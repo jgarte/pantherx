@@ -32,8 +32,8 @@
   #:export (run-welcome-page))
 
 ;; Expected width and height for the logo.
-(define logo-width (make-parameter 43))
-(define logo-height (make-parameter 19))
+(define logo-width (make-parameter 62))
+(define logo-height (make-parameter 16))
 
 (define info-textbox-width (make-parameter 70))
 (define options-listbox-height (make-parameter 5))
@@ -116,8 +116,8 @@ we want this page to occupy all the screen space available."
 the page. Ask the user to choose between manual installation, graphical
 installation and reboot."
   (run-menu-page
-   (G_ "GNU Guix install")
-   (G_ "Welcome to GNU Guix system installer!
+   (G_ "PantherX OS install")
+   (G_ "Welcome to PantherX OS system installer!
 
 You will be guided through a graphical installation program.
 
