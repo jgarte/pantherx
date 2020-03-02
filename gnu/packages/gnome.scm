@@ -7144,7 +7144,7 @@ properties, screen resolution, and other GNOME parameters.")
                                              "/slim/0.x/background.png")
                               "data/theme/guix-background.png")
                    (copy-file #$(file-append %artwork-repository
-                                             "/logo/Guix-horizontal-white.svg")
+                                             "/logo/Panther-white.svg")
                               "data/theme/guix-logo.svg")
                    #t))))
     (build-system meson-build-system)
