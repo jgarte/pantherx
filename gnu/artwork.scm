@@ -29,16 +29,16 @@
 ;;; Code:
 
 (define %artwork-repository
-  (let ((commit "2f2fe74c1078be605a6a93c2193fd6c715cebbb0"))
+  (let ((commit "b4a452832c546993c6e427792a117528cb0cda8e"))
     (origin
       (method git-fetch)
       (uri (git-reference
-             (url "https://git.savannah.gnu.org/git/guix/guix-artwork.git")
+             (url "https://branding:g6MywRYxgkPcccm6R3NV@git.pantherx.org/development/desktop/px-artwork.git")
              (commit commit)))
-      (file-name (string-append "guix-artwork-" (string-take commit 7)
+      (file-name (string-append "px-artwork-" (string-take commit 7)
                                 "-checkout"))
       (sha256
        (base32
-        "0c8r0phvm3wgf914n2kw1461cwdjl2zbzqvzq9x7d9pwkgv7xmq7")))))
+        "0jbzanwn5fvi6z3km5ja7vx3fhwdjzhg26rvb08mbi099fsp9mxd")))))
 
 ;;; artwork.scm ends here
