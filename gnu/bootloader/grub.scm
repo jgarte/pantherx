@@ -387,7 +387,7 @@ set timeout=~a~%"
 
           #$@(if (pair? old-entries)
                  #~((format port "
-submenu \"GNU system, old configurations...\" {~%")
+submenu \"PantherX system, old configurations...\" {~%")
                     #$@(map menu-entry->gexp old-entries)
                     (format port "}~%"))
                  #~())

@@ -290,7 +290,7 @@ the user's target storage device rather than on the RAM disk."
 (define %installation-services
   ;; List of services of the installation system.
   (let ((motd (plain-file "motd" "
-\x1b[1;37mWelcome to the installation of GNU Guix!\x1b[0m
+\x1b[1;37mWelcome to the installation of PantherX OS!\x1b[0m
 
 \x1b[2m\
 Using this shell, you can carry out the installation process \"manually.\"
@@ -413,7 +413,7 @@ Access documentation at any time by pressing Alt-F2.\x1b[0m
 (define %issue
   ;; Greeting.
   "
-\x1b[1;37mThis is an installation image of the GNU system.  Welcome.\x1b[0m
+\x1b[1;37mThis is an installation image of the PantherX OS.  Welcome.\x1b[0m
 
 \x1b[1;33mUse Alt-F2 for documentation.\x1b[0m
 ")
@@ -427,7 +427,7 @@ Access documentation at any time by pressing Alt-F2.\x1b[0m
     (bootloader (bootloader-configuration
                  (bootloader grub-bootloader)
                  (target "/dev/sda")))
-    (label (string-append "GNU Guix installation "
+    (label (string-append "PantherX OS installation "
                           (package-version guix)))
 
     ;; XXX: The AMD Radeon driver is reportedly broken, which makes kmscon
@@ -441,7 +441,7 @@ Access documentation at any time by pressing Alt-F2.\x1b[0m
      ;; the appropriate one.
      (cons* (file-system
               (mount-point "/")
-              (device (file-system-label "Guix_image"))
+              (device (file-system-label "pantherx_image"))
               (type "ext4"))
 
             ;; Make /tmp a tmpfs instead of keeping the overlayfs.  This
