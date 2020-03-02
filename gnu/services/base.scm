@@ -1601,7 +1601,8 @@ archive' public keys, with GUIX."
 
 (define %default-authorized-guix-keys
   ;; List of authorized substitute keys.
-  (list (file-append guix "/share/guix/berlin.guixsd.org.pub")))
+  (list (file-append guix "/share/guix/berlin.guixsd.org.pub")
+        (file-append guix "/share/guix/build.pantherx.org.pub")))
 
 (define-record-type* <guix-configuration>
   guix-configuration make-guix-configuration

@@ -515,7 +515,8 @@ check-system: $(GOBJECTS)
 dist_pkgdata_DATA =				\
   etc/substitutes/berlin.guixsd.org.pub		\
   etc/substitutes/ci.guix.gnu.org.pub		\
-  etc/substitutes/ci.guix.info.pub
+  etc/substitutes/ci.guix.info.pub   \
+  etc/substitutes/build.pantherx.org.pub
 
 # Bash completion file.
 dist_bashcompletion_DATA = etc/completion/bash/guix	\
