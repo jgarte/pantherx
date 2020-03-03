@@ -109,12 +109,12 @@
   ;; Default list of channels.
   (list (channel
          (name 'guix)
-         (branch "client-47-branded")
-         (url "https://panther:huQ7CfV1iZZ8hR_S2ecx@git.pantherx.org/development/pantherx.git"))
+         (branch "rolling")
+         (url "https://rolling:s7T92icU5usys-R2bsM6@git.pantherx.org/development/pantherx.git"))
         (channel
           (name 'pantherx)
-          (branch "master")
-          (url "https://panther:ddrm1PR6-vFfs5AnrRL6@git.pantherx.org/development/guix-pantherx.git"))))
+          (branch "rolling")
+          (url "https://rolling:HPuf8Tdt6RFNFaoi_kVi@git.pantherx.org/development/guix-pantherx.git"))))
 
 (define (guix-channel? channel)
   "Return true if CHANNEL is the 'guix' channel."

@@ -33,7 +33,7 @@
     (origin
       (method git-fetch)
       (uri (git-reference
-             (url "https://branding:g6MywRYxgkPcccm6R3NV@git.pantherx.org/development/desktop/px-artwork.git")
+             (url "https://rolling:9o5en-xoPr_ZHz-skuAz@git.pantherx.org/development/desktop/px-artwork.git")
              (commit commit)))
       (file-name (string-append "px-artwork-" (string-take commit 7)
                                 "-checkout"))
