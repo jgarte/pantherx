@@ -980,14 +980,14 @@ listed in OS.  The C library expects to find it under
 (define (kernel->boot-label kernel)
   "Return a label for the bootloader menu entry that boots KERNEL."
   (cond ((package? kernel)
-         (string-append "GNU with "
+         (string-append "PantherX OS with "
                         (string-titlecase (package-name kernel)) " "
                         (package-version kernel)))
         ((inferior-package? kernel)
-         (string-append "GNU with "
+         (string-append "PantherX OS with "
                         (string-titlecase (inferior-package-name kernel)) " "
                         (inferior-package-version kernel)))
-        (else "GNU")))
+        (else "PantherX OS")))
 
 (define (operating-system-default-label os)
   "Return the default label for OS, as it will appear in the bootloader menu
