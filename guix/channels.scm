@@ -108,9 +108,13 @@
 (define %default-channels
   ;; Default list of channels.
   (list (channel
-         (name 'guix)
-         (branch "rolling")
-         (url "https://rolling:s7T92icU5usys-R2bsM6@git.pantherx.org/development/pantherx.git"))
+          (name 'guix)
+          (branch "rolling-nonlibre")
+          (url "https://rolling:s7T92icU5usys-R2bsM6@git.pantherx.org/development/pantherx.git"))
+        (channel
+          (name 'nongnu)
+          (branch "rolling")
+          (url "https://rolling:ieE7t6i5WJqmzyppJAWv@git.pantherx.org/development/pantherx-nonguix.git"))
         (channel
           (name 'pantherx)
           (branch "rolling")
