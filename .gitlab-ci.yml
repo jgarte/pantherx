@@ -62,6 +62,7 @@ sync-nonlibre:
   stage: sync
   script:
     - guix pull --verbosity=2
+    - guix describe
   only:
     - staging-nonlibre
   tags:
@@ -89,7 +90,7 @@ build-nonlibre:
     - guix
 
 
-reload-substitutes-nonlibre:
+reload-substitutes:
   inherit:
     default: false
   stage: publish
@@ -101,9 +102,19 @@ reload-substitutes-nonlibre:
     - guix
 
 
-rebase-rolling-nonlibre:
+rebase-rolling:
   stage: publish
   script:
+    - if [[ ! -z $(git branch --list ${STAGING_LIBRE}) ]]; then
+        git branch -D ${STAGING_LIBRE};
+      fi;
+    - git checkout origin/${STAGING_LIBRE} -b ${STAGING_LIBRE}
+    - if [[ ! -z $(git branch --list ${ROLLING_LIBRE}) ]]; then
+        git branch -D ${ROLLING_LIBRE};
+      fi;
+    - git checkout origin/${ROLLING_LIBRE} -b ${ROLLING_LIBRE}
+    - git rebase ${STAGING_LIBRE}
+    - git push -u origin ${ROLLING_LIBRE}
     - if [[ ! -z $(git branch --list ${STAGING_NONLIBRE}) ]]; then
         git branch -D ${STAGING_NONLIBRE};
       fi;
