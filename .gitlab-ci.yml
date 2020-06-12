@@ -36,12 +36,19 @@ default:
 apply-staging-changes:
   stage: sync
   script:
+    - if [[ ! -z $(git branch --list ${STAGING}) ]]; then
+        git branch -D ${STAGING};
+      fi;
     - git checkout origin/${STAGING} -b ${STAGING}
-    - echo "APPLY to '${STAGING_LIBRE}'"
+    - if [[ ! -z $(git branch --list ${STAGING_LIBRE}) ]]; then
+        git branch -D ${STAGING_LIBRE};
+      fi;
     - git checkout origin/${STAGING_LIBRE} -b ${STAGING_LIBRE}
     - git merge --no-ff ${STAGING}
     - git push -u origin/${STAGING_LIBRE}
-    - echo "APPLY to '${STAGING_NONLIBRE}'"
+    - if [[ ! -z $(git branch --list ${STAGING_NONLIBRE}) ]]; then
+        git branch -D ${STAGING_NONLIBRE};
+      fi;
     - git checkout origin/${STAGING_NONLIBRE} -b ${STAGING_NONLIBRE}
     - git merge --no-ff ${STAGING}
     - git push -u origin/${STAGING_NONLIBRE}
@@ -97,7 +104,13 @@ reload-substitutes-nonlibre:
 rebase-rolling-nonlibre:
   stage: publish
   script:
+    - if [[ ! -z $(git branch --list ${STAGING_NONLIBRE}) ]]; then
+        git branch -D ${STAGING_NONLIBRE};
+      fi;
     - git checkout origin/${STAGING_NONLIBRE} -b ${STAGING_NONLIBRE}
+    - if [[ ! -z $(git branch --list ${ROLLING_NONLIBRE}) ]]; then
+        git branch -D ${ROLLING_NONLIBRE};
+      fi;
     - git checkout origin/${ROLLING_NONLIBRE} -b ${ROLLING_NONLIBRE}
     - git rebase ${STAGING_NONLIBRE}
     - git push -u origin/${ROLLING_NONLIBRE}
