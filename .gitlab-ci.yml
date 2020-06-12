@@ -1,0 +1,118 @@
+# GitLab CI Automation for PantherX Upstream Merge
+# Author: Reza Alizadeh Majd <r.majd@pantherx.org>
+# Version: 0.1.0
+
+stages:
+  - sync
+  - build
+  - publish
+
+
+variables:
+  STAGING: 'staging'
+  STAGING_LIBRE: 'staging-libre'
+  STAGING_NONLIBRE: 'staging-nonlibre'
+  ROLLING_LIBRE: 'rolling'
+  ROLLING_NONLIBRE: 'rolling-nonlibre'
+  MANIFEST_REPO: 'guix-pantherx'
+
+
+default:
+  image: alpine
+  before_script:
+    - apk update && apk upgrade
+    - apk add git openssh bash perl
+    - export CI_PUSH_REPO=`echo $CI_REPOSITORY_URL | perl -pe 's#.*@(.+?(\:\d+)?)/#git@\1:#'`; echo ${CI_PUSH_REPO};
+    - export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+    - mkdir ~/.ssh
+    - echo ${DEPLOY_SECRET_KEY_BASE64} | base64 -d > ~/.ssh/id_rsa
+    - chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+    - git config user.email "r.majd@pantherx.org"
+    - git config user.name "CI Pipeline Script"
+    - git config http.sslverify "false"
+    - git remote set-url --push origin "${CI_PUSH_REPO}"
+
+
+apply-staging-changes:
+  stage: sync
+  script:
+    - if [[ ! -z $(git branch --list ${STAGING}) ]]; then
+        git branch -D ${STAGING};
+      fi;
+    - git checkout origin/${STAGING} -b ${STAGING}
+    - if [[ ! -z $(git branch --list ${STAGING_LIBRE}) ]]; then
+        git branch -D ${STAGING_LIBRE};
+      fi;
+    - git checkout origin/${STAGING_LIBRE} -b ${STAGING_LIBRE}
+    - git merge --no-ff ${STAGING}
+    - git push -u origin ${STAGING_LIBRE}
+    - if [[ ! -z $(git branch --list ${STAGING_NONLIBRE}) ]]; then
+        git branch -D ${STAGING_NONLIBRE};
+      fi;
+    - git checkout origin/${STAGING_NONLIBRE} -b ${STAGING_NONLIBRE}
+    - git merge --no-ff ${STAGING}
+    - git push -u origin ${STAGING_NONLIBRE}
+  only:
+    - staging
+
+
+sync-nonlibre:
+  inherit:
+    default: false
+  stage: sync
+  script:
+    - guix pull --verbosity=2
+  only:
+    - staging-nonlibre
+  tags:
+    - guix
+
+
+build-nonlibre:
+  inherit:
+    default: false
+  stage: build
+  script:
+    - if [ -d "${MANIFEST_REPO}" ]; then
+        rm -rf "${MANIFEST_REPO}";
+      fi
+    - git clone "https://panther:${MANIFEST_TOKEN}@git.pantherx.org/development/${MANIFEST_REPO}.git"
+    - cd "${MANIFEST_REPO}"
+    - sed 's/^ //g' manifest.txt | grep -v '^#' | grep -v '^$' | while read -r package; do
+        echo "Build process started for $package";
+        guix build --verbosity=2 "$package";
+        echo "---------------------------------------------";
+      done
+  only:
+    - staging-nonlibre
+  tags:
+    - guix
+
+
+reload-substitutes-nonlibre:
+  inherit:
+    default: false
+  stage: publish
+  script:
+    - herd restart guix-daemon
+  only:
+    - staging-nonlibre
+  tags:
+    - guix
+
+
+rebase-rolling-nonlibre:
+  stage: publish
+  script:
+    - if [[ ! -z $(git branch --list ${STAGING_NONLIBRE}) ]]; then
+        git branch -D ${STAGING_NONLIBRE};
+      fi;
+    - git checkout origin/${STAGING_NONLIBRE} -b ${STAGING_NONLIBRE}
+    - if [[ ! -z $(git branch --list ${ROLLING_NONLIBRE}) ]]; then
+        git branch -D ${ROLLING_NONLIBRE};
+      fi;
+    - git checkout origin/${ROLLING_NONLIBRE} -b ${ROLLING_NONLIBRE}
+    - git rebase ${STAGING_NONLIBRE}
+    - git push -u origin ${ROLLING_NONLIBRE}
+  only:
+    - staging-nonlibre
