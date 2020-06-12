@@ -45,13 +45,13 @@ apply-staging-changes:
       fi;
     - git checkout origin/${STAGING_LIBRE} -b ${STAGING_LIBRE}
     - git merge --no-ff ${STAGING}
-    - git push -u origin/${STAGING_LIBRE}
+    - git push -u origin ${STAGING_LIBRE}
     - if [[ ! -z $(git branch --list ${STAGING_NONLIBRE}) ]]; then
         git branch -D ${STAGING_NONLIBRE};
       fi;
     - git checkout origin/${STAGING_NONLIBRE} -b ${STAGING_NONLIBRE}
     - git merge --no-ff ${STAGING}
-    - git push -u origin/${STAGING_NONLIBRE}
+    - git push -u origin ${STAGING_NONLIBRE}
   only:
     - staging
 
@@ -113,6 +113,6 @@ rebase-rolling-nonlibre:
       fi;
     - git checkout origin/${ROLLING_NONLIBRE} -b ${ROLLING_NONLIBRE}
     - git rebase ${STAGING_NONLIBRE}
-    - git push -u origin/${ROLLING_NONLIBRE}
+    - git push -u origin ${ROLLING_NONLIBRE}
   only:
     - staging-nonlibre
