@@ -3,6 +3,7 @@
 ;;; Copyright © 2015 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2016, 2017, 2019, 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2018 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -56,7 +57,6 @@
              (sha256
               (base32
                "1arkyizn5wbgvbh53aziv3s6lmd3wm9lqzkhxb3hijlp1y124hjg"))
-             (patches (search-patches "plotutils-libpng-jmpbuf.patch"))
              (modules '((guix build utils)))
              (snippet
               ;; Force the use of libXaw7 instead of libXaw.  When not doing
@@ -67,22 +67,28 @@
                  (substitute* "configure"
                    (("-lXaw")
                     "-lXaw7"))
+                 ;; Use the `png_jmpbuf' accessor, as recommended since libpng
+                 ;; 1.4.0 (see:
+                 ;; http://www.libpng.org/pub/png/src/libpng-1.2.x-to-1.4.x-summary.txt).
+                 (substitute* "libplot/z_write.c"
+                   (("png_ptr->jmpbuf")
+                    "png_jmpbuf (png_ptr)"))
                  #t))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags (list "--enable-libplotter")))
     (inputs `(("libpng" ,libpng)
               ("libx11" ,libx11)
               ("libxt" ,libxt)
               ("libxaw" ,libxaw)))
-
-    (home-page
-     "https://www.gnu.org/software/plotutils/")
+    (home-page "https://www.gnu.org/software/plotutils/")
     (synopsis "Plotting utilities and library")
     (description
-     "GNU Plotutils is a package for plotting and working with 2D graphics. 
-It includes a library, \"libplot\", for C and C++ for exporting 2D vector
-graphics in many file formats.  It also has support for 2D vector graphics
-animations.  The package also contains command-line programs for plotting
-scientific data.")
+     "GNU Plotutils is a package for plotting and working with 2D graphics.
+It includes the C library @code{libplot} and the C++ @code{libplotter} library
+for exporting 2D vector graphics in many file formats.  It also has support
+for 2D vector graphics animations.  The package also contains command-line
+programs for plotting scientific data.")
     (license license:gpl2+)))
 
 (define-public guile-charting
@@ -112,7 +118,7 @@ scientific data.")
                   #t))))
     (build-system gnu-build-system)
     (native-inputs `(("pkg-config" ,pkg-config)))
-    (inputs `(("guile" ,guile-2.2)))
+    (inputs `(("guile" ,guile-3.0)))
     (propagated-inputs `(("guile-cairo" ,guile-cairo)))
     (home-page "http://wingolog.org/software/guile-charting/")
     (synopsis "Create charts and graphs in Guile")
@@ -121,12 +127,15 @@ scientific data.")
 using the Cairo drawing library.")
     (license license:lgpl2.1+)))
 
-(define-public guile3.0-charting
+(define-public guile2.2-charting
   (package
     (inherit guile-charting)
-    (name "guile3.0-charting")
-    (inputs `(("guile" ,guile-3.0)))
-    (propagated-inputs `(("guile-cairo" ,guile3.0-cairo)))))
+    (name "guile2.2-charting")
+    (inputs `(("guile" ,guile-2.2)))
+    (propagated-inputs `(("guile-cairo" ,guile2.2-cairo)))))
+
+(define-public guile3.0-charting
+  (deprecated-package "guile3.0-charting" guile-charting))
 
 (define-public ploticus
   (package
@@ -214,6 +223,7 @@ colors, styles, options and details.")
        ;; For the manual and the tests.
        ("texlive" ,(texlive-union (list texlive-amsfonts
                                         texlive-epsf
+                                        texlive-etoolbox
                                         texlive-latex-base
                                         texlive-latex-geometry
                                         texlive-latex-graphics

@@ -6,11 +6,11 @@
 ;;; Copyright © 2015, 2016 Mathieu Lirzin <mthl@gnu.org>
 ;;; Copyright © 2014, 2015, 2016 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2014, 2016, 2019 Eric Bavier <bavier@member.fsf.org>
-;;; Copyright © 2015, 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2015, 2018 Kyle Meyer <kyle@kyleam.com>
 ;;; Copyright © 2015, 2017, 2018, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016, 2017 Leo Famulari <leo@famulari.name>
-;;; Copyright © 2016, 2017, 2018 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017, 2018 Nikita <nikita@n0.is>
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Vasile Dumitrascu <va511e@yahoo.com>
 ;;; Copyright © 2017 Clément Lassieur <clement@lassieur.org>
@@ -24,10 +24,11 @@
 ;;; Copyright © 2018 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2019 Jovany Leandro G.C <bit4bit@riseup.net>
 ;;; Copyright © 2019 Kei Kebreau <kkebreau@posteo.net>
-;;; Copyright © 2019 Alex Griffin <a@ajgrf.com>
+;;; Copyright © 2019, 2020 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2020 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2020 John D. Boy <jboy@bius.moe>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -145,20 +146,29 @@ changes to project files over time.  It supports both a distributed workflow
 as well as the classic centralized workflow.")
     (license license:gpl2+)))
 
+(define git-cross-configure-flags
+  '("ac_cv_fread_reads_directories=yes"
+    "ac_cv_snprintf_returns_bogus=no"
+    "ac_cv_iconv_omits_bom=no"))
+
 (define-public git
   (package
    (name "git")
-   (version "2.26.0")
+   (version "2.26.2")
    (source (origin
             (method url-fetch)
             (uri (string-append "mirror://kernel.org/software/scm/git/git-"
                                 version ".tar.xz"))
             (sha256
              (base32
-              "1mlmwibfgcv42c28fxmbd3iim8fc06r17dljd8vdgq550z5hvkly"))))
+              "0j685w6pzkn926z5nf5r8fij4ziipvw4c9yb0wc577nzf4j16rbd"))))
    (build-system gnu-build-system)
    (native-inputs
     `(("native-perl" ,perl)
+      ;; Add bash-minimal explicitly to ensure it comes before bash-for-tests,
+      ;; see <https://bugs.gnu.org/39513>.
+      ("bash" ,bash-minimal)
+      ("bash-for-tests" ,bash)
       ("gettext" ,gettext-minimal)
       ("git-manpages"
        ,(origin
@@ -168,7 +178,7 @@ as well as the classic centralized workflow.")
                 version ".tar.xz"))
           (sha256
            (base32
-            "09ilv5gg7167mwc0qqw2fz3lmdm360crnxc0xzkqn53wnsh4cziq"))))
+            "0rb4f4jc31zrcg4gyjg4fi07dw7nggkjg2nqfiq5p1aayw2f2ga3"))))
       ;; For subtree documentation.
       ("asciidoc" ,asciidoc-py3)
       ("docbook-xsl" ,docbook-xsl)
@@ -180,10 +190,6 @@ as well as the classic centralized workflow.")
       ("perl" ,perl)
       ("python" ,python) ; for git-p4
       ("zlib" ,zlib)
-
-      ;; Note: we keep this in inputs rather than native-inputs to work around
-      ;; a problem in 'patch-shebangs'; see <https://bugs.gnu.org/31952>.
-      ("bash-for-tests" ,bash)
 
       ;; For PCRE support in git grep (USE_LIBPCRE2).
       ("pcre" ,pcre2)
@@ -237,23 +243,46 @@ as well as the classic centralized workflow.")
       ;; absolute file name to 'wish'.
       #:configure-flags (list (string-append "--with-tcltk="
                                              (assoc-ref %build-inputs "tk")
-                                             "/bin/wish8.6")) ; XXX
+                                             "/bin/wish8.6")  ; XXX
+                              ,@(if (%current-target-system)
+                                    git-cross-configure-flags
+                                    '()))
 
       #:modules ((srfi srfi-1)
                  (srfi srfi-26)
                  ,@%gnu-build-system-modules)
       #:phases
       (modify-phases %standard-phases
-        (add-after 'unpack 'modify-PATH
-          (lambda* (#:key inputs #:allow-other-keys)
-            (let ((path (string-split (getenv "PATH") #\:))
-                  (bash-full (assoc-ref inputs "bash-for-tests")))
-              ;; Drop the test bash from PATH so that (which "sh") and
-              ;; similar does the right thing.
-              (setenv "PATH" (string-join
-                              (remove (cut string-prefix? bash-full <>) path)
-                              ":"))
-              #t)))
+        ,@(if (%current-target-system)
+              ;; The git build system assumes build == host
+              `((add-after 'unpack  'use-host-uname_S
+                  (lambda _
+                    (substitute* "config.mak.uname"
+                      (("uname_S := .*" all)
+                       (if (equal? ,(%current-target-system) "i586-pc-gnu")
+                         "uname_S := GNU\n"
+                         all)))
+                    #t)))
+              ;; We do not have bash-for-tests when cross-compiling.
+              `((add-after 'unpack 'modify-PATH
+                  (lambda* (#:key inputs #:allow-other-keys)
+                    (let ((path (string-split (getenv "PATH") #\:))
+                          (bash-full (assoc-ref inputs "bash-for-tests")))
+                      ;; Drop the test bash from PATH so that (which "sh") and
+                      ;; similar does the right thing.
+                      (setenv "PATH" (string-join
+                                      (remove (cut string-prefix? bash-full <>) path)
+                                      ":"))
+                      #t)))))
+        ;; Add cross curl-config script to PATH when cross-compiling.
+        ,@(if (%current-target-system)
+              '((add-before 'configure 'add-cross-curl-config
+                   (lambda* (#:key inputs #:allow-other-keys)
+                     (setenv "PATH"
+                             (string-append (assoc-ref inputs "curl") "/bin:"
+                                            (getenv "PATH")))
+                     #t)))
+              '())
         (add-after 'configure 'patch-makefiles
           (lambda _
             (substitute* "Makefile"
@@ -514,20 +543,24 @@ everything from small to very large projects with speed and efficiency.")
        ((#:make-flags flags)
         `(delete "USE_LIBPCRE2=yes" ,flags))
        ((#:configure-flags flags)
-        ''())
+        `(list
+          ,@(if (%current-target-system)
+                git-cross-configure-flags
+                '())))
        ((#:disallowed-references lst '())
         `(,perl ,@lst))))
     (outputs '("out"))
     (native-inputs
-     `(("native-perl" ,perl)
+     `(("bash" ,bash-minimal)
+       ("bash-for-tests" ,bash)
+       ("native-perl" ,perl)
        ("gettext" ,gettext-minimal)))
     (inputs
      `(("curl" ,curl)                             ;for HTTP(S) access
        ("expat" ,expat)                           ;for 'git push' over HTTP(S)
        ("openssl" ,openssl)
        ("perl" ,perl)
-       ("zlib" ,zlib)
-       ("bash-for-tests" ,bash)))))
+       ("zlib" ,zlib)))))
 
 (define-public gitless
   (package
@@ -601,7 +634,7 @@ on @command{git}, and use any regular Git hosting service.")
 (define-public libgit2
   (package
     (name "libgit2")
-    (version "1.0.0")
+    (version "1.0.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/libgit2/libgit2/"
@@ -609,7 +642,7 @@ on @command{git}, and use any regular Git hosting service.")
                                   "/libgit2-" version ".tar.gz"))
               (sha256
                (base32
-                "1d09ni0v3vammk8zqmmwks92fh3wwnsxpyrh4s5wwdb3gxma27va"))
+                "0nlg35pxhh548nn7aa3y1m81mf81nkbzz86i2psps4f474n497v8"))
               (patches (search-patches "libgit2-mtime-0.patch"))
               (snippet '(begin
                           (delete-file-recursively "deps") #t))
@@ -617,9 +650,16 @@ on @command{git}, and use any regular Git hosting service.")
     (build-system cmake-build-system)
     (outputs '("out" "debug"))
     (arguments
-     `(#:configure-flags '("-DUSE_NTLMCLIENT=OFF" ;TODO: package this
-                           "-DREGEX_BACKEND=pcre2"
-                           "-DUSE_HTTP_PARSER=system")
+     `(#:configure-flags
+       (list "-DUSE_NTLMCLIENT=OFF" ;TODO: package this
+             "-DREGEX_BACKEND=pcre2"
+             "-DUSE_HTTP_PARSER=system"
+             ,@(if (%current-target-system)
+                   `((string-append
+                      "-DPKG_CONFIG_EXECUTABLE="
+                      (assoc-ref %build-inputs "pkg-config")
+                      "/bin/" ,(%current-target-system) "-pkg-config"))
+                   '()))
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'fix-hardcoded-paths
@@ -630,9 +670,13 @@ on @command{git}, and use any regular Git hosting service.")
                (("/bin/cp") (which "cp"))
                (("/bin/rm") (which "rm")))
              #t))
-         ;; Run checks more verbosely.
+         ;; Run checks more verbosely, unless we are cross-compiling.
          (replace 'check
-           (lambda _ (invoke "./libgit2_clar" "-v" "-Q"))))))
+           (lambda* (#:key (tests? #t) #:allow-other-keys)
+             (if tests?
+                 (invoke "./libgit2_clar" "-v" "-Q")
+                 ;; Tests may be disabled if cross-compiling.
+                 (format #t "Test suite not run.~%")))))))
     (inputs
      `(("libssh2" ,libssh2)
        ("http-parser" ,http-parser)))
@@ -652,6 +696,24 @@ provided as a re-entrant linkable library with a solid API, allowing you to
 write native speed custom Git applications in any language with bindings.")
     ;; GPLv2 with linking exception
     (license license:gpl2)))
+
+(define-public libgit2-0.28
+  (package
+    (inherit libgit2)
+    (version "0.28.5")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (string-append "https://github.com/libgit2/libgit2/releases/"
+                            "download/v" version
+                            "/libgit2-" version ".tar.gz"))
+        (sha256
+         (base32
+          "0hjgpqjjmkciw1i8jqkx9q2vhdc4fc99qajhrj2bq8ziwsp6hyrb"))
+        (patches (search-patches "libgit2-mtime-0.patch"))
+        (modules '((guix build utils)))
+        (snippet '(begin
+                    (delete-file-recursively "deps") #t))))))
 
 (define-public git-crypt
   (package
@@ -711,7 +773,7 @@ to lock down your entire repository.")
 (define-public git-remote-gcrypt
   (package
    (name "git-remote-gcrypt")
-   (version "1.0.3")
+   (version "1.3")
    (source (origin
              (method git-fetch)
              (uri (git-reference
@@ -720,7 +782,7 @@ to lock down your entire repository.")
              (file-name (string-append name "-" version "-checkout"))
              (sha256
               (base32
-               "1vay3204729c7wajgn3nxf0s0hzwpdrw14pl6kd8w2ss25gvw2k1"))))
+               "0n8fzvr6y0pxrbvkywlky2bd8jvi0ayp4n9hwi84l1ldmv4a40dh"))))
    (build-system trivial-build-system)
    (arguments
     `(#:modules ((guix build utils))
@@ -843,9 +905,9 @@ collaboration using typical untrusted file hosts or services.")
            (method url-fetch)
            ;; cgit is tightly bound to git.  Use GIT_VER from the Makefile,
            ;; which may not match the current (package-version git).
-           (uri "mirror://kernel.org/software/scm/git/git-2.25.1.tar.xz")
+           (uri "mirror://kernel.org/software/scm/git/git-2.25.4.tar.xz")
            (sha256
-            (base32 "09lzwa183nblr6l8ib35g2xrjf9wm9yhk3szfvyzkwivdv69c9r2"))))
+            (base32 "11am6s46wmn1yll5614smjhzlghbqq6gysgcs64igjr9y5wzpdxq"))))
        ("openssl" ,openssl)
        ("groff" ,groff)
        ("python" ,python)
@@ -1245,7 +1307,7 @@ also walk each side of a merge and test those changes individually.")
 (define-public gitolite
   (package
     (name "gitolite")
-    (version "3.6.7")
+    (version "3.6.11")
     (source
      (origin
        (method git-fetch)
@@ -1254,7 +1316,7 @@ also walk each side of a merge and test those changes individually.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0rmyzr66lxh2ildf3h1nh3hh2ndwk21rjdin50r5vhwbdd7jg8vb"))))
+        (base32 "1rkj7gknwjlc5ij9w39zf5mr647bm45la57yjczydmvrb8c56yrh"))))
     (build-system gnu-build-system)
     (arguments
      '(#:tests? #f ; no tests
@@ -1356,6 +1418,28 @@ also walk each side of a merge and test those changes individually.")
 control to Git repositories.")
     (license license:gpl2)))
 
+(define (mercurial-patch name revision hash)
+  (origin
+    (method url-fetch)
+    (uri (string-append "https://www.mercurial-scm.org/repo/hg/raw-rev/" revision))
+    (file-name (string-append "mercurial-" name ".patch"))
+    (sha256 (base32 hash))))
+
+(define %mercurial-patches
+  (list
+   ;; These three patches fixes compatibility with the updated gzip module
+   ;; in Python 3.8.2: <https://bz.mercurial-scm.org/show_bug.cgi?id=6284>.
+   (mercurial-patch "python-mtime" "6c36a521572edf3a79ee567b118469b3192037cc"
+                    "0bmm7y40r8s081ws2sjvn1v8kvyfan4a97jl0fhdh7yc2pzxlzqq")
+   (mercurial-patch "indent-gzip" "a23b859ad17dd0a5b9bb37846b69b5e30f99c44c"
+                    "1spscv9dgqv38m7h1liki93ax6w97gxayg17fr7wr6acjdfccpr9")
+   (mercurial-patch "python-gzip" "b7ca03dff14c63d64ad7bfa36a2d0a36a6b62253"
+                    "0p88ffhx0kk21ssrsb156ffhpcb7g8mkwwkmq49qpmbm5ag2paf0")
+   ;; This fixes an incompatibility with os.isfile in Python 3.8:
+   ;; <https://bz.mercurial-scm.org/show_bug.cgi?id=6287>.
+   (mercurial-patch "os-isfile" "6a8738dc4a019da4c9df5c26961aa09d45ce1c68"
+                    "0lr069m12kzrkmr1pmhaxg5lxmdwxabsza61qp1i1q70g7sy8lvy")))
+
 (define-public mercurial
   (package
     (name "mercurial")
@@ -1364,6 +1448,7 @@ control to Git repositories.")
              (method url-fetch)
              (uri (string-append "https://www.mercurial-scm.org/"
                                  "release/mercurial-" version ".tar.gz"))
+             (patches %mercurial-patches)
              (sha256
               (base32
                "1nbjpzjrzgql4hrvslpxwbcgn885ikq6ba1yb4w6p78rw9nzkhgp"))))
@@ -1484,18 +1569,14 @@ following features:
 (define-public subversion
   (package
     (name "subversion")
-    (version "1.10.6")
+    (version "1.14.0")
     (source (origin
              (method url-fetch)
-             (uri
-               (list
-                 (string-append "https://archive.apache.org/dist/subversion/"
-                                "subversion-" version ".tar.bz2")
-                 (string-append "https://www-eu.apache.org/dist/subversion/"
-                                "subversion-" version ".tar.bz2")))
+             (uri (string-append "mirror://apache/subversion/"
+                                 "subversion-" version ".tar.bz2"))
              (sha256
               (base32
-               "19zc215mhpnm92mlyl5jbv57r5zqp6cavr3s2g9yglp6j4kfgj0q"))))
+               "00i1f88snlpcnsycpn6r315h6792l5nkr2p5k6kq6yprz4cf5a3b"))))
     (build-system gnu-build-system)
     (arguments
      '(#:parallel-tests? #f             ; TODO Seems to cause test failures on
@@ -1633,14 +1714,14 @@ RCS, PRCS, and Aegis packages.")
 (define-public cvs-fast-export
   (package
     (name "cvs-fast-export")
-    (version "1.51")
+    (version "1.55")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://www.catb.org/~esr/cvs-fast-export/"
                                   "cvs-fast-export-" version ".tar.gz"))
               (sha256
                (base32
-                "0nn5cf8syb5nbjvkn8w561pk25clv187h4hs9pnc700g9w56chzf"))))
+                "06y2myhhv2ap08bq7d7shq0b7lq6wgznwrpz6622xq66cxkf2n5g"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -1800,7 +1881,10 @@ accessed and migrated on modern systems.")
        ("ed" ,ed)))
     (arguments
      `(#:configure-flags (list "--with-no-aegis-configured"
-                               "--sharedstatedir=/var/com/aegis")
+                               "--sharedstatedir=/var/com/aegis"
+                               ;; Uses the old 'throw()' specifier with 'new'
+                               ;; which changed in C++11.
+                               "CXXFLAGS=-std=c++03")
        #:parallel-build? #f ; There are some nasty racy rules in the Makefile.
        #:phases
        (modify-phases %standard-phases
@@ -1843,7 +1927,7 @@ accessed and migrated on modern systems.")
 
                ;; The author decided to call the check rule "sure".
                (invoke "make" "sure")))))))
-    (home-page "http://aegis.sourceforge.net")
+    (home-page "https://sourceforge.net/projects/aegis/")
     (synopsis "Project change supervisor")
     (description "Aegis is a project change supervisor, and performs some of
 the Software Configuration Management needed in a CASE environment.  Aegis
@@ -2083,7 +2167,7 @@ by rclone usable with git-annex.")
 (define-public fossil
   (package
     (name "fossil")
-    (version "2.10")
+    (version "2.11")
     (source
      (origin
        (method url-fetch)
@@ -2091,8 +2175,7 @@ by rclone usable with git-annex.")
               "https://www.fossil-scm.org/index.html/uv/"
               "fossil-src-" version ".tar.gz"))
        (sha256
-        (base32
-         "041bs4fgk52fw58p7s084pxk9d9vs5v2f2pjbznqawz75inpg8yq"))
+        (base32 "0c9nzx42wxfmym9vf1pnbdb1c7gp7a7zqky60izxsph7w2xh8nix"))
        (modules '((guix build utils)))
        (snippet
         '(begin

@@ -2,7 +2,7 @@
 ;;; Copyright © 2015 Sou Bunnbu <iyzsong@gmail.com>
 ;;; Copyright © 2015 David Hashe <david.hashe@dhashe.com>
 ;;; Copyright © 2015 Ricardo Wurmus <rekado@elephly.net>
-;;; Copyright © 2015, 2016, 2017, 2018, 2019 Mark H Weaver <mhw@netris.org>
+;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2019 Marius Bakke <mbakke@fastmail.com>
@@ -93,14 +93,14 @@ backend which implements them.")
 (define-public wpebackend-fdo
   (package
     (name "wpebackend-fdo")
-    (version "1.6.0")
+    (version "1.6.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://wpewebkit.org/releases/"
                                   "wpebackend-fdo-" version ".tar.xz"))
               (sha256
                (base32
-                "0rzm16m3mw9dh2jis9avk2rhz7bijanrzlywyiaicyzrv2wxfnvz"))))
+                "1jdi43gciqjgvhnqxs160f3hmp1hkqhrllb0hhmldyxc4wryw3kl"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ;no tests
@@ -121,14 +121,15 @@ engine that uses Wayland for graphics output.")
 (define-public webkitgtk
   (package
     (name "webkitgtk")
-    (version "2.28.0")
+    (version "2.28.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://www.webkitgtk.org/releases/"
                                   "webkitgtk-" version ".tar.xz"))
               (sha256
                (base32
-                "12qfs9w93c5kiyi14ynm4rf4ad3c213dvzmdrc9c3ab2iwbks7rn"))))
+                "1g9hik3bprki5s9d7y5288q5irwckbzajr6rnlvjrlnqrwjkblmr"))
+              (patches (search-patches "webkitgtk-share-store.patch"))))
     (build-system cmake-build-system)
     (outputs '("out" "doc"))
     (arguments
@@ -156,6 +157,15 @@ engine that uses Wayland for graphics output.")
                           "-DUSE_WOFF2=OFF")
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'configure-bubblewrap-store-directory
+           (lambda _
+             ;; This phase is a corollary to 'webkitgtk-share-store.patch' to
+             ;; avoid hard coding /gnu/store, for users with other prefixes.
+             (let ((store-directory (%store-directory)))
+               (substitute*
+                   "Source/WebKit/UIProcess/Launcher/glib/BubblewrapLauncher.cpp"
+                 (("@storedir@") store-directory))
+               #t)))
          (add-after 'unpack 'patch-gtk-doc-scan
            (lambda* (#:key inputs #:allow-other-keys)
              (for-each (lambda (file)
@@ -206,7 +216,7 @@ engine that uses Wayland for graphics output.")
        ("hyphen" ,hyphen)
        ("icu4c" ,icu4c)
        ("libgcrypt" ,libgcrypt)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libnotify" ,libnotify)
        ("libpng" ,libpng)
        ("libseccomp" ,libseccomp)

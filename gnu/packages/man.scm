@@ -62,14 +62,14 @@ a flexible and convenient way.")
 (define-public man-db
   (package
     (name "man-db")
-    (version "2.9.1")
+    (version "2.9.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://savannah/man-db/man-db-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "0ky7aq8313xa1y0zdwdbz5yvjfjb3xy0xymbimd2d9q9bky8lgds"))))
+                "0z04kwv5ymmd0pzadpaag696jfckg6rbz8x4jrgj09bmqqk3yf3v"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -164,7 +164,7 @@ the traditional flat-text whatis databases.")
 (define-public man-pages
   (package
     (name "man-pages")
-    (version "5.05")
+    (version "5.07")
     (source
      (origin
        (method url-fetch)
@@ -174,7 +174,7 @@ the traditional flat-text whatis databases.")
               (string-append "mirror://kernel.org/linux/docs/man-pages/Archive/"
                              "man-pages-" version ".tar.xz")))
        (sha256
-        (base32 "0izb6shcczvg37cyd3kzxsfsrffqj1qw9nqhhq9mi4kd36qkbcfm"))))
+        (base32 "13b3q7c67r0wkla4pdihl1qh09k67ms2z5jgzfqgpdqqy6mgziwd"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases (modify-phases %standard-phases (delete 'configure))
@@ -200,7 +200,7 @@ Linux kernel and C library interfaces employed by user-space programs.")
 (define-public help2man
   (package
     (name "help2man")
-    (version "1.47.10")
+    (version "1.47.13")
     (source
      (origin
       (method url-fetch)
@@ -208,7 +208,7 @@ Linux kernel and C library interfaces employed by user-space programs.")
                           version ".tar.xz"))
       (sha256
        (base32
-        "1yywli520246aba12vpgj7bhr1r13swad3xm49a0cygqcgywnwgk"))))
+        "08q5arxz4j4pyx5q4712c2rn7p7dw7as9xg38yvmsh1c3ynvpy5p"))))
     (build-system gnu-build-system)
     (arguments `(;; There's no `check' target.
                  #:tests? #f))
@@ -218,6 +218,8 @@ Linux kernel and C library interfaces employed by user-space programs.")
        ;; ("perl-LocaleGettext" ,perl-LocaleGettext)
        ;; ("gettext" ,gettext-minimal)
        ))
+    (native-inputs
+     `(("perl" ,perl)))
     (home-page "https://www.gnu.org/software/help2man/")
     (synopsis "Automatically generate man pages from program --help")
     (description
@@ -225,18 +227,6 @@ Linux kernel and C library interfaces employed by user-space programs.")
 \"--help\" and \"--version\" command-line arguments into a manual page
 automatically.")
     (license gpl3+)))
-
-(define-public help2man/latest
-  (package
-    (inherit help2man)
-    (version "1.47.13")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://gnu/help2man/help2man-"
-                                  version ".tar.xz"))
-              (sha256
-               (base32
-                "08q5arxz4j4pyx5q4712c2rn7p7dw7as9xg38yvmsh1c3ynvpy5p"))))))
 
 (define-public scdoc
   (package

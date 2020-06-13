@@ -135,8 +135,11 @@
     "third_party/dawn" ;ASL2.0
     "third_party/depot_tools/owners.py" ;BSD-3
     "third_party/devtools-frontend" ;BSD-3
+    "third_party/devtools-frontend/src/front_end/third_party/fabricjs" ;Expat
+    "third_party/devtools-frontend/src/front_end/third_party/wasmparser" ;ASL2.0
     "third_party/devtools-frontend/src/third_party/axe-core" ;MPL2.0
     "third_party/devtools-frontend/src/third_party/pyjson5" ;ASL2.0
+    "third_party/devtools-frontend/src/third_party/typescript" ;ASL2.0
     "third_party/dom_distiller_js" ;BSD-3
     "third_party/emoji-segmenter" ;ASL2.0
     "third_party/flatbuffers" ;ASL2.0
@@ -196,7 +199,6 @@
     "third_party/qcms" ;Expat
     "third_party/rnnoise" ;BSD-3
     "third_party/s2cellid" ;ASL2.0
-    "third_party/sfntly" ;ASL2.0
     "third_party/skia" ;BSD-3
     "third_party/skia/include/third_party/skcms" ;BSD-3
     "third_party/skia/third_party/skcms" ;BSD-3
@@ -206,7 +208,6 @@
     "third_party/spirv-headers" ;ASL2.0
     "third_party/SPIRV-Tools" ;ASL2.0
     "third_party/sqlite" ;Public domain
-    "third_party/ungoogled" ;BSD-3
     "third_party/usb_ids" ;BSD-3
     "third_party/usrsctp" ;BSD-2
     "third_party/wayland/wayland_scanner_wrapper.py" ;BSD-3
@@ -247,9 +248,9 @@ from forcing GEXP-PROMISE."
                       #:system system
                       #:guile-for-build guile)))
 
-(define %chromium-version "80.0.3987.163")
-(define %ungoogled-revision "516e2d990a50a4bbeb8c583e56333c2935e2af95")
-(define %debian-revision "debian/80.0.3987.116-1")
+(define %chromium-version "81.0.4044.138")
+(define %ungoogled-revision "c2a89fb6b5b559c826796c811741fa8ed3e11de8")
+(define %debian-revision "debian/81.0.4044.92-1")
 (define package-revision "0")
 (define %package-version (string-append %chromium-version "-"
                                         package-revision "."
@@ -263,7 +264,7 @@ from forcing GEXP-PROMISE."
                         %chromium-version ".tar.xz"))
     (sha256
      (base32
-      "0ikk4cgz3jgjhyncsvlqvlc03y7jywjpa6v34fwsjxs88flyzpdn"))))
+      "19kpzmqmld0m0nflx13w9flxfal19msnxhzl3lip1jqih65z4y7l"))))
 
 (define %ungoogled-origin
   (origin
@@ -274,7 +275,7 @@ from forcing GEXP-PROMISE."
                               (string-take %ungoogled-revision 7)))
     (sha256
      (base32
-      "0nm55qq4ahw9haf5g7hmzic4mr2xjgpay7lxps7xjp7s1pda4g0q"))))
+      "0bbr4a2gkgm3ykdgpj8x58sd3dwam6qkifhzfs2997681g7b2v2q"))))
 
 (define %debian-origin
   (origin
@@ -288,7 +289,7 @@ from forcing GEXP-PROMISE."
                                 (_ (string-take %debian-revision 7)))))
     (sha256
      (base32
-      "1cc5sp566dd8f2grgr770xwbxgxf58dk1w7q3s8pmv4js5h3pwq8"))))
+      "0srgbcqga3l75bfkv3bnmjk416189nazsximvzdx2k5n8v5k4p3m"))))
 
 ;; This is a "computed" origin that does the following:
 ;; *) Runs the Ungoogled scripts on a pristine Chromium tarball.
@@ -319,8 +320,7 @@ from forcing GEXP-PROMISE."
                   (list #+(canonical-package patch)
                         #+(canonical-package xz)
                         #+(canonical-package tar)
-                        #+python-2
-                        #+python))
+                        #+python-wrapper))
 
                  (copy-recursively #+ungoogled-source "/tmp/ungoogled")
 
@@ -338,11 +338,11 @@ from forcing GEXP-PROMISE."
 
                    (format #t "Ungooglifying...~%")
                    (force-output)
-                   (invoke "python3" "utils/prune_binaries.py" chromium-dir
+                   (invoke "python" "utils/prune_binaries.py" chromium-dir
                            "pruning.list")
-                   (invoke "python3" "utils/patches.py" "apply"
+                   (invoke "python" "utils/patches.py" "apply"
                            chromium-dir "patches")
-                   (invoke "python3" "utils/domain_substitution.py" "apply" "-r"
+                   (invoke "python" "utils/domain_substitution.py" "apply" "-r"
                            "domain_regex.list" "-f" "domain_substitution.list"
                            "-c" "/tmp/domainscache.tar.gz" chromium-dir)
 
@@ -390,13 +390,13 @@ from forcing GEXP-PROMISE."
 
                      (format #t "Pruning third party files...~%")
                      (force-output)
-                     (apply invoke "python"
+                     (apply invoke (string-append #+python-2 "/bin/python")
                             "build/linux/unbundle/remove_bundled_libraries.py"
                             "--do-remove" preserved-files)
 
                      (format #t "Replacing GN files...~%")
                      (force-output)
-                     (invoke "python3" "build/linux/unbundle/replace_gn_files.py"
+                     (invoke "python" "build/linux/unbundle/replace_gn_files.py"
                              "--system-libraries" "ffmpeg" "flac" "fontconfig"
                              "freetype" "harfbuzz-ng" "icu" "libdrm" "libevent"
                              "libjpeg" "libpng" "libvpx" "libwebp" "libxml"
@@ -427,18 +427,6 @@ from forcing GEXP-PROMISE."
         `(cons "--enable-custom-modes"
                ,flags))))))
 
-;; Add a custom ld wrapper that supports quoted strings in response files.
-;; To be merged with 'ld-wrapper' in a future rebuild cycle.
-(define-public ld-wrapper-next
-  (let ((orig (car (assoc-ref (%final-inputs) "ld-wrapper"))))
-    (package
-      (inherit orig)
-      (name "ld-wrapper-next")
-      (inputs
-       `(("wrapper" ,(search-path %load-path
-                                  "gnu/packages/ld-wrapper-next.in"))
-         ,@(alist-delete "wrapper" (package-inputs orig)))))))
-
 (define-public ungoogled-chromium
   (package
     (name "ungoogled-chromium")
@@ -462,7 +450,6 @@ from forcing GEXP-PROMISE."
        ;; directory for an exhaustive list of supported flags.
        ;; (Note: The 'configure' phase will do that for you.)
        (list "is_debug=false"
-             "is_cfi=false"
              "use_gold=false"
              "use_lld=false"
              "clang_use_chrome_plugins=false"
@@ -540,6 +527,12 @@ from forcing GEXP-PROMISE."
        (modify-phases %standard-phases
          (add-after 'unpack 'patch-stuff
            (lambda _
+             ;; Fix build with newer re2.  Taken from:
+             ;; https://chromium-review.googlesource.com/c/chromium/src/+/2145261
+             (substitute* "components/autofill/core/browser/address_rewriter.cc"
+               (("options\\.set_utf8\\(true\\)")
+                "options.set_encoding(RE2::Options::EncodingUTF8)"))
+
              (substitute*
                  '("base/process/launch_posix.cc"
                    "base/third_party/dynamic_annotations/dynamic_annotations.c"
@@ -648,8 +641,13 @@ from forcing GEXP-PROMISE."
              (setenv "AR" "ar") (setenv "NM" "nm")
              (setenv "CC" "clang") (setenv "CXX" "clang++")
 
-             ;; Do not optimize away null pointer safety checks.
-             (setenv "CXXFLAGS" "-fno-delete-null-pointer-checks")
+             (setenv "CXXFLAGS"
+                     (string-join
+                      '(;; Do not optimize away null pointer safety checks.
+                        "-fno-delete-null-pointer-checks"
+                        ;; Disable warnings about unknown warnings that require
+                        ;; Clang plugins or newer versions.
+                        "-Wno-unknown-warning-option")))
 
              ;; TODO: pre-compile instead. Avoids a race condition.
              (setenv "PYTHONDONTWRITEBYTECODE" "1")
@@ -766,7 +764,6 @@ from forcing GEXP-PROMISE."
        ("clang" ,clang-9)
        ("gn" ,gn)
        ("gperf" ,gperf)
-       ("ld-wrapper" ,ld-wrapper-next)
        ("ninja" ,ninja)
        ("node" ,node)
        ("pkg-config" ,pkg-config)

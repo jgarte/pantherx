@@ -6,13 +6,15 @@
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2016 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2017, 2018 Ricardo Wurmus <rekado@elephly.net>
-;;; Copyright © 2017, 2018 ng0 <ng0@n0.is>
+;;; Copyright © 2017, 2018 Nikita <nikita@n0.is>
 ;;; Copyright © 2017, 2018 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2017 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2019 Meiyo Peng <meiyo.peng@gmail.com>
 ;;; Copyright © 2019 Timothy Sample <samplet@ngyro.com>
+;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2019, 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
+;;; Copyright © 2020 Ryan Prior <rprior@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -40,6 +42,7 @@
   #:use-module (gnu packages guile)
   #:use-module (gnu packages libbsd)
   #:use-module (gnu packages libedit)
+  #:use-module (gnu packages linux)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
@@ -48,26 +51,27 @@
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages readline)
   #:use-module (gnu packages scheme)
+  #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system python)
   #:use-module (guix build-system trivial)
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix licenses)
-  #:use-module (guix packages))
+  #:use-module (guix packages)
+  #:use-module (guix utils))
 
 (define-public dash
   (package
     (name "dash")
-    (version "0.5.10.2")
+    (version "0.5.11")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://gondor.apana.org.au/~herbert/dash/files/"
                            "dash-" version ".tar.gz"))
        (sha256
-        (base32
-         "0wb0bwmqc661hylqcfdp7l7x12myw3vpqk513ncyqrjwvhckjriw"))
+        (base32 "1jwilfsy249d3q7fagg1ga4bgc2bg1fzw63r2nan0m77bznsdnad"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -95,7 +99,7 @@ direct descendant of NetBSD's Almquist Shell (@command{ash}).")
 (define-public fish
   (package
     (name "fish")
-    (version "3.0.2")
+    (version "3.1.0")
     (source
      (origin
        (method url-fetch)
@@ -103,38 +107,53 @@ direct descendant of NetBSD's Almquist Shell (@command{ash}).")
                            "releases/download/" version "/"
                            "fish-" version ".tar.gz"))
        (sha256
-        (base32 "03j3jl9jzlnhq4p86zj8wqsh5sx45j1d1fvfa80ks1cfdg68qwhl"))))
-    (build-system gnu-build-system)
+        (base32 "0s2356mlx7fp9kgqgw91lm5ds2i9iq9hq071fbqmcp3875l1xnz5"))))
+    (build-system cmake-build-system)
     (inputs
      `(("fish-foreign-env" ,fish-foreign-env)
-       ("groff" ,groff)                 ; for 'fish --help'
        ("ncurses" ,ncurses)
        ("pcre2" ,pcre2)      ; don't use the bundled PCRE2
        ("python" ,python)))  ; for fish_config and manpage completions
     (native-inputs
-     `(("doxygen" ,doxygen)))
+     `(("doxygen" ,doxygen)
+       ; for 'fish --help'
+       ("groff" ,groff)))
     (arguments
-     '(#:tests? #f                      ; no check target
-       #:phases
+     '(#:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'patch-source
-           (lambda _
-             (substitute* '("build_tools/build_commands_hdr.sh"
-                            "build_tools/build_user_doc.sh")
-               (("/usr/bin/env") "env"))
-             #t))
-         ;; Embed absolute paths.
-         (add-before 'install 'embed-absolute-paths
-           (lambda _
-             (substitute* '("share/functions/__fish_config_interactive.fish"
-                            "share/functions/fish_config.fish"
-                            "share/functions/fish_update_completions.fish")
-               (("python3") (which "python3")))
-             (substitute* "share/functions/__fish_print_help.fish"
-               (("nroff") (which "nroff")))
-             #t))
+         (add-after 'unpack 'patch-tests
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((coreutils (assoc-ref inputs "coreutils"))
+                   (bash (assoc-ref inputs "bash")))
+               ;; These try to open a terminal
+               (delete-file "tests/checks/interactive.fish")
+               (delete-file "tests/checks/login-interactive.fish")
+               ;; These contain absolute path references
+               (substitute* "src/fish_tests.cpp"
+                 (("/bin/echo" echo) (string-append coreutils echo))
+                 (("/bin/ca" ca) (string-append coreutils ca))
+                 (("\"(/bin/c)\"" _ c) (string-append "\"" coreutils c "\""))
+                 (("/bin/ls_not_a_path" ls-not-a-path)
+                  (string-append coreutils ls-not-a-path))
+                 (("/bin/ls" ls) (string-append coreutils ls))
+                 (("(/bin/)\"" _ bin) (string-append coreutils bin "\""))
+                 (("/bin -" bin) (string-append coreutils bin))
+                 (((string-append
+                    "do_test\\(is_potential_path\\("
+                    "L\"/usr\", wds, vars, PATH_REQUIRE_DIR\\)\\);"))
+                  ""))
+               (substitute*
+                   (append (find-files "tests" ".*\\.(in|out|err)$")
+                           (find-files "tests/checks" ".*\\.fish"))
+                 (("/bin/pwd" pwd) (string-append coreutils pwd))
+                 (("/bin/echo" echo) (string-append coreutils echo))
+                 (("/bin/sh" sh) (string-append bash sh))
+                 (("/bin/ls" ls) (string-append coreutils ls)))
+               (substitute* (find-files "tests" ".*\\.(in|out|err)$")
+                 (("/usr/bin") (string-append coreutils "/bin")))
+               #t)))
          ;; Source /etc/fish/config.fish from $__fish_sysconf_dir/config.fish.
-         (add-before 'install 'patch-fish-config
+         (add-after 'patch-tests 'patch-fish-config
            (lambda _
              (let ((port (open-file "etc/config.fish" "a")))
                (display (string-append
@@ -147,6 +166,12 @@ direct descendant of NetBSD's Almquist Shell (@command{ash}).")
                         port)
                (close-port port))
              #t))
+         ;; Embed absolute paths.
+         (add-before 'install 'embed-absolute-paths
+           (lambda _
+               (substitute* "share/functions/__fish_print_help.fish"
+                 (("nroff") (which "nroff")))
+               #t))
          ;; Enable completions, functions and configurations in user's and
          ;; system's guix profiles by adding them to __extra_* variables.
          (add-before 'install 'patch-fish-extra-paths
@@ -335,7 +360,7 @@ written by Paul Haahr and Byron Rakitzis.")
 (define-public tcsh
   (package
     (name "tcsh")
-    (version "6.20.00")
+    (version "6.22.02")
     (source (origin
               (method url-fetch)
               ;; Old tarballs are moved to old/.
@@ -345,9 +370,8 @@ written by Paul Haahr and Byron Rakitzis.")
                                         "old/tcsh-" version ".tar.gz")))
               (sha256
                (base32
-                "17ggxkkn5skl0v1x0j6hbv5l0sgnidfzwv16992sqkdm983fg7dq"))
-              (patches (search-patches "tcsh-fix-autotest.patch"
-                                       "tcsh-fix-out-of-bounds-read.patch"))
+                "0nw8prz1n0lmr82wnpyhrzmki630afn7p9cfgr3vl00vr9c72a7d"))
+              (patches (search-patches "tcsh-fix-autotest.patch"))
               (patch-flags '("-p0"))))
     (build-system gnu-build-system)
     (native-inputs
@@ -358,6 +382,14 @@ written by Paul Haahr and Byron Rakitzis.")
     (arguments
      `(#:phases
         (modify-phases %standard-phases
+          ,@(if (%current-target-system)
+                '((add-before 'configure 'set-cross-cc
+                     (lambda _
+                       (substitute* "configure"
+                         (("CC_FOR_GETHOST=\"cc\"")
+                          "CC_FOR_GETHOST=\"gcc\""))
+                       #t)))
+                '())
           (add-before 'check 'patch-test-scripts
             (lambda _
               ;; Take care of pwd
@@ -461,21 +493,31 @@ ksh, and tcsh.")
 (define-public xonsh
   (package
     (name "xonsh")
-    (version "0.6.2")
+    (version "0.9.18")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "xonsh" version))
         (sha256
           (base32
-            "0c2bbmdg0n10q54vq9k1z5n53l0mh1hb1q5xprfhilvrbr6hlcwr"))
+            "1h4rrwzwiwkyi9p49sjn97rl39fqq2r23hchzsw0s3fcwa7m8fkj"))
         (modules '((guix build utils)))
         (snippet
          `(begin
-            ;; Delete bundled ply.
+            ;; Delete bundled PLY.
             (delete-file-recursively "xonsh/ply")
-            (substitute* '("setup.py")
-              (("'xonsh\\.ply\\.ply',") ""))
+            (substitute* "setup.py"
+              (("\"xonsh\\.ply\\.ply\",") ""))
+            ;; Use our properly packaged PLY instead.
+            (substitute* (list "setup.py"
+                               "tests/test_lexer.py"
+                               "xonsh/__amalgam__.py"
+                               "xonsh/lexer.py"
+                               "xonsh/parsers/base.py"
+                               "xonsh/xonfig.py")
+              (("from xonsh\\.ply\\.(.*) import" _ module)
+               (format #f "from ~a import" module))
+              (("from xonsh\\.ply import") "import"))
             #t))))
     (build-system python-build-system)
     (arguments
@@ -558,8 +600,9 @@ operating system.")
            "1z16qwix8z6a40fskdgxsibkqgdrp4q6ncp4n6hnv4r9iihy2d8r"))))
       (build-system gnu-build-system)
       (arguments
-       `(#:tests? #f ;No tests are included
-         #:make-flags (list "CC=gcc")
+       `(#:tests? #f                    ; no tests are included
+         #:make-flags
+         (list ,(string-append "CC=" (cc-for-target)))
          #:phases
          (modify-phases %standard-phases
            (delete 'configure)
@@ -712,14 +755,14 @@ interactive POSIX shell targeted at resource-constrained systems.")
 (define-public mksh
   (package
     (name "mksh")
-    (version "57")
+    (version "58")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.mirbsd.org/MirOS/dist/mir/mksh/mksh-R"
                            version ".tgz"))
        (sha256
-        (base32 "0xdykm1z710wriwd6nc8s8lwk2dwjl63dq96xxaawlid31a1241x"))))
+        (base32 "1337zjvzh14yncg9igdry904a3ns52l8rnm1kcq262w7f5xyp2v0"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; tests require access to /dev/tty
@@ -748,51 +791,51 @@ Shell (pdksh).")
     (license (list miros
                    isc))))              ; strlcpy.c
 
-(define-public oil-shell
+(define-public oil
   (package
-    (name "oil-shell")
-    (version "0.7.0")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://www.oilshell.org/download/oil-"
-                                  version ".tar.xz"))
-              (sha256
-               (base32
-                "12c9s462879adb6mwd3fqafk0dnqsm16s18rhym6cmzfzy8v8zm3"))))
+    (name "oil")
+    ;; https://www.oilshell.org/blog/2020/04/release-0.8.pre4.html#comment-on-version-numbering
+    (version "0.8.pre5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://www.oilshell.org/download/oil-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "02llxx10izxpv1y32qn8k6r0y7al01rzxjirc8h6x8nd9kiaqknl"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:tests? #f ; the tests are not distributed in the tarballs
-       #:strip-binaries? #f ; the binaries cannot be stripped
+     `(#:strip-binaries? #f             ; strip breaks the binary
        #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'patch-compiler-invocation
-           (lambda _
-             (substitute* "configure"
-               ((" cc ") " gcc "))
-             #t))
          (replace 'configure
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((out (assoc-ref outputs "out")))
                (setenv "CC" "gcc")
-               ;; The configure script doesn't recognize CONFIG_SHELL.
-               (setenv "CONFIG_SHELL" (which "sh"))
+               (substitute* "configure"
+                 ((" cc ") " $CC "))
                (invoke "./configure" (string-append "--prefix=" out)
                        "--with-readline"))))
-         (add-before 'install 'make-destination
+         (replace 'check
+           ;; The tests are not distributed in the tarballs but upstream
+           ;; recommends running this smoke test.
+           ;; https://github.com/oilshell/oil/blob/release/0.8.pre5/INSTALL.txt#L38-L48
            (lambda _
-             ;; The build scripts don't create the destination directory.
-             (mkdir-p (string-append (assoc-ref %outputs "out") "/bin")))))))
+             (let* ((oil "_bin/oil.ovm"))
+               (invoke/quiet oil "osh" "-c" "echo hi")
+               (invoke/quiet oil "osh" "-n" "configure")))))))
     (inputs
      `(("readline" ,readline)))
-    (synopsis "Bash-compatible Unix shell")
-    (description "Oil is a Unix / POSIX shell, compatible with Bash.  It
-implements the Oil language, which is a new shell language to which Bash can be
-automatically translated.  The Oil language is a superset of Bash.  It also
-implements the OSH language, a statically-parseable language based on Bash as it
-is commonly written.")
-    (home-page "https://www.oilshell.org/")
-    (license (list psfl ; The Oil sources include a patched Python 2 source tree
+    (home-page "https://www.oilshell.org")
+    (synopsis "Programming language and Bash-compatible Unix shell")
+    (description "Oil is a programming language with automatic translation for
+Bash.  It includes osh, a Unix/POSIX shell that runs unmodified Bash
+scripts.")
+    (license (list psfl                 ; tarball includes python2.7
                    asl2.0))))
+
+(define-public oil-shell
+  (deprecated-package "oil-shell" oil))
 
 (define-public gash
   (package
@@ -847,3 +890,4 @@ designed to be capable of bootstrapping their standard GNU counterparts.
 Underpinning these utilities are many Scheme interfaces for manipulating
 files and text.")
     (license gpl3+)))
+

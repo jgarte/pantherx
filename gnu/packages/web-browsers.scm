@@ -4,12 +4,14 @@
 ;;; Copyright © 2015, 2016, 2019 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2017 Eric Bavier <bavier@member.fsf.org>
-;;; Copyright © 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2018 Timo Eisenmann <eisenmann@fn.de>
 ;;; Copyright © 2018 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2019 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2019 Brett Gilio <brettg@gnu.org>
+;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
+;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -30,10 +32,13 @@
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (guix packages)
   #:use-module (gnu packages)
+  #:use-module (gnu packages backup)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages fltk)
   #:use-module (gnu packages fontutils)
+  #:use-module (gnu packages freedesktop)
+  #:use-module (gnu packages glib)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages gnupg)
   #:use-module (gnu packages libevent)
@@ -42,6 +47,7 @@
   #:use-module (gnu packages lisp-xyz)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages gnome)
+  #:use-module (gnu packages gnome-xyz)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
@@ -57,10 +63,68 @@
   #:use-module (gnu packages gcc)
   #:use-module (guix download)
   #:use-module (guix git-download)
+  #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system python)
-  #:use-module (guix build-system asdf))
+  #:use-module (guix build-system asdf)
+  #:use-module (guix build-system go))
+
+(define-public midori
+  (package
+    (name "midori")
+    (version "9.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri
+        (string-append "https://github.com/midori-browser/core/releases/"
+                       "download/v" version "/" name "-v" version ".tar.gz"))
+       (sha256
+        (base32
+         "05i04qa83dnarmgkx4xsk6fga5lw1lmslh4rb3vhyyy4ala562jy"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:imported-modules
+       (,@%cmake-build-system-modules
+        (guix build glib-or-gtk-build-system))
+       #:modules
+       ((guix build cmake-build-system)
+        ((guix build glib-or-gtk-build-system) #:prefix glib-or-gtk:)
+        (guix build utils))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'glib-or-gtk-compile-schemas
+           (assoc-ref glib-or-gtk:%standard-phases
+                      'glib-or-gtk-compile-schemas))
+         (add-after 'install 'glib-or-gtk-wrap
+           (assoc-ref glib-or-gtk:%standard-phases
+                      'glib-or-gtk-wrap)))))
+    (native-inputs
+     `(("glib:bin" ,glib "bin")
+       ("gtk+:bin" ,gtk+ "bin")
+       ("intltool" ,intltool)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("adwaita-icon-theme" ,adwaita-icon-theme)
+       ("gcr" ,gcr)
+       ("glib" ,glib)
+       ("glib-networking" ,glib-networking)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+       ("gtk+" ,gtk+)
+       ("json-glib" ,json-glib)
+       ("libarchive" ,libarchive)
+       ("libpeas" ,libpeas)
+       ("libsoup" ,libsoup)
+       ("sqlite" ,sqlite)
+       ("vala" ,vala)
+       ("webkitgtk" ,webkitgtk)))
+    (synopsis "Lightweight graphical web browser")
+    (description "@code{Midori} is a lightweight, Webkit-based web browser.
+It features integration with GTK+3, configurable web search engine, bookmark
+management, extensions such as advertisement blocker and colorful tabs.")
+    (home-page "https://www.midori-browser.org")
+    (license license:lgpl2.1+)))
 
 (define-public dillo
   (package
@@ -78,7 +142,7 @@
     (native-inputs `(("pkg-config" ,pkg-config)))
     (inputs `(("fltk" ,fltk)
               ("fontconfig" ,fontconfig)
-              ("libjpeg" ,libjpeg)
+              ("libjpeg" ,libjpeg-turbo)
               ("libpng" ,libpng)
               ("libxcursor" ,libxcursor)
               ("libxft" ,libxft)
@@ -126,7 +190,7 @@ older or slower computers and embedded systems.")
     (native-inputs `(("pkg-config" ,pkg-config)))
     (inputs `(("zlib" ,zlib)
               ("openssl" ,openssl)
-              ("libjpeg" ,libjpeg)
+              ("libjpeg" ,libjpeg-turbo)
               ("libtiff" ,libtiff)
               ("libevent" ,libevent)
               ("libpng" ,libpng)
@@ -276,7 +340,7 @@ access.")
 (define-public qutebrowser
   (package
     (name "qutebrowser")
-    (version "1.10.0")
+    (version "1.12.0")
     (source
      (origin
        (method url-fetch)
@@ -284,8 +348,7 @@ access.")
                            "qutebrowser/releases/download/v" version "/"
                            "qutebrowser-" version ".tar.gz"))
        (sha256
-        (base32
-         "1prvd3cysmcjfybn0dmr3ih0bl6lm5ml9i7wd09fn8hb7047mkby"))))
+        (base32 "0pywyhi4v6ymxpn85grrdr1agmcxsnm5jfqf3rlxqx5swbnxbfs1"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-attrs" ,python-attrs))) ; for tests
@@ -630,3 +693,46 @@ key-bindings and is fully configurable and extensible in Common Lisp.")
 
 (define-public sbcl-next
   (deprecated-package "sbcl-next" next))
+
+(define-public bombadillo
+  (package
+    (name "bombadillo")
+    (version "2.2.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://tildegit.org/sloum/bombadillo")
+                    (commit version)))
+              (sha256
+               (base32
+                "1m52b1wk48gkqmjy8l0x3jaksrx2v8w6w59lhr7zaw2i0n4f5k0z"))
+              (file-name (git-file-name name version))))
+    (build-system go-build-system)
+    (arguments
+     `(#:import-path "tildegit.org/sloum/bombadillo"
+       #:install-source? #f
+       #:phases (modify-phases %standard-phases
+                  (add-after 'install 'install-data
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let* ((builddir "src/tildegit.org/sloum/bombadillo")
+                             (out (assoc-ref outputs "out"))
+                             (pkg (strip-store-file-name out))
+                             (sharedir (string-append out "/share"))
+                             (appdir (string-append sharedir "/applications"))
+                             (docdir (string-append sharedir "/doc/" pkg))
+                             (mandir (string-append sharedir "/man/man1"))
+                             (pixdir (string-append sharedir "/pixmaps")))
+                        (with-directory-excursion builddir
+                          (install-file "bombadillo.desktop" appdir)
+                          (install-file "LICENSE" docdir)
+                          (install-file "bombadillo.1" mandir)
+                          (install-file "bombadillo-icon.png" pixdir)
+                          #t)))))))
+    (home-page "http://bombadillo.colorfield.space")
+    (synopsis "Terminal browser for the gopher, gemini, and finger protocols")
+    (description "Bombadillo is a non-web browser for the terminal with
+vim-like key bindings, a document pager, configurable settings, and robust
+command selection.  The following protocols are supported as first-class
+citizens: gopher, gemini, finger, and local.  There is also support for telnet,
+http, and https via third-party applications.")
+    (license license:gpl3+)))

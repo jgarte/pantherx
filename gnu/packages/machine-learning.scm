@@ -1,9 +1,9 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2015, 2016, 2017, 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2016 Hartmut Goebel <h.goebel@crazy-compilers.com>
-;;; Copyright © 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2018 Mark Meyer <mark@ofosos.org>
 ;;; Copyright © 2018 Ben Woodcroft <donttrustben@gmail.com>
@@ -11,8 +11,10 @@
 ;;; Copyright © 2018 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2018 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
 ;;; Copyright © 2019 Nicolas Goaziou <mail@nicolasgoaziou.fr>
-;;; Copyright © 2019 Guillaume Le Vaillant <glv@posteo.net>
+;;; Copyright © 2019, 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2019 Brett Gilio <brettg@gnu.org>
+;;; Copyright © 2020 Konrad Hinsen <konrad.hinsen@fastmail.net>
+;;; Copyright © 2020 Edouard Klein <edk@beaver-labs.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -570,8 +572,8 @@ optimizing, and searching weighted finite-state transducers (FSTs).")
     (synopsis "Machine learning toolbox")
     (description
      "The Shogun Machine learning toolbox provides a wide range of unified and
-efficient Machine Learning (ML) methods.  The toolbox seamlessly allows to
-combine multiple data representations, algorithm classes, and general purpose
+efficient Machine Learning (ML) methods.  The toolbox seamlessly
+combines multiple data representations, algorithm classes, and general purpose
 tools.  This enables both rapid prototyping of data pipelines and extensibility
 in terms of new algorithms.")
     (license license:gpl3+)))
@@ -713,14 +715,14 @@ than 8 bits, and at the end only some significant 8 bits are kept.")
 (define-public dlib
   (package
     (name "dlib")
-    (version "19.7")
+    (version "19.20")
     (source (origin
               (method url-fetch)
               (uri (string-append
                     "http://dlib.net/files/dlib-" version ".tar.bz2"))
               (sha256
                (base32
-                "1mljz02kwkrbggyncxv5fpnyjdybw2qihaacb3js8yfkw12vwpc2"))
+                "139jyi19qz37wwmmy48gil9d1kkh2r3w3bwdzabha6ayxmba96nz"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -780,7 +782,7 @@ than 8 bits, and at the end only some significant 8 bits are kept.")
     (inputs
      `(("giflib" ,giflib)
        ("lapack" ,lapack)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libx11" ,libx11)
        ("openblas" ,openblas)
@@ -835,13 +837,13 @@ computing environments.")
     (inputs
      `(("openblas" ,openblas)))
     (native-inputs
-     `(("python-joblib" ,python-joblib)
-       ("python-pytest" ,python-pytest)
+     `(("python-pytest" ,python-pytest)
        ("python-pandas" ,python-pandas) ;for tests
        ("python-cython" ,python-cython)))
     (propagated-inputs
      `(("python-numpy" ,python-numpy)
-       ("python-scipy" ,python-scipy)))
+       ("python-scipy" ,python-scipy)
+       ("python-joblib" ,python-joblib)))
     (home-page "https://scikit-learn.org/")
     (synopsis "Machine Learning in Python")
     (description
@@ -866,6 +868,35 @@ data analysis.")
                 (sha256
                  (base32
                   "08zbzi8yx5wdlxfx9jap61vg1malc9ajf576w7a0liv6jvvrxlpj")))))))
+
+(define-public python-scikit-rebate
+  (package
+    (name "python-scikit-rebate")
+    (version "0.6")
+    (source (origin
+              (method url-fetch)
+              (uri (pypi-uri "skrebate" version))
+              (sha256
+               (base32
+                "1h7qs9gjxpzqabzhb8rmpv3jpmi5iq41kqdibg48299h94iikiw7"))))
+    (build-system python-build-system)
+    ;; Pandas is only needed to run the tests.
+    (native-inputs
+     `(("python-pandas" ,python-pandas)))
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)
+       ("python-scipy" ,python-scipy)
+       ("python-scikit-learn" ,python-scikit-learn)
+       ("python-joblib" ,python-joblib)))
+    (home-page "https://epistasislab.github.io/scikit-rebate/")
+    (synopsis "Relief-based feature selection algorithms for Python")
+    (description "Scikit-rebate is a scikit-learn-compatible Python
+implementation of ReBATE, a suite of Relief-based feature selection algorithms
+for Machine Learning.  These algorithms excel at identifying features that are
+predictive of the outcome in supervised learning problems, and are especially
+good at identifying feature interactions that are normally overlooked by
+standard feature selection algorithms.")
+    (license license:expat)))
 
 (define-public python-autograd
   (let* ((commit "442205dfefe407beffb33550846434baa90c4de7")
@@ -1027,8 +1058,8 @@ association studies (GWAS) on extremely large data sets.")
 
 ;; There have been no proper releases yet.
 (define-public kaldi
-  (let ((commit "2f95609f0bb085bd3a1dc5eb0a39f3edea59e606")
-        (revision "1"))
+  (let ((commit "d4791c0f3fc1a09c042dac365e120899ee2ad21e")
+        (revision "2"))
     (package
       (name "kaldi")
       (version (git-version "0" revision commit))
@@ -1040,7 +1071,7 @@ association studies (GWAS) on extremely large data sets.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "082qh3pfi7hvncylp4xsmkfahbd7gb0whdfa4rwrx7fxk9rdh3kz"))))
+                  "07k80my6f19mhrkwbzhjsnpf9871wmrwkl0ym468i830w67qyjrz"))))
       (build-system gnu-build-system)
       (arguments
        `(#:test-target "test"
@@ -1138,8 +1169,8 @@ written in C++.")
       (license license:asl2.0))))
 
 (define-public gst-kaldi-nnet2-online
-  (let ((commit "617e43e73c7cc45eb9119028c02bd4178f738c4a")
-        (revision "1"))
+  (let ((commit "cb227ef43b66a9835c14eb0ad39e08ee03c210ad")
+        (revision "2"))
     (package
       (name "gst-kaldi-nnet2-online")
       (version (git-version "0" revision commit))
@@ -1151,7 +1182,7 @@ written in C++.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0xh3w67b69818s6ib02ara4lw7wamjdmh4jznvkpzrs4skbs9jx9"))))
+                  "1i6ffwiavxx07ri0lxix6s8q0r31x7i4xxvhys5jxkixf5q34w8g"))))
       (build-system gnu-build-system)
       (arguments
        `(#:tests? #f                    ; there are none
@@ -1209,8 +1240,9 @@ automatically.")
       (license license:asl2.0))))
 
 (define-public kaldi-gstreamer-server
-  (let ((commit "1735ba49c5dc0ebfc184e45105fc600cd9f1f508")
-        (revision "1"))
+  ;; This is the tip of the py3 branch
+  (let ((commit "f68cab490be7eb0da2af1475fbc16655f50a60cb")
+        (revision "2"))
     (package
       (name "kaldi-gstreamer-server")
       (version (git-version "0" revision commit))
@@ -1222,7 +1254,7 @@ automatically.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0j701m7lbwmzqxsfanj882v7881hrbmpqybbczbxqpcbg8q34w0k"))))
+                  "17lh1368vkg8ngrcbn2phvigzlmalrqg6djx2gg61qq1a0nj87dm"))))
       (build-system gnu-build-system)
       (arguments
        `(#:tests? #f ; there are no tests that can be run automatically
@@ -1238,6 +1270,14 @@ automatically.")
                ;; are reproducible.
                (setenv "PYTHONHASHSEED" "0")
                (with-directory-excursion "kaldigstserver"
+                 ;; See https://github.com/alumae/kaldi-gstreamer-server/issues/232
+                 (substitute* "master_server.py"
+                   (("\\.replace\\('\\\\.*") ")"))
+
+                 ;; This is a Python 2 file
+                 (delete-file "decoder_test.py")
+                 (delete-file "test-buffer.py")
+
                  (for-each (lambda (file)
                              (apply invoke
                                     `("python"
@@ -1288,12 +1328,10 @@ exec ~a ~a/~a \"$@\"~%"
                  #t))))))
       (inputs
        `(("gst-kaldi-nnet2-online" ,gst-kaldi-nnet2-online)
-         ("python2" ,python-2)
-         ("python2-futures" ,python2-futures)
-         ("python2-pygobject" ,python2-pygobject)
-         ("python2-pyyaml" ,python2-pyyaml)
-         ("python2-tornado" ,python2-tornado)
-         ("python2-ws4py" ,python2-ws4py-for-kaldi-gstreamer-server)))
+         ("python" ,python-wrapper)
+         ("python-pygobject" ,python-pygobject)
+         ("python-pyyaml" ,python-pyyaml)
+         ("python-tornado" ,python-tornado-6)))
       (home-page "https://github.com/alumae/kaldi-gstreamer-server")
       (synopsis "Real-time full-duplex speech recognition server")
       (description "This is a real-time full-duplex speech recognition server,
@@ -1366,7 +1404,11 @@ Python.")
        (list "CC=gcc")
        #:modules ((ice-9 ftw)
                   (guix build utils)
-                  (guix build cmake-build-system))
+                  (guix build cmake-build-system)
+                  ((guix build python-build-system)
+                   #:select (python-version)))
+       #:imported-modules (,@%cmake-build-system-modules
+                            (guix build python-build-system))
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'set-source-file-times-to-1980
@@ -1391,6 +1433,12 @@ Python.")
              ;; optional package.
              (substitute* "tensorflow/tools/pip_package/setup.py"
                ((".*'tensorboard >.*") ""))
+
+             ;; Fix the build with python-3.8, taken from rejected upstream patch:
+             ;; https://github.com/tensorflow/tensorflow/issues/34197
+             (substitute* (find-files "tensorflow/python" ".*\\.cc$")
+               (("(nullptr,)(\\ +/. tp_print)" _ _ tp_print)
+                (string-append "NULL,   " tp_print)))
              #t))
          (add-after 'python3.7-compatibility 'chdir
            (lambda _ (chdir "tensorflow/contrib/cmake") #t))
@@ -1580,16 +1628,19 @@ INSTALL_RPATH " (assoc-ref outputs "out") "/lib)\n")))
              (invoke "make" "tf_python_build_pip_package")
              #t))
          (add-after 'build-pip-package 'install-python
-           (lambda* (#:key outputs #:allow-other-keys)
+           (lambda* (#:key inputs outputs #:allow-other-keys)
              (let ((out (assoc-ref outputs "out"))
-                   (wheel (car (find-files "../build/tf_python/dist/" "\\.whl$"))))
+                   (wheel (car (find-files "../build/tf_python/dist/" "\\.whl$")))
+                   (python-version (python-version
+                                     (assoc-ref inputs "python"))))
                (invoke "python" "-m" "pip" "install" wheel
                        (string-append "--prefix=" out))
 
                ;; XXX: broken RUNPATH, see fix-python-build phase.
                (delete-file
                 (string-append
-                 out "/lib/python3.7/site-packages/tensorflow/contrib/"
+                 out "/lib/python" python-version
+                 "/site-packages/tensorflow/contrib/"
                  "seq2seq/python/ops/lib_beam_search_ops.so"))
                #t))))))
     (native-inputs
@@ -1731,7 +1782,7 @@ INSTALL_RPATH " (assoc-ref outputs "out") "/lib)\n")))
        ("eigen" ,eigen-for-tensorflow)
        ("gemmlowp" ,gemmlowp-for-tensorflow)
        ("lmdb" ,lmdb)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("giflib" ,giflib)
        ("grpc" ,grpc-1.16.1 "static")
@@ -1766,12 +1817,14 @@ advanced research.")
          "1k8szlpm19rcwcxdny9qdm3gmaqq8akb4xlvrzyz8c2d679aak6l"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("ipython" ,python-ipython)
-       ("nose" ,python-nose)
+     `(("ipython" ,(prompt-toolkit-2-instead-of-prompt-toolkit
+                    python-ipython))
        ("numpy" ,python-numpy)
        ("pandas" ,python-pandas)
        ("scipy" ,python-scipy)))
-    (home-page "http://github.com/interpretable-ml/iml")
+    (native-inputs
+     `(("nose" ,python-nose)))
+    (home-page "https://github.com/interpretable-ml/iml")
     (synopsis "Interpretable Machine Learning (iML) package")
     (description "Interpretable ML (iML) is a set of data type objects,
 visualizations, and interfaces that can be used by any method designed to
@@ -2014,18 +2067,7 @@ online linear classification written in Common Lisp.")
          ("cl-online-learning" ,sbcl-cl-online-learning)
          ("lparallel" ,sbcl-lparallel)))
       (arguments
-       `(;; The tests download data from the Internet
-         #:tests? #f
-         #:phases
-         (modify-phases %standard-phases
-           (add-after 'unpack 'add-sb-cltl2-dependency
-             (lambda _
-               ;; sb-cltl2 is required by lparallel when using sbcl, but it is
-               ;; not loaded automatically.
-               (substitute* "cl-random-forest.asd"
-                 (("\\(in-package :cl-user\\)")
-                  "(in-package :cl-user) #+sbcl (require :sb-cltl2)"))
-               #t)))))
+       `(#:tests? #f)) ; The tests download data from the Internet
       (synopsis "Random Forest and Global Refinement for Common Lisp")
       (description
        "CL-random-forest is an implementation of Random Forest for multiclass

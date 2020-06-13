@@ -4,11 +4,12 @@
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Fis Trivial <ybbs.daans@hotmail.com>
 ;;; Copyright © 2018 Tomáš Čech <sleep_walker@gnu.org>
-;;; Copyright © 2018 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2018, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2018 Alex Vong <alexvong1995@gmail.com>
 ;;; Copyright © 2019 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2019 Jonathan Brielmaier <jonathan.brielmaier@web.de>
 ;;; Copyright © 2020 Leo Prikler <leo.prikler@student.tugraz.at>
+;;; Copyright © 2020 Yuval Kogman <nothingmuch@woobling.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -33,12 +34,14 @@
   #:use-module (guix git-download)
   #:use-module (guix build-system cmake)
   #:use-module (gnu packages)
+  #:use-module (gnu packages check)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages package-management)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-web)
+  #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages ninja)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system python))
@@ -103,8 +106,8 @@ generate such a compilation database.")
     (license license:gpl3+)))
 
 (define-public gn
-  (let ((commit "6e5ba2e7210823cf7ccce3eb2a23336a4e7f1349")
-        (revision "1666"))          ;as returned by `git describe`, used below
+  (let ((commit "ec938ddaa276646eb8f1ab33e160c156011d8217")
+        (revision "1736"))            ;as returned by `git describe`, used below
     (package
       (name "gn")
       (version (git-version "0.0" revision commit))
@@ -114,7 +117,7 @@ generate such a compilation database.")
                 (uri (git-reference (url home-page) (commit commit)))
                 (sha256
                  (base32
-                  "157ax65sixjm0i1j89wvny48v1mbsl4pbvv5vqinjc6r0fryaf2r"))
+                  "0j1qjwp2biw12s6npzpx4z8nvih7pyn68q6cz2k4700bk9y0d574"))
                 (file-name (git-file-name name version))))
       (build-system gnu-build-system)
       (arguments
@@ -135,8 +138,10 @@ generate such a compilation database.")
                         (call-with-output-file "out/last_commit_position.h"
                           (lambda (port)
                             (format port
-                                    "#define LAST_COMMIT_POSITION \"~a (~a)\"\n"
-                                    ,revision ,(string-take commit 8))
+                                    (string-append
+                                     "#define LAST_COMMIT_POSITION_NUM ~a\n"
+                                     "#define LAST_COMMIT_POSITION \"~a (~a)\"\n")
+                                    ,revision ,revision ,(string-take commit 8))
                             #t))))
                     (replace 'build
                       (lambda _
@@ -169,7 +174,7 @@ files and generates build instructions for the Ninja build system.")
 (define-public meson
   (package
     (name "meson")
-    (version "0.50.1")
+    (version "0.53.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/mesonbuild/meson/"
@@ -177,7 +182,7 @@ files and generates build instructions for the Ninja build system.")
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1k2fw5qk4mqjcb4j5dhp8xfn0caqphb11yh8zkw7v9w01kb5d3zn"))))
+                "07y2hh9dfn1m9g4bsy49nbn3vdmd0b2iwr8bxg19fhqq6c7q73ry"))))
     (build-system python-build-system)
     (arguments
      `(;; FIXME: Tests require many additional inputs, a fix for the RUNPATH
@@ -308,3 +313,38 @@ Service.  It allows you to checkout, commit, perform reviews etc.  The vast
 majority of the OBS functionality is available via commands and the rest can
 be reached via direct API calls.")
     (license license:gpl2+)))
+
+(define-public compiledb
+  (package
+    (name "compiledb")
+    (version "0.10.1")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "compiledb" version))
+        (sha256
+          (base32 "0vlngsdxfakyl8b7rnvn8h3l216lhbrrydr04yhy6kd03zflgfq6"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'no-compat-shim-dependency
+           ;; shutilwhich is only needed for python 3.3 and earlier
+           (lambda _
+             (substitute* "setup.py" (("^ *'shutilwhich'\n") ""))
+             (substitute* "compiledb/compiler.py" (("shutilwhich") "shutil")))))))
+    (propagated-inputs
+      `(("python-bashlex" ,python-bashlex)
+        ("python-click" ,python-click)))
+    (native-inputs
+      `(("python-pytest" ,python-pytest)))
+    (home-page
+      "https://github.com/nickdiego/compiledb")
+    (synopsis
+      "Generate Clang JSON Compilation Database files for make-based build systems")
+    (description
+     "@code{compiledb} provides a @code{make} python wrapper script which,
+besides executing the make build command, updates the JSON compilation
+database file corresponding to that build, resulting in a command-line
+interface similar to Bear.")
+    (license license:gpl3)))

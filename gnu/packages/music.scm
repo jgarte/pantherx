@@ -8,7 +8,7 @@
 ;;; Copyright © 2016, 2017, 2019 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2016 John J. Foerch <jjfoerch@earthlink.net>
 ;;; Copyright © 2016 Alex Griffin <a@ajgrf.com>
-;;; Copyright © 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2017 nikita <nikita@n0.is>
 ;;; Copyright © 2017 Rodger Fox <thylakoid@openmailbox.org>
 ;;; Copyright © 2017, 2018, 2019, 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2017, 2018, 2019 Pierre Langlois <pierre.langlois@gmx.com>
@@ -27,6 +27,7 @@
 ;;; Copyright © 2019, 2020 Alexandros Theodotou <alex@zrythm.org>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Lars-Dominik Braun <lars@6xq.net>
+;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -99,6 +100,7 @@
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages gpodder)
   #:use-module (gnu packages graphics)
+  #:use-module (gnu packages graphviz)
   #:use-module (gnu packages gstreamer)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages guile)
@@ -139,6 +141,7 @@
   #:use-module (gnu packages tls)
   #:use-module (gnu packages version-control)
   #:use-module (gnu packages video)
+  #:use-module (gnu packages vim)       ;for 'xxd'
   #:use-module (gnu packages web)
   #:use-module (gnu packages wxwidgets)
   #:use-module (gnu packages xml)
@@ -299,7 +302,7 @@ score, keyboard, guitar, drum and controller views.")
          ("pulseaudio" ,pulseaudio)
          ("qtbase" ,qtbase)
          ("qtx11extras" ,qtx11extras)
-         ("sqlite" ,sqlite-with-column-metadata)
+         ("sqlite" ,sqlite)
          ("sparsehash" ,sparsehash)
          ("taglib" ,taglib)))
       (home-page "https://clementine-player.org")
@@ -382,14 +385,14 @@ many input formats and provides a customisable Vi-style user interface.")
 (define-public denemo
   (package
     (name "denemo")
-    (version "2.3.0")
+    (version "2.4.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://gnu/denemo/"
                            "denemo-" version ".tar.gz"))
        (sha256
-        (base32 "1blkcl3slbsq9jlhwcf2m9v9g38a0sjfhh9advgi2qr1gxri08by"))))
+        (base32 "145kq0zfgdadykl3i6na221i4s5wzdrcqq48amzyfarnrqk2rmpd"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -624,62 +627,72 @@ MusePack, Monkey's Audio, and WavPack files.")
 (define-public extempore
   (package
     (name "extempore")
-    (version "0.7.0")
+    (version "0.8.6")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/digego/extempore.git")
-                    (commit version)))
+                    (commit (string-append "v" version))))
               (sha256
                (base32
-                "12fsp7zkfxb9kykwq46l88kcbbici9arczrrsl4qn87m6vm5349l"))
-              (file-name (string-append name "-" version "-checkout"))))
+                "182jy23qv115dipny7kglwbn21z55dp253w1ykm0kh8n6vkgs7gp"))
+              (file-name (git-file-name name version))
+              (patches (search-patches
+                        "extempore-unbundle-external-dependencies.patch"))
+              (modules '((guix build utils)))
+              (snippet
+               '(begin
+                  ;; Remove bundled sources.
+                  (map delete-file-recursively
+                       '("src/portaudio"
+                         "src/pcre"))
+                  #t))))
     (build-system cmake-build-system)
     (arguments
-     `(;; The default target also includes ahead-of-time compilation of the
-       ;; standard libraries.  However, during the "install" phase this would
-       ;; happen *again* for unknown reasons.  Hence we only build the
-       ;; extempore executable during the build phase.
-       #:make-flags '("extempore")
-       #:configure-flags '("-DJACK=ON"
-                           ;; We want to distribute.
-                           "-DIN_TREE=OFF"
-                           ;; Don't download any dependencies.
-                           "-DBUILD_DEPS=OFF")
+     `(#:configure-flags (list "-DJACK=ON"
+                               "-DPACKAGE=ON"
+                               "-DEXTERNAL_SHLIBS_AUDIO=OFF"
+                               "-DEXTERNAL_SHLIBS_GRAPHICS=OFF"
+                               "-DCMAKE_BUILD_TYPE=Release"
+                               (string-append "-DEXT_SHARE_DIR="
+                                              (assoc-ref %outputs "out")
+                                              "/share"))
        #:modules ((ice-9 match)
                   (guix build cmake-build-system)
                   (guix build utils))
        #:phases
        (modify-phases %standard-phases
+         (add-after 'build 'build-aot-libs
+           (lambda _
+             (for-each (lambda (target)
+                         (invoke "make" target))
+                       '("aot_base"
+                         "aot_math"
+                         "aot_instruments"))
+             #t))
+         (add-after 'unpack 'patch-install-locations
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "CMakeLists.txt"
+               (("EXT_SHARE_DIR=\"\\.\"\\)")
+                "EXT_SHARE_DIR=\"${EXT_SHARE_DIR}/extempore\")")
+               (("DESTINATION \"\\.\"\\)") "DESTINATION bin)")
+               (("DESTINATION \"\\.\"\n") "DESTINATION share/extempore\n"))
+             #t))
          (add-after 'unpack 'patch-directories
            (lambda* (#:key outputs #:allow-other-keys)
-             ;; Rewrite default path to runtime directory
-             (substitute* "src/Extempore.cpp"
-               (("runtimedir \\+= \"runtime\"")
-                (string-append "runtimedir = \""
-                               (assoc-ref outputs "out")
-                               "/lib/extempore/runtime\"")))
              (substitute* "extras/extempore.el"
                (("\\(runtime-directory \\(concat default-directory \"runtime\"\\)\\)")
                 (string-append "(runtime-directory \""
                                (assoc-ref outputs "out")
-                               "/lib/extempore/runtime"
+                               "/share/extempore/runtime"
                                "\")")))
              #t))
          (add-after 'unpack 'link-with-additional-libs
            (lambda _
              ;; The executable must be linked with libffi and zlib.
              (substitute* "CMakeLists.txt"
-               (("add_dependencies\\(aot_extended extended_deps\\)") "")
                (("target_link_libraries\\(extempore PRIVATE dl" line)
                 (string-append line " ffi z")))
-             #t))
-         ;; FIXME: AOT compilation of the nanovg bindings fail with the error:
-         ;; "Compiler Error  could not bind _nvgLinearGradient"
-         (add-after 'unpack 'disable-nanovg
-           (lambda _
-             (substitute* "CMakeLists.txt"
-               (("aotcompile_lib\\(libs/external/nanovg.xtm.*") ""))
              #t))
          ;; FIXME: All examples that are used as tests segfault for some
          ;; unknown reason.
@@ -709,20 +722,16 @@ MusePack, Monkey's Audio, and WavPack files.")
                 ("gl/glcompat-directbind" "libGL.so" "mesa")))
              #t))
          (add-after 'unpack 'use-own-llvm
-          (lambda* (#:key inputs #:allow-other-keys)
-            (setenv "EXT_LLVM_DIR" (assoc-ref inputs "llvm"))
-            ;; Our LLVM builds shared libraries, so Extempore should use
-            ;; those.
-            (substitute* "CMakeLists.txt"
-              (("CMAKE_STATIC_LIBRARY") "CMAKE_SHARED_LIBRARY"))
-            #t))
+           (lambda* (#:key inputs #:allow-other-keys)
+             (setenv "EXT_LLVM_DIR" (assoc-ref inputs "llvm"))
+             ;; Our LLVM builds shared libraries, so Extempore should use
+             ;; those.
+             (substitute* "CMakeLists.txt"
+               (("CMAKE_STATIC_LIBRARY") "CMAKE_SHARED_LIBRARY"))
+             #t))
          (add-after 'unpack 'fix-aot-compilation
            (lambda* (#:key outputs #:allow-other-keys)
              (substitute* "CMakeLists.txt"
-               ;; EXT_SHARE_DIR does not exist before installation, so the
-               ;; working directory should be the source directory instead.
-               (("WORKING_DIRECTORY \\$\\{EXT_SHARE_DIR\\}")
-                "WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}")
                ;; Extempore needs to be told where the runtime is to be found.
                ;; While we're at it we disable automatic tuning for a specific
                ;; CPU to make binary substitution possible.
@@ -1154,6 +1163,28 @@ complete studio.")
 with a selectable pattern matrix size.")
     (license license:gpl3+)))
 
+(define-public bchoppr
+  (package
+    (inherit bsequencer)
+    (name "bchoppr")
+    (version "1.4.2")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/sjaehn/BChoppr.git")
+               (commit version)))
+        (file-name (git-file-name name version))
+        (sha256
+          (base32
+            "1ympx0kyn3mkb23xgd44rlrf4qnngnlkmikz9syhayklgax7ijgm"))))
+    (synopsis "Audio stream-chopping LV2 plugin")
+    (description "B.Choppr cuts the audio input stream into a repeated
+sequence of up to 16 chops.  Each chop can be leveled up or down (gating).
+B.Choppr is the successor of B.Slizr.")
+    (home-page "https://github.com/sjaehn/BChoppr")
+    (license license:gpl3+)))
+
 (define-public solfege
   (package
     (name "solfege")
@@ -1406,7 +1437,7 @@ users to select LV2 plugins and run them with jalv.")
 (define-public synthv1
   (package
     (name "synthv1")
-    (version "0.9.13")
+    (version "0.9.14")
     (source (origin
               (method url-fetch)
               (uri
@@ -1414,7 +1445,7 @@ users to select LV2 plugins and run them with jalv.")
                               "/synthv1-" version ".tar.gz"))
               (sha256
                (base32
-                "0bb48myvgvqcibwm68qhd4852pjr2g19rasf059a799d1hzgfq3l"))))
+                "08n83krkak20924flb9azhm9hn40lyfvn29m63zs3lw3wajf0b40"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -1438,7 +1469,7 @@ oscillators and stereo effects.")
 (define-public drumkv1
   (package
     (name "drumkv1")
-    (version "0.9.13")
+    (version "0.9.14")
     (source (origin
               (method url-fetch)
               (uri
@@ -1446,7 +1477,7 @@ oscillators and stereo effects.")
                               "/drumkv1-" version ".tar.gz"))
               (sha256
                (base32
-                "1h88sakxs0b20k8v2sh14y05fin1zqmhnid6h9mk9c37ixxg58ia"))))
+                "0fr7pkp55zvjxf7p22drs93fsjgvqhbd55vxi0srhp2s2wzz5qak"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -1471,7 +1502,7 @@ effects.")
 (define-public samplv1
   (package
     (name "samplv1")
-    (version "0.9.13")
+    (version "0.9.14")
     (source (origin
               (method url-fetch)
               (uri
@@ -1479,7 +1510,7 @@ effects.")
                               "/samplv1-" version ".tar.gz"))
               (sha256
                (base32
-                "0clsp6s5qfnh0xaxbd35vq2ppi72q9dfayrzlgl73800a8p7gh9m"))))
+                "0p3f9wsn1nz93szcl60yxhxdr554zm2z2jlbniwwify765lvasxc"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -1504,7 +1535,7 @@ effects.")
 (define-public padthv1
   (package
     (name "padthv1")
-    (version "0.9.13")
+    (version "0.9.14")
     (source (origin
               (method url-fetch)
               (uri
@@ -1512,7 +1543,7 @@ effects.")
                               "/padthv1-" version ".tar.gz"))
               (sha256
                (base32
-                "1c1zllph86qswcxddz4vpsj6r9w21hbv4gkba0pyd3q7pbfqr7nz"))))
+                "079iwwlkl1gscyv70v9ambad8shxbs0ixdfp0vsl6dbh87b09qzh"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -1725,7 +1756,7 @@ is subjective.")
 (define-public tuxguitar
   (package
     (name "tuxguitar")
-    (version "1.5.3")
+    (version "1.5.4")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1733,7 +1764,7 @@ is subjective.")
                     version "/tuxguitar-" version "-src.tar.gz"))
               (sha256
                (base32
-                "1qy5kjcsl3c86kdlyvsf6dsfmfl1mv8zg0ln6g3qg3i8f35vlpp6"))))
+                "0fjhf56lhlhm84v08917xp4yw8y6d0qajm4qiy1gfp8dm74whwwg"))))
     (build-system ant-build-system)
     (arguments
      `(#:build-target "build"
@@ -1850,7 +1881,7 @@ export.")
 (define-public pd
   (package
     (name "pd")
-    (version "0.50-2")
+    (version "0.51-0")
     (source (origin
               (method url-fetch)
               (uri
@@ -1858,23 +1889,25 @@ export.")
                               version ".src.tar.gz"))
               (sha256
                (base32
-                "0dz6r6jy0zfs1xy1xspnrxxks8kddi9c7pxz4vpg2ygwv83ghpg5"))))
+                "0qzv4hjf4h7xx00ihnbl43pxa0fia9qkc8nwgzhqrs12jiljz6ps"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:tests? #f                      ; no "check" target
-       #:configure-flags
-       (list
-        "--enable-jack"
-        (string-append "--with-wish=" (string-append
-                                       (assoc-ref %build-inputs "tk")
-                                       "/bin/wish8.6")))
-       #:phases
-       (modify-phases %standard-phases
-         (add-before 'configure 'fix-with-path
-           (lambda _
-             (substitute* "tcl/pd-gui.tcl"
-               (("exec wish ") (string-append "exec " (which "wish8.6") " ")))
-             #t)))))
+     (let ((wish (string-append "wish" (version-major+minor
+                                        (package-version tk)))))
+       `(#:tests? #f                    ; no "check" target
+         #:configure-flags
+         (list
+          "--enable-jack"
+          (string-append "--with-wish=" (string-append
+                                         (assoc-ref %build-inputs "tk")
+                                         "/bin/" ,wish)))
+         #:phases
+         (modify-phases %standard-phases
+           (add-before 'configure 'fix-with-path
+             (lambda _
+               (substitute* "tcl/pd-gui.tcl"
+                 (("exec wish ") (string-append "exec " (which ,wish) " ")))
+               #t))))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
@@ -1885,7 +1918,7 @@ export.")
      `(("tk" ,tk)
        ("alsa-lib" ,alsa-lib)
        ("jack" ,jack-1)))
-    (home-page "http://puredata.info")
+    (home-page "https://puredata.info")
     (synopsis "Visual programming language for artistic performances")
     (description
      "Pure Data (aka Pd) is a visual programming language.  Pd enables
@@ -1978,24 +2011,27 @@ using a system-independent interface.")
     (license license:expat)))
 
 (define-public portmidi-for-extempore
-  (package (inherit portmidi)
-    (name "portmidi-for-extempore")
-    (version "217")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/extemporelang/portmidi.git")
-                    (commit version)))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "1inriyrjf7xx2b7r54x0vmf9ngyqgr7g5060c22bwkbsgg53apzv"))))
-    (build-system cmake-build-system)
-    (arguments `(#:tests? #f)) ; no tests
-    (native-inputs '())
-    ;; Extempore refuses to build on architectures other than x86_64
-    (supported-systems '("x86_64-linux"))
-    (home-page "https://github.com/extemporelang/portmidi/")))
+  (let ((version "217")
+        (revision "0")
+        (commit "8602f548f71daf5ef638b2f7d224753400cb2158"))
+    (package (inherit portmidi)
+      (name "portmidi-for-extempore")
+      (version (git-version version revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/extemporelang/portmidi.git")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "1qidzl1s3kzhczzm96rcd2ppn27a97k2axgfh1zhvyf0s52d7m4w"))))
+      (build-system cmake-build-system)
+      (arguments `(#:tests? #f))        ; no tests
+      (native-inputs '())
+      ;; Extempore refuses to build on architectures other than x86_64
+      (supported-systems '("x86_64-linux"))
+      (home-page "https://github.com/extemporelang/portmidi/"))))
 
 (define-public python-pyportmidi
   (package
@@ -2034,7 +2070,7 @@ using a system-independent interface.")
 (define-public frescobaldi
   (package
     (name "frescobaldi")
-    (version "3.1.1")
+    (version "3.1.2")
     (source
      (origin
        (method url-fetch)
@@ -2042,7 +2078,7 @@ using a system-independent interface.")
              "https://github.com/wbsoft/frescobaldi/releases/download/v"
              version "/frescobaldi-" version ".tar.gz"))
        (sha256
-        (base32 "0kfwvgygx2ds01w8g7vzykfrajglmr2brchk9d67ahzijpgvfkj5"))))
+        (base32 "084vxzvxnxl5rrhllincnh6krsyi03c8p0452ppzmn9c52wgyb2w"))))
     (build-system python-build-system)
     (arguments
      `(#:tests? #f))                    ;no tests included
@@ -2055,7 +2091,7 @@ using a system-independent interface.")
        ("python-pyportmidi" ,python-pyportmidi)
        ("python-pyqt" ,python-pyqt)
        ("python-sip" ,python-sip)))
-    (home-page "http://www.frescobaldi.org/")
+    (home-page "https://www.frescobaldi.org/")
     (synopsis "LilyPond sheet music text editor")
     (description
      "Frescobaldi is a LilyPond sheet music text editor with syntax
@@ -2204,61 +2240,66 @@ capabilities, custom envelopes, effects, etc.")
     (license license:gpl2)))
 
 (define-public yoshimi
-  (package
-    (name "yoshimi")
-    (version "1.7.0.1")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://sourceforge/yoshimi/"
-                                  (version-major+minor version)
-                                  "/yoshimi-" version ".tar.bz2"))
-              (sha256
-               (base32
-                "1pkqrrr51vlxh96vy0c0rf5ijjvymys4brsw9rv1bdp1bb8izw6c"))))
-    (build-system cmake-build-system)
-    (arguments
-     `(#:tests? #f                      ; there are no tests
-       #:configure-flags
-       (list (string-append "-DCMAKE_INSTALL_DATAROOTDIR="
-                            (assoc-ref %outputs "out") "/share"))
-       #:phases
-       (modify-phases %standard-phases
-         (add-before 'configure 'enter-dir
-           (lambda _ (chdir "src") #t))
-         ;; Move SSE compiler optimization flags from generic target to
-         ;; athlon64 and core2 targets, because otherwise the build would fail
-         ;; on non-Intel machines.
-         (add-after 'unpack 'remove-sse-flags-from-generic-target
-          (lambda _
-            (substitute* "src/CMakeLists.txt"
-              (("-msse -msse2 -mfpmath=sse") "")
-              (("-march=(athlon64|core2)" flag)
-               (string-append flag " -msse -msse2 -mfpmath=sse")))
-            #t)))))
-    (inputs
-     `(("boost" ,boost)
-       ("fftwf" ,fftwf)
-       ("alsa-lib" ,alsa-lib)
-       ("jack" ,jack-1)
-       ("fontconfig" ,fontconfig)
-       ("minixml" ,minixml)
-       ("mesa" ,mesa)
-       ("fltk" ,fltk)
-       ("lv2" ,lv2)
-       ("readline" ,readline)
-       ("ncurses" ,ncurses)
-       ("cairo" ,cairo)
-       ("zlib" ,zlib)))
-    (native-inputs
-     `(("pkg-config" ,pkg-config)))
-    (home-page "http://yoshimi.sourceforge.net/")
-    (synopsis "Multi-paradigm software synthesizer")
-    (description
-     "Yoshimi is a fork of ZynAddSubFX, a feature-heavy real-time software
+  ;; Release 1.7.1 doesn't build with our version of LV2.  Applying only
+  ;; 86996cbb235f0fe138ae814a6758c2c8ba1c2a38 is not enough.
+  (let ((commit "bfcadc6537dbcb301cd93346f21d36bcbffa36c7")
+        (revision "0"))
+    (package
+      (name "yoshimi")
+      (version (git-version "1.7.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://git.code.sf.net/p/yoshimi/code")
+               (commit commit)))
+         (sha256
+          (base32 "0vhdxj7ky4iyq11r5wj9jwavjih4xvcn2djbrlmwpkdhrzpy6myl"))
+         (file-name (git-file-name name version))))
+      (build-system cmake-build-system)
+      (arguments
+       `(#:tests? #f                    ; there are no tests
+         #:configure-flags
+         (list (string-append "-DCMAKE_INSTALL_DATAROOTDIR="
+                              (assoc-ref %outputs "out") "/share"))
+         #:phases
+         (modify-phases %standard-phases
+           (add-before 'configure 'enter-dir
+             (lambda _ (chdir "src") #t))
+           ;; Move SSE compiler optimization flags from generic target to
+           ;; athlon64 and core2 targets, because otherwise the build would fail
+           ;; on non-Intel machines.
+           (add-after 'unpack 'remove-sse-flags-from-generic-target
+             (lambda _
+               (substitute* "src/CMakeLists.txt"
+                 (("-msse -msse2 -mfpmath=sse") "")
+                 (("-march=(athlon64|core2)" flag)
+                  (string-append flag " -msse -msse2 -mfpmath=sse")))
+               #t)))))
+      (inputs
+       `(("boost" ,boost)
+         ("fftwf" ,fftwf)
+         ("alsa-lib" ,alsa-lib)
+         ("jack" ,jack-1)
+         ("fontconfig" ,fontconfig)
+         ("minixml" ,minixml)
+         ("mesa" ,mesa)
+         ("fltk" ,fltk)
+         ("lv2" ,lv2)
+         ("readline" ,readline)
+         ("ncurses" ,ncurses)
+         ("cairo" ,cairo)
+         ("zlib" ,zlib)))
+      (native-inputs
+       `(("pkg-config" ,pkg-config)))
+      (home-page "http://yoshimi.sourceforge.net/")
+      (synopsis "Multi-paradigm software synthesizer")
+      (description
+       "Yoshimi is a fork of ZynAddSubFX, a feature-heavy real-time software
 synthesizer.  It offers three synthesizer engines, multitimbral and polyphonic
 synths, microtonal capabilities, custom envelopes, effects, etc.  Yoshimi
 improves on support for JACK features, such as JACK MIDI.")
-    (license license:gpl2)))
+      (license license:gpl2))))
 
 (define-public libgig
   (package
@@ -2273,7 +2314,7 @@ improves on support for JACK features, such as JACK MIDI.")
                 "1zs5yy124bymfyapsnljr6rv2lnn5inwchm0xnwiw44b2d39l8hn"))))
     (build-system gnu-build-system)
     (inputs
-     `(("libuuid" ,util-linux)
+     `(("libuuid" ,util-linux "lib")
        ("libsndfile" ,libsndfile)))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -2466,14 +2507,14 @@ from the command line.")
 (define-public qtractor
   (package
     (name "qtractor")
-    (version "0.9.12")
+    (version "0.9.14")
     (source (origin
               (method url-fetch)
-              (uri (string-append "http://downloads.sourceforge.net/qtractor/"
+              (uri (string-append "https://downloads.sourceforge.net/qtractor/"
                                   "qtractor-" version ".tar.gz"))
               (sha256
                (base32
-                "06493sf4hr178jkvric3rmc2phh1ph2jlyh8kl9z248amq3zfnhy"))))
+                "1gh268gdpj7nw19xfh7k2l3aban4yrs1lmx33qswrnngs2izj1fk"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; no "check" target
@@ -2685,8 +2726,7 @@ tune-in sender list from @url{http://opml.radiotime.com}.")
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no tests
-       #:make-flags (list "CC=gcc" "CFLAGS=-std=c99"
-                          (string-append "PREFIX=" %output))
+       #:make-flags (list "CC=gcc" (string-append "PREFIX=" %output))
        #:phases (modify-phases %standard-phases
                   (delete 'configure))))
     (inputs
@@ -2929,7 +2969,7 @@ websites such as Libre.fm.")
     (home-page "https://github.com/yask123/Instant-Music-Downloader")
     (synopsis "Command-line program to download a song from YouTube")
     (description "InstantMusic downloads a song from YouTube in MP3 format.
-Songs can be searched by artist, name or even by a part of the song text.")
+    Songs can be searched by artist, name or even by a part of the song text.")
     (license license:expat))))
 
 (define-public beets
@@ -2978,9 +3018,9 @@ Songs can be searched by artist, name or even by a part of the song text.")
     (home-page "https://beets.io")
     (synopsis "Music organizer")
     (description "The purpose of beets is to get your music collection right
-once and for all.  It catalogs your collection, automatically improving its
-metadata as it goes using the MusicBrainz database.  Then it provides a variety
-of tools for manipulating and accessing your music.")
+    once and for all.  It catalogs your collection, automatically improving its
+    metadata as it goes using the MusicBrainz database.  Then it provides a variety
+    of tools for manipulating and accessing your music.")
     (license license:expat)))
 
 (define-public beets-bandcamp
@@ -3006,8 +3046,8 @@ of tools for manipulating and accessing your music.")
     (synopsis "Bandcamp plugin for beets")
     (description
      "This plugin for beets automatically obtains tag data from @uref{Bandcamp,
-https://bandcamp.com/}.  It's also capable of getting song lyrics and album art
-using the beets FetchArt plugin.")
+                                                                      https://bandcamp.com/}.  It's also capable of getting song lyrics and album art
+    using the beets FetchArt plugin.")
     (license license:gpl2)))
 
 (define-public milkytracker
@@ -3048,9 +3088,9 @@ using the beets FetchArt plugin.")
      `(("pkg-config" ,pkg-config)))
     (synopsis "Music tracker for working with .MOD/.XM module files")
     (description "MilkyTracker is a music application for creating .MOD and .XM
-module files.  It attempts to recreate the module replay and user experience of
-the popular DOS program Fasttracker II, with special playback modes available
-for improved Amiga ProTracker 2/3 compatibility.")
+    module files.  It attempts to recreate the module replay and user experience of
+    the popular DOS program Fasttracker II, with special playback modes available
+    for improved Amiga ProTracker 2/3 compatibility.")
     (home-page "https://milkytracker.titandemo.org/")
     ;; 'src/milkyplay' is under Modified BSD, the rest is under GPL3 or later.
     (license (list license:bsd-3 license:gpl3+))))
@@ -3074,8 +3114,8 @@ for improved Amiga ProTracker 2/3 compatibility.")
                `(begin
                   (substitute* "schism/version.c"
                     (("Schism Tracker built %s %s.*$")
-                     (string-append "Schism Tracker version " ,version "\");")))
-                  #t))))
+                     (string-append "Schism Tracker version " ,version "\") ;")))
+              #t))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -3653,7 +3693,7 @@ plugins, a switch trigger, a toggle switch, and a peakmeter.")
          ("lv2" ,lv2)
          ("lilv" ,lilv)
          ("raul" ,raul-devel)
-         ("ganv" ,ganv-devel)
+         ("ganv" ,ganv)
          ("suil" ,suil)
          ("serd" ,serd)
          ("sord" ,sord)
@@ -4094,14 +4134,14 @@ specification and header.")
 (define-public rosegarden
   (package
     (name "rosegarden")
-    (version "19.12")
+    (version "20.06")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/rosegarden/rosegarden/"
                            version "/rosegarden-" version ".tar.bz2"))
        (sha256
-        (base32 "1qcaxc6hdzva7kwxxhgl95437fagjbxzv4mihsgpr7y9qk08ppw1"))))
+        (base32 "1i9x9rkqwwdrk77xl5ra8i48cjirbc7fbisnj0nnclccwaq0wk6r"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags '("-DCMAKE_BUILD_TYPE=Release")
@@ -4831,6 +4871,48 @@ effects.  It contains a bitcrusher, delay, distortion, equalizer, compressor,
 and reverb.")
     (license license:gpl2+)))
 
+(define-public lsp-plugins
+  (package
+    (name "lsp-plugins")
+    (version "1.1.22")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/sadko4u/lsp-plugins.git")
+               (commit (string-append "lsp-plugins-" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "0s0i0kf5nqxxywckg03fds1w7696ly60rnlljzqvp7qfgzps1r6c"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags
+       (list
+         (string-append "CC=" ,(cc-for-target))
+         "BUILD_MODULES=\"lv2 ladspa jack\"" "VST_UI=0"
+         (string-append "PREFIX=" (assoc-ref %outputs "out"))
+         (string-append "ETC_PATH=" (assoc-ref %outputs "out") "/etc"))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))   ; no configure
+       #:test-target "test"))
+    (inputs
+     `(("cairo", cairo)
+       ("hicolor-icon-theme", hicolor-icon-theme)
+       ("jack", jack-1)
+       ("ladspa", ladspa)
+       ("libsndfile", libsndfile)
+       ("lv2", lv2)
+       ("mesa", mesa)))
+    (native-inputs
+     `(("pkg-config", pkg-config)))
+    (synopsis "Audio plugin collection")
+    (description "LSP (Linux Studio Plugins) is a collection of audio
+plugins available as LADSPA/LV2 plugins and as standalone JACK
+applications.")
+    (home-page "https://lsp-plug.in/")
+    (license license:lgpl3)))
+
 (define-public sherlock-lv2
   (package
     (name "sherlock-lv2")
@@ -4859,6 +4941,49 @@ visualizing LV2 atom, MIDI and OSC events.  They can be used for monitoring
 and debugging of event signal flows inside plugin graphs.")
     (home-page "https://open-music-kontrollers.ch/lv2/sherlock/")
     (license license:artistic2.0)))
+
+(define-public spectacle-analyzer
+  (package
+    (name "spectacle-analyzer")
+    (version "1.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/jpcima/spectacle.git")
+             (commit (string-append "v" version))
+             ;; Bundles a specific commit of the DISTRHO plugin framework.
+             (recursive? #t)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0xiqa6z8g68lcvnwhws4j7c4py35r9d20cirrili7ycyp3a6149a"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ; no check target
+       #:make-flags
+       (list "CC=gcc"
+             (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("xxd" ,xxd)))
+    (inputs
+     `(("cairo", cairo)
+       ("fftw", fftw)
+       ("fftwf", fftwf)
+       ("jack", jack-1)
+       ("lv2", lv2)
+       ("mesa", mesa)))
+    (synopsis "Realtime graphical spectrum analyzer")
+    (description "Spectacle is a real-time spectral analyzer using the
+short-time Fourier transform, available as LV2 audio plugin and JACK client.")
+    (home-page "https://github.com/jpcima/spectacle")
+    ;; The project is licensed under the ISC license, and files in
+    ;; sources/plugin carry the Expat license.
+    (license (list license:isc license:expat))))
 
 (define-public x42-plugins
   (package
@@ -5158,7 +5283,7 @@ and as an LV2 plugin.")
 (define-public zrythm
   (package
     (name "zrythm")
-    (version "0.8.200")
+    (version "0.8.333")
     (source
       (origin
         (method url-fetch)
@@ -5166,7 +5291,7 @@ and as an LV2 plugin.")
                             version ".tar.xz"))
         (sha256
           (base32
-            "13ivxbrd44qnhyh46dcr94dvqxg8cn4bbd8xm77ljw0p9b4ks4zs"))))
+            "0x2kxr5zz058jpy6k6ymj0fi2gqfcgrlv4qkwz9443hjy5345iwb"))))
    (build-system meson-build-system)
    (arguments
     `(#:glib-or-gtk? #t
@@ -5190,7 +5315,9 @@ and as an LV2 plugin.")
       ("fftwf" ,fftwf)
       ("gettext" ,gettext-minimal)
       ("glibc" ,glibc)
+      ("graphviz" ,graphviz)
       ("gtk+" ,gtk+)
+      ("gtksourceview" ,gtksourceview)
       ("guile" ,guile-2.2)
       ("libcyaml" ,libcyaml)
       ("libsamplerate" ,libsamplerate)
@@ -5423,3 +5550,146 @@ plugin and a standalone JACK application.")
   offers an LV2 version ported by moddevices.")
       (home-page "http://tap-plugins.sourceforge.net/")
       (license license:gpl2))))
+
+(define-public wolf-shaper
+  (package
+    (name "wolf-shaper")
+    (version "0.1.7")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/pdesaulniers/wolf-shaper.git")
+               (commit (string-append "v" version))
+               ;; Bundles a specific commit of the DISTRHO plugin framework.
+               (recursive? #t)))
+        (file-name (git-file-name name version))
+        (sha256
+          (base32
+            "0lllgcbnnh1m95bp29hh17x170hl7170zizjrvy892qfkn36830d"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ; no check target
+       #:make-flags (list "CC=gcc")
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)            ;no configure target
+         (replace 'install              ;no install target
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin"))
+                    (lv2 (string-append out "/lib/lv2")))
+               ;; Install LV2.
+               (for-each
+                (lambda (file)
+                  (copy-recursively file
+                                    (string-append lv2 "/" (basename file))))
+                (find-files "bin" "\\.lv2$" #:directories? #t))
+               ;; Install executables.
+               (for-each
+                 (lambda (file)
+                   (install-file file bin))
+                 (find-files "bin"
+                             (lambda (name stat)
+                               (and
+                                 (equal? (dirname name) "bin")
+                                 (not (string-suffix? ".so" name))
+                                 (not (string-suffix? ".lv2" name))))))
+               #t))))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+      `(("jack", jack-1)
+        ("lv2", lv2)
+        ("mesa", mesa)))
+    (synopsis "Waveshaper plugin")
+    (description "Wolf Shaper is a waveshaper plugin with a graph editor.
+It is provided as an LV2 plugin and as a standalone Jack application.")
+    (home-page "https://pdesaulniers.github.io/wolf-shaper/")
+    (license license:gpl3)))
+
+(define-public wolf-spectrum
+  (package
+    (inherit wolf-shaper)
+    (name "wolf-spectrum")
+    (version "1.0.0")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/pdesaulniers/wolf-spectrum")
+               (commit (string-append "v" version))
+               ;; Bundles a specific commit of the DISTRHO plugin framework.
+               (recursive? #t)))
+        (file-name (git-file-name name version))
+        (sha256
+          (base32
+            "17db1jlj7vb1xyvkdhhrsvdbwb7jqw6i4168cdvlj3yvn2ra8gpm"))))
+    (synopsis "2D spectrogram plugin")
+    (description "Wolf Spectrum is a real-time 2D spectrogram plugin.
+It is provided as an LV2 plugin and as a standalone Jack application.")
+    (home-page "https://github.com/pdesaulniers/wolf-spectrum")
+    (license license:gpl3)))
+
+(define-public shiru-lv2
+  (let ((commit "08853f99140012234649e67e5647906fda74f6cc")
+        (revision "1"))
+    (package
+      (name "shiru-lv2")
+      (version (git-version "0.0" revision commit))
+      (source
+        (origin
+          (method git-fetch)
+          (uri (git-reference
+                 (url "https://github.com/linuxmao-org/shiru-plugins.git")
+                 (commit commit)
+                 ;; Bundles a specific commit of the DISTRHO plugin framework.
+                 (recursive? #t)))
+          (file-name (git-file-name name version))
+          (sha256
+            (base32
+              "00rf6im3rhg98h60sgl1r2s37za5vr5h14pybwi07h8zbc8mi6fm"))))
+      (build-system gnu-build-system)
+      (arguments
+       `(#:tests? #f                      ; no check target
+         #:make-flags (list "CC=gcc")
+         #:phases
+         (modify-phases %standard-phases
+           (delete 'configure)            ;no configure target
+           (replace 'install              ;no install target
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let* ((out (assoc-ref outputs "out"))
+                      (bin (string-append out "/bin"))
+                      (lv2 (string-append out "/lib/lv2")))
+                 ;; Install LV2.
+                 (for-each
+                  (lambda (file)
+                    (copy-recursively file
+                                      (string-append lv2 "/" (basename file))))
+                  (find-files "bin" "\\.lv2$" #:directories? #t))
+                 ;; Install executables.
+                 (for-each
+                   (lambda (file)
+                     (install-file file bin))
+                   (find-files "bin"
+                               (lambda (name stat)
+                                 (and
+                                   (equal? (dirname name) "bin")
+                                   (not (string-suffix? ".so" name))
+                                   (not (string-suffix? ".lv2" name))))))
+                 #t))))))
+      (native-inputs
+       `(("pkg-config" ,pkg-config)))
+      (inputs
+        `(("cairo", cairo)
+          ("glu", glu)
+          ("jack", jack-1)
+          ("lv2", lv2)
+          ("mesa", mesa)
+          ("pango", pango)))
+      (synopsis "Audio plugin collection")
+      (description "Shiru plugins is a collection of audio plugins created
+  by Shiru, ported to LV2 by the Linux MAO project using the DISTRHO plugin
+  framework.")
+      (home-page "http://shiru.untergrund.net/software.shtml")
+      (license license:wtfpl2))))

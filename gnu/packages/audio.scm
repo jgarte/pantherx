@@ -6,7 +6,7 @@
 ;;; Copyright © 2015, 2016 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017 Alex Griffin <a@ajgrf.com>
-;;; Copyright © 2016 ng0 <ng0@n0.is>
+;;; Copyright © 2016 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Lukas Gradl <lgradl@openmailbox.org>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018, 2020 Oleg Pykhalov <go.wigust@gmail.com>
@@ -30,6 +30,8 @@
 ;;; Copyright © 2019 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Guillaume Le Vaillant <glv@posteo.net>
+;;; Copyright © 2020 Jonathan Frederickson <jonathan@terracrypt.net>
+;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -86,6 +88,7 @@
   #:use-module (gnu packages multiprecision)
   #:use-module (gnu packages music)
   #:use-module (gnu packages ncurses)
+  #:use-module (gnu packages networking)
   #:use-module (gnu packages onc-rpc)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
@@ -848,30 +851,30 @@ emulation (valve, tape), bit fiddling (decimator, pointer-cast), etc.")
 (define-public csound
   (package
     (name "csound")
-    (version "6.13.0")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/csound/csound.git")
-                    (commit version)))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "14822ybqyp31z18gky2y9zadr9dkbhabg97y139py73w7v3af1bh"))))
+    (version "6.14.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/csound/csound.git")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1sr9knfhbm2m0wpkjq2l5n471vnl51wy4p6j4m95zqybimzb4s2j"))))
     (build-system cmake-build-system)
-    (inputs
-     `(("alsa-lib" ,alsa-lib)
-       ("boost" ,boost)
-       ("pulseaudio" ,pulseaudio)
-       ("libsndfile" ,libsndfile)
-       ("liblo" ,liblo)
-       ("ladspa" ,ladspa)
-       ("jack" ,jack-1)
-       ("gettext" ,gettext-minimal)))
     (native-inputs
      `(("bison" ,bison)
        ("flex" ,flex)
+       ("gettext" ,gettext-minimal)
        ("zlib" ,zlib)))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("boost" ,boost)
+       ("jack" ,jack-1)
+       ("ladspa" ,ladspa)
+       ("liblo" ,liblo)
+       ("libsndfile" ,libsndfile)
+       ("pulseaudio" ,pulseaudio)))
     (home-page "https://csound.com/")
     (synopsis "Sound and music computing system")
     (description
@@ -1239,7 +1242,7 @@ follower.")
 (define-public fluidsynth
   (package
     (name "fluidsynth")
-    (version "2.1.1")
+    (version "2.1.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1248,7 +1251,7 @@ follower.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "09jq04hrasidf6b5gkk4aba13fq55z3bmn7bq35rdaikz26xiij4"))))
+                "0dv6jprz2bzasvk91x2rv2pqyyvxkc72s4r6vsqw723a3kqa5bhc"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f                      ; no check target
@@ -1627,7 +1630,7 @@ especially for creating reverb effects.  It supports impulse responses with 1,
     ;; uuid.h is included in the JACK type headers
     ;; db.h is included in the libjack metadata headers
     (propagated-inputs
-     `(("libuuid" ,util-linux)
+     `(("libuuid" ,util-linux "lib")
        ("bdb" ,bdb)))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -1855,6 +1858,31 @@ for headphone prolonged listening to disable superstereo fatigue without
 essential distortions.")
     (license license:expat)))
 
+(define-public ladspa-bs2b
+  (package
+    (name "ladspa-bs2b")
+    (version "0.9.1")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "mirror://sourceforge/bs2b/plugins/LADSPA%20plugin/"
+                    version "/" name "-" version ".tar.gz"))
+              (sha256
+               (base32
+                "1b4aipbj1ba5k99gbc7gmgy14sywyrjd8rpyqj5l905j0mjv8jg2"))))
+    (build-system gnu-build-system)
+    (native-inputs `(("pkg-config" ,pkg-config)))
+    (inputs `(("ladspa" ,ladspa)
+              ("libbs2b" ,libbs2b)))
+    (home-page "https://sourceforge.net/projects/bs2b/")
+    (synopsis "Bauer stereophonic-to-binaural DSP - LADSPA plugin")
+    (description "The Bauer stereophonic-to-binaural DSP (bs2b) library and
+plugins is designed to improve headphone listening of stereo audio records.
+Recommended for headphone prolonged listening to disable superstereo fatigue
+without essential distortions.  This package contains a LADSPA plugin for use
+with applications that support them (e.g. PulseAudio).")
+    (license license:gpl2+)))
+
 (define-public liblo
   (package
     (name "liblo")
@@ -1933,14 +1961,14 @@ included are the command line utilities @code{send_osc} and @code{dump_osc}.")
 (define-public lilv
   (package
     (name "lilv")
-    (version "0.24.6")
+    (version "0.24.8")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://download.drobilla.net/lilv-"
                                  version ".tar.bz2"))
              (sha256
               (base32
-               "1p3hafsxgs5d4za7n66lf5nz74qssfqpmk520cm7iq2njvvlqm2z"))))
+               "0063i5zgf3d3accwmyx651hw0wh5ik7kji2hvfkcdbl1qia3dp6a"))))
     (build-system waf-build-system)
     (arguments
      `(#:tests? #f                      ; no check target
@@ -1979,14 +2007,14 @@ significantly faster and have minimal dependencies.")
 (define-public lv2
   (package
     (name "lv2")
-    (version "1.16.0")
+    (version "1.18.0")
     (source (origin
              (method url-fetch)
              (uri (string-append "http://lv2plug.in/spec/lv2-"
                                  version ".tar.bz2"))
              (sha256
               (base32
-               "1ppippbpdpv13ibs06b0bixnazwfhiw0d0ja6hx42jnkgdyp5hyy"))))
+               "0gs7401xz23q9vajqr31aa2db8dvssgyh5zrvr4ipa6wig7yb8wh"))))
     (build-system waf-build-system)
     (arguments
      `(#:tests? #f  ; no check target
@@ -2163,7 +2191,7 @@ buffers, and audio capture.")
 (define-public patchage
   (package
     (name "patchage")
-    (version "1.0.0")
+    (version "1.0.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.drobilla.net/patchage-"
@@ -2171,10 +2199,10 @@ buffers, and audio capture.")
                                   ".tar.bz2"))
               (sha256
                (base32
-                "1agdpwwi42176l4mxj0c4fsvdiv1ig56bfnnx0msckxmy57df8bb"))))
+                "0dk3fiac10m83mwss3026yz7ygc47c2iw924cwwnh2fyydc9bsy6"))))
     (build-system waf-build-system)
     (arguments
-     `(#:tests? #f ; no check target
+     `(#:tests? #f                      ; no check target
        #:python ,python-2))
     (inputs
      `(("alsa-lib" ,alsa-lib)
@@ -2292,20 +2320,26 @@ background file post-processing.")
 (define-public supercollider
   (package
     (name "supercollider")
-    (version "3.10.4")
+    (version "3.11.0")
     (source (origin
-              (method url-fetch)
-              (uri (string-append
-                    "https://github.com/supercollider/supercollider"
-                    "/releases/download/Version-" version
-                    "/SuperCollider-" version "-Source-linux.tar.bz2"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/supercollider/supercollider.git")
+                    (commit (string-append "Version-" version))
+                    ;; for nova-simd, nova-tt, hidapi, TLSF, oscpack
+                    (recursive? #t)))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "0x11g3pfw11m6v18qfpfl5w99dbmf73g4z7wvwhrj1a4qv2dn084"))))
+                "02v911w2kdbg3kfl593lb2ig4sjbfxzv20a0vbcymhfzpvp1x6xp"))))
     (build-system cmake-build-system)
+    (outputs
+     '("out"   ;core language
+       "ide")) ;qt ide
     (arguments
      `(#:configure-flags '("-DSYSTEM_BOOST=on" "-DSYSTEM_YAMLCPP=on"
-                           "-DSC_QT=off"
+                           "-DSC_QT=ON" "-DCMAKE_BUILD_TYPE=Release"
+                           "-DFORTIFY=ON" "-DLIBSCSYNTH=ON"
                            "-DSC_EL=off") ;scel is packaged individually as
                                           ;emacs-scel
        #:modules ((guix build utils)
@@ -2326,6 +2360,9 @@ background file post-processing.")
                            (lambda (x)
                              (and (eq? (stat:type (stat x)) 'directory)
                                   (not (member (basename x) keep-dirs))))))))
+             (substitute* "lang/CMakeLists.txt"
+               (("include\\(\\.\\./external_libraries/link/AbletonLinkConfig\\.cmake\\)")
+                "find_package(AbletonLink NAMES AbletonLink ableton-link link REQUIRED)"))
              #t))
          ;; Some tests are broken (see:
          ;; https://github.com/supercollider/supercollider/issues/3555 and
@@ -2337,15 +2374,36 @@ background file post-processing.")
                 "")
                (("perf_counter_test.cpp")
                 ""))
-             (delete-file "testsuite/server/supernova/server_test.cpp")
-             (delete-file "testsuite/server/supernova/perf_counter_test.cpp")
              (substitute* "testsuite/CMakeLists.txt"
                (("add_subdirectory\\(sclang\\)")
                 ""))
              (delete-file "testsuite/sclang/CMakeLists.txt")
-             #t)))))
+             #t))
+         (add-after 'disable-broken-tests 'patch-scclass-dir
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (scclass-dir
+                     (string-append out
+                                    "/share/SuperCollider/SCClassLibrary")))
+               (substitute* "lang/LangSource/SC_LanguageConfig.cpp"
+                 (((string-append
+                    "SC_Filesystem::instance\\(\\)\\.getDirectory"
+                    "\\(DirName::Resource\\) / CLASS_LIB_DIR_NAME"))
+                  (string-append "Path(\"" scclass-dir "\")")))
+               #t)))
+         (add-before 'install 'install-ide
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (ide (assoc-ref outputs "ide"))
+                    (scide "editors/sc-ide/scide"))
+               (install-file scide
+                             (string-append ide "/bin"))
+               (delete-file scide)
+               #t))))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     `(("ableton-link" ,ableton-link)
+       ("pkg-config" ,pkg-config)
+       ("qttools" ,qttools)))
     (inputs
      `(("jack" ,jack-1)
        ("libsndfile" ,libsndfile)
@@ -2358,7 +2416,14 @@ background file post-processing.")
        ("icu4c" ,icu4c)
        ("boost" ,boost)
        ("boost-sync" ,boost-sync)
-       ("yaml-cpp" ,yaml-cpp)))
+       ("yaml-cpp" ,yaml-cpp)
+       ("qtbase" ,qtbase)
+       ("qtdeclarative" ,qtdeclarative)
+       ("qtsvg" ,qtsvg)
+       ("qtwebchannel" ,qtwebchannel)
+       ("qtwebsockets" ,qtwebsockets)))
+    (propagated-inputs                  ;to get native-search-path
+     `(("qtwebengine" ,qtwebengine)))
     (home-page "https://github.com/supercollider/supercollider")
     (synopsis "Synthesis engine and programming language")
     (description "SuperCollider is a synthesis engine (@code{scsynth} or
@@ -2490,13 +2555,6 @@ tempo and pitch of an audio recording independently of one another.")
                (base32
                 "1k962ljpnwyjw9jjiky2372khhri1wqvrj5qsalfpys31xqzw31p"))))
     (build-system gnu-build-system)
-    (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-before 'bootstrap 'noconfigure
-           (lambda _
-             (setenv "NOCONFIGURE" "yes")
-             #t)))))
     (inputs
      `(("jack" ,jack-1)
        ("alsa-lib" ,alsa-lib)))
@@ -2715,14 +2773,14 @@ stretching and pitch scaling of audio.  This package contains the library.")
 (define-public wavpack
   (package
     (name "wavpack")
-    (version "5.2.0")
+    (version "5.3.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://www.wavpack.com/"
                                   "wavpack-" version ".tar.xz"))
               (sha256
                (base32
-                "1qvpvfx30kvrkw7y1g6r8xj109wszg1z0qmkfm17wf3flb7v3rbp"))))
+                "01r351ggha9pdfk7p601dlxac4ka1q89lgnb6zqk00zf1fd3fi5l"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--disable-static")))
@@ -3315,17 +3373,18 @@ with support for HD extensions.")
 (define-public bs1770gain
   (package
     (name "bs1770gain")
-    (version "0.6.7")
+    (version "0.7.0")
+    (home-page "https://manpages.debian.org/sid/bs1770gain/bs1770gain.1.en.html")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/bs1770gain/bs1770gain/"
                            version "/bs1770gain-" version ".tar.gz"))
        (sha256
-        (base32 "13hsbqj1dkpz1gbclnjxv50kr7b4gcjai6c1l38g01433h217qjc"))
+        (base32 "0a2dcaxvxy5m3a5sb1lhplsymvz3ypaiidc5xn9qy01h53zvyvkp"))
        (modules '((guix build utils)))
        (snippet
-        '(begin
+        `(begin
            ;; XXX
            (substitute* (find-files "." "\\.[ch]$")
              (("^ \\* N..o.*") ""))
@@ -3337,12 +3396,11 @@ with support for HD extensions.")
                               "configure.ac"
                               "configure")
              (("https?://bs1770gain[^/]*/")
-              "https://manpages.debian.org/sid/bs1770gain/bs1770gain.1.en.html"))
+              ,home-page))
            #t))))
     (build-system gnu-build-system)
     (inputs `(("ffmpeg" ,ffmpeg)
               ("sox" ,sox)))
-    (home-page "https://manpages.debian.org/sid/bs1770gain/bs1770gain.1.en.html")
     (synopsis "Tool to adjust loudness of media files")
     (description
      "BS1770GAIN is a loudness scanner compliant with ITU-R BS.1770 and its
@@ -3872,15 +3930,15 @@ other Gnaural instances, allowing synchronous sessions between many users.")
 (define-public darkice
   (package
     (name "darkice")
-    (version "1.3")
+    (version "1.4")
     (source (origin
               (method url-fetch)
-              (uri (string-append "mirror://sourceforge/darkice/darkice/"
-                                  version "/darkice-" version ".tar.gz"))
+              (uri (string-append "https://github.com/rafael2k/darkice/releases/"
+                                  "download/v" version "/darkice-"
+                                  version ".tar.gz"))
               (sha256
-               (base32 "1rlxds7ssq7nk2in4s46xws7xy9ylxsqgcz85hxjgh17lsm0y39c"))
-              (patches
-               (search-patches "darkice-workaround-fpermissive-error.patch"))))
+               (base32
+                "05yq7lggxygrkd76yiqby3msrgdn082p0qlvmzzv9xbw8hmyra76"))))
     (build-system gnu-build-system)
     (native-inputs `(("pkg-config" ,pkg-config)))
     (inputs `(("lame" ,lame)
@@ -3930,7 +3988,7 @@ stream to one or more IceCast and/or ShoutCast servers.")
 (define-public redkite
   (package
     (name "redkite")
-    (version "0.8.0")
+    (version "0.8.1")
     (source
      (origin
        (method git-fetch)
@@ -3939,8 +3997,7 @@ stream to one or more IceCast and/or ShoutCast servers.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "1747w1kg8y9jbl11xi018d85dm38xk7843pz26sh0k5fdv87a10q"))))
+        (base32 "17kv2jc4jvn3sdicz3sf8dnf25wbvv7ijzkr0mm0sbrrjz6vrwz0"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ;no tests included
@@ -4242,3 +4299,104 @@ between 700 and 3200 bit/s.  The main application is low bandwidth HF/VHF
 digital radio.")
     (home-page "https://www.rowetel.com/?page_id=452")
     (license license:lgpl2.1)))
+
+(define-public ableton-link
+  (package
+    (name "ableton-link")
+    (version "3.0.2")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/Ableton/link.git")
+                    (commit (string-append "Link-" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0262vm0v7hmqjhqx5xikh529p3c065p1yld6ymaiz74yq1dnnjir"))
+              (modules '((guix build utils)))
+              (patches
+               (search-patches "ableton-link-system-libraries-debian.patch"))
+              (snippet
+               '(begin
+                  ;; Tests assume that CMake's "build" directory is a
+                  ;; sub-directory of the source tree, so we fix it.
+                  (substitute* "ci/run-tests.py"
+                    (("root_dir,") "root_dir, os.pardir,"))
+                  ;; Unbundle dependencies.
+                  (delete-file-recursively "third_party")
+                  (delete-file-recursively "modules")
+                  #t))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("catch" ,catch-framework)
+       ("python" ,python)       ;for running tests
+       ("portaudio" ,portaudio) ;for portaudio examples
+       ("qtbase" ,qtbase)       ;for Qt examples
+       ("qtdeclarative" ,qtdeclarative)
+       ("qttools" ,qttools)))
+    (inputs
+     `(("jack" ,jack-1)                       ;for JACK examples
+       ("qtquickcontrols" ,qtquickcontrols))) ;for Qt examples
+    (propagated-inputs
+     ;; This is because include/ableton/platforms/asio/AsioWrapper.hpp
+     ;; contains '#include <asio.hpp>'.
+     `(("asio" ,asio)))
+    (arguments
+     `(#:configure-flags
+       '("-DLINK_BUILD_QT_EXAMPLES=ON"
+         "-DLINK_BUILD_JACK=ON")
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let* ((python (string-append (assoc-ref inputs "python")
+                                          "/bin/python3"))
+                   (run-tests (string-append "../ableton-link-"
+                                             ,version
+                                             "-checkout/ci/run-tests.py")))
+               (invoke python run-tests "--target" "LinkCoreTest")
+               (invoke python run-tests "--target" "LinkDiscoveryTest"))))
+         (add-before 'install 'patch-cmake
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let* ((source (string-append "../ableton-link-"
+                                                ,version
+                                                "-checkout/")))
+               (substitute* (string-append source
+                                           "cmake_include/AsioStandaloneConfig.cmake")
+                 (((string-append "\\$\\{CMAKE_CURRENT_LIST_DIR\\}/\\.\\./"
+                                  "modules/asio-standalone/asio/include"))
+                  (string-append (assoc-ref inputs "asio")
+                                 "/include")))
+               (substitute* (string-append source "AbletonLinkConfig.cmake")
+                 (("\\$\\{CMAKE_CURRENT_LIST_DIR\\}/include")
+                  "${CMAKE_CURRENT_LIST_DIR}/../../../include")
+                 (("\\$\\{CMAKE_CURRENT_LIST_DIR\\}/include/ableton/Link\\.hpp")
+                  "${CMAKE_CURRENT_LIST_DIR}/../../../include/ableton/Link.hpp"))
+               #t)))
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin"))
+                    (lib-cmake (string-append out "/lib/cmake/ableton-link"))
+                    (source (string-append "../ableton-link-" ,version "-checkout")))
+               (for-each (lambda (test-file)
+                           (delete-file test-file))
+                         '("bin/LinkDiscoveryTest" "bin/LinkCoreTest"))
+               (copy-recursively "bin" bin)
+               (copy-recursively (string-append source "/include/ableton")
+                                 (string-append out "/include/ableton"))
+               (install-file (string-append source "/AbletonLinkConfig.cmake")
+                             lib-cmake)
+               (install-file (string-append source
+                                            "/cmake_include/AsioStandaloneConfig.cmake")
+                             (string-append lib-cmake "/cmake_include"))
+               #t))))))
+    (home-page "https://github.com/Ableton/link")
+    (synopsis "Synchronize musical beat, tempo, and phase across multiple applications")
+    (description
+     "Ableton Link is a C++ library that synchronizes musical beat, tempo, and phase
+across multiple applications running on one or more devices.  Applications on devices
+connected to a local network discover each other automatically and form a musical
+session in which each participant can perform independently: anyone can start or stop
+while still staying in time.")
+    (license license:gpl2+)))

@@ -4,7 +4,7 @@
 ;;; Copyright © 2015, 2019 Ricardo Wurmus <ricardo.wurmus@mdc-berlin.de>
 ;;; Copyright © 2016, 2017 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017 Ben Woodcroft <donttrustben@gmail.com>
-;;; Copyright © 2017, 2019 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2017, 2019, 2020 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2018 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2019 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;;
@@ -28,6 +28,7 @@
   #:use-module (guix licenses)
   #:use-module (guix packages)
   #:use-module (guix download)
+  #:use-module (guix git-download)
   #:use-module (gnu packages check)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
@@ -41,7 +42,7 @@
 (define-public libffi
   (package
     (name "libffi")
-    (version "3.2.1")
+    (version "3.3")
     (source (origin
               (method url-fetch)
               (uri
@@ -49,21 +50,12 @@
                               name "-" version ".tar.gz"))
               (sha256
                (base32
-                "0dya49bnhianl0r65m65xndz6ls2jn1xngyn72gd28ls3n7bnvnh"))
-              (patches (search-patches "libffi-3.2.1-complex-alpha.patch"))))
+                "0mi0cpf8aa40ljjmzxb7im6dbj45bb0kllcd09xgmp834y9agyvj"))))
     (build-system gnu-build-system)
     (arguments
      `(;; Prevent the build system from passing -march and -mtune to the
        ;; compiler.  See "ax_cc_maxopt.m4" and "ax_gcc_archflag.m4".
-       #:configure-flags '("--enable-portable-binary" "--without-gcc-arch")
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'install 'post-install
-           (lambda* (#:key outputs #:allow-other-keys)
-             (define out (assoc-ref outputs "out"))
-             (symlink (string-append out "/lib/libffi-3.2.1/include")
-                      (string-append out "/include"))
-             #t)))))
+       #:configure-flags '("--enable-portable-binary" "--without-gcc-arch")))
     (outputs '("out" "debug"))
     (synopsis "Foreign function call interface library")
     (description
@@ -85,14 +77,13 @@ conversions for values passed between the two languages.")
 (define-public python-cffi
   (package
     (name "python-cffi")
-    (version "1.11.5")
+    (version "1.13.2")
     (source
      (origin
       (method url-fetch)
       (uri (pypi-uri "cffi" version))
       (sha256
-       (base32 "1x3lrj928dcxx1k8k9gf3s4s3jwvzv8mc3kkyg1g7c3a1sc1f3z9"))
-      (patches (search-patches "python-cffi-x87-stack-clean.patch"))))
+       (base32 "0iikq5rn9a405n94c7s2j6kq3jv5qs9q4xyik8657b2py27ix6jr"))))
     (build-system python-build-system)
     (inputs
      `(("libffi" ,libffi)))
@@ -125,7 +116,7 @@ conversions for values passed between the two languages.")
                                "compiler_so='gcc',linker_exe='gcc',"
                                "linker_so='gcc -shared')")))
              (substitute* "testing/cffi0/test_ownlib.py"
-               (("'cc testownlib") "'gcc testownlib"))
+               (("\"cc testownlib") "\"gcc testownlib"))
              (invoke "py.test" "-v" "c/" "testing/")
              #t))
          (add-before 'check 'patch-paths-of-dynamically-loaded-libraries
@@ -151,14 +142,7 @@ conversions for values passed between the two languages.")
                (substitute* "c/test_c.py"
                  (("find_and_load_library\\(['\"]{1}c['\"]{1}")
                   (format #f "find_and_load_library('~a'" libc)))
-               #t)))
-         (add-before 'check 'disable-failing-test
-           ;; This is assumed to be a libffi issue:
-           ;; https://bitbucket.org/cffi/cffi/issues/312/tests-failed-with-armv8
-           (lambda _
-             (substitute* "testing/cffi0/test_ownlib.py"
-               (("ret.left") "ownlib.left"))
-             #t)))))
+               #t))))))
     (home-page "https://cffi.readthedocs.io/")
     (synopsis "Foreign function interface for Python")
     (description "Foreign Function Interface for Python calling C code.")
@@ -199,17 +183,60 @@ project.")
 (define-public ruby-ffi
   (package
     (name "ruby-ffi")
-    (version "1.10.0")
+    (version "1.12.2")
     (source (origin
-              (method url-fetch)
-              (uri (rubygems-uri "ffi" version))
+              ;; Pull from git because the RubyGems release bundles LibFFI,
+              ;; and comes with a gemspec that makes it difficult to unbundle.
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/ffi/ffi")
+                    (commit version)))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "0j8pzj8raxbir5w5k6s7a042sb5k02pg0f8s4na1r5lan901j00p"))))
+                "1cvqsbjr2gfjgqggq9kdx90qhhzr7qkyr9wmxdsfsik6cnxnnpmd"))))
     (build-system ruby-build-system)
-    ;; FIXME: Before running tests the build system attempts to build libffi
-    ;; from sources.
-    (arguments `(#:tests? #f))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'do-not-depend-on-ccache
+           (lambda _
+             (substitute* "spec/ffi/fixtures/GNUmakefile"
+               (("^CCACHE := .*")
+                ""))
+             #t))
+         (replace 'replace-git-ls-files
+           (lambda _
+             ;; Do not try to execute git, or include the (un)bundled LibFFI.
+             (substitute* "ffi.gemspec"
+               (("git ls-files -z")
+                "find * -type f -print0 | sort -z")
+               (("lfs \\+?= .*")
+                "lfs = []\n"))
+             (substitute* "Rakefile"
+               (("LIBFFI_GIT_FILES = .*")
+                "LIBFFI_GIT_FILES = []\n"))
+             #t))
+         (replace 'build
+          (lambda _
+            ;; Tests depend on the native extensions, so we build it
+            ;; beforehand without going through the gem machinery.
+             (invoke "rake" "compile")
+
+             ;; XXX: Ideally we'd use "rake native gem" here to prevent the
+             ;; install phase from needlessly rebuilding everything, but that
+             ;; requires the bundled LibFFI, and the install phase can not
+             ;; deal with such gems anyway.
+             (invoke "gem" "build" "ffi.gemspec")))
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (if tests?
+                 (begin
+                   (setenv "MAKE" "make")
+                   (setenv "CC" "gcc")
+                   (invoke "rspec" "spec"))
+                 (format #t "test suite not run~%"))
+             #t)))))
     (native-inputs
      `(("ruby-rake-compiler" ,ruby-rake-compiler)
        ("ruby-rspec" ,ruby-rspec)

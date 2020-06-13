@@ -74,7 +74,8 @@
                   #t))))
     (build-system gnu-build-system)
     (arguments
-     `(#:configure-flags '("--shared-cares"
+     `(#:configure-flags '("--shared"
+                           "--shared-cares"
                            "--shared-http-parser"
                            "--shared-libuv"
                            "--shared-nghttp2"
@@ -183,8 +184,8 @@
      `(("c-ares" ,c-ares)
        ("http-parser" ,http-parser)
        ("icu4c" ,icu4c)
-       ("libuv" ,libuv/latest)
-       ("nghttp2" ,nghttp2-1.40 "lib")
+       ("libuv" ,libuv)
+       ("nghttp2" ,nghttp2 "lib")
        ("openssl" ,openssl)
        ("zlib" ,zlib)))
     (synopsis "Evented I/O for V8 JavaScript")

@@ -14,7 +14,7 @@
 ;;; Copyright © 2016 Rene Saavedra <rennes@openmailbox.org>
 ;;; Copyright © 2016 Ben Woodcroft <donttrustben@gmail.com>
 ;;; Copyright © 2016 Clément Lassieur <clement@lassieur.org>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016, 2017, 2018, 2019 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2016 Bake Timmons <b3timmons@speedymail.org>
@@ -35,10 +35,13 @@
 ;;; Copyright © 2019 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2019 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2019 Jakob L. Kreuze <zerodaysfordays@sdf.org>
+;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
+;;; Copyright © 2019 Pierre-Moana Levesque <pierre.moana.levesque@gmail.com>
 ;;; Copyright © 2019, 2020 Florian Pelz <pelzflorian@pelzflorian.de>
 ;;; Copyright © 2020 Timotej Lazar <timotej.lazar@araneo.si>
 ;;; Copyright © 2020 Alexandros Theodotou <alex@zrythm.org>
 ;;; Copyright © 2020 Pierre Neidhardt <mail@ambrevar.xyz>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2018, 2019, 2020 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
 ;;; Copyright © 2020 Paul Garlick <pgarlick@tourbillion-technology.com>
 ;;;
@@ -108,6 +111,7 @@
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages guile)
   #:use-module (gnu packages guile-xyz)
+  #:use-module (gnu packages hurd)
   #:use-module (gnu packages java)
   #:use-module (gnu packages jemalloc)
   #:use-module (gnu packages image)
@@ -119,9 +123,11 @@
   #:use-module (gnu packages libunwind)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lisp-xyz)
+  #:use-module (gnu packages lsof)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages markup)
   #:use-module (gnu packages ncurses)
+  #:use-module (gnu packages networking)
   #:use-module (gnu packages nss)
   #:use-module (gnu packages openldap)
   #:use-module (gnu packages openstack)
@@ -223,14 +229,14 @@ Interface} specification.")
     ;; ’stable’ and recommends that “in general you deploy the NGINX mainline
     ;; branch at all times” (https://www.nginx.com/blog/nginx-1-6-1-7-released/)
     ;; Consider updating the nginx-documentation package together with this one.
-    (version "1.17.9")
+    (version "1.19.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nginx.org/download/nginx-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "12dnrdxwnlid0wr797vdxj9z1fmxnk7ib55bznvl2g3mbi05vmkx"))))
+                "1j1n3rlvan6l9j3vw8axbbdm96w7s0x6ygmgqvbplzfd3wbid9j4"))))
     (build-system gnu-build-system)
     (inputs `(("openssl" ,openssl)
               ("pcre" ,pcre)
@@ -272,7 +278,6 @@ Interface} specification.")
                              (string-append "--crossbuild="
                                             system ":" release ":" machine)))))
                (setenv "CC" "gcc")
-               (format #t "environment variable `CC' set to `gcc'~%")
                (format #t "configure flags: ~s~%" flags)
                (apply invoke "./configure" flags)
                #t)))
@@ -354,13 +359,13 @@ documentation.")
       (license license:bsd-2))))
 
 (define-public nginx-documentation
-  ;; This documentation should be relevant for nginx@1.15.9.
-  (let ((revision 2345)
-        (changeset "7ef11708457e"))
+  ;; This documentation should be relevant for the current nginx package.
+  (let ((version "1.19.0")
+        (revision 2549)
+        (changeset "c13a55aae487"))
     (package
       (name "nginx-documentation")
-      (version
-       (simple-format #f "2019-03-01-~A-~A" revision changeset))
+      (version (simple-format #f "~A-~A-~A" version revision changeset))
       (source
        (origin (method hg-fetch)
                (uri (hg-reference
@@ -369,7 +374,7 @@ documentation.")
                (file-name (string-append name "-" version))
                (sha256
                 (base32
-                 "15975jvh53mnsgi4hhgrwdwy3by23v4kxnhy2vnkziq8v7wkmy4y"))))
+                 "0vwwvk6wf8f6c6n6yffmya9a287s6dbx1p739hdl3hwxfyh2ygc5"))))
       (build-system gnu-build-system)
       (arguments
        '(#:tests? #f                    ; no test suite
@@ -1173,7 +1178,7 @@ other systems that want to manipulate WebAssembly files.")
 (define-public websocketpp
   (package
     (name "websocketpp")
-    (version "0.8.1")
+    (version "0.8.2")
     (source
      (origin
        (method git-fetch)
@@ -1182,8 +1187,8 @@ other systems that want to manipulate WebAssembly files.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "12ffczcrryh74c1xssww35ic6yiy2l2xgdd30lshiq9wnzl2brgy"))
-       (patches (search-patches "websocketpp-fix-for-boost-1.70.patch"))))
+        (base32 "1ww4fhl8qf12hkv6jaild8zzsygdspxm1gqpk2f63gv1xfi31wpm"))
+       (patches (search-patches "websocketpp-fix-for-cmake-3.15.patch"))))
     (build-system cmake-build-system)
     (inputs `(("boost" ,boost)
               ("openssl" ,openssl)))
@@ -1269,7 +1274,7 @@ Browsers and other web clients can use it to avoid privacy-leaking
 highlighting parts of the domain in a user interface, and sorting domain lists
 by site.
 
-Libpsl has built-in PSL data for fast access, allows to load PSL data from
+Libpsl has built-in PSL data for fast access, allowing to load PSL data from
 files, checks if a given domain is a public suffix, provides immediate cookie
 domain verification, finds the longest public part of a given domain, finds
 the shortest private part of a given domain, works with international
@@ -1470,7 +1475,7 @@ hash/signatures.")
 (define-public libyaml
   (package
     (name "libyaml")
-    (version "0.1.7")
+    (version "0.2.4")
     (source
      (origin
        (method url-fetch)
@@ -1479,27 +1484,13 @@ hash/signatures.")
              version ".tar.gz"))
        (sha256
         (base32
-         "0a87931cx5m14a1x8rbjix3nz7agrcgndf4h392vm62a4rby9240"))))
+         "0mq5wf17ifcwwxq3kbimhi53jn3fg23vcynqpzxjcz3vfjlfs2nq"))))
     (build-system gnu-build-system)
     (home-page "http://pyyaml.org/wiki/LibYAML")
     (synopsis "YAML 1.1 parser and emitter written in C")
     (description
      "LibYAML is a YAML 1.1 parser and emitter written in C.")
     (license license:expat)))
-
-(define-public libyaml-2.1
-  (package
-    (inherit libyaml)
-    (version "0.2.1")
-    (source
-     (origin
-       (method url-fetch)
-       (uri (string-append
-             "http://pyyaml.org/download/libyaml/yaml-"
-             version ".tar.gz"))
-       (sha256
-        (base32
-         "1karpcfgacgppa82wm2drcfn2kb6q2wqfykf5nrhy20sci2i2a3q"))))))
 
 (define-public libquvi-scripts
   (package
@@ -1584,7 +1575,7 @@ from streaming URLs.  It is a command-line wrapper for the libquvi library.")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "https://archive.apache.org/dist/serf/serf-"
+       (uri (string-append "mirror://apache/serf/serf-"
                            version ".tar.bz2"))
        (sha256
         (base32 "1k47gbgpp52049andr28y28nbwh9m36bbb0g8p0aka3pqlhjv72l"))))
@@ -2615,7 +2606,7 @@ development server with Starman.")
 (define-public perl-cgi
   (package
     (name "perl-cgi")
-    (version "4.46")
+    (version "4.47")
     (source
      (origin
        (method url-fetch)
@@ -2623,7 +2614,7 @@ development server with Starman.")
                            "CGI-" version ".tar.gz"))
        (sha256
         (base32
-         "16225vmdsfa2y7i1ydv7634nd0qxxb0ccwnfszjq58rwqgfri2bq"))))
+         "1a9cylhqsm5icvbg09m21nj0xx4zy5gbk4p74npm1ch3qlryzyyr"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-test-deep" ,perl-test-deep)
@@ -3728,6 +3719,35 @@ possibly-temporary error (like a DNS lookup timeout), it'll wait a few seconds
 and retry a few times.")
     (license license:perl-license)))
 
+(define-public perl-lwpx-paranoidagent
+  (package
+    (name "perl-lwpx-paranoidagent")
+    (version "1.12")
+    (source
+     (origin
+      (method url-fetch)
+      (uri (string-append
+            "mirror://cpan/authors/id/S/SA/SAXJAZMAN/lwp/LWPx-ParanoidAgent-"
+            version ".tar.gz"))
+      (sha256
+       (base32
+        "0gfhw3jbs25yya2dryv8xvyn9myngcfcmsybj7gkq62fnznil16c"))))
+    (build-system perl-build-system)
+    (propagated-inputs
+     `(("perl-libwww" ,perl-libwww)
+       ;; Users should instead make sure SSL_ca_path is set properly.
+       ;; ("perl-mozilla-ca" ,perl-mozilla-ca)
+       ("perl-net-dns" ,perl-net-dns)))
+    (home-page "https://metacpan.org/release/LWPx-ParanoidAgent")
+    (synopsis "Security enhanced subclass of LWP::UserAgent")
+    (description "@code{LWPx::ParanoidAgent} is a class subclassing
+@code{LWP::UserAgent} but paranoid against attackers.  Its purpose is
+to vet requests for a remote resource on behalf of a possibly
+malicious user.  The class can do the same as @code{LWP::UserAgent},
+except that proxy support has been removed.  Support for URI schemes
+is limited to http and https.")
+    (license license:perl-license)))
+
 (define-public perl-net-amazon-s3
   (package
     (name "perl-net-amazon-s3")
@@ -4650,15 +4670,14 @@ you'd expect.")
 (define-public uhttpmock
   (package
     (name "uhttpmock")
-    (version "0.5.1")
+    (version "0.5.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://tecnocode.co.uk/downloads/uhttpmock/"
-                           name "-" version ".tar.xz"))
+                           "uhttpmock-" version ".tar.xz"))
        (sha256
-        (base32
-         "163py4klka423x7li2b685gmg3a6hjf074mlff2ajhmi3l0lm8x6"))))
+        (base32 "0glyx07kxc3s3cx5vp30kfgscl9q6bghcq1zysfyxm24r0h6j58p"))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      `(("gobject-introspection" ,gobject-introspection)
@@ -4715,7 +4734,7 @@ tools they trust (e.g. wget).")
 (define netsurf-buildsystem
   (package
     (name "netsurf-buildsystem")
-    (version "1.7")
+    (version "1.9")
     (source
      (origin
        (method url-fetch)
@@ -4723,7 +4742,7 @@ tools they trust (e.g. wget).")
                            "buildsystem-" version ".tar.gz"))
        (sha256
         (base32
-         "1q23aaycv35ma5471l1gxib8lfq2s9kprrkaqgfc926d04rlbmhw"))))
+         "0alsmaig9ln8dgllb3z63gq90fiz75jz0ic71fi0k0k898qix14k"))))
     (build-system gnu-build-system)
     (inputs `(("perl" ,perl)))
     (arguments
@@ -4779,7 +4798,7 @@ C.  It is developed as part of the NetSurf project.")
 (define-public hubbub
   (package
     (name "hubbub")
-    (version "0.3.6")
+    (version "0.3.7")
     (source
      (origin
        (method url-fetch)
@@ -4787,7 +4806,7 @@ C.  It is developed as part of the NetSurf project.")
                            "libhubbub-" version "-src.tar.gz"))
        (sha256
         (base32
-         "1x3v7xvagx85v9h3pypzc86rcxs4mij87mmcqkp8pq50q6awfmnp"))
+         "1dimfyblmym98qa1b80c5jslv2zk8r44xbdrgrsrw1n9wr9y4yly"))
        (patches (search-patches "hubbub-sort-entities.patch"))))
     (build-system gnu-build-system)
     (native-inputs
@@ -4810,33 +4829,69 @@ NetSurf project.")
 (define-public ikiwiki
   (package
     (name "ikiwiki")
-    (version "3.20190228")
+    (version "3.20200202.3")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "http://snapshot.debian.org/archive/debian/"
-                           "20190301T035241Z/pool/main/i/ikiwiki/ikiwiki_"
-                           version ".orig.tar.xz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "git://git.ikiwiki.info/")
+             (commit version)))
+       (file-name (git-file-name name version))
        (sha256
         (base32
-         "17pyblaqhkb61lxl63bzndiffism8k859p54k3k4sghclq6lsynh"))))
+         "0fphyqzlk9y8v9s89ypsmrnbhyymzrpc2w0liy0n4knc7kk2pabq"))
+       (snippet
+        '(begin
+           ;; The POT file requires write permission during the build
+           ;; phase.
+           (chmod "po/ikiwiki.pot" #o644)
+           #t))))
     (build-system perl-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'include-PERL5LIB-in-wrapper
-           (lambda _
-             (substitute* "IkiWiki/Wrapper.pm"
-               (("^@wrapper\\_hooks")
-                (string-append
-                 "@wrapper_hooks\n"
-                 "        addenv(\"PERL5LIB\", \""
-                 (getenv "PERL5LIB")
-                 "\");")))))
-         (add-after 'patch-source-shebangs 'patch-Makefile
+         (add-after 'patch-source-shebangs 'patch-Makefiles
            (lambda _
              (substitute* "Makefile.PL"
-               (("SYSCONFDIR\\?=") "SYSCONFDIR?=$(PREFIX)"))
+                          (("SYSCONFDIR\\?=") "SYSCONFDIR?=$(PREFIX)"))
+             (with-directory-excursion "po"
+               (substitute* "Makefile"
+                            (("PERL5LIB=") "PERL5LIB=${PERL5LIB}:")))
+             #t))
+         (add-before 'build 'set-modification-times
+           ;; The wiki '--refresh' steps, which are executed during
+           ;; the check phase, require recent timestamps on files in
+           ;; the 'doc' and 'underlays' directories.
+           (lambda _
+             (invoke "find"  "doc" "underlays" "-type" "f" "-exec"
+                     "touch" "{}" "+")
+             #t))
+         (add-before 'check 'pre-check
+           (lambda* (#:key inputs #:allow-other-keys)
+             ;; Six tests use IPC::Run.  For these tests the PERL5LIB
+             ;; variable is needed in the runtime environment and also
+             ;; in the search path list in the setup file.
+             (substitute*
+              '("t/aggregate-file.t" "t/git-cgi.t" "t/git-untrusted.t"
+                "t/passwordauth.t" "t/relativity.t" "t/wrapper-environ.t")
+              (("(.*)\"perl\"(.*)$" _ prefix suffix)
+               (string-append prefix "qw(env), 'PERL5LIB='.$ENV{PERL5LIB}"
+                              ", qw(perl)" suffix))
+              (("(.*) PERL5LIB=(.*) perl(.*)$" _ prefix middle suffix)
+               (string-append prefix "), 'PERL5LIB='.$ENV{PERL5LIB}.':"
+                              middle "', qw(perl" suffix))
+              (("(.*)setup(.* )getcwd(.*)$" _ prefix middle suffix)
+               (string-append prefix "setup" middle
+                              "$ENV{PERL5LIB}.':'.getcwd" suffix))
+              (("^ENV(.*): '(.*)$" _ middle suffix)
+               (string-append "ENV" middle
+                              ": '$ENV{PERL5LIB}:" suffix)))
+             ;; XDG_DATA_DIRS is needed by the podcast.t test.
+             (setenv "XDG_DATA_DIRS"
+                     (string-append (assoc-ref inputs "shared-mime-info")
+                                    "/share"))
+             ;; CC is needed by IkiWiki/Wrapper.pm.
+             (setenv "CC" "gcc")
              #t))
          (add-after 'install 'wrap-programs
            (lambda* (#:key outputs #:allow-other-keys)
@@ -4850,10 +4905,6 @@ NetSurf project.")
                #t))))))
     (native-inputs
      `(("which" ,which)
-       ("perl-html-tagset" ,perl-html-tagset)
-       ("perl-timedate" ,perl-timedate)
-       ("perl-xml-sax" ,perl-xml-sax)
-       ("perl-xml-simple" ,perl-xml-simple)
        ("gettext" ,gettext-minimal)
        ("subversion" ,subversion)
        ("git" ,git)
@@ -4862,17 +4913,30 @@ NetSurf project.")
        ("mercurial" ,mercurial)))
     (inputs
      `(("python" ,python-wrapper)
-       ("perl-cgi-formbuilder" ,perl-cgi-formbuilder)
-       ("perl-cgi-session" ,perl-cgi-session)
+       ("perl-authen-passphrase" ,perl-authen-passphrase)
        ("perl-cgi-simple" ,perl-cgi-simple)
        ("perl-db-file" ,perl-db-file)
+       ("perl-file-mimeinfo" ,perl-file-mimeinfo)
+       ("perl-html-tagset" ,perl-html-tagset)
+       ("perl-image-magick" ,perl-image-magick)
+       ("perl-ipc-run" ,perl-ipc-run)
+       ("perl-lwpx-paranoidagent" ,perl-lwpx-paranoidagent)
+       ("perl-xml-feed" ,perl-xml-feed)
+       ("perl-xml-sax" ,perl-xml-sax)
+       ("perl-xml-twig" ,perl-xml-twig)
+       ("po4a" ,po4a)))
+    (propagated-inputs
+     `(("perl-cgi-formbuilder" ,perl-cgi-formbuilder)
+       ("perl-cgi-session" ,perl-cgi-session)
        ("perl-html-parser" ,perl-html-parser)
        ("perl-html-scrubber" ,perl-html-scrubber)
        ("perl-html-template" ,perl-html-template)
-       ("perl-image-magick" ,perl-image-magick)
        ("perl-json" ,perl-json)
+       ("perl-mail-sendmail" ,perl-mail-sendmail)
        ("perl-text-markdown-discount" ,perl-text-markdown-discount)
+       ("perl-timedate" ,perl-timedate)
        ("perl-uri" ,perl-uri)
+       ("perl-xml-simple" ,perl-xml-simple)
        ("perl-yaml-libyaml" ,perl-yaml-libyaml)))
     (home-page "https://ikiwiki.info/")
     (synopsis "Wiki compiler, capable of generating HTML")
@@ -4885,7 +4949,7 @@ commenting.")
 (define-public libwapcaplet
   (package
     (name "libwapcaplet")
-    (version "0.4.2")
+    (version "0.4.3")
     (source
      (origin
        (method url-fetch)
@@ -4893,7 +4957,7 @@ commenting.")
                            "libwapcaplet-" version "-src.tar.gz"))
        (sha256
         (base32
-         "1fjwzbn7j8bi1b9bvwxsy3i2cr6byq2s2d29866801pjnf528g86"))))
+         "0p0c2q9lsj4vs97aa7vjllfhw33zv3dpysdkjblzhib6dpfs2alv"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)
@@ -4911,7 +4975,7 @@ developed as part of the Netsurf project.")
 (define-public libcss
   (package
     (name "libcss")
-    (version "0.9.0")
+    (version "0.9.1")
     (source
      (origin
        (method url-fetch)
@@ -4919,7 +4983,7 @@ developed as part of the Netsurf project.")
                            "libcss-" version "-src.tar.gz"))
        (sha256
         (base32
-         "1vw9j3d2mr4wbvs8fyqmgslkbxknvac10456775hflxxcivbm3xr"))))
+         "1p66sdiiqm7w4jkq23hsf08khsnmq93hshh9f9m8sbirjdpf3p6j"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)
@@ -4979,7 +5043,7 @@ in which the loaded data is arranged in memory.")
 (define-public libdom
   (package
     (name "libdom")
-    (version "0.4.0")
+    (version "0.4.1")
     (source
      (origin
        (method url-fetch)
@@ -4987,7 +5051,7 @@ in which the loaded data is arranged in memory.")
                            "libdom-" version "-src.tar.gz"))
        (sha256
         (base32
-         "1ixkqsl3f7dl1kajksm0c231w1v5xy8z6hm3v67hgm9nh4qcvfcy"))))
+         "0jpg5hx3y0mdxk5szd47dyijqimd2321brbqk2620pp5f4j0gvlq"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)
@@ -5046,7 +5110,7 @@ project.")
 (define-public libnsbmp
   (package
     (name "libnsbmp")
-    (version "0.1.5")
+    (version "0.1.6")
     (source
      (origin
        (method url-fetch)
@@ -5054,7 +5118,7 @@ project.")
                            name "-" version "-src.tar.gz"))
        (sha256
         (base32
-         "0lib2m07d1i0k80m4blkwnj0g7rha4jbm5vrgd0wwbkyfa0hvk35"))))
+         "0krjg69a2amxjsahdgm3wmy9ngnyr3gfs2a1zhdlbvb0z1jr7i3r"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)))
@@ -5092,7 +5156,7 @@ C.  It is developed as part of the NetSurf project.")
 (define-public libnslog
   (package
     (name "libnslog")
-    (version "0.1.2")
+    (version "0.1.3")
     (source
      (origin
        (method url-fetch)
@@ -5100,12 +5164,12 @@ C.  It is developed as part of the NetSurf project.")
                            "libnslog-" version "-src.tar.gz"))
        (sha256
         (base32
-         "1ggs6xvxp8fbg5w8pifalipm458ygr9ab6j2yvj8fnnmxwvdh4jd"))))
+         "1l2k0kdv9iv18svhv360vszjavhl4g09cp8a8yb719pgsylxr67w"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)
        ("pkg-config" ,pkg-config)
-       ("check" ,check-0.12)            ; For tests
+       ("check" ,check)                 ; For tests
        ("bison" ,bison)
        ("flex" ,flex)))
     (arguments netsurf-buildsystem-arguments)
@@ -5120,7 +5184,7 @@ client applications.  It is developed as part of the NetSurf project.")
 (define-public libnsutils
   (package
     (name "libnsutils")
-    (version "0.0.5")
+    (version "0.1.0")
     (source
      (origin
        (method url-fetch)
@@ -5128,7 +5192,7 @@ client applications.  It is developed as part of the NetSurf project.")
                            name "-" version "-src.tar.gz"))
        (sha256
         (base32
-         "09w1rixps1iiq6wirjwxmd6h87llvjzvw565rahjb3rlyhcplfqf"))))
+         "1w5fyy2i60a3v3if3iqcn9sy9sycx6966rcx53v85gja6hb6a33r"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)))
@@ -5143,7 +5207,7 @@ developed as part of the NetSurf project.")
 (define-public libnspsl
   (package
     (name "libnspsl")
-    (version "0.1.5")
+    (version "0.1.6")
     (source
      (origin
        (method url-fetch)
@@ -5151,7 +5215,7 @@ developed as part of the NetSurf project.")
                            "libnspsl-" version "-src.tar.gz"))
        (sha256
         (base32
-         "0siq8zjfxv75i9fw6q5hkaijpdm1w3zskd5qk6vsvz8cqan4vifd"))))
+         "02q28n5i6fwqcz1nn167rb71k1q95mx38mfah6zi1lvqrc2q5ifk"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)))
@@ -5166,7 +5230,7 @@ Public Suffix List.  It is developed as part of the NetSurf project.")
 (define-public nsgenbind
   (package
     (name "nsgenbind")
-    (version "0.7")
+    (version "0.8")
     (source
      (origin
        (method url-fetch)
@@ -5174,7 +5238,7 @@ Public Suffix List.  It is developed as part of the NetSurf project.")
                            "nsgenbind-" version "-src.tar.gz"))
        (sha256
         (base32
-         "0rplmky4afsjwiwh7grkmcdmzg86zksa55j93dvq92f91yljwqqq"))))
+         "1cqwgwca49jvmijwiyaab2bwxicgxdrnlpinf8kp3nha02nm73ad"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)
@@ -5194,7 +5258,7 @@ w3c webidl files and a binding configuration file.")
 (define-public netsurf
   (package
     (name "netsurf")
-    (version "3.9")
+    (version "3.10")
     (source
      (origin
        (method url-fetch)
@@ -5202,7 +5266,7 @@ w3c webidl files and a binding configuration file.")
                            "releases/source/netsurf-" version "-src.tar.gz"))
        (sha256
         (base32
-         "1hzcm2s2wh5sapgr000lg63hcdbj6hyajxl43xa1x80kc5piqbyp"))
+         "0plra64c5xyiw12yx2q13brxsv8apmany97zqa2lcqckw4ll8j1n"))
        (patches (search-patches "netsurf-system-utf8proc.patch"
                                 "netsurf-y2038-tests.patch"
                                 "netsurf-longer-test-timeout.patch"
@@ -5223,7 +5287,7 @@ w3c webidl files and a binding configuration file.")
        ("openssl" ,openssl)
        ("utf8proc" ,utf8proc)
        ("libpng" ,libpng)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libcss" ,libcss)
        ("libdom" ,libdom)
        ("libnsbmp" ,libnsbmp)
@@ -5269,18 +5333,18 @@ w3c webidl files and a binding configuration file.")
                  (display (read-line in 'concat) out)
                  (sxml->xml
                   (let rec ((sxml (xml->sxml in
-					     #:default-entity-handler
-					     (lambda (port name)
-					       (string-append "<ENTITY>"
-							      (symbol->string name)
-							      "</ENTITY>")))))
+                                             #:default-entity-handler
+                                             (lambda (port name)
+                                               (string-append "<ENTITY>"
+                                                              (symbol->string name)
+                                                              "</ENTITY>")))))
                     ;; We'd like to use sxml-match here, but it can't
                     ;; match against generic tag symbols...
                     (match sxml
                       (`(div (@ (class "links")) . ,rest)
                        '())
-		      (`(ENTITY ,ent)
-		       `(*ENTITY* ,ent))
+                      (`(ENTITY ,ent)
+                       `(*ENTITY* ,ent))
                       ((x ...)
                        (map rec x))
                       (x x)))
@@ -5422,6 +5486,60 @@ runs in a terminal or through your browser.  It provides fast and valuable
 HTTP statistics for system administrators that require a visual server report
 on the fly.")
     (license license:x11)))
+
+(define-public hitch
+  (package
+    (name "hitch")
+    (version "1.5.2")
+    (home-page "https://hitch-tls.org/")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append home-page "source/hitch-" version ".tar.gz"))
+              (sha256
+               (base32
+                "1nnzqqigfw78nqhp81a72x1s8d6v49ayw4w5df0zzm2cb1jgv95i"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (add-before 'check 'pre-check
+                    (lambda _
+                      ;; Most tests attempts to access hitch-tls.org which is
+                      ;; unavailable in the build container.  Run them against
+                      ;; a dummy local web server instead.
+                      (for-each (lambda (test)
+                                  (substitute* test
+                                    (("\\[hitch-tls\\.org\\]:80")
+                                     "[localhost]:8000")))
+                                (find-files "src/tests" "\\.sh$"))
+                      (system "python3 -m http.server &")
+
+                      ;; The build container does not reap zombie processes,
+                      ;; causing stop_hitch to hang indefinitely while waiting
+                      ;; for the process to terminate because 'kill -0' never
+                      ;; succeeds.  Use a different test to see whether the
+                      ;; process has shut down.
+                      (substitute* "src/tests/hitch_test.sh"
+                        (("kill -0 \"\\$HITCH_PID\"")
+                         "$(ps -p $HITCH_PID -o state= | grep -qv '^Z$')"))
+                      #t)))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+
+       ;; For tests.
+       ("curl" ,curl)
+       ("egrep" ,grep)
+       ("lsof" ,lsof)
+       ("python" ,python)))
+    (inputs
+     `(("libev" ,libev)
+       ("openssl" ,openssl)))
+    (synopsis "Scalable TLS proxy")
+    (description
+     "Hitch is a performant TLS proxy based on @code{libev}.  It terminates
+SSL/TLS connections and forwards the unencrypted traffic to a backend such
+as a web server.  It is designed to handle many thousand connections on
+multicore machines.")
+    (license license:bsd-2)))
 
 (define-public httptunnel
   (package
@@ -5586,15 +5704,15 @@ configuration language.")
   (package
     (name "varnish-modules")
     (home-page "https://github.com/varnish/varnish-modules")
-    (version "0.15.0")
+    (version "0.16.0")
     (source (origin
               (method url-fetch)
-              (uri (string-append "https://download.varnish-software.com"
-                                  "/varnish-modules/varnish-modules-"
-                                  version ".tar.gz"))
+              (uri (string-append "https://github.com/varnish/varnish-modules"
+                                  "/releases/download/varnish-modules-" version
+                                  "/varnish-modules-" version ".tar.gz"))
               (sha256
                (base32
-                "09li9lqa1kb275w1rby2zldyg8r9cfcl4qyv53qyd9xbzilrz751"))))
+                "1ph5bplsip4rycql1c2hgbvmrwbgcrgv2ldgfp7saxxbsv5cpcds"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -5604,7 +5722,7 @@ configuration language.")
     (synopsis "Collection of Varnish modules")
     (description
      "This package provides a collection of modules (@dfn{vmods}) for the Varnish
-cache server, extending the @dfn{Varnish Configuration Language} (VCL) with
+cache server, extending the @acronym{VCL, Varnish Configuration Language} with
 additional capabilities.")
     (license license:bsd-2)))
 
@@ -5811,40 +5929,68 @@ into your tests.  It automatically starts up a HTTP server in a separate thread 
 (define-public http-parser
   (package
     (name "http-parser")
-    (version "2.9.3")
+    (version "2.9.4")
     (home-page "https://github.com/nodejs/http-parser")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference (url home-page)
-                                  (commit (string-append "v" version))))
-              (file-name (git-file-name name version))
-              (patches
-               ;; When parsing URLs, treat an empty port (eg
-               ;; `http://hostname:/`) as if it were unspecified.  This patch is
-               ;; applied to Fedora's http-parser and to libgit2's bundled version.
-               (list
-                (origin
-                  (method url-fetch)
-                  (uri (string-append
-                         "https://src.fedoraproject.org/rpms/http-parser/raw/"
-                         "e89b4c4e2874c19079a5a1a2d2ccc61b551aa289/"
-                         "f/0001-url-treat-empty-port-as-default.patch"))
-                  (sha256
-                   (base32
-                    "0pbxf2nq9pcn299k2b2ls8ldghaqln9glnp79gi57mamx4iy0f6g")))))
-              (sha256
-               (base32
-                "189zi61vczqgmqjd2myjcjbbi5icrk7ccs0kn6nj8hxqiv5j3811"))))
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference (url home-page)
+                           (commit (string-append "v" version))))
+       (sha256
+        (base32 "1vda4dp75pjf5fcph73sy0ifm3xrssrmf927qd1x8g3q46z0cv6c"))
+       (file-name (git-file-name name version))
+       (patches
+        (list
+         (origin
+           ;; Treat an empty port (e.g. `http://hostname:/`) when parsing
+           ;; URLs as if no port were specified.  This patch is applied
+           ;; to Fedora's http-parser and to libgit2's bundled version.
+           (method url-fetch)
+           (uri (string-append
+                 "https://src.fedoraproject.org/rpms/http-parser/raw/"
+                 "e89b4c4e2874c19079a5a1a2d2ccc61b551aa289/"
+                 "f/0001-url-treat-empty-port-as-default.patch"))
+           (sha256
+            (base32
+             "0pbxf2nq9pcn299k2b2ls8ldghaqln9glnp79gi57mamx4iy0f6g")))))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
        #:make-flags
        (list (string-append "PREFIX="
                             (assoc-ref %outputs "out"))
-             "CC=gcc" "library")
+             "library"
+             ,@(if (%current-target-system)
+                   '()
+                   '("CC=gcc")))
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure))))
+         ,@(match (%current-system)
+             ("armhf-linux"
+              '((add-before 'check 'apply-assertion.patch
+                  (lambda* (#:key inputs #:allow-other-keys)
+                    (let ((patch (assoc-ref inputs "assertion.patch")))
+                      (invoke "patch" "-p1" "-i" patch)
+                      #t)))))
+             (_ '()))
+         ,@(if (%current-target-system)
+               '((replace 'configure
+                    (lambda* (#:key target #:allow-other-keys)
+                      (substitute* (find-files "." "Makefile")
+                        (("CC\\?=.*$")
+                         (string-append "CC=" target "-gcc\n"))
+                        (("AR\\?=.*$")
+                         (string-append "AR=" target "-ar\n")))
+                      #t)))
+               '((delete 'configure))))))
+    (native-inputs
+     `(,@(match (%current-system)
+           ("armhf-linux"
+            ;; A fix for <https://issues.guix.gnu.org/40604> which in turn
+            ;; breaks i686-linux builds.
+            `(("assertion.patch"
+               ,@(search-patches "http-parser-fix-assertion-on-armhf.patch"))))
+           (_ '()))))
     (synopsis "HTTP request/response parser for C")
     (description "This is a parser for HTTP messages written in C.  It parses
 both requests and responses.  The parser is designed to be used in
@@ -6264,12 +6410,14 @@ technologies.")
     (name "java-eclipse-jetty-test-helper")
     (version "4.2")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/eclipse/jetty.toolchain/"
-                                  "archive/jetty-test-helper-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/eclipse/jetty.toolchain/")
+                     (commit (string-append "jetty-test-helper-" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1jd6r9wc26fa11si4rn2gvy8ml8q4zw1nr6v04mjp8wvwpgvzwx5"))))
+                "1g7cdh03nfwbdxzvwm84ysgvw08xx7431lsjryj2gmf3lrqpizgb"))))
     (build-system ant-build-system)
     (arguments
      `(#:jar-name "eclipse-jetty-test-helper.jar"
@@ -7044,8 +7192,8 @@ derivation by David Revoy from the original MonsterID by Andreas Gohr.")
 (define-public nghttp2
   (package
     (name "nghttp2")
-    (version "1.39.1")
-    (replacement nghttp2-1.39.2)
+    (version "1.40.0")
+    (replacement nghttp2-1.41)
     (source
      (origin
        (method url-fetch)
@@ -7054,7 +7202,7 @@ derivation by David Revoy from the original MonsterID by Andreas Gohr.")
                            "nghttp2-" version ".tar.xz"))
        (sha256
         (base32
-         "0j0lk37k8k3f61r9nw647hg4b22z1753l36n3xrp9x01civ614b7"))))
+         "0wwhwv7cvi1vxpdjwvg0kpa4jzhszclpnwrwfcw728zz53a47z09"))))
     (build-system gnu-build-system)
     (outputs (list "out"
                    "lib"))              ; only libnghttp2
@@ -7068,7 +7216,8 @@ derivation by David Revoy from the original MonsterID by Andreas Gohr.")
      ;; Required to build the tools (i.e. without ‘--enable-lib-only’).
      `(("c-ares" ,c-ares)
        ("jansson" ,jansson)             ; for HPACK tools
-       ("jemalloc" ,jemalloc)           ; fight nghttpd{,x} heap fragmentation
+       ,@(if (hurd-target?) '()
+             `(("jemalloc" ,jemalloc))) ; fight nghttpd{,x} heap fragmentation
        ("libev" ,libev)
        ("libxml2" ,libxml2)             ; for ‘nghttp -a’
        ("openssl" ,openssl)))
@@ -7092,9 +7241,10 @@ derivation by David Revoy from the original MonsterID by Andreas Gohr.")
                 (assoc-ref outputs "lib")))
              #t))
          (add-before 'check 'set-timezone-directory
-           (lambda* (#:key inputs #:allow-other-keys)
-             (setenv "TZDIR" (string-append (assoc-ref inputs "tzdata")
-                                            "/share/zoneinfo"))
+           (lambda* (#:key inputs native-inputs #:allow-other-keys)
+             (setenv "TZDIR" (string-append
+                               (assoc-ref (or native-inputs inputs) "tzdata")
+                               "/share/zoneinfo"))
              #t)))))
     (home-page "https://nghttp2.org/")
     (synopsis "HTTP/2 protocol client, proxy, server, and library")
@@ -7123,36 +7273,23 @@ compressed JSON header blocks.
 @end itemize\n")
     (license license:expat)))
 
-(define nghttp2-1.39.2
+(define-public nghttp2-1.41                       ;fixes CVE-2020-11080
   (package
     (inherit nghttp2)
-    (version "1.39.2")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/nghttp2/nghttp2/"
-                                  "releases/download/v" version "/"
-                                  "nghttp2-" version ".tar.xz"))
-              (sha256
-               (base32
-                "12yfsjghbaypp4w964d45ih9vs38g6anih80wbsflaxx192idlm2"))))))
-
-;; 'Node' requires this newer version, to be removed on the next rebuild cycle.
-(define-public nghttp2-1.40
-  (package
-   (inherit nghttp2)
-   (version "1.40.0")
-   (source (origin
-             (method url-fetch)
-             (uri (string-append "https://github.com/nghttp2/nghttp2/"
-                                 "releases/download/v" version "/"
-                                 "nghttp2-" version ".tar.xz"))
-             (sha256
-              (base32
-               "0wwhwv7cvi1vxpdjwvg0kpa4jzhszclpnwrwfcw728zz53a47z09"))))))
+    (version "1.41.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/nghttp2/nghttp2/"
+                           "releases/download/v" version "/"
+                           "nghttp2-" version ".tar.xz"))
+       (sha256
+        (base32
+         "1hk77vngjmvvzb5y1gi1aqwf6qywrc7yak08zvzb7x81qs6mphmb"))))))
 
 (define-public hpcguix-web
-  (let ((commit "f39c90b35e99e4122b0866ec4337020d61c81508")
-        (revision "4"))
+  (let ((commit "9de63562b06b4aef3a3afe5ecb18d3c91e57ee74")
+        (revision "5"))
     (package
       (name "hpcguix-web")
       (version (git-version "0.0.1" revision commit))
@@ -7164,7 +7301,7 @@ compressed JSON header blocks.
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0idzzlwnaymk6hm5q9nh146h5m6vd8acp32vlmzp6qq08mimfkq7"))))
+                  "0wjgj2s7v2cyz6dx24c111rxs99i84sfvxl4ch8brnh02j2606jz"))))
       (build-system gnu-build-system)
       (arguments
        `(#:modules ((guix build gnu-build-system)
@@ -7222,9 +7359,9 @@ compressed JSON header blocks.
       (inputs
        `(("guix" ,guix)))
       (propagated-inputs
-       `(("guile" ,guile-2.2)
+       `(("guile" ,guile-3.0)
          ("guile-commonmark" ,guile-commonmark)
-         ("guile-json" ,guile-json-3)))
+         ("guile-json" ,guile-json-4)))
       (home-page "https://github.com/UMCUGenetics/hpcguix-web")
       (synopsis "Web interface for cluster deployments of Guix")
       (description "Hpcguix-web provides a web interface to the list of packages

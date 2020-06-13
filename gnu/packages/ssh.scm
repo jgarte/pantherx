@@ -9,10 +9,11 @@
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
-;;; Copyright © 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2018 Manuel Graf <graf@init.at>
 ;;; Copyright © 2019 Gábor Boskovits <boskovits@gmail.com>
-;;; Copyright © 2020 Mathieu Othacehe <m.othacehe@gmail.com>
+;;; Copyright © 2019, 2020 Mathieu Othacehe <m.othacehe@gmail.com>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -131,14 +132,15 @@ a server that supports the SSH-2 protocol.")
 (define-public openssh
   (package
    (name "openssh")
-   (version "8.2p1")
+   (version "8.3p1")
    (source (origin
              (method url-fetch)
              (uri (string-append "mirror://openbsd/OpenSSH/portable/"
                                  "openssh-" version ".tar.gz"))
+             (patches (search-patches "openssh-hurd.patch"))
              (sha256
               (base32
-               "0wg6ckzvvklbzznijxkk28fb8dnwyjd0w30ra0afwv6gwr8m34j3"))))
+               "1cl74ghi9y21dc3f4xa0qamb7dhwacbynh1ks9syprrg8zhgpgpj"))))
    (build-system gnu-build-system)
    (native-inputs `(("groff" ,groff)
                     ("pkg-config" ,pkg-config)))
@@ -147,7 +149,7 @@ a server that supports the SSH-2 protocol.")
              ("pam" ,linux-pam)
              ("mit-krb5" ,mit-krb5)
              ("zlib" ,zlib)
-             ("xauth" ,xauth)))         ; for 'ssh -X' and 'ssh -Y'
+             ("xauth" ,xauth)))        ; for 'ssh -X' and 'ssh -Y'
    (arguments
     `(#:test-target "tests"
       ;; Otherwise, the test scripts try to use a nonexistent directory and
@@ -167,7 +169,15 @@ a server that supports the SSH-2 protocol.")
                           "--with-libedit"
 
                           ;; Enable PAM support in sshd.
-                          "--with-pam")
+                          "--with-pam"
+
+                          ;; "make install" runs "install -s" by default,
+                          ;; which doesn't work for cross-compiled binaries
+                          ;; because it invokes 'strip' instead of
+                          ;; 'TRIPLET-strip'.  Work around this.
+                          ,,@(if (%current-target-system)
+                                 '("--disable-strip")
+                                 '()))
 
       #:phases
       (modify-phases %standard-phases
@@ -225,6 +235,15 @@ Additionally, various channel-specific options can be negotiated.")
    (license (license:non-copyleft "file://LICENSE"
                                "See LICENSE in the distribution."))
    (home-page "https://www.openssh.com/")))
+
+;; OpenSSH without X support. This allows to use OpenSSH without dragging X
+;; libraries to the closure.
+(define-public openssh-sans-x
+  (package
+    (inherit openssh)
+    (name "openssh-sans-x")
+    (inputs (alist-delete "xauth" (package-inputs openssh)))
+    (synopsis "OpenSSH client and server without X11 support")))
 
 (define-public guile-ssh
   (package
@@ -293,8 +312,8 @@ Additionally, various channel-specific options can be negotiated.")
                      ("texinfo" ,texinfo)
                      ("pkg-config" ,pkg-config)
                      ("which" ,which)
-                     ("guile" ,guile-2.2))) ;needed when cross-compiling.
-    (inputs `(("guile" ,guile-2.2)
+                     ("guile" ,guile-3.0))) ;needed when cross-compiling.
+    (inputs `(("guile" ,guile-3.0)
               ("libssh" ,libssh)
               ("libgcrypt" ,libgcrypt)))
     (synopsis "Guile bindings to libssh")
@@ -314,15 +333,18 @@ libssh library.")
     (inputs `(("guile" ,guile-2.0)
               ,@(alist-delete "guile" (package-inputs guile-ssh))))))
 
-(define-public guile3.0-ssh
+(define-public guile2.2-ssh
   (package
     (inherit guile-ssh)
-    (name "guile3.0-ssh")
+    (name "guile2.2-ssh")
     (native-inputs
-     `(("guile" ,guile-next) ;needed when cross-compiling.
+     `(("guile" ,guile-2.2) ;needed when cross-compiling.
        ,@(alist-delete "guile" (package-native-inputs guile-ssh))))
-    (inputs `(("guile" ,guile-next)
+    (inputs `(("guile" ,guile-2.2)
               ,@(alist-delete "guile" (package-inputs guile-ssh))))))
+
+(define-public guile3.0-ssh
+  (deprecated-package "guile3.0-ssh" guile-ssh))
 
 (define-public corkscrew
   (package

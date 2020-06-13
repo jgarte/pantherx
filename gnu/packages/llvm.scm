@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2014, 2016, 2018 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2015, 2017, 2018, 2019 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2015, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016 Dennis Mungai <dmngaie@gmail.com>
 ;;; Copyright © 2016, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Roel Janssen <roel@gnu.org>
@@ -14,6 +14,7 @@
 ;;; Copyright © 2019 Arm Ltd <David.Truby@arm.com>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2019 Brett Gilio <brettg@gnu.org>
+;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -75,7 +76,8 @@ as \"x86_64-linux\"."
              ("powerpc"     => "PowerPC")
              ("riscv"       => "RISCV")
              ("x86_64"      => "X86")
-             ("i686"        => "X86"))))
+             ("i686"        => "X86")
+             ("i586"        => "X86"))))
 
 (define (llvm-download-uri component version)
   (if (version>=? version "9.0.1")
@@ -84,18 +86,19 @@ as \"x86_64-linux\"."
       (string-append "https://releases.llvm.org/" version "/" component "-"
                      version ".src.tar.xz")))
 
-(define-public llvm
+(define-public llvm-10
   (package
     (name "llvm")
-    (version "9.0.1")
+    (version "10.0.0")
     (source
      (origin
       (method url-fetch)
       (uri (llvm-download-uri "llvm" version))
       (sha256
        (base32
-        "16hwp3qa54c3a3v7h8nlw0fh5criqh0hlr1skybyk0cz70gyx880"))))
+        "1pwgm6cr0xr5a0hrbqs1zvsvvjvy0yq1y47c96804wcs795s90yz"))))
     (build-system cmake-build-system)
+    (outputs '("out" "opt-viewer"))
     (native-inputs
      `(("python" ,python-2) ;bytes->str conversion in clang>=3.7 needs python-2
        ("perl"   ,perl)))
@@ -113,16 +116,27 @@ as \"x86_64-linux\"."
 
        ;; Don't use '-g' during the build, to save space.
        #:build-type "Release"
-       #:phases (modify-phases %standard-phases
-                  (add-before 'build 'shared-lib-workaround
-                    ;; Even with CMAKE_SKIP_BUILD_RPATH=FALSE, llvm-tblgen
-                    ;; doesn't seem to get the correct rpath to be able to run
-                    ;; from the build directory.  Set LD_LIBRARY_PATH as a
-                    ;; workaround.
-                    (lambda _
-                      (setenv "LD_LIBRARY_PATH"
-                              (string-append (getcwd) "/lib"))
-                      #t)))))
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'build 'shared-lib-workaround
+           ;; Even with CMAKE_SKIP_BUILD_RPATH=FALSE, llvm-tblgen
+           ;; doesn't seem to get the correct rpath to be able to run
+           ;; from the build directory.  Set LD_LIBRARY_PATH as a
+           ;; workaround.
+           (lambda _
+             (setenv "LD_LIBRARY_PATH"
+                     (string-append (getcwd) "/lib"))
+             #t))
+         (add-after 'install 'install-opt-viewer
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (opt-viewer-out (assoc-ref outputs "opt-viewer"))
+                    (opt-viewer-share-dir (string-append opt-viewer-out "/share"))
+                    (opt-viewer-dir (string-append opt-viewer-share-dir "/opt-viewer")))
+               (mkdir-p opt-viewer-share-dir)
+               (rename-file (string-append out "/share/opt-viewer")
+                            opt-viewer-dir))
+             #t)))))
     (home-page "https://www.llvm.org")
     (synopsis "Optimizing compiler infrastructure")
     (description
@@ -152,7 +166,28 @@ of programming tools as well as libraries with equivalent functionality.")
     (arguments
      `(;; Don't use '-g' during the build to save space.
        #:build-type "Release"
-       #:tests? #f))                    ; Tests require gtest
+       #:tests? #f                      ; Tests require gtest
+       #:modules ((srfi srfi-1)
+                  (ice-9 match)
+                  ,@%cmake-build-system-modules)
+       #:phases (modify-phases (@ (guix build cmake-build-system) %standard-phases)
+                  (add-after 'set-paths 'hide-glibc
+                    ;; Work around https://issues.guix.info/issue/36882.  We need to
+                    ;; remove glibc from CPLUS_INCLUDE_PATH so that the one hardcoded
+                    ;; in GCC, at the bottom of GCC include search-path is used.
+                    (lambda* (#:key inputs #:allow-other-keys)
+                      (let* ((filters '("libc"))
+                             (input-directories
+                              (filter-map (lambda (input)
+                                            (match input
+                                              ((name . dir)
+                                               (and (not (member name filters))
+                                                    dir))))
+                                          inputs)))
+                        (set-path-environment-variable "CPLUS_INCLUDE_PATH"
+                                                       '("include")
+                                                       input-directories)
+                        #t))))))
     (home-page "https://compiler-rt.llvm.org")
     (synopsis "Runtime library for Clang/LLVM")
     (description
@@ -166,7 +201,11 @@ compiler.  In LLVM this library is called \"compiler-rt\".")
     (supported-systems (delete "mips64el-linux" %supported-systems))))
 
 (define* (clang-from-llvm llvm clang-runtime hash
-                          #:key (patches '()))
+                          #:key (patches '()) tools-extra)
+  "Produce Clang with dependencies on LLVM and CLANG-RUNTIME, and applying the
+given PATCHES.  When TOOLS-EXTRA is given, it must point to the
+'clang-tools-extra' tarball, which contains code for 'clang-tidy', 'pp-trace',
+'modularize', and other tools."
   (package
     (name "clang")
     (version (package-version llvm))
@@ -183,11 +222,15 @@ compiler.  In LLVM this library is called \"compiler-rt\".")
     ;; doesn't seem to be any way to do this with clang's autotools-based
     ;; build system.
     (build-system cmake-build-system)
+    (outputs (if tools-extra '("out" "extra") '("out")))
     (native-inputs (package-native-inputs llvm))
     (inputs
      `(("libxml2" ,libxml2)
        ("gcc-lib" ,gcc "lib")
-       ,@(package-inputs llvm)))
+       ,@(package-inputs llvm)
+       ,@(if tools-extra
+             `(("clang-tools-extra" ,tools-extra))
+             '())))
     (propagated-inputs
      `(("llvm" ,llvm)
        ("clang-runtime" ,clang-runtime)))
@@ -208,6 +251,71 @@ compiler.  In LLVM this library is called \"compiler-rt\".")
        #:build-type "Release"
 
        #:phases (modify-phases %standard-phases
+                  ,@(if tools-extra
+                        `((add-after 'unpack 'add-tools-extra
+                            (lambda* (#:key inputs #:allow-other-keys)
+                              ;; Unpack the 'clang-tools-extra' tarball under
+                              ;; tools/.
+                              (let ((extra (assoc-ref inputs
+                                                      "clang-tools-extra")))
+                                (invoke "tar" "xf" extra)
+                                (rename-file ,(string-append
+                                               "clang-tools-extra-"
+                                               (package-version llvm)
+                                               ".src")
+                                             "tools/extra")
+                                #t)))
+                          (add-after 'install 'move-extra-tools
+                            (lambda* (#:key outputs #:allow-other-keys)
+                              ;; Move the extra tools to the "extra" output.
+                              ;; These programs alone weigh in at 296 MiB,
+                              ;; because they statically-link a whole bunch of
+                              ;; Clang libraries.
+                              (let* ((out   (assoc-ref outputs "out"))
+                                     (extra (assoc-ref outputs "extra"))
+                                     (bin   (string-append out "/bin"))
+                                     (bin*  (string-append extra "/bin"))
+                                     (lib   (string-append out "/lib")))
+                                (define (move program)
+                                  (rename-file (string-append bin "/" program)
+                                               (string-append bin* "/"
+                                                              program)))
+
+                                (mkdir-p bin*)
+                                (for-each move
+                                          '("clang-apply-replacements"
+                                            "clang-change-namespace"
+                                            "clangd"
+                                            "clang-doc"
+                                            "clang-include-fixer"
+                                            "clang-move"
+                                            "clang-query"
+                                            "clang-reorder-fields"
+                                            "clang-tidy"
+                                            "find-all-symbols"
+                                            "modularize"
+                                            "pp-trace"))
+
+                                ;; Remove MiBs of .a files coming from
+                                ;; 'clang-tools-extra'.
+                                (for-each (lambda (component)
+                                            (delete-file
+                                             (string-append lib "/libclang"
+                                                            component ".a")))
+                                          '("ApplyReplacements"
+                                            "ChangeNamespace"
+                                            "Daemon"
+                                            "DaemonTweaks"
+                                            "Doc"
+                                            "IncludeFixer"
+                                            "IncludeFixerPlugin"
+                                            "Move"))
+                                (for-each delete-file
+                                          (find-files
+                                           lib
+                                           "^(libfindAllSymbols|libclangTidy)"))
+                                #t))))
+                        '())
                   (add-after 'unpack 'add-missing-triplets
                     (lambda _
                       ;; Clang iterates through known triplets to search for
@@ -306,8 +414,11 @@ compiler.  In LLVM this library is called \"compiler-rt\".")
     ;; Clang supports the same environment variables as GCC.
     (native-search-paths
      (list (search-path-specification
-            (variable "CPATH")
+            (variable "C_INCLUDE_PATH")
             (files '("include")))
+           (search-path-specification
+            (variable "CPLUS_INCLUDE_PATH")
+            (files '("include/c++" "include")))
            (search-path-specification
             (variable "LIBRARY_PATH")
             (files '("lib" "lib64")))))
@@ -368,23 +479,58 @@ output), and Binutils.")
               ("libc-debug" ,glibc "debug")
               ("libc-static" ,glibc "static")))))
 
-(define-public clang-runtime
+(define-public clang-runtime-10
   (clang-runtime-from-llvm
-   llvm
-   "0xwh79g3zggdabxgnd0bphry75asm1qz7mv3hcqihqwqr6aspgy2"))
+   llvm-10
+   "0x9c531k6ww21s2mkdwqx1vbdjmx6d4wmfb8gdbj0wqa796sczba"))
 
-(define-public clang
-  (clang-from-llvm llvm clang-runtime
+(define-public clang-10
+  (clang-from-llvm llvm-10 clang-runtime-10
+                   "08fbxa2a0kr3ni35ckppj0kyvlcyaywrhpqwcdrdy0z900mhcnw8"
+                   #:patches '("clang-10.0-libc-search-path.patch")
+                   #:tools-extra
+                   (origin
+                     (method url-fetch)
+                     (uri (llvm-download-uri "clang-tools-extra"
+                                             (package-version llvm-10)))
+                     (sha256
+                      (base32
+                       "074ija5s2jsdn0k035r2dzmryjmqxdnyg4xwvaqych2bazv8rpxc")))))
+
+(define-public clang-toolchain-10
+  (make-clang-toolchain clang-10))
+
+(define-public llvm-9
+  (package
+    (inherit llvm-10)
+    (version "9.0.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (llvm-download-uri "llvm" version))
+       (sha256
+        (base32
+         "16hwp3qa54c3a3v7h8nlw0fh5criqh0hlr1skybyk0cz70gyx880"))))))
+
+(define-public clang-runtime-9
+  (clang-runtime-from-llvm
+   llvm-9
+   "0xwh79g3zggdabxgnd0bphry75asm1qz7mv3hcqihqwqr6aspgy2"
+   '("clang-runtime-9-libsanitizer-mode-field.patch")))
+
+(define-public clang-9
+  (clang-from-llvm llvm-9 clang-runtime-9
                    "0ls2h3iv4finqyflyhry21qhc9cm9ga7g1zq21020p065qmm2y2p"
                    #:patches '("clang-9.0-libc-search-path.patch")))
 
-(define-public clang-toolchain
-  (make-clang-toolchain clang))
+(define-public clang-toolchain-9
+  (make-clang-toolchain clang-9))
 
-(define-public llvm-9 llvm)
-(define-public clang-runtime-9 clang-runtime)
-(define-public clang-9 clang)
-(define-public clang-toolchain-9 clang-toolchain)
+;; Default LLVM and Clang version.
+(define-public llvm llvm-9)
+(define-public clang-runtime clang-runtime-9)
+(define-public clang clang-9)
+(define-public clang-toolchain clang-toolchain-9)
 
 (define-public llvm-8
   (package
@@ -401,7 +547,8 @@ output), and Binutils.")
 (define-public clang-runtime-8
   (clang-runtime-from-llvm
    llvm-8
-   "1c919wsm17xnv7lr8bhpq2wkq8113lzlw6hzhfr737j59x3wfddl"))
+   "1c919wsm17xnv7lr8bhpq2wkq8113lzlw6hzhfr737j59x3wfddl"
+   '("clang-runtime-9-libsanitizer-mode-field.patch")))
 
 (define-public clang-8
   (clang-from-llvm llvm-8 clang-runtime-8
@@ -425,7 +572,8 @@ output), and Binutils.")
 (define-public clang-runtime-7
   (clang-runtime-from-llvm
    llvm-7
-   "065ybd8fsc4h2hikbdyricj6pyv4r7r7kpcikhb2y5zf370xybkq"))
+   "065ybd8fsc4h2hikbdyricj6pyv4r7r7kpcikhb2y5zf370xybkq"
+   '("clang-runtime-9-libsanitizer-mode-field.patch")))
 
 (define-public clang-7
   (clang-from-llvm llvm-7 clang-runtime-7
@@ -449,7 +597,8 @@ output), and Binutils.")
 (define-public clang-runtime-6
   (clang-runtime-from-llvm
    llvm-6
-   "1fcr3jn24yr8lh36nc0c4ikli4744i2q9m1ik67p1jymwwaixkgl"))
+   "1fcr3jn24yr8lh36nc0c4ikli4744i2q9m1ik67p1jymwwaixkgl"
+   '("clang-runtime-9-libsanitizer-mode-field.patch")))
 
 (define-public clang-6
   (clang-from-llvm llvm-6 clang-runtime-6
@@ -469,13 +618,20 @@ output), and Binutils.")
       (uri (llvm-download-uri "llvm" version))
       (sha256
        (base32
-        "1vi9sf7rx1q04wj479rsvxayb6z740iaz3qniwp266fgp5a07n8z"))))))
+        "1vi9sf7rx1q04wj479rsvxayb6z740iaz3qniwp266fgp5a07n8z"))))
+    (outputs '("out"))
+    (arguments
+     (substitute-keyword-arguments (package-arguments llvm)
+       ((#:phases phases)
+        `(modify-phases ,phases
+           (delete 'install-opt-viewer)))))))
 
 (define-public clang-runtime-3.9.1
   (clang-runtime-from-llvm
    llvm-3.9.1
    "16gc2gdmp5c800qvydrdhsp0bzb97s8wrakl6i8a4lgslnqnf2fk"
-   '("clang-runtime-asan-build-fixes.patch"
+   '("clang-runtime-3.9-libsanitizer-mode-field.patch"
+     "clang-runtime-asan-build-fixes.patch"
      "clang-runtime-esan-build-fixes.patch"
      "clang-3.5-libsanitizer-ustat-fix.patch")))
 
@@ -501,6 +657,7 @@ output), and Binutils.")
    llvm-3.8
    "0p0y85c7izndbpg2l816z7z7558axq11d5pwkm4h11sdw7d13w0d"
    '("clang-runtime-asan-build-fixes.patch"
+     "clang-runtime-3.8-libsanitizer-mode-field.patch"
      "clang-3.5-libsanitizer-ustat-fix.patch")))
 
 (define-public clang-3.8
@@ -524,6 +681,7 @@ output), and Binutils.")
    llvm-3.7
    "10c1mz2q4bdq9bqfgr3dirc6hz1h3sq8573srd5q5lr7m7j6jiwx"
    '("clang-runtime-asan-build-fixes.patch"
+     "clang-runtime-3.8-libsanitizer-mode-field.patch"
      "clang-3.5-libsanitizer-ustat-fix.patch")))
 
 (define-public clang-3.7
@@ -546,7 +704,7 @@ output), and Binutils.")
   (clang-runtime-from-llvm
    llvm-3.6
    "11qx8d3pbfqjaj2x207pvlvzihbs1z2xbw4crpz7aid6h1yz6bqg"
-   '("clang-runtime-asan-build-fixes.patch")))
+     '("clang-runtime-asan-build-fixes.patch")))
 
 (define-public clang-3.6
   (clang-from-llvm llvm-3.6 clang-runtime-3.6
@@ -601,12 +759,16 @@ output), and Binutils.")
                    #:patches '("clang-3.5-libc-search-path.patch")))
 
 (define-public llvm-for-extempore
-  (package (inherit llvm-3.7)
+  (package (inherit llvm-3.8)
     (name "llvm-for-extempore")
     (source
      (origin
-       (inherit (package-source llvm-3.7))
-       (patches (list (search-patch "llvm-for-extempore.patch")))))
+       (method url-fetch)
+       (uri (string-append "http://extempore.moso.com.au/extras/"
+                           "llvm-3.8.0.src-patched-for-extempore.tar.xz"))
+       (sha256
+        (base32
+         "1svdl6fxn8l01ni8mpm0bd5h856ahv3h9sdzgmymr6fayckjvqzs"))))
     ;; Extempore refuses to build on architectures other than x86_64
     (supported-systems '("x86_64-linux"))))
 
@@ -622,6 +784,23 @@ output), and Binutils.")
         (base32
          "0d2bj5i6mk4caq7skd5nsdmz8c2m5w5anximl5wz3x32p08zz089"))))
     (build-system cmake-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases (@ (guix build cmake-build-system) %standard-phases)
+         (add-after 'set-paths 'adjust-CPLUS_INCLUDE_PATH
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((gcc (assoc-ref inputs  "gcc")))
+               ;; Hide GCC's C++ headers so that they do not interfere with
+               ;; the ones we are attempting to build.
+               (setenv "CPLUS_INCLUDE_PATH"
+                       (string-join (delete (string-append gcc "/include/c++")
+                                            (string-split (getenv "CPLUS_INCLUDE_PATH")
+                                                          #\:))
+                                    ":"))
+               (format #t
+                       "environment variable `CPLUS_INCLUDE_PATH' changed to ~a~%"
+                       (getenv "CPLUS_INCLUDE_PATH"))
+               #t))))))
     (native-inputs
      `(("clang" ,clang)
        ("llvm" ,llvm)))
@@ -768,35 +947,6 @@ with that of libgomp, the GNU Offloading and Multi Processing Library.")
      "This package provides a Python binding to LLVM for use in Numba.")
     (license license:bsd-3)))
 
-(define (package-elisp-from-package source-package package-name
-                                    source-files)
-  "Return a package definition named PACKAGE-NAME that packages the Emacs Lisp
-SOURCE-FILES found in SOURCE-PACKAGE."
-  (let ((orig (package-source source-package)))
-    (package
-      (inherit source-package)
-      (name package-name)
-      (build-system emacs-build-system)
-      (source (origin
-                (method (origin-method orig))
-                (uri (origin-uri orig))
-                (sha256 (origin-sha256 orig))
-                (file-name (string-append package-name "-"
-                                          (package-version source-package)))
-                (modules '((guix build utils)
-                           (srfi srfi-1)
-                           (ice-9 ftw)))
-                (snippet
-                 `(let* ((source-files (quote ,source-files))
-                         (basenames (map basename source-files)))
-                    (map copy-file
-                         source-files basenames)
-                    (map delete-file-recursively
-                         (fold delete
-                               (scandir ".")
-                               (append '("." "..") basenames)))
-                    #t)))))))
-
 (define-public emacs-clang-format
   (package
     (inherit clang)
@@ -816,7 +966,7 @@ SOURCE-FILES found in SOURCE-PACKAGE."
                   (string-append clang "/bin/clang-format"))))
              #t)))))
     (synopsis "Format code using clang-format")
-    (description "This package allows to filter code through @code{clang-format}
+    (description "This package filters code through @code{clang-format}
 to fix its formatting.  @code{clang-format} is a tool that formats
 C/C++/Obj-C code according to a set of style options, see
 @url{https://clang.llvm.org/docs/ClangFormatStyleOptions.html}.")))

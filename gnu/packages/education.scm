@@ -6,6 +6,8 @@
 ;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018, 2019, 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2020 Robert Smith <robertsmith@posteo.net>
+;;; Copyright © 2020 Guy Fleury Iteriteka <gfleury@disroot.org>
+;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -31,24 +33,28 @@
   #:use-module (gnu packages compression)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages databases)
+  #:use-module (gnu packages flex)
   #:use-module (gnu packages fonts)
   #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages game-development)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
+  #:use-module (gnu packages golang)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages image)
   #:use-module (gnu packages javascript)
   #:use-module (gnu packages kde)
   #:use-module (gnu packages kde-frameworks) ; extra-cmake-modules
   #:use-module (gnu packages mp3)
+  #:use-module (gnu packages ncurses)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
+  #:use-module (gnu packages readline)
   #:use-module (gnu packages sdl)
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages texinfo)
@@ -64,6 +70,7 @@
   #:use-module (guix utils)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
+  #:use-module (guix build-system go)
   #:use-module (guix build-system python)
   #:use-module (guix build-system qt)
   #:use-module (guix build-system trivial)
@@ -110,7 +117,7 @@
        ("texi2html" ,texi2html)
        ("glib:bin" ,glib "bin")
        ("pkg-config" ,pkg-config)))
-    (home-page "http://gcompris.net")
+    (home-page "https://gcompris.net")
     (synopsis "Educational software suite")
     (description "GCompris is an educational software suite comprising of
 numerous activities for children aged 2 to 10.  Some of the activities are
@@ -382,7 +389,10 @@ to open the application in a web browser, for offline usage.")
                             Type=Application~%"
                            out)))
                #t))))))
-    (inputs `(("python-pyqt" ,python-pyqt)))
+    (native-inputs
+     `(("unzip" ,unzip)))
+    (inputs
+     `(("python-pyqt" ,python-pyqt)))
     (synopsis "School tools for physically disabled children")
     (description "ToutEnClic is intended to facilitate the schooling
 of physically disabled children in ordinary schools.  It is both
@@ -602,14 +612,14 @@ Portuguese, Spanish and Italian.")
 (define-public fet
   (package
     (name "fet")
-    (version "5.44.0")
+    (version "5.45.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.lalescu.ro/liviu/fet/download/"
                            "fet-" version ".tar.bz2"))
        (sha256
-        (base32 "13q3b0g1zz885g15gir8fbalvix8sy42v1p429h0751490wq5c3h"))))
+        (base32 "04jns6wc20rz6cp410znsllknhp4zlf4rn8wgv712855nffs42c6"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -628,28 +638,27 @@ Portuguese, Spanish and Italian.")
      `(("qtbase" ,qtbase)))
     (home-page "https://www.lalescu.ro/liviu/fet/")
     (synopsis "Timetabling software")
-    (description "FET is a program for automatically scheduling the
-timetable of a school, high-school or university.  It uses a fast and
-efficient timetabling algorithm.
+    (description
+     "FET is a program for automatically scheduling the timetable of a school,
+high-school or university.  It uses a fast and efficient timetabling
+algorithm.
 
-Usually, FET is able to solve a complicated timetable in maximum 5-20
-minutes.  For simpler timetables, it may take a shorter time, under
-5 minutes (in some cases, a matter of seconds).  For extremely
-difficult timetables, it may take a longer time, a matter of hours.")
+Usually, FET is able to solve a complicated timetable in maximum 5-20 minutes.
+For extremely difficult timetables, it may take a longer time, a matter of
+hours.")
     (license license:agpl3+)))
 
 (define-public klavaro
   (package
     (name "klavaro")
-    (version "3.09")
+    (version "3.10")
     (source
       (origin
         (method url-fetch)
         (uri (string-append "mirror://sourceforge/klavaro/klavaro-"
                             version ".tar.bz2"))
         (sha256
-         (base32
-          "12gml7h45b1w9s318h0d5wxw92h7pgajn2kh57j0ak9saq0yb0wr"))))
+         (base32 "0jnzdrndiq6m0bwgid977z5ghp4q61clwdlzfpx4fd2ml5x3iq95"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("intltool" ,intltool)
@@ -935,3 +944,72 @@ TuxMath also includes Factoroids, a game that gives practice in
 factoring numbers and simplifying fractions, as well as zapping rocks
 floating through space.")
     (license license:gpl3+)))
+
+(define-public mdk
+  (package
+    (name "mdk")
+    (version "1.2.10")
+    (source
+    (origin
+      (method url-fetch)
+      (uri (string-append "mirror://gnu/mdk/v1.2.10/mdk-"
+                          version ".tar.gz"))
+      (sha256
+        (base32
+          "1rwcq2b5vvv7318j92nxc5dayj27dpfhzc4rjiv4ccvsc0x35x5h"))))
+   (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags (list "--enable-gui=yes" "-with-readline=yes")))
+    (native-inputs
+     `(("flex" ,flex)
+       ("pkg-config" ,pkg-config)
+       ("intltool" ,intltool)
+       ("ncurses" ,ncurses)))
+   (inputs
+    `(("readline" ,readline)
+      ("glib" ,glib)
+      ("gtk+" ,gtk+)
+      ("pango" ,pango)
+      ("libglade" ,libglade)))
+   (home-page "https://www.gnu.org/software/mdk/")
+    (synopsis "Virtual development environment for Knuth's MIX")
+    (description
+     "GNU MDK is the Mix Development Kit, an emulation of the pedagogical
+computer MIX and its assembly language MIXAL.  MIX has a virtual CPU with
+standard features such as registers, memory cells, an overflow toggle,
+comparison flags, input-output devices, and a set of binary instructions.
+The package includes a compiler, a virtual machine, a GUI for the virtual
+machine, and more.")
+    (license license:gpl3+)))
+
+(define-public exercism
+  (package
+    (name "exercism")
+    (version "3.0.13")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/exercism/cli")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "17gvz9a0sn4p36hf4l77bxhhfipf4x998iay31layqwbnzmb4xy7"))
+       (patches (search-patches "exercism-disable-self-update.patch"))))
+    (build-system go-build-system)
+    (arguments
+     `(#:import-path "github.com/exercism/cli/exercism"
+       #:unpack-path "github.com/exercism/cli"))
+    (inputs
+     `(("github.com/blang/semver" ,go-github-com-blang-semver)
+       ("github.com/spf13/cobra" ,go-github-com-spf13-cobra)
+       ("github.com/spf13/pflag" ,go-github-com-spf13-pflag)
+       ("github.com/spf13/viper" ,go-github-com-spf13-viper)
+       ("golang.org/x/net" ,go-golang-org-x-net)
+       ("golang.org/x/text" ,go-golang-org-x-text)))
+    (home-page "https://exercism.io")
+    (synopsis "Mentored learning for programming languages")
+    (description "Commandline client for exercism.io, a free service providing
+mentored learning for programming languages.")
+    (license license:expat)))

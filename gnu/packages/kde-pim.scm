@@ -1,5 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2017, 2019, 2020 Hartmut Goebel <h.goebel@crazy-compilers.com>
+;;; Copyright © 2020 Marius Bakke <marius@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -308,7 +309,10 @@ wrapping notes into KMime::Message objects.")
         (base32 "16qzs2cs4nxwrpwcdgwry95qn6wmg8s1p4w3qajx1ahkgwmsh11s"))))
     (build-system qt-build-system)
     (native-inputs
-     `(("extra-cmake-modules" ,extra-cmake-modules)))
+     `(("extra-cmake-modules" ,extra-cmake-modules)
+
+       ;; For tests.
+       ("dbus" ,dbus)))
     (inputs
      `(("akonadi" ,akonadi)
        ("akonadi-mime" ,akonadi-mime)
@@ -327,7 +331,19 @@ wrapping notes into KMime::Message objects.")
        ("qtbase" ,qtbase)
        ("xapian" ,xapian)))
     (arguments
-     `(#:tests? #f)) ;; TODO: needs dbus
+     `(#:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'disable-failing-test
+                    (lambda _
+                      ;; FIXME: This test fails because it fails to establish
+                      ;; a socket connection, seemingly due to failure during
+                      ;; DBus communication.
+                      (substitute* "agent/autotests/CMakeLists.txt"
+                        ((".*schedulertest\\.cpp.*")
+                         ""))
+                      #t))
+                  (replace 'check
+                    (lambda _
+                      (invoke "dbus-launch" "ctest"))))))
     (home-page "https://api.kde.org/stable/kdepimlibs-apidocs/akonadi/html/")
     (synopsis "Akonadi search library")
     (description "This package provides a library used to search in the
@@ -623,7 +639,7 @@ functions for accessing calendar data using the kcalcore API.")
        ("qtxmlpatterns" ,qtxmlpatterns)))
     (home-page "https://cgit.kde.org/kdav.git")
     (synopsis "DAV protocol implementation with KJobs")
-    (description "This is a DAV protocol implemention with KJobs.  Calendars
+    (description "This is a DAV protocol implementation with KJobs.  Calendars
 and todos are supported, using either GroupDAV or CalDAV, and contacts are
 supported using GroupDAV or CardDAV.")
     (license ;; GPL for programs, LGPL for libraries
@@ -670,7 +686,7 @@ supported using GroupDAV or CardDAV.")
        ("qtbase" ,qtbase)))
     (home-page "https://cgit.kde.org/kdepim-apps-libs.git")
     (synopsis "KDE PIM mail related libraries and data files")
-    (description "This packages provides mail related libraries and data files
+    (description "This package provides mail related libraries and data files
 for KDE PIM.")
     (license ;; GPL for programs, LGPL for libraries
      (list license:gpl2+ license:lgpl2.0+))))
@@ -1095,7 +1111,7 @@ and retrieving certificates from LDAP servers.")
     (description "KMail supports multiple accounts, mail filtering and email
 encryption.  The program let you configure your workflow and it has good
 integration into KDE (Plasma Desktop) but is also useable with other Desktop
-Envionments.
+Environments.
 
 KMail is the email component of Kontact, the integrated personal information
 manager from KDE.")
@@ -1346,7 +1362,7 @@ using a Qt/KMime C++ API.")
      `(#:tests? #f)) ;; TODO many test fail for quite different reasons
     (home-page "https://cgit.kde.org/messagelib.git")
     (synopsis "KDE PIM messaging libraries")
-    (description "This packages provides several libraries for messages,
+    (description "This package provides several libraries for messages,
 e.g. a message list, a mime tree parse, a template parser and the
 kwebengineviewer.")
     (license ;; GPL for programs, LGPL for libraries
@@ -1578,6 +1594,37 @@ your personal data.  KOrganizer supports the two dominant standards for storing
 and exchanging calendar data, vCalendar and iCalendar.")
     (license ;; GPL for programs, LGPL for libraries, FDL for documentation
      (list license:gpl2+ license:lgpl2.0+ license:fdl1.2+))))
+
+(define-public kpeoplevcard
+  (package
+    (name "kpeoplevcard")
+    (version "0.1")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://download.kde.org/stable/kpeoplevcard/"
+                                  version "/kpeoplevcard-" version ".tar.xz"))
+              (sha256
+               (base32
+                "1hv3fq5k0pps1wdvq9r1zjnr0nxf8qc3vwsnzh9jpvdy79ddzrcd"))))
+    (build-system qt-build-system)
+    (arguments
+     '(#:phases (modify-phases %standard-phases
+                  (replace 'check-setup
+                    (lambda _
+                      (setenv "HOME" "/tmp")
+                      #t)))))
+    (native-inputs
+     `(("extra-cmake-modules" ,extra-cmake-modules)))
+    (inputs
+     `(("kcontacts" ,kcontacts)
+       ("kpeople" ,kpeople)
+       ("qtbase" ,qtbase)))
+    (home-page "https://invent.kde.org/pim/kpeoplevcard")
+    (synopsis "Expose vCard contacts to KPeople")
+    (description
+     "This plugins adds support for vCard (also known as @acronym{VCF,
+Virtual Contact File}) files to the KPeople contact management library.")
+    (license license:lgpl2.1+)))
 
 (define-public kpimcommon
   (package

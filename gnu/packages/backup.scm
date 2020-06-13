@@ -11,9 +11,12 @@
 ;;; Copyright © 2017 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2018 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2018 Oleg Pykhalov <go.wigust@gmail.com>
-;;; Copyright © 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2019 Alex Vong <alexvong1995@gmail.com>
 ;;; Copyright © 2019 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
+;;; Copyright © 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
+;;; Copyright © 2020 Marcin Karpezo <sirmacik@wioo.waw.pl>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -36,6 +39,7 @@
   #:use-module (guix git-download)
   #:use-module (guix download)
   #:use-module (guix utils)
+  #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
   #:use-module (guix build-system python)
@@ -63,6 +67,7 @@
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
+  #:use-module (gnu packages protobuf)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-web)
@@ -91,6 +96,7 @@
        ("par2cmdline" ,par2cmdline)
        ("python-pexpect" ,python2-pexpect)
        ("python-fasteners" ,python2-fasteners)
+       ("tzdata" ,tzdata-for-tests)
        ("mock" ,python2-mock)))
     (propagated-inputs
      `(("lockfile" ,python2-lockfile)
@@ -99,8 +105,7 @@
      `(("librsync" ,librsync-0.9)
        ("lftp" ,lftp)
        ("gnupg" ,gnupg)                 ; gpg executable needed
-       ("util-linux" ,util-linux)       ; for setsid
-       ("tzdata" ,tzdata)))
+       ("util-linux" ,util-linux)))     ; for setsid
     (arguments
      `(#:python ,python-2               ; setup assumes Python 2
        #:test-target "test"
@@ -200,18 +205,18 @@ backups (called chunks) to allow easy burning to CD/DVD.")
 (define-public libarchive
   (package
     (name "libarchive")
-    (version "3.4.0")
+    (version "3.4.2")
     (source
      (origin
        (method url-fetch)
        (uri (list (string-append "https://libarchive.org/downloads/libarchive-"
-                                 version ".tar.gz")
+                                 version ".tar.xz")
                   (string-append "https://github.com/libarchive/libarchive"
                                  "/releases/download/v" version "/libarchive-"
-                                 version ".tar.gz")))
+                                 version ".tar.xz")))
        (sha256
         (base32
-         "0pl25mmz1b1cnwf35kxmygyy9g7z7hslxbx329a9yx8csh7dahw6"))))
+         "18dd01ahs2hv74xm7axjc3yhq839p0x0s4vssvlmm8fknja09qfq"))))
     (build-system gnu-build-system)
     (inputs
      `(("bzip2" ,bzip2)
@@ -231,24 +236,34 @@ backups (called chunks) to allow easy burning to CD/DVD.")
                (("/bin/pwd") (which "pwd")))
              #t))
          (replace 'check
-           (lambda _
-             ;; XXX: The test_owner_parse, test_read_disk, and
-             ;; test_write_disk_lookup tests expect user 'root' to exist, but
-             ;; the chroot's /etc/passwd doesn't have it.  Turn off those tests.
-             ;;
-             ;; XXX: Adjust test that fails with zstd 1.4.1 because the default
-             ;; options compresses two bytes better than this test expects.
-             ;; https://github.com/libarchive/libarchive/issues/1226
-             (substitute* "libarchive/test/test_write_filter_zstd.c"
-               (("compression-level\", \"6\"")
-                "compression-level\", \"7\""))
+           (lambda* (#:key (tests? #t) #:allow-other-keys)
+             (if tests?
+		 ;; XXX: The test_owner_parse, test_read_disk, and
+		 ;; test_write_disk_lookup tests expect user 'root' to
+		 ;; exist, but the chroot's /etc/passwd doesn't have
+		 ;; it.  Turn off those tests.
+		 ;;
+		 ;; XXX: Adjust test that fails with zstd 1.4.1
+		 ;; because the default options compresses two bytes
+		 ;; better than this test expects.
+		 ;; https://github.com/libarchive/libarchive/issues/1226
+                 (begin
+                   (substitute* "libarchive/test/test_write_filter_zstd.c"
+		     (("compression-level\", \"6\"")
+		      "compression-level\", \"7\""))
 
-             ;; The tests allow one to disable tests matching a globbing pattern.
-             (invoke "make" "libarchive_test" "bsdcpio_test" "bsdtar_test")
-             ;; XXX: This glob disables too much.
-             (invoke "./libarchive_test" "^test_*_disk*")
-             (invoke "./bsdcpio_test" "^test_owner_parse")
-             (invoke "./bsdtar_test")))
+		   ;; The tests allow one to disable tests matching a globbing pattern.
+		   (invoke "make"
+			   "libarchive_test"
+			   "bsdcpio_test"
+			   "bsdtar_test")
+
+		   ;; XXX: This glob disables too much.
+		   (invoke "./libarchive_test" "^test_*_disk*")
+		   (invoke "./bsdcpio_test" "^test_owner_parse")
+		   (invoke "./bsdtar_test"))
+                 ;; Tests may be disabled if cross-compiling.
+                 (format #t "Test suite not run.~%"))))
          (add-after 'install 'add--L-in-libarchive-pc
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (let* ((out     (assoc-ref outputs "out"))
@@ -548,14 +563,13 @@ detection, and lossless compression.")
 (define-public borg
   (package
     (name "borg")
-    (version "1.1.11")
+    (version "1.1.13")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "borgbackup" version))
        (sha256
-        (base32
-         "190gjzx83b6p64nqj840x382dgz9gfv0gm7wj585lnkrpa90j29n"))
+        (base32 "089q3flmwbz7dc28zlscwylf64kgck3jf1n6lqpwww8hlrk8cjhn"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -638,7 +652,8 @@ detection, and lossless compression.")
                         ;; These tests assume the kernel supports FUSE.
                         "and not test_fuse "
                         "and not test_fuse_allow_damaged_files "
-                        "and not test_mount_hardlinks")))))
+                        "and not test_mount_hardlinks "
+                        "and not test_readonly_mount ")))))
          (add-after 'install 'install-doc
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
@@ -722,14 +737,14 @@ changes are stored.")
 (define-public wimlib
   (package
     (name "wimlib")
-    (version "1.13.1")
+    (version "1.13.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://wimlib.net/downloads/"
                                   "wimlib-" version ".tar.gz"))
               (sha256
                (base32
-                "0pxgrpr3dr81rcf2jh71aiiq3v4anc5sj1nld18f2vhvbijbrx27"))))
+                "0id9ym3hzij4kpdrk0sz3ijxp5r0z1md5jch83pml9hdy1zbx5bj"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -976,17 +991,89 @@ precious backup space.
 @end itemize")
     (license license:bsd-2)))
 
+(define-public zbackup
+  (package
+    (name "zbackup")
+    (version "1.4.4")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/zbackup/zbackup.git")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "14l1kyxg7pccpax3d6qcpmdycb70kn3fxp1a59w64hqy2493hngl"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f))                    ;no test
+    (inputs
+     `(("lzo" ,lzo)
+       ("libressl" ,libressl)
+       ("protobuf" ,protobuf)
+       ("xz" ,xz)
+       ("zlib" ,zlib)))
+    (home-page "http://zbackup.org")
+    (synopsis "Versatile deduplicating backup tool")
+    (description
+     "ZBackup is a globally-deduplicating backup tool, based on the
+ideas found in Rsync.  Feed a large @file{.tar} into it, and it will
+store duplicate regions of it only once, then compress and optionally
+encrypt the result.  Feed another @file{.tar} file, and it will also
+re-use any data found in any previous backups.  This way only new
+changes are stored, and as long as the files are not very different,
+the amount of storage required is very low.  Any of the backup files
+stored previously can be read back in full at any time.  The program
+is format-agnostic, so you can feed virtually any files to it.")
+    (license license:gpl2+)))
+
+(define-public dump
+  (package
+    (name "dump")
+    (version "0.4b46")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/dump/dump/"
+                           version "/dump-" version ".tar.gz"))
+       (sha256
+        (base32
+         "15rg5y15ak0ppqlhcih78layvg7cwp6hc16p3c58xs8svlkxjqc0"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       `("--sysconfdir=/etc"
+         "--disable-readline"
+         "--disable-rmt")))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("openssl" ,openssl-1.0)
+       ("zlib" ,zlib)
+       ("util-linux" ,util-linux "lib")
+       ("e2fsprogs" ,e2fsprogs)))
+    (home-page "https://dump.sourceforge.io/")
+    (synopsis "Ext2/3/4 filesystem dump/restore utilities")
+    (description "Dump examines files in a filesystem, determines which ones
+need to be backed up, and copies those files to a specified disk, tape or
+other storage medium.  Subsequent incremental backups can then be layered on
+top of the full backup.  The restore command performs the inverse function of
+dump; it can restore a full backup of a filesystem.  Single files and
+directory subtrees may also be restored from full or partial backups in
+interractive mode.")
+    (license license:bsd-3)))
+
 (define-public burp
   (package
     (name "burp")
-    (version "2.3.24")
+    (version "2.3.28")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/burp/burp-" version
                                   "/burp-" version ".tar.bz2"))
               (sha256
                (base32
-                "0dmahqx8ldqdrx9b47r7ag3m801n7h3kclcqja1cc1jzhfhfq27w"))))
+                "18f8cjsb87skabvz4cl5pdln35qmim7x686js1xzpld6wyl9kv2k"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases

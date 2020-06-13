@@ -37,14 +37,14 @@
 (define-public gnu-efi
   (package
     (name "gnu-efi")
-    (version "3.0.11")
+    (version "3.0.12")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/gnu-efi/"
                            "gnu-efi-" version ".tar.bz2"))
        (sha256
-        (base32 "1ffnc4xbzfggs37ymrgfx76j56kk2644c081ivhr2bjkla9ag3gj"))))
+        (base32 "0sbn6am3k5lqafycggh1g964fcwjwnh0i9hhwrk4ncrwzphz55h1"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; none exist
@@ -54,8 +54,8 @@
        (modify-phases %standard-phases
          (delete 'configure))))
     (synopsis "EFI toolchain")
-    (description "This package provides an EFI (Extensible Firmware
-Interface) toolchain for building programs that can run in the
+    (description "This package provides an @acronym{EFI, Extensible Firmware
+Interface} toolchain for building programs that can run in the
 environment presented by Intel's EFI.")
     (home-page "https://directory.fsf.org/wiki/GNU_EFI")
     ;; Distribution is allowed only when accepting all those licenses.
@@ -112,6 +112,7 @@ environment presented by Intel's EFI.")
        ("util-linux" ,util-linux))) ; getopt
     (inputs
      `(("gnu-efi" ,gnu-efi)
+       ("libuuid" ,util-linux "lib")
        ("openssl" ,openssl)))
     (synopsis "EFI signing tools")
     (description "This package provides tools for signing EFI binaries.")

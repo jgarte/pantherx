@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2019 Guillaume Le Vaillant <glv@posteo.net>
 ;;;
@@ -223,7 +223,7 @@ one specific hardware device. These we have to create."
               (call-with-input-file devname-name
                                     read-static-device-nodes))))
 
-(define* (make-essential-device-nodes #:key (root "/"))
+(define* (make-essential-device-nodes #:optional (root "/"))
   "Make essential device nodes under ROOT/dev."
   ;; The hand-made devtmpfs/udev!
 
@@ -467,25 +467,13 @@ upon error."
   (define (root-mount-point? fs)
     (string=? (file-system-mount-point fs) "/"))
 
-  (define root-fs-type
-    (or (any (lambda (fs)
-               (and (root-mount-point? fs)
-                    (file-system-type fs)))
-             mounts)
-        "ext4"))
-
-  (define root-fs-flags
-    (mount-flags->bit-mask (or (any (lambda (fs)
-                                      (and (root-mount-point? fs)
-                                           (file-system-flags fs)))
-                                    mounts)
-                               '())))
-
-  (define root-fs-options
-    (any (lambda (fs)
-           (and (root-mount-point? fs)
-                (file-system-options fs)))
-         mounts))
+  (define (device-string->file-system-device device-string)
+    ;; The "--root=SPEC" kernel command-line option always provides a
+    ;; string, but the string can represent a device, a UUID, or a
+    ;; label.  So check for all three.
+    (cond ((string-prefix? "/" device-string) device-string)
+          ((uuid device-string) => identity)
+          (else (file-system-label device-string))))
 
   (display "Welcome, this is GNU's early boot Guile.\n")
   (display "Use '--repl' for an initrd REPL.\n\n")
@@ -495,7 +483,21 @@ upon error."
       (mount-essential-file-systems)
       (let* ((args    (linux-command-line))
              (to-load (find-long-option "--load" args))
-             (root    (find-long-option "--root" args)))
+             (root-fs (find root-mount-point? mounts))
+             (root-fs-type (or (and=> root-fs file-system-type)
+                               "ext4"))
+             (root-fs-device (and=> root-fs file-system-device))
+             (root-fs-flags (mount-flags->bit-mask
+                             (or (and=> root-fs file-system-flags)
+                                 '())))
+             (root-options (if root-fs
+                               (file-system-options root-fs)
+                               #f))
+             ;; --root takes precedence over the 'device' field of the root
+             ;; <file-system> record.
+             (root-device (or (and=> (find-long-option "--root" args)
+                                     device-string->file-system-device)
+                              root-fs-device)))
 
         (when (member "--repl" args)
           (start-repl))
@@ -530,18 +532,12 @@ upon error."
 
         (setenv "EXT2FS_NO_MTAB_OK" "1")
 
-        (if root
-            ;; The "--root=SPEC" kernel command-line option always provides a
-            ;; string, but the string can represent a device, a UUID, or a
-            ;; label.  So check for all three.
-            (let ((root (cond ((string-prefix? "/" root) root)
-                              ((uuid root) => identity)
-                              (else (file-system-label root)))))
-              (mount-root-file-system (canonicalize-device-spec root)
-                                      root-fs-type
-                                      #:volatile-root? volatile-root?
-                                      #:flags root-fs-flags
-                                      #:options root-fs-options))
+        (if root-device
+            (mount-root-file-system (canonicalize-device-spec root-device)
+                                    root-fs-type
+                                    #:volatile-root? volatile-root?
+                                    #:flags root-fs-flags
+                                    #:options root-options)
             (mount "none" "/root" "tmpfs"))
 
         ;; Mount the specified file systems.
@@ -568,4 +564,4 @@ upon error."
               (start-repl)))))
     #:on-error on-error))
 
-;;; linux-initrd.scm ends here
+;;; linux-boot.scm ends here

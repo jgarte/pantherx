@@ -7,6 +7,8 @@
 ;;; Copyright © 2016 Benz Schenk <benz.schenk@uzh.ch>
 ;;; Copyright © 2016 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2020 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2020 Simon Tournier <zimon.toutoune@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -33,6 +35,7 @@
   #:use-module (guix packages)
   #:use-module (guix profiles)
   #:use-module (guix search-paths)
+  #:use-module (guix import json)
   #:use-module (guix monads)
   #:use-module (guix utils)
   #:use-module (guix config)
@@ -53,13 +56,13 @@
   #:use-module (srfi srfi-35)
   #:use-module (srfi srfi-37)
   #:use-module (gnu packages)
-  #:autoload   (gnu packages base) (canonical-package)
-  #:autoload   (gnu packages guile) (guile-2.2)
   #:autoload   (gnu packages bootstrap) (%bootstrap-guile)
   #:export (build-and-use-profile
             delete-generations
             delete-matching-generations
             guix-package
+
+            search-path-environment-variables
 
             transaction-upgrade-entry             ;mostly for testing
 
@@ -418,7 +421,10 @@ Install, remove, or upgrade packages in a single transaction.\n"))
          (option '(#\f "install-from-file") #t #f
                  (lambda (opt name arg result arg-handler)
                    (values (alist-cons 'install
-                                       (load* arg (make-user-module '()))
+                                       (let ((file (or (and (string-suffix? ".json" arg)
+                                                            (json->scheme-file arg))
+                                                       arg)))
+                                         (load* file (make-user-module '())))
                                        result)
                            #f)))
          (option '(#\r "remove") #f #t
@@ -669,12 +675,13 @@ doesn't need it."
 (define (process-query opts)
   "Process any query specified by OPTS.  Return #t when a query was actually
 processed, #f otherwise."
-  (let* ((profiles (match (filter-map (match-lambda
-                                        (('profile . p) p)
-                                        (_              #f))
-                                      opts)
-                     (() (list %current-profile))
-                     (lst (reverse lst))))
+  (let* ((profiles (delete-duplicates
+                    (match (filter-map (match-lambda
+                                         (('profile . p) p)
+                                         (_              #f))
+                                       opts)
+                      (() (list %current-profile))
+                      (lst (reverse lst)))))
          (profile  (match profiles
                      ((head tail ...) head))))
     (match (assoc-ref opts 'query)
@@ -712,7 +719,8 @@ processed, #f otherwise."
 
       (('list-installed regexp)
        (let* ((regexp    (and regexp (make-regexp* regexp regexp/icase)))
-              (manifest  (profile-manifest profile))
+              (manifest  (concatenate-manifests
+                          (map profile-manifest profiles)))
               (installed (manifest-entries manifest)))
          (leave-on-EPIPE
           (for-each (match-lambda
@@ -723,8 +731,8 @@ processed, #f otherwise."
                                  name (or version "?") output path))))
 
                     ;; Show most recently installed packages last.
-                    (reverse installed)))
-         #t))
+                    (reverse installed))))
+       #t)
 
       (('list-available regexp)
        (let* ((regexp    (and regexp (make-regexp* regexp regexp/icase)))
@@ -782,18 +790,26 @@ processed, #f otherwise."
           (display-search-results matches (current-output-port)))
          #t))
 
-      (('show requested-name)
-       (let-values (((name version)
-                     (package-name->name+version requested-name)))
-         (match (remove package-superseded
-                        (find-packages-by-name name version))
-           (()
-            (leave (G_ "~a~@[@~a~]: package not found~%") name version))
-           (packages
-            (leave-on-EPIPE
-             (for-each (cute package->recutils <> (current-output-port))
-                       packages))))
-         #t))
+      (('show _)
+       (let ((requested-names
+              (filter-map (match-lambda
+                            (('query 'show requested-name) requested-name)
+                            (_                            #f))
+                          opts)))
+         (for-each
+          (lambda (requested-name)
+            (let-values (((name version)
+                          (package-name->name+version requested-name)))
+              (match (remove package-superseded
+                             (find-packages-by-name name version))
+                (()
+                 (leave (G_ "~a~@[@~a~]: package not found~%") name version))
+                (packages
+                 (leave-on-EPIPE
+                  (for-each (cute package->recutils <> (current-output-port))
+                            packages))))))
+          requested-names))
+       #t)
 
       (('search-paths kind)
        (let* ((manifests (map profile-manifest profiles))
@@ -956,5 +972,5 @@ option processing with 'parse-command-line'."
                                (%store)
                                (if (assoc-ref opts 'bootstrap?)
                                    %bootstrap-guile
-                                   (canonical-package guile-2.2)))))
+                                   (default-guile)))))
                 (process-actions (%store) opts))))))))

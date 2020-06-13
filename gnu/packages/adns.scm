@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2014 Ludovic Courtès <ludo@gnu.org>
-;;; Copyright © 2015, 2016, 2018 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2015, 2016, 2018, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2019 Marius Bakke <mbakke@fastmail.com>
 ;;;
@@ -25,22 +25,23 @@
   #:use-module (guix download)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
+  #:use-module (gnu packages m4)
   #:use-module (gnu packages pkg-config))
 
 (define-public adns
   (package
     (name "adns")
-    (version "1.5.1")
+    (version "1.6.0")
     (source (origin
               (method url-fetch)
               (uri (list (string-append "mirror://gnu/adns/adns-"
                                         version ".tar.gz")
                          (string-append
-                          "http://www.chiark.greenend.org.uk/~ian/adns/ftp/adns-"
-                          version ".tar.gz")))
+                           "https://www.chiark.greenend.org.uk/~ian/adns/ftp/adns-"
+                           version ".tar.gz")))
               (sha256
                (base32
-                "1ssfh94ck6kn98nf2yy6743srpgqgd167va5ja3bwx42igqjc42v"))))
+                "1pi0xl07pav4zm2jrbrfpv43s1r1q1y12awgak8k7q41m5jp4hpv"))))
     (build-system gnu-build-system)
     (arguments
      ;; Make sure the programs under bin/ fine libadns.so.
@@ -50,6 +51,8 @@
 
        ;; XXX: Tests expect real name resolution to work.
        #:tests? #f))
+    (native-inputs
+     `(("m4" ,m4)))
     (home-page "https://www.gnu.org/software/adns/")
     (synopsis "Asynchronous DNS client library and utilities")
     (description
@@ -62,7 +65,7 @@ scripts.")
 (define-public c-ares
   (package
     (name "c-ares")
-    (version "1.15.0")
+    (version "1.16.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -70,7 +73,7 @@ scripts.")
                     ".tar.gz"))
               (sha256
                (base32
-                "0lk8knip4xk6qzksdkn7085mmgm4ixfczdyyjw656c193y3rgnvc"))))
+                "129sm0wzij0mp8vdv68v18hnykcjb6ivi66wnqnnw598q7bql1fy"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))

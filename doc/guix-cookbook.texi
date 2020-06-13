@@ -12,6 +12,9 @@ Copyright @copyright{} 2019 Ricardo Wurmus@*
 Copyright @copyright{} 2019 Efraim Flashner@*
 Copyright @copyright{} 2019 Pierre Neidhardt@*
 Copyright @copyright{} 2020 Oleg Pykhalov@*
+Copyright @copyright{} 2020 Matthew Brooks@*
+Copyright @copyright{} 2020 Marcin Karpezo@*
+Copyright @copyright{} 2020 Brice Waegeneire@*
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -325,7 +328,7 @@ package definitions.
 @item
 Inheritance makes it easy to customize a package by inheriting from it and
 modifying only what is needed.
- 
+
 @item
 Batch processing: the whole package collection can be parsed, filtered and
 processed.  Building a headless server with all graphical interfaces stripped
@@ -580,7 +583,7 @@ packages.
 Guix makes it possible to streamline the process by adding as many ``package
 declaration directories'' as you want.
 
-Create a directory, say @samp{~./guix-packages} and add it to the @samp{GUIX_PACKAGE_PATH}
+Create a directory, say @file{~./guix-packages} and add it to the @samp{GUIX_PACKAGE_PATH}
 environment variable:
 
 @example
@@ -850,7 +853,7 @@ version when packaging programs for a specific commit.
 @subsubsection Snippets
 
 Snippets are quoted (i.e. non-evaluated) Scheme code that are a means of patching
-the source.  They are a Guix-y alternative to the traditional @samp{.patch} files.
+the source.  They are a Guix-y alternative to the traditional @file{.patch} files.
 Because of the quote, the code in only evaluated when passed to the Guix daemon
 for building.  There can be as many snippets as needed.
 
@@ -954,7 +957,7 @@ $ make CC=gcc prefix=/gnu/store/...-<out>
 This sets the C compiler to @code{gcc} and the @code{prefix} variable (the installation
 directory in Make parlance) to @code{(assoc-ref %outputs "out")}, which is a build-stage
 global variable pointing to the destination directory in the store (something like
-@samp{/gnu/store/...-my-libgit2-20180408}).
+@file{/gnu/store/...-my-libgit2-20180408}).
 
 Similarly, it's possible to set the configure flags:
 
@@ -1079,7 +1082,7 @@ mechanism of passing code around two running processes is called @uref{https://a
 @subsubsection Utility functions
 
 When customizing @code{phases}, we often need to write code that mimics the
-equivalent system invocations (@code{make}, @code{mkdir}, @code{cp}, etc.) commonly used during
+equivalent system invocations (@code{make}, @code{mkdir}, @code{cp}, etc.)@: commonly used during
 regular ``Unix-style'' installations.
 
 Some like @code{chmod} are native to Guile.
@@ -1321,7 +1324,10 @@ reference.
 
 @menu
 * Customizing the Kernel::       Creating and using a custom Linux kernel on Guix System.
+* Connecting to Wireguard VPN::  Connecting to a Wireguard VPN.
 * Customizing a Window Manager:: Handle customization of a Window manager on Guix System.
+* Setting up a bind mount:: Setting up a bind mount in the file-systems definition.
+* Getting substitutes from Tor:: Configuring Guix daemon to get substitutes through Tor.
 @end menu
 
 @node Customizing the Kernel
@@ -1564,6 +1570,83 @@ likely that you'll need to modify the initrd on a machine using a custom
 kernel, since certain modules which are expected to be built may not be
 available for inclusion into the initrd.
 
+@node Connecting to Wireguard VPN
+@section Connecting to Wireguard VPN
+
+To connect to a Wireguard VPN server you need the kernel module to be
+loaded in memory and a package providing networking tools that support
+it (e.g.  @code{wireguard-tools} or @code{network-manager}).
+
+Here is a configuration example for Linux-Libre < 5.6, where the module
+is out of tree and need to be loaded manually---following revisions of
+the kernel have it built-in and so don't need such configuration:
+
+@lisp
+(use-modules (gnu))
+(use-service-modules desktop)
+(use-package-modules vpn)
+
+(operating-system
+  ;; …
+  (services (cons (simple-service 'wireguard-module
+                                  kernel-module-loader-service-type
+                                  '("wireguard"))
+                  %desktop-services))
+  (packages (cons wireguard-tools %base-packages))
+  (kernel-loadable-modules (list wireguard-linux-compat)))
+@end lisp
+
+After reconfiguring and restarting your system you can either use
+Wireguard tools or NetworkManager to connect to a VPN server.
+
+@subsection Using Wireguard tools
+
+To test your Wireguard setup it is convenient to use @command{wg-quick}.
+Just give it a configuration file @command{wg-quick up ./wg0.conf}; or
+put that file in @file{/etc/wireguard} and run @command{wg-quick up wg0}
+instead.
+
+@quotation Note
+Be warned that the author described this command as a: “[…] very quick
+and dirty bash script […]”.
+@end quotation
+
+@subsection Using NetworkManager
+
+Thanks to NetworkManager support for Wireguard we can connect to our VPN
+using @command{nmcli} command.  Up to this point this guide assumes that
+you're using Network Manager service provided by
+@code{%desktop-services}.  Ortherwise you need to adjust your services
+list to load @code{network-manager-service-type} and reconfigure your
+Guix system.
+
+To import your VPN configuration execute nmcli import command:
+
+@example shell
+# nmcli connection import type wireguard file wg0.conf
+Connection 'wg0' (edbee261-aa5a-42db-b032-6c7757c60fde) successfully added
+@end example
+
+This will create a configuration file in
+@file{/etc/NetworkManager/wg0.nmconnection}.  Next connect to the
+Wireguard server:
+
+@example shell
+$ nmcli connection up wg0
+Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/6)
+@end example
+
+By default NetworkManager will connect automatically on system boot.  To
+change that behaviour you need to edit your config:
+
+@example shell
+# nmcli connection modify wg0 connection.autoconnect no
+@end example
+
+For more specific information about NetworkManager and wireguard
+@uref{https://blogs.gnome.org/thaller/2019/03/15/wireguard-in-networkmanager/,see
+this post by thaller}.
+
 @node Customizing a Window Manager
 @section Customizing a Window Manager
 @cindex wm
@@ -1573,8 +1656,8 @@ available for inclusion into the initrd.
 @cindex stumpwm
 
 You could install StumpWM with a Guix system by adding
-@code{stumpwm-checkout} and optionally @code{`(,stumpwm-checkout "lib")}
-packages to a system configuration file, e.g. @file{/etc/config.scm}.
+@code{stumpwm} and optionally @code{`(,stumpwm "lib")}
+packages to a system configuration file, e.g.@: @file{/etc/config.scm}.
 
 An example configuration can look like this:
 
@@ -1584,14 +1667,14 @@ An example configuration can look like this:
 
 (operating-system
   ;; …
-  (packages (append (list sbcl stumpwm-checkout `(,stumpwm-checkout "lib"))
+  (packages (append (list sbcl stumpwm `(,stumpwm "lib"))
                     %base-packages)))
 @end lisp
 
 @cindex stumpwm fonts
 By default StumpWM uses X11 fonts, which could be small or pixelated on
 your system.  You could fix this by installing StumpWM contrib Lisp
-module @code{sbcl-stumpwm-ttf-fonts}, adding it to Guix system packages:
+module @code{sbcl-ttf-fonts}, adding it to Guix system packages:
 
 @lisp
 (use-modules (gnu))
@@ -1599,8 +1682,8 @@ module @code{sbcl-stumpwm-ttf-fonts}, adding it to Guix system packages:
 
 (operating-system
   ;; …
-  (packages (append (list sbcl stumpwm-checkout `(,stumpwm-checkout "lib"))
-                    sbcl-stumpwm-ttf-fonts font-dejavu %base-packages)))
+  (packages (append (list sbcl stumpwm `(,stumpwm "lib"))
+                    sbcl-ttf-fonts font-dejavu %base-packages)))
 @end lisp
 
 Then you need to add the following code to a StumpWM configuration file
@@ -1613,6 +1696,152 @@ Then you need to add the following code to a StumpWM configuration file
 (xft:cache-fonts)
 (set-font (make-instance 'xft:font :family "DejaVu Sans Mono" :subfamily "Book" :size 11))
 @end lisp
+
+@node Session lock
+@subsection Session lock
+@cindex sessionlock
+
+Depending on your environment, locking the screen of your session might come built in
+or it might be something you have to set up yourself. If you use a desktop environment
+like GNOME or KDE, it's usually built in. If you use a plain window manager like
+StumpWM or EXWM, you might have to set it up yourself.
+
+@node Xorg
+@subsubsection Xorg
+
+If you use Xorg, you can use the utility
+@uref{https://www.mankier.com/1/xss-lock, xss-lock} to lock the screen of your session.
+xss-lock is triggered by DPMS which since Xorg 1.8 is auto-detected and enabled if
+ACPI is also enabled at kernel runtime.
+
+To use xss-lock, you can simple execute it and put it into the background before
+you start your window manager from e.g. your @file{~/.xsession}:
+
+@example
+xss-lock -- slock &
+exec stumpwm
+@end example
+
+In this example, xss-lock uses @code{slock} to do the actual locking of the screen when
+it determines it's appropriate, like when you suspend your device.
+
+For slock to be allowed to be a screen locker for the graphical session, it needs to
+be made setuid-root so it can authenticate users, and it needs a PAM service. This
+can be achieved by adding the following service to your @file{config.scm}:
+
+@lisp
+(screen-locker-service slock)
+@end lisp
+
+If you manually lock your screen, e.g. by directly calling slock when you want to lock
+your screen but not suspend it, it's a good idea to notify xss-lock about this so no
+confusion occurs. This can be done by executing @code{xset s activate} immediately
+before you execute slock.
+
+@node Setting up a bind mount
+@section Setting up a bind mount
+
+To bind mount a file system, one must first set up some definitions
+before the @code{operating-system} section of the system definition.  In
+this example we will bind mount a folder from a spinning disk drive to
+@file{/tmp}, to save wear and tear on the primary SSD, without
+dedicating an entire partition to be mounted as @file{/tmp}.
+
+First, the source drive that hosts the folder we wish to bind mount
+should be defined, so that the bind mount can depend on it.
+
+@lisp
+(define source-drive ;; "source-drive" can be named anything you want.
+   (file-system
+    (device (uuid "UUID goes here"))
+    (mount-point "/path-to-spinning-disk-goes-here")
+    (type "ext4"))) ;; Make sure to set this to the appropriate type for your drive.
+@end lisp
+
+The source folder must also be defined, so that guix will know it's not
+a regular block device, but a folder.
+@lisp
+(define (%source-directory) "/path-to-spinning-disk-goes-here/tmp") ;; "source-directory" can be named any valid variable name.
+@end lisp
+
+Finally, inside the @code{file-systems} definition, we must add the
+mount itself.
+
+@lisp
+(file-systems (cons*
+
+                ...<other drives omitted for clarity>...
+
+                source-drive ;; Must match the name you gave the source drive in the earlier definition.
+
+                (file-system
+                 (device (%source-directory)) ;; Make sure "source-directory" matches your earlier definition.
+                 (mount-point "/tmp")
+                 (type "none") ;; We are mounting a folder, not a partition, so this type needs to be "none"
+                 (flags '(bind-mount))
+                 (dependencies (list source-drive)) ;; Ensure "source-drive" matches what you've named the variable for the drive.
+                 )
+
+                 ...<other drives omitted for clarity>...
+
+                ))
+@end lisp
+
+@node Getting substitutes from Tor
+@section Getting substitutes from Tor
+
+Guix daemon can use a HTTP proxy to get substitutes, here we are
+configuring it to get them via Tor.
+
+@quotation Warning
+@emph{Not all} Guix daemon's traffic will go through Tor!  Only
+HTTP/HTTPS will get proxied; FTP, Git protocol, SSH, etc connections
+will still go through the clearnet.  Again, this configuration isn't
+foolproof some of your traffic won't get routed by Tor at all.  Use it
+at your own risk.
+@end quotation
+
+Guix's substitute server is available as a Onion service, if you want
+to use it to get your substitutes from Tor configure your system as
+follow:
+
+@lisp
+(use-modules (gnu))
+(use-service-module base networking)
+
+(operating-system
+  …
+  (services
+    (cons
+      (service tor-service-type
+              (tor-configuration
+                (config-file (plain-file "tor-config"
+                                         "HTTPTunnelPort 127.0.0.1:9250"))))
+      (modify-services %base-services
+        (guix-service-type
+          config => (guix-configuration
+                      (inherit config)
+                      ;; ci.guix.gnu.org's Onion service
+                      (substitute-urls "https://bp7o7ckwlewr4slm.onion")
+                      (http-proxy "http://localhost:9250")))))))
+@end lisp
+
+This will keep a tor process running that provides a HTTP CONNECT tunnel
+which will be used by @command{guix-daemon}.  The daemon can use other
+protocols than HTTP(S) to get remote resources, request using those
+protocols won't go through Tor since we are only setting a HTTP tunnel
+here.  Note that @code{substitutes-urls} is using HTTPS and not HTTP or
+it won't work, that's a limitation of Tor's tunnel; you may want to use
+@command{privoxy} instead to avoid such limitations.
+
+If you don't want to always get substitutes through Tor but using it just
+some of the times, then skip the @code{guix-configuration}.  When you
+want to get a substitute from the Tor tunnel run:
+
+@example
+sudo herd set-http-proxy guix-daemon http://localhost:9250
+guix build --substitute-urls=https://bp7o7ckwlewr4slm.onion …
+@end example
 
 @c *********************************************************************
 @node Advanced package management
@@ -1740,8 +1969,8 @@ where we will store our profiles in the rest of this article.
 
 Placing all your profiles in a single directory, with each profile getting its
 own sub-directory, is somewhat cleaner.  This way, each sub-directory will
-contain all the symlinks for precisely one profile.  Besides, "looping over
-profiles" becomes obvious from any programming language (e.g. a shell script) by
+contain all the symlinks for precisely one profile.  Besides, ``looping over
+profiles'' becomes obvious from any programming language (e.g.@: a shell script) by
 simply looping over the sub-directories of @samp{$GUIX_EXTRA_PROFILES}.
 
 Note that it's also possible to loop over the output of
@@ -1750,9 +1979,9 @@ Note that it's also possible to loop over the output of
 guix package --list-profiles
 @end example
 
-although you'll probably have to filter out @samp{~/.config/guix/current}.
+although you'll probably have to filter out @file{~/.config/guix/current}.
 
-To enable all profiles on login, add this to your @samp{~/.bash_profile} (or similar):
+To enable all profiles on login, add this to your @file{~/.bash_profile} (or similar):
 
 @example
 for i in $GUIX_EXTRA_PROFILES/*; do
@@ -1766,8 +1995,8 @@ done
 @end example
 
 Note to Guix System users: the above reflects how your default profile
-@samp{~/.guix-profile} is activated from @samp{/etc/profile}, that latter being loaded by
-@samp{~/.bashrc} by default.
+@file{~/.guix-profile} is activated from @file{/etc/profile}, that latter being loaded by
+@file{~/.bashrc} by default.
 
 You can obviously choose to only enable a subset of them:
 
@@ -1810,8 +2039,8 @@ guix package -m /path/to/guix-my-project-manifest.scm -p "$GUIX_EXTRA_PROFILES"/
 
 To upgrade all profiles, it's easy enough to loop over them.  For instance,
 assuming your manifest specifications are stored in
-@samp{~/.guix-manifests/guix-$profile-manifest.scm}, with @samp{$profile} being the name
-of the profile (e.g. "project1"), you could do the following in Bourne shell:
+@file{~/.guix-manifests/guix-$profile-manifest.scm}, with @samp{$profile} being the name
+of the profile (e.g.@: "project1"), you could do the following in Bourne shell:
 
 @example
 for profile in "$GUIX_EXTRA_PROFILES"/*; do
@@ -1870,12 +2099,12 @@ The same is true for @samp{INFOPATH} (you can install @samp{info-reader}),
 @node Default profile
 @subsection Default profile
 
-What about the default profile that Guix keeps in @samp{~/.guix-profile}?
+What about the default profile that Guix keeps in @file{~/.guix-profile}?
 
 You can assign it the role you want.  Typically you would install the manifest
 of the packages you want to use all the time.
 
-Alternatively, you could keep it "manifest-less" for throw-away packages
+Alternatively, you could keep it ``manifest-less'' for throw-away packages
 that you would just use for a couple of days.
 This way makes it convenient to run
 
@@ -1906,7 +2135,7 @@ Manifests come with multiple benefits.  In particular, they ease maintenance:
 @itemize
 @item
 When a profile is set up from a manifest, the manifest itself is
-self-sufficient to keep a "package listing" around and reinstall the profile
+self-sufficient to keep a ``package listing'' around and reinstall the profile
 later or on a different system.  For ad-hoc profiles, we would need to
 generate a manifest specification manually and maintain the package versions
 for the packages that don't use the default version.
@@ -1943,7 +2172,7 @@ They can be manipulated in Scheme and passed to the various Guix @uref{https://e
 
 It's important to understand that while manifests can be used to declare
 profiles, they are not strictly equivalent: profiles have the side effect that
-they "pin" packages in the store, which prevents them from being
+they ``pin'' packages in the store, which prevents them from being
 garbage-collected (@pxref{Invoking guix gc,,, guix, GNU Guix Reference Manual})
 and ensures that they will still be available at any point in
 the future.

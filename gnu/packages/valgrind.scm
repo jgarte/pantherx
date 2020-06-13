@@ -2,7 +2,7 @@
 ;;; Copyright © 2013, 2014 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2016 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2018 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -35,7 +35,7 @@
     (version "3.15.0")
     (source (origin
               (method url-fetch)
-              (uri (list (string-append "http://www.valgrind.org/downloads"
+              (uri (list (string-append "https://sourceware.org/pub/valgrind"
                                         "/valgrind-" version ".tar.bz2")
                          (string-append "ftp://sourceware.org/pub/valgrind"
                                         "/valgrind-" version ".tar.bz2")))
@@ -47,7 +47,11 @@
     (outputs '("doc"                              ;16 MB
                "out"))
     (arguments
-     '(#:phases
+     `(,@(if (string-prefix? "powerpc" (or (%current-target-system)
+                                           (%current-system)))
+           `(#:make-flags '("CFLAGS+=-maltivec"))
+           '())
+       #:phases
        (modify-phases %standard-phases
          (add-after 'install 'patch-suppression-files
            (lambda* (#:key outputs #:allow-other-keys)
@@ -71,7 +75,7 @@
      `(("gdb" ,gdb)))
     (native-inputs
      `(("perl" ,perl)))
-    (home-page "http://www.valgrind.org/")
+    (home-page "https://www.valgrind.org/")
     (synopsis "Debugging and profiling tool suite")
     (description
      "Valgrind is an instrumentation framework for building dynamic analysis

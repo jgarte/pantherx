@@ -38,6 +38,7 @@
   #:use-module (gnu packages dav)
   #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages glib)
+  #:use-module (gnu packages gnome)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages icu4c)
   #:use-module (gnu packages perl)
@@ -136,7 +137,10 @@ the <tz.h> library for handling time zones and leap seconds.")
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f ; test suite appears broken
-       #:configure-flags '("-DSHARED_ONLY=true")
+       #:configure-flags '("-DSHARED_ONLY=true"
+                           ;; required by evolution-data-server
+                           "-DGOBJECT_INTROSPECTION=true"
+                           "-DICAL_GLIB_VAPI=true")
        #:phases
        (modify-phases %standard-phases
          (add-before 'configure 'patch-paths
@@ -153,9 +157,11 @@ the <tz.h> library for handling time zones and leap seconds.")
                  (("\\\"/usr/share/lib/zoneinfo\\\"") "")))
              #t)))))
     (native-inputs
-     `(("gtk-doc" ,gtk-doc)
+     `(("gobject-introspection" ,gobject-introspection)
+       ("gtk-doc" ,gtk-doc)
        ("perl" ,perl)
-       ("pkg-config" ,pkg-config)))
+       ("pkg-config" ,pkg-config)
+       ("vala" ,vala)))
     (inputs
      `(("glib" ,glib)
        ("libxml2" ,libxml2)
@@ -180,7 +186,17 @@ data units.")
              (uri (pypi-uri "khal" version))
              (sha256
               (base32
-               "1r8bkgjwkh7i8ygvsv51h1cnax50sb183vafg66x5snxf3dgjl6l"))))
+               "1r8bkgjwkh7i8ygvsv51h1cnax50sb183vafg66x5snxf3dgjl6l"))
+             (patches
+               (list
+                 (origin
+                   (method url-fetch)
+                   ;; This patch fixes an issue with python-urwid-2.1.0
+                   (uri "https://github.com/pimutils/khal/commit/2c5990c2de2015b251ba23617faa40ee11b8c22a.patch")
+                   (file-name "khal-compat-urwid-2.1.0.patch")
+                   (sha256
+                    (base32
+                     "11nd8hkjz68imwqqn0p54zmb53z2pfxmzchaviy7jc1ky5s9l663")))))))
     (build-system python-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -213,9 +229,8 @@ data units.")
        ("python-sphinxcontrib-newsfeed" ,python-sphinxcontrib-newsfeed)
        ("python-sphinx" ,python-sphinx)))
     (inputs
-     `(("sqlite" ,sqlite)))
-    (propagated-inputs
-     `(("python-configobj" ,python-configobj)
+     `(("sqlite" ,sqlite)
+       ("python-configobj" ,python-configobj)
        ("python-dateutil" ,python-dateutil)
        ("python-icalendar" ,python-icalendar)
        ("python-tzlocal" ,python-tzlocal)

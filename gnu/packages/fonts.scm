@@ -7,19 +7,19 @@
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
 ;;; Copyright © 2015, 2017 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2016 Leo Famulari <leo@famulari.name>
-;;; Copyright © 2016, 2017, 2018 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017, 2018 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Jookia <166291@gmail.com>
 ;;; Copyright © 2016 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2016 Dmitry Nikolaev <cameltheman@gmail.com>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2016, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2016 Toni Reina <areina@riseup.net>
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 José Miguel Sánchez García <jmi2k@openmailbox.com>
 ;;; Copyright © 2017 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2017 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2017 Brendan Tildesley <mail@brendan.scot>
-;;; Copyright © 2017, 2018, 2019 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2017, 2018, 2019, 2020 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2017 Mohammed Sadiq <sadiq@sadiqpk.org>
 ;;; Copyright © 2018 Charlie Ritter <chewzerita@posteo.net>
 ;;; Copyright © 2018 Gabriel Hondet <gabrielhondet@gmail.com>
@@ -32,6 +32,9 @@
 ;;; Copyright © 2020 Amin Bandali <bandali@gnu.org>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 John Soo <jsoo1@asu.edu>
+;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
+;;; Copyright © 2020 Julien Lepiller <julien@lepiller.eu>
+;;; Copyright © 2020 Zhu Zihao <all_but_last@163.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -64,9 +67,11 @@
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages glib)
+  #:use-module (gnu packages gtk)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages xorg))
 
 (define-public font-ibm-plex
@@ -192,7 +197,7 @@ itself."))))
 (define-public font-cantarell
   (package
     (name "font-abattis-cantarell")
-    (version "0.111")
+    (version "0.201")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/cantarell-fonts/"
@@ -200,11 +205,10 @@ itself."))))
                                   "/cantarell-fonts-" version ".tar.xz"))
               (sha256
                (base32
-                "05hpnhihwm9sxlq1qn993g03pwkmpjbn0dvnba71r1gfjv0jp2w5"))))
+                "0qwqmkczqy09fdj8l11nr841ks0dwsydqg55qyms12m4yvjn87xn"))))
     (build-system meson-build-system)
     (native-inputs
-     `(("appstream-glib" ,appstream-glib)
-       ("gettext" ,gettext-minimal))) ;for msgfmt
+     `(("gettext" ,gettext-minimal)))   ; for msgfmt
     (home-page "https://wiki.gnome.org/Projects/CantarellFonts")
     (synopsis "Cantarell sans-serif typeface")
     (description "The Cantarell font family is a contemporary Humanist
@@ -230,9 +234,11 @@ The Lato 2.010 family supports more than 100 Latin-based languages, over
 50 Cyrillic-based languages as well as Greek and IPA phonetics.")
     (license license:silofl1.1)))
 
-(define-public font-gnu-freefont-ttf
+(define-public font-gnu-freefont
   (package
-    (name "font-gnu-freefont-ttf")
+    (name "font-gnu-freefont")
+    ;; Note: Remove the special FontForge input and package once the 2020
+    ;; release is out.
     (version "20120503")
     (source (origin
              (method url-fetch)
@@ -249,26 +255,45 @@ The Lato 2.010 family supports more than 100 Latin-based languages, over
                    (lambda _
                      (let ((doc-dir  (string-append %output "/share/doc/"
                                                     ,name "-" ,version))
-                           (font-dir (string-append %output
-                                                    "/share/fonts/truetype")))
+                           (ttf-font-dir (string-append %output
+                                                        "/share/fonts/truetype"))
+                           (otf-font-dir (string-append %output
+                                                        "/share/fonts/opentype"))
+                           (woff-font-dir (string-append %output
+                                                         "/share/fonts/webfonts")))
                        (mkdir-p doc-dir)
                        (substitute* "Makefile"
                          (("\\$\\(TMPDIR\\)") doc-dir)
-                         (("sfd/\\*.ttf") ""))
-                       (system* "make" "ttftar")
-                       (mkdir-p font-dir)
+                         (("sfd/\\*.ttf") "")
+                         (("sfd/\\*.otf") "")
+                         (("sfd/\\*.woff") ""))
+                       ;; XXX The FreeFont Makefile tries to use the current
+                       ;; time and date as names for generated files, and fails
+                       ;; silently. But the fonts are still installed, so we
+                       ;; leave the issue alone for now.
+                       ;; See <https://bugs.gnu.org/40783>
+                       (system* "make" "ttftar" "otftar" "wofftar")
+                       (mkdir-p ttf-font-dir)
+                       (mkdir-p otf-font-dir)
+                       (mkdir-p woff-font-dir)
                        (for-each (lambda (file)
-                                   (install-file file font-dir))
+                                   (install-file file ttf-font-dir))
                                  (filter
                                    (lambda (file) (string-suffix? "ttf" file))
+                                   (find-files "." "")))
+                       (for-each (lambda (file)
+                                   (install-file file otf-font-dir))
+                                 (filter
+                                   (lambda (file) (string-suffix? "otf" file))
+                                   (find-files "." "")))
+                       (for-each (lambda (file)
+                                   (install-file file woff-font-dir))
+                                 (filter
+                                   (lambda (file) (string-suffix? "woff" file))
                                    (find-files "." "")))))))
        #:test-target "tests"))
-    ;; replace python 3 with python 2
-    ;; python 3 support commits aren't yet released in 20120503
-    ;; so freefont needs python 2 support in fontforge
-    (native-inputs `(("fontforge" ,(package (inherit fontforge)
-                                     (inputs `(("python-2" ,python-2)
-                                     ,@(package-inputs fontforge)))))))
+    ;; FreeFont anno 2012 requires a FontForge built with Python 2.
+    (native-inputs `(("fontforge" ,fontforge-20190801)))
     (home-page "https://www.gnu.org/software/freefont/")
     (synopsis "Unicode-encoded outline fonts")
     (description
@@ -279,17 +304,20 @@ The Lato 2.010 family supports more than 100 Latin-based languages, over
     (properties '((upstream-name . "freefont")
                   (ftp-directory . "/gnu/freefont")))))
 
+(define-public font-gnu-freefont-ttf
+  (deprecated-package "font-gnu-freefont-ttf" font-gnu-freefont))
+
 (define-public font-liberation
   (package
     (name "font-liberation")
-    (version "2.00.5")
+    (version "2.1.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/liberationfonts/liberation-fonts/"
-                           "files/2926169/liberation-fonts-ttf-" version ".tar.gz"))
+                           "files/4743886/liberation-fonts-ttf-" version ".tar.gz"))
        (sha256
-        (base32 "0kdjsbf0y716k1kv0i0ixdpvg7b9b8xkcsg6favaxdc7pshg0kzi"))))
+        (base32 "1jkg8j8jx7ffj13z5ilw7dids99dyypljm1pv06ycmghw1pw3qlf"))))
     (build-system font-build-system)
     (home-page "https://github.com/liberationfonts")
     (synopsis "Fonts compatible with Arial, Times New Roman, and Courier New")
@@ -650,7 +678,7 @@ for use at smaller text sizes")))
 (define-public font-gnu-unifont
   (package
     (name "font-gnu-unifont")
-    (version "13.0.01")
+    (version "13.0.02")
     (source
      (origin
        (method url-fetch)
@@ -660,7 +688,7 @@ for use at smaller text sizes")))
              (string-append "mirror://gnu/unifont/unifont-"
                             version "/unifont-" version ".tar.gz")))
        (sha256
-        (base32 "1svzm3xahb2m8r79ha9gb1z3zlckykx9d87cghswj7dxn9868j4b"))))
+        (base32 "1fg908qadh14kfbpzqfj3vgzlxgx68sdlwhl2prz7arq5r45dami"))))
     (build-system gnu-build-system)
     (outputs '("out"   ; TrueType version
                "pcf"   ; PCF (bitmap) version
@@ -1040,7 +1068,7 @@ vector graphics.")
 (define-public font-tamzen
   (package
     (name "font-tamzen")
-    (version "1.11.4")
+    (version "1.11.5")
     (source
      (origin
        (method git-fetch)
@@ -1049,8 +1077,7 @@ vector graphics.")
               (commit (string-append "Tamzen-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "17kgmvg6q32mqhx9g44hjvzv0si0mnpprga4z7na930g2zdd8846"))))
+        (base32 "00x5fipzqimglvshhqwycdhaqslbvn3rl06jnswhyxfvz16ymj7s"))))
     (build-system trivial-build-system)
     (arguments
      `(#:modules ((guix build utils))
@@ -1094,16 +1121,14 @@ later hand-tweaked with the gbdfed(1) editor:
 (define-public font-comic-neue
   (package
     (name "font-comic-neue")
-    ;; The ‘v2.3’ and ‘v2.4’ releases at https://github.com/crozynski/comicneue
-    ;; are equivalent.  The home page hosts 2.3, not 2.4, so we use that here.
-    (version "2.3")
+    (version "2.5")
     (source (origin
               (method url-fetch/zipbomb)
               (uri (string-append
                     "http://www.comicneue.com/comic-neue-" version ".zip"))
               (sha256
                (base32
-                "1695hkpd8kqnr2a88p8xs496slgzxjjkzpa9aa33ml3pnh7519zk"))))
+                "1ng0m0zs7qr91qy5ff0l01l27npr76961c6zfkxnhxf68zpwz5k4"))))
     (build-system font-build-system)
     (arguments
      `(#:phases
@@ -1221,6 +1246,34 @@ programming.  Iosevka is completely generated from its source code.")
            (lambda _
              (for-each make-file-writable (find-files "." ".*"))
              #t)))))))
+
+(define-public font-sarasa-gothic
+  (package
+    (name "font-sarasa-gothic")
+    (version "0.12.6")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/be5invis/Sarasa-Gothic"
+                           "/releases/download/v" version
+                           "/sarasa-gothic-ttc-" version ".7z"))
+       (sha256
+        (base32 "1g6k9d5lajchbhsh3g12fk5cgilyy6yw09fals9vc1f9wsqvac86"))))
+    (build-system font-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'unpack
+                    (lambda* (#:key source #:allow-other-keys)
+                      (mkdir "source")
+                      (chdir "source")
+                      (invoke "7z" "x" source))))))
+    (native-inputs `(("p7zip" ,p7zip)))
+    (home-page "https://github.com/be5invis/Sarasa-Gothic")
+    (license license:silofl1.1)
+    (synopsis "Sarasa Gothic / 更纱黑体 / 更紗黑體 / 更紗ゴシック / 사라사 고딕")
+    (description
+     "Sarasa Gothic is a programming font based on Iosevka and Source Han Sans,
+most CJK characters are same height, and double width as ASCII characters.")))
 
 (define-public font-go
   (let ((commit "f03a046406d4d7fbfd4ed29f554da8f6114049fc")
@@ -1670,3 +1723,75 @@ always uses Farsi digits, and does not include Latin glyphs from Roboto.
            (license:x11-style           ; ...the Bitstream Vera typeface
             "file://LICENSE" "Bitstream Vera License")
            license:asl2.0))))           ; Latin glyphs from Roboto
+
+(define-public font-meera-inimai
+  (package
+    (name "font-meera-inimai")
+    (version "2.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.com/smc/meera-inimai")
+             (commit "0f39cdd7dbf1b6d1bed7df85834d33789dce20a7")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "1x5mhrpx24imh0r4l83mkaiszxgwi1q4ppyyvq63h3ddwk20cwdg"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("fontforge" ,fontforge)
+       ("harfbuzz" ,harfbuzz "bin")
+       ("python" ,python-minimal)
+       ("python-fonttools" ,python-fonttools)
+       ("python-google-brotli" ,python-google-brotli)))
+    (arguments
+     `(#:make-flags (list "PY=python3"
+                          (string-append "DESTDIR=" %output)
+                          "fontpath=/share/fonts/truetype")
+       #:test-target "test"
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
+    (home-page "https://gitlab.com/smc/meera-inimai")
+    (synopsis "Meera Inimai Tamil font")
+    (description "Meera Inimai is a Unicode font for the Tamil Script.  Meera
+Inimai is a san-serif typeface.  It is best used as a screen font for body
+text.  It is also useful for body text of printed pamphlets or single page
+designs.  Meera Inimai can be thought of as similar to Helvetica and its
+variation Arial.  Tamil characters are inherently vertically-elliptical.  The
+orthography of Roman glyphs of Meera Inimai are also based on this
+characteristic so that they sit smoothly with the Tamil glyphs.")
+    (license license:silofl1.1)))
+
+(define-public font-ipa-mj-mincho
+  (package
+    (name "font-ipa-mj-mincho")
+    (version "006.01")
+    (source (origin
+              (method url-fetch/zipbomb)
+              (uri (string-append "https://mojikiban.ipa.go.jp/OSCDL/IPAmjMincho"
+                                  "/ipamjm" (string-join (string-split version #\.) "")
+                                  ".zip"))
+              (sha256
+               (base32
+                "0s2vs9p7vd7ajnn6c2icli069sjwi4d45a39fczqpwwn507lwj9m"))))
+    (build-system font-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'install-doc
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((doc-dir (string-append (assoc-ref outputs "out")
+                                           "/share/doc/font-ipa-mj-mincho")))
+               (mkdir-p doc-dir)
+               (copy-file "Readme.txt" (string-append doc-dir "/README"))
+               (copy-file "IPA_Font_License_Agreement_v1.0.txt"
+                          (string-append doc-dir "/LICENSE"))
+               #t))))))
+    (home-page "https://mojikiban.ipa.go.jp/1300.html")
+    (synopsis "Japanese font from the Information-technology Promotion Agency")
+    (description "MJM Mincho is a font that aims at, for example, allowing you
+to write people's name, or for formal business situations where it is necessary
+to have a detailed and proper character style.")
+    (license license:ipa)))

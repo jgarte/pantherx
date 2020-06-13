@@ -1,5 +1,5 @@
 # GNU Guix --- Functional package management for GNU
-# Copyright © 2018, 2019 Ludovic Courtès <ludo@gnu.org>
+# Copyright © 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 #
 # This file is part of GNU Guix.
 #
@@ -72,6 +72,10 @@ then
     # mounting an empty file system on top of it.  That way, we exercise the
     # wrapper code that creates the user namespace and bind-mounts the store.
     unshare -mrf sh -c 'mount -t tmpfs none "$STORE_PARENT"; echo "$STORE_PARENT"/*; "$test_directory/Bin/sed" --version > "$test_directory/output"'
+
+    # Check whether the exit code is preserved.
+    if unshare -mrf sh -c 'mount -t tmpfs none "$STORE_PARENT"; echo "$STORE_PARENT"/*; "$test_directory/Bin/sed" --does-not-exist';
+    then false; else true; fi
 else
     # Run the relocatable 'sed' in the current namespaces.  This is a weak
     # test because we're going to access store items from the host store.
@@ -79,6 +83,29 @@ else
 fi
 grep 'GNU sed' "$test_directory/output"
 chmod -Rf +w "$test_directory"; rm -rf "$test_directory"/*
+
+case "`uname -m`" in
+    x86_64|i?86)
+	# Try '-RR' and PRoot.
+	tarball="`guix pack -RR -S /Bin=bin sed`"
+	tar tvf "$tarball" | grep /bin/proot
+	(cd "$test_directory"; tar xvf "$tarball")
+	GUIX_EXECUTION_ENGINE="proot"
+	export GUIX_EXECUTION_ENGINE
+	"$test_directory/Bin/sed" --version > "$test_directory/output"
+	grep 'GNU sed' "$test_directory/output"
+
+	# Now with fakechroot.
+	GUIX_EXECUTION_ENGINE="fakechroot"
+	"$test_directory/Bin/sed" --version > "$test_directory/output"
+	grep 'GNU sed' "$test_directory/output"
+
+	chmod -Rf +w "$test_directory"; rm -rf "$test_directory"/*
+	;;
+    *)
+	echo "skipping PRoot test" >&2
+	;;
+esac
 
 # Ensure '-R' works with outputs other than "out".
 tarball="`guix pack -R -S /share=share groff:doc`"

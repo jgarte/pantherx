@@ -38,6 +38,7 @@
 
 (define-module (gnu packages game-development)
   #:use-module (srfi srfi-1)
+  #:use-module (ice-9 match)
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (guix packages)
   #:use-module (guix download)
@@ -190,39 +191,39 @@ DeuTex has functions such as merging wads, etc.")
   (package
     (name "grfcodec")
     (version "6.0.6")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "http://binaries.openttd.org/extra/"
-                                  name "/" version "/" name "-" version
-                                  "-source.tar.xz"))
-              (sha256
-               (base32
-                "08admgnpqcsifpicbm56apgv360fxapqpbbsp10qyk8i22w1ivsk"))))
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://binaries.openttd.org/extra/"
+                           name "/" version "/" name "-" version
+                           "-source.tar.xz"))
+       (sha256
+        (base32 "08admgnpqcsifpicbm56apgv360fxapqpbbsp10qyk8i22w1ivsk"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:tests? #f ; no check target
+     '(#:tests? #f                      ;no check target
        #:phases
-      (modify-phases %standard-phases
-        (delete 'configure) ; no configure script
-        (replace 'install   ; no install target
-          (lambda* (#:key outputs #:allow-other-keys)
-            (let* ((out (assoc-ref outputs "out"))
-                   (bin (string-append out "/bin"))
-                   (doc (string-append out "/share/doc"))
-                   (man (string-append out "/share/man/man1")))
-              (for-each (lambda (file)
-                          (install-file file bin))
-                        '("grfcodec" "grfid" "grfstrip" "nforenum"))
-              (install-file "COPYING" doc)
-              (with-directory-excursion "docs"
-                (for-each (lambda (file)
-                            (install-file (string-append file ".txt") doc))
-                          '("auto_correct" "commands" "grf" "grfcodec" "grftut"
-                            "readme" "readme.rpn"))
-                (for-each (lambda (file)
-                            (install-file file man))
-                          (find-files "." "\\.1"))))
-            #t)))))
+       (modify-phases %standard-phases
+         (delete 'configure)            ;no configure script
+         (replace 'install              ;no install target
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin"))
+                    (doc (string-append out "/share/doc"))
+                    (man (string-append out "/share/man/man1")))
+               (for-each (lambda (file)
+                           (install-file file bin))
+                         '("grfcodec" "grfid" "grfstrip" "nforenum"))
+               (install-file "COPYING" doc)
+               (with-directory-excursion "docs"
+                 (for-each (lambda (file)
+                             (install-file (string-append file ".txt") doc))
+                           '("auto_correct" "commands" "grf" "grfcodec" "grftut"
+                             "readme" "readme.rpn"))
+                 (for-each (lambda (file)
+                             (install-file file man))
+                           (find-files "." "\\.1"))))
+             #t)))))
     (inputs
      `(("boost" ,boost)
        ("libpng" ,libpng)
@@ -239,7 +240,7 @@ with a specific task:
 @item @code{nforenum} checks NFO code for errors, making corrections when
 necessary.
 @end enumerate")
-    (home-page "http://dev.openttdcoop.org/projects/grfcodec")
+    (home-page "https://dev.openttdcoop.org/projects/grfcodec")
     ;; GRFCodec, GRFID, and GRFStrip are exclusively under the GPL2.
     ;; NFORenum is under the GPL2+.
     ;; The MD5 implementation contained in GRFID is under the zlib license.
@@ -255,15 +256,14 @@ necessary.
        (uri (string-append "https://binaries.openttd.org/extra/catcodec/"
                            version "/catcodec-" version "-source.tar.xz"))
        (sha256
-        (base32
-         "1qg0c2i4p29sxj0q6qp2jynlrzm5pphz2xhcjqlxa69ycrnlxzs7"))))
+        (base32 "1qg0c2i4p29sxj0q6qp2jynlrzm5pphz2xhcjqlxa69ycrnlxzs7"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f ; no tests
        #:make-flags (list (string-append "prefix=" %output))
        #:phases (modify-phases %standard-phases
                   (delete 'configure))))
-    (home-page "http://dev.openttdcoop.org/projects/catcodec")
+    (home-page "https://dev.openttdcoop.org/projects/catcodec")
     (synopsis "Encode/decode OpenTTD sounds")
     (description "catcodec encodes and decodes sounds for OpenTTD.  These
 sounds are not much more than some metadata (description and filename) and raw
@@ -532,7 +532,7 @@ clone.")
        ("xcb-util-image" ,xcb-util-image)
        ("libxrandr" ,libxrandr)
        ("eudev" ,eudev)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libsndfile" ,libsndfile)
        ("stb-image" ,stb-image)
        ("stb-image-write" ,stb-image-write)))
@@ -631,6 +631,7 @@ garbage collection and can be extended with plugins.")
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f                      ; no check target
+       #:configure-flags '("-DPHYSFS_BUILD_STATIC=OFF")
        #:phases (modify-phases %standard-phases
                   (add-after 'unpack 'patch-CMakeLists.txt
                     (lambda _
@@ -680,7 +681,6 @@ archive on a per-file basis.")
        ("mesa" ,mesa)
        ("mpg123" ,mpg123)
        ("openal" ,openal)
-       ("physfs" ,physfs)
        ("sdl2" ,sdl2)
        ("zlib" ,zlib)))
     (synopsis "2D game framework for Lua")
@@ -779,7 +779,7 @@ etc.")
        ("freetype" ,freetype)
        ("glu" ,glu)
        ("gtk" ,gtk+-2)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libtheora" ,libtheora)
        ("libvorbis" ,libvorbis)
@@ -861,7 +861,7 @@ etc.")
        ("curl" ,curl)
        ("freetype" ,freetype)
        ("giflib" ,giflib)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libwebp" ,libwebp)
        ("libx11" ,libx11)
@@ -1013,7 +1013,7 @@ interface (API).")
        ("sdl-mixer" ,sdl-mixer)
        ("sdl-ttf" ,sdl-ttf)
        ("sdl-gfx" ,sdl-gfx)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libX11" ,libx11)
        ("libsmpeg" ,libsmpeg)
@@ -1156,7 +1156,7 @@ developed mainly for Ren'py.")
     (native-inputs
      `(("python2-cython" ,python2-cython)
        ("xdg-utils" ,xdg-utils)))
-    (home-page "http://www.renpy.org/")
+    (home-page "https://www.renpy.org/")
     (synopsis "Ren'py python module")
     (description "This package contains the shared libraries and Python
 modules of Ren'py.")
@@ -1344,7 +1344,7 @@ if __name__ == \"__main__\":
        ("xorg-server" ,xorg-server)))
     (outputs
      (list "out" "tutorial" "the-question"))
-    (home-page "http://www.renpy.org/")
+    (home-page "https://www.renpy.org/")
     (synopsis "Visual Novel Engine")
     (description "Ren'Py is a visual novel engine that helps you use words,
 images, and sounds to tell interactive stories that run on computers and
@@ -1584,11 +1584,7 @@ games.")
     (build-system scons-build-system)
     (arguments
      `(#:scons ,scons-python2
-       #:scons-flags (list "platform=x11"
-                           ,@(if (string-prefix? "aarch64" (or (%current-target-system)
-                                                               (%current-system)))
-                               `("CCFLAGS=-DNO_THREADS")
-                               '())
+       #:scons-flags (list "platform=x11" "target=release_debug"
                            ;; Avoid using many of the bundled libs.
                            ;; Note: These options can be found in the SConstruct file.
                            "builtin_bullet=no"
@@ -1607,7 +1603,7 @@ games.")
                            "builtin_wslay=no"
                            "builtin_zlib=no"
                            "builtin_zstd=no")
-       #:tests? #f ; There are no tests
+       #:tests? #f                      ; There are no tests
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'scons-use-env
@@ -1620,41 +1616,46 @@ games.")
                  "env_base = Environment(tools=custom_tools)\n"
                  "env_base = Environment(ENV=os.environ)")))
              #t))
+         ;; Build headless tools, used for packaging games without depending on X.
+         (add-after 'build 'build-headless
+           (lambda* (#:key scons-flags #:allow-other-keys)
+             (apply invoke "scons"
+                    `(,(string-append "-j" (number->string (parallel-job-count)))
+                      "platform=server" ,@(delete "platform=x11" scons-flags)))))
          (replace 'install
-           (lambda* (#:key outputs #:allow-other-keys)
+           (lambda* (#:key inputs outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
-                    (bin (string-append out "/bin")))
+                    (headless (assoc-ref outputs "headless"))
+                    (zenity (assoc-ref inputs "zenity")))
+               ;; Strip build info from filenames.
                (with-directory-excursion "bin"
-                 (if (file-exists? "godot.x11.tools.64")
-                     (rename-file "godot.x11.tools.64" "godot")
-                     (rename-file "godot.x11.tools.32" "godot"))
-                 (install-file "godot" bin))
-               ;; Tell Godot where to find zenity for OS.alert().
-               (wrap-program (string-append bin "/godot")
-                 `("PATH" ":" prefix
-                   (,(string-append (assoc-ref %build-inputs "zenity") "/bin"))))
-               #t)))
+                 (for-each
+                  (lambda (file)
+                    (let ((dest (car (string-split (basename file) #\.))))
+                      (rename-file file dest)))
+                  (find-files "." "godot.*\\.x11\\.opt\\.tools.*"))
+                 (install-file "godot" (string-append out "/bin"))
+                 (install-file "godot_server" (string-append headless "/bin")))
+               ;; Tell the editor where to find zenity for OS.alert().
+               (wrap-program (string-append out "/bin/godot")
+                 `("PATH" ":" prefix (,(string-append zenity "/bin")))))
+             #t))
          (add-after 'install 'install-godot-desktop
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
-                    (desktop (string-append out "/share/applications"))
-                    (icon-dir (string-append out "/share/pixmaps")))
-               (rename-file "icon.png" "godot.png")
-               (install-file "godot.png" icon-dir)
-               (mkdir-p desktop)
-               (with-output-to-file
-                   (string-append desktop "/godot.desktop")
-                 (lambda _
-                   (format #t
-                           "[Desktop Entry]~@
-                           Name=godot~@
-                           Comment=The godot game engine~@
-                           Exec=~a/bin/godot~@
-                           TryExec=~@*~a/bin/godot~@
-                           Icon=godot~@
-                           Type=Application~%"
-                           out)))
-               #t))))))
+                    (applications (string-append out "/share/applications"))
+                    (icons (string-append out "/share/icons/hicolor")))
+               (mkdir-p applications)
+               (copy-file "misc/dist/linux/org.godotengine.Godot.desktop"
+                          (string-append applications "/godot.desktop"))
+               (for-each (lambda (icon dest)
+                           (mkdir-p (dirname dest))
+                           (copy-file icon dest))
+                         '("icon.png" "icon.svg")
+                         `(,(string-append icons "/256x256/apps/godot.png")
+                           ,(string-append icons "/scalable/apps/godot.svg"))))
+             #t)))))
+    (outputs '("out" "headless"))
     (native-inputs `(("pkg-config" ,pkg-config)))
     (inputs `(("alsa-lib" ,alsa-lib)
               ("bullet" ,bullet)
@@ -1726,7 +1727,7 @@ scripted in a Python-like language.")
               ("libxft" ,libxft)
               ("libxinerama" ,libxinerama)
               ("libfontconfig" ,fontconfig)
-              ("libjpeg" ,libjpeg)
+              ("libjpeg" ,libjpeg-turbo)
               ("libpng" ,libpng)
               ("fltk" ,fltk)
               ("zlib" ,zlib)))
@@ -1777,7 +1778,7 @@ that parenthetically inclined game developers need to make 2D (and eventually
 (define-public guile3.0-chickadee
   (package
     (inherit guile-chickadee)
-    (name "guile-chickadee")
+    (name "guile3.0-chickadee")
     (version "0.4.0")
     (source (origin
               (method url-fetch)
@@ -1934,7 +1935,7 @@ of the others")
       (build-system gnu-build-system)
       (inputs
        `(("sdl2" ,sdl2)
-         ("libjpeg" ,libjpeg)
+         ("libjpeg" ,libjpeg-turbo)
          ("openal" ,openal)
          ("curl" ,curl)
          ("opusfile" ,opusfile)
@@ -2225,3 +2226,89 @@ rigid body physics library written in C.")
 developers providing an advanced true color console, input, and lots of other
 utilities frequently used in roguelikes.")
     (license license:bsd-3)))
+
+(define-public warsow-qfusion
+  ;; As of 2020-04-09, the latest stable version 2.1.0 is deprecated.
+  ;; The 2.5 beta as published on the homepage is commit
+  ;; c4de15df559410aff0ca6643724e24cddb0ecbbd
+  (let ((commit "c4de15df559410aff0ca6643724e24cddb0ecbbd"))
+    (package
+      (name "warsow-qfusion")
+      (version (git-version "2.5" "1" commit)) ; 2.5-beta
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/Warsow/qfusion/")
+                      (commit commit)
+                      (recursive? #t)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "0xv2yycr43p3xmq7lm6j6zb3cpcr6w00x7qg918faq0mw9j7v48g"))
+                ;; Issue reported here: https://github.com/Warsow/qfusion/issues/46
+                (patches (search-patches "warsow-qfusion-fix-bool-return-type.patch"))
+                (modules '((guix build utils)))
+                (snippet '(begin
+                            (delete-file-recursively "platforms")
+                            (delete-file-recursively "debian")
+                            (delete-file-recursively "libsrcs")
+                            #t))))
+      (build-system cmake-build-system)
+      (arguments
+       `(#:tests? #f                    ; No tests.
+         #:configure-flags '("-DQFUSION_GAME=Warsow")
+         #:modules
+         ((guix build utils)
+          (guix build cmake-build-system)
+          (ice-9 match))
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'change-to-build-dir
+             (lambda _
+               (chdir "source")
+               #t))
+           (add-after 'install 'really-install
+             (lambda* (#:key outputs system #:allow-other-keys)
+               (let ((arch (match system
+                             ("x86_64-linux" "x86_64")
+                             ("i686-linux" "i386")))
+                     (out (assoc-ref outputs "out")))
+                 (install-file (string-append "../source/build/basewsw/libgame_"
+                                              arch ".so")
+                               (string-append out "/lib/"))
+                 (install-file (string-append "../source/build/libui_" arch ".so")
+                               (string-append out "/lib/"))
+                 (for-each
+                  (lambda (file)
+                    (install-file file (string-append out "/bin/")))
+                  (append (find-files "../source/build" "warsow")
+                          (find-files "../source/build" "wsw_server."))))
+               #t)))))
+      (inputs
+       `(("alsa-lib" ,alsa-lib)
+         ("curl" ,curl)
+         ("freetype" ,freetype)
+         ("ffmpeg" ,ffmpeg)
+         ("libjpeg" ,libjpeg-turbo)
+         ("libogg" ,libogg)
+         ("libpng" ,libpng)
+         ("libtheora" ,libtheora)
+         ("libvorbis" ,libvorbis)
+         ("mesa" ,mesa)
+         ("openal" ,openal)
+         ("pulseaudio" ,pulseaudio)
+         ("qtbase" ,qtbase)
+         ("qtdeclarative" ,qtdeclarative)
+         ("sdl2" ,sdl2)
+         ("uuid.h" ,util-linux "lib")
+         ("zlib" ,zlib)))
+      (native-inputs
+       `(("pkg-config" ,pkg-config)))
+      (home-page "https://github.com/Warsow/qfusion")
+      (supported-systems '("i686-linux" "x86_64-linux"))
+      (synopsis "Warsow's fork of qfusion, the id Tech 2 derived game engine")
+      (description
+       "This package contains the game engine of Warsow, a first-person
+shooter video game.  The engine is based on qfusion, the id Tech 2 derived
+game engine.  id Tech 2 is the engine originally behind Quake 2.")
+      (license license:gpl2+))))
