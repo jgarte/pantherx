@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2017 Andy Wingo <wingo@igalia.com>
-;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2019 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015 Sou Bunnbu <iyzsong@gmail.com>
 ;;; Copyright © 2018, 2019 Timothy Sample <samplet@ngyro.com>
 ;;; Copyright © 2019 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
@@ -31,7 +31,7 @@
   #:use-module (gnu system keyboard)
   #:use-module (gnu services base)
   #:use-module (gnu services dbus)
-  #:use-module ((gnu packages base) #:select (canonical-package))
+  #:use-module (gnu packages base)
   #:use-module (gnu packages guile)
   #:use-module (gnu packages xorg)
   #:use-module (gnu packages fonts)
@@ -180,31 +180,32 @@
 (define (xorg-configuration->file config)
   "Compute an Xorg configuration file corresponding to CONFIG, an
 <xorg-configuration> record."
-  (define all-modules
-    ;; 'xorg-server' provides 'fbdevhw.so' etc.
-    (append (xorg-configuration-modules config)
-            (list xorg-server)))
+  (let ((xorg-server (xorg-configuration-server config)))
+    (define all-modules
+      ;; 'xorg-server' provides 'fbdevhw.so' etc.
+      (append (xorg-configuration-modules config)
+              (list xorg-server)))
 
-  (define build
-    #~(begin
-        (use-modules (ice-9 match)
-                     (srfi srfi-1)
-                     (srfi srfi-26))
+    (define build
+      #~(begin
+          (use-modules (ice-9 match)
+                       (srfi srfi-1)
+                       (srfi srfi-26))
 
-        (call-with-output-file #$output
-          (lambda (port)
-            (define drivers
-              '#$(xorg-configuration-drivers config))
+          (call-with-output-file #$output
+            (lambda (port)
+              (define drivers
+                '#$(xorg-configuration-drivers config))
 
-            (define (device-section driver)
-              (string-append "
+              (define (device-section driver)
+                (string-append "
 Section \"Device\"
   Identifier \"device-" driver "\"
   Driver \"" driver "\"
 EndSection"))
 
-            (define (screen-section driver resolutions)
-              (string-append "
+              (define (screen-section driver resolutions)
+                (string-append "
 Section \"Screen\"
   Identifier \"screen-" driver "\"
   Device \"device-" driver "\"
@@ -218,8 +219,8 @@ Section \"Screen\"
   EndSubSection
 EndSection"))
 
-            (define (input-class-section layout variant model options)
-              (string-append "
+              (define (input-class-section layout variant model options)
+                (string-append "
 Section \"InputClass\"
   Identifier \"evdev keyboard catchall\"
   MatchIsKeyboard \"on\"
@@ -243,69 +244,69 @@ Section \"InputClass\"
   Driver \"evdev\"
 EndSection\n"))
 
-            (define (expand modules)
-              ;; Append to MODULES the relevant /lib/xorg/modules
-              ;; sub-directories.
-              (append-map (lambda (module)
-                            (filter-map (lambda (directory)
-                                          (let ((full (string-append module
-                                                                     directory)))
-                                            (and (file-exists? full)
-                                                 full)))
-                                        '("/lib/xorg/modules/drivers"
-                                          "/lib/xorg/modules/input"
-                                          "/lib/xorg/modules/multimedia"
-                                          "/lib/xorg/modules/extensions")))
-                          modules))
+              (define (expand modules)
+                ;; Append to MODULES the relevant /lib/xorg/modules
+                ;; sub-directories.
+                (append-map (lambda (module)
+                              (filter-map (lambda (directory)
+                                            (let ((full (string-append module
+                                                                       directory)))
+                                              (and (file-exists? full)
+                                                   full)))
+                                          '("/lib/xorg/modules/drivers"
+                                            "/lib/xorg/modules/input"
+                                            "/lib/xorg/modules/multimedia"
+                                            "/lib/xorg/modules/extensions")))
+                            modules))
 
-            (display "Section \"Files\"\n" port)
-            (for-each (lambda (font)
-                        (format port "  FontPath \"~a\"~%" font))
-                      '#$(xorg-configuration-fonts config))
-            (for-each (lambda (module)
-                        (format port
-                                "  ModulePath \"~a\"~%"
-                                module))
-                      (append (expand '#$all-modules)
+              (display "Section \"Files\"\n" port)
+              (for-each (lambda (font)
+                          (format port "  FontPath \"~a\"~%" font))
+                        '#$(xorg-configuration-fonts config))
+              (for-each (lambda (module)
+                          (format port
+                                  "  ModulePath \"~a\"~%"
+                                  module))
+                        (append (expand '#$all-modules)
 
-                              ;; For fbdevhw.so and so on.
-                              (list #$(file-append xorg-server
-                                                   "/lib/xorg/modules"))))
-            (display "EndSection\n" port)
-            (display "
+                                ;; For fbdevhw.so and so on.
+                                (list #$(file-append xorg-server
+                                                     "/lib/xorg/modules"))))
+              (display "EndSection\n" port)
+              (display "
 Section \"ServerFlags\"
   Option \"AllowMouseOpenFail\" \"on\"
 EndSection\n" port)
 
-            (display (string-join (map device-section drivers) "\n")
-                     port)
-            (newline port)
-            (display (string-join
-                      (map (cut screen-section <>
-                                '#$(xorg-configuration-resolutions config))
-                           drivers)
-                      "\n")
-                     port)
-            (newline port)
+              (display (string-join (map device-section drivers) "\n")
+                       port)
+              (newline port)
+              (display (string-join
+                        (map (cut screen-section <>
+                                  '#$(xorg-configuration-resolutions config))
+                             drivers)
+                        "\n")
+                       port)
+              (newline port)
 
-            (let ((layout  #$(and=> (xorg-configuration-keyboard-layout config)
-                                    keyboard-layout-name))
-                  (variant #$(and=> (xorg-configuration-keyboard-layout config)
-                                    keyboard-layout-variant))
-                  (model   #$(and=> (xorg-configuration-keyboard-layout config)
-                                    keyboard-layout-model))
-                  (options '#$(and=> (xorg-configuration-keyboard-layout config)
-                                     keyboard-layout-options)))
-              (when layout
-                (display (input-class-section layout variant model options)
-                         port)
-                (newline port)))
+              (let ((layout  #$(and=> (xorg-configuration-keyboard-layout config)
+                                      keyboard-layout-name))
+                    (variant #$(and=> (xorg-configuration-keyboard-layout config)
+                                      keyboard-layout-variant))
+                    (model   #$(and=> (xorg-configuration-keyboard-layout config)
+                                      keyboard-layout-model))
+                    (options '#$(and=> (xorg-configuration-keyboard-layout config)
+                                       keyboard-layout-options)))
+                (when layout
+                  (display (input-class-section layout variant model options)
+                           port)
+                  (newline port)))
 
-            (for-each (lambda (config)
-                        (display config port))
-                      '#$(xorg-configuration-extra-config config))))))
+              (for-each (lambda (config)
+                          (display config port))
+                        '#$(xorg-configuration-extra-config config))))))
 
-  (computed-file "xserver.conf" build))
+    (computed-file "xserver.conf" build)))
 
 (define (xorg-configuration-directory modules)
   "Return a directory that contains the @code{.conf} files for X.org that
@@ -619,7 +620,9 @@ reboot_cmd " shepherd "/sbin/reboot\n"
                          (service-extension profile-service-type
                                             (const (list xterm)))))
 
-                  (default-value (slim-configuration)))))
+                  (default-value (slim-configuration))
+                  (description
+                   "Run the SLiM graphical login manager for X11."))))
 
 (define-deprecated (slim-service #:key (slim slim)
                                  (allow-empty-passwords? #t) auto-login?
@@ -691,7 +694,11 @@ theme."
                  (list (service-extension pam-root-service-type
                                           screen-locker-pam-services)
                        (service-extension setuid-program-service-type
-                                          screen-locker-setuid-programs)))))
+                                          screen-locker-setuid-programs)))
+                (description
+                 "Allow the given program to be used as a screen locker for
+the graphical server by making it setuid-root, so it can authenticate users,
+and by creating a PAM service for it.")))
 
 (define* (screen-locker-service package
                                 #:optional

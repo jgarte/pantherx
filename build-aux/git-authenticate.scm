@@ -1,5 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -21,29 +22,28 @@
 ;;;
 
 (use-modules (git)
+             (guix base16)
              (guix git)
-             (guix gnupg)
-             (guix utils)
-             ((guix build utils) #:select (mkdir-p))
+             (guix git-authenticate)
              (guix i18n)
+             ((guix openpgp)
+              #:select (openpgp-public-key-fingerprint
+                        openpgp-format-fingerprint))
              (guix progress)
              (srfi srfi-1)
-             (srfi srfi-11)
              (srfi srfi-26)
-             (srfi srfi-34)
-             (srfi srfi-35)
-             (rnrs io ports)
              (ice-9 match)
              (ice-9 format)
              (ice-9 pretty-print))
 
 
-(define %committers
-  ;; List of committers.  These are the user names found on
+(define %historical-committers
+  ;; List of "historical" committers---people once authorized committers
+  ;; before the '.guix-authorizations' file was created.
+  ;;
+  ;; These are the user names found on
   ;; <https://savannah.gnu.org/project/memberlist.php?group=guix> along with
   ;; the fingerprint of the signing (sub)key.
-  ;;
-  ;; TODO: Replace this statically-defined list by an in-repo list.
   '(("andreas"
      "AD17 A21E F8AE D8F1 CC02  DBD9 F7D5 C9BF 765C 61E3")
     ("ajgrf"
@@ -148,10 +148,10 @@
      "F2A3 8D7E EB2B 6640 5761  070D 0ADE E100 9460 4D37")
     ("nckx"
      ;; primary: "F5BC 5534 C36F 0087 B39D  36EF 1C9D C4FE B9DB 7C4B"
-     "7E8F AED0 0944 78EF 72E6  4D16 D889 B0F0 18C5 493C")
-    ("nckx (2nd)"
-     ;; primary: "F5BC 5534 C36F 0087 B39D  36EF 1C9D C4FE B9DB 7C4B"
      "F5DA 2032 4B87 3D0B 7A38  7672 0DB0 FF88 4F55 6D79")
+    ("nckx (revoked; not compromised)"
+     ;; primary: "F5BC 5534 C36F 0087 B39D  36EF 1C9D C4FE B9DB 7C4B"
+     "7E8F AED0 0944 78EF 72E6  4D16 D889 B0F0 18C5 493C")
     ("niedzejkob"
      "E576 BFB2 CF6E B13D F571  33B9 E315 A758 4613 1564")
     ("ngz"
@@ -210,12 +210,13 @@
     ("wingo"
      "FF47 8FB2 64DE 32EC 2967  25A3 DDC0 F535 8812 F8F2")))
 
-(define %authorized-signing-keys
-  ;; Fingerprint of authorized signing keys.
+(define %historical-authorized-signing-keys
+  ;; Fingerprint of historically authorized signing keys.
   (map (match-lambda
          ((name fingerprint)
-          (string-filter char-set:graphic fingerprint)))
-       %committers))
+          (base16-string->bytevector
+           (string-downcase (string-filter char-set:graphic fingerprint)))))
+       %historical-committers))
 
 (define %commits-with-bad-signature
   ;; Commits with a known-bad signature.
@@ -225,139 +226,8 @@
   ;; Commits lacking a signature.
   '())
 
-(define-syntax-rule (with-temporary-files file1 file2 exp ...)
-  (call-with-temporary-output-file
-   (lambda (file1 port1)
-     (call-with-temporary-output-file
-      (lambda (file2 port2)
-        exp ...)))))
-
-(define (commit-signing-key repo commit-id)
-  "Return the OpenPGP key ID that signed COMMIT-ID (an OID).  Raise an
-exception if the commit is unsigned or has an invalid signature."
-  (let-values (((signature signed-data)
-                (catch 'git-error
-                  (lambda ()
-                    (commit-extract-signature repo commit-id))
-                  (lambda _
-                    (values #f #f)))))
-    (if (not signature)
-        (raise (condition
-                (&message
-                 (message (format #f (G_ "commit ~a lacks a signature")
-                                  commit-id)))))
-        (begin
-          (with-fluids ((%default-port-encoding "UTF-8"))
-            (with-temporary-files data-file signature-file
-              (call-with-output-file data-file
-                (cut display signed-data <>))
-              (call-with-output-file signature-file
-                (cut display signature <>))
-
-              (let-values (((status data)
-                            (with-error-to-port (%make-void-port "w")
-                              (lambda ()
-                                (gnupg-verify* signature-file data-file
-                                               #:key-download 'always)))))
-                (match status
-                  ('invalid-signature
-                   ;; There's a signature but it's invalid.
-                   (raise (condition
-                           (&message
-                            (message (format #f (G_ "signature verification failed \
-for commit ~a")
-                                             (oid->string commit-id)))))))
-                  ('missing-key
-                   (raise (condition
-                           (&message
-                            (message (format #f (G_ "could not authenticate \
-commit ~a: key ~a is missing")
-                                             (oid->string commit-id)
-                                             data))))))
-                  ('valid-signature
-                   (match data
-                     ((fingerprint . user)
-                      fingerprint)))))))))))
-
-(define (authenticate-commit repository commit)
-  "Authenticate COMMIT from REPOSITORY and return the signing key fingerprint.
-Raise an error when authentication fails."
-  (define id
-    (commit-id commit))
-
-  (define signing-key
-    (commit-signing-key repository id))
-
-  (unless (member signing-key %authorized-signing-keys)
-    (raise (condition
-            (&message
-             (message (format #f (G_ "commit ~a not signed by an authorized \
-key: ~a")
-                              (oid->string id) signing-key))))))
-
-  signing-key)
-
-(define* (authenticate-commits repository commits
-                               #:key (report-progress (const #t)))
-  "Authenticate COMMITS, a list of commit objects, calling REPORT-PROGRESS for
-each of them.  Return an alist showing the number of occurrences of each key."
-  (parameterize ((current-keyring (string-append (config-directory)
-                                                 "/keyrings/channels/guix.kbx")))
-    (fold (lambda (commit stats)
-            (report-progress)
-            (let ((signer (authenticate-commit repository commit)))
-              (match (assoc signer stats)
-                (#f          (cons `(,signer . 1) stats))
-                ((_ . count) (cons `(,signer . ,(+ count 1))
-                                   (alist-delete signer stats))))))
-          '()
-          commits)))
-
 (define commit-short-id
   (compose (cut string-take <> 7) oid->string commit-id))
-
-
-;;;
-;;; Caching.
-;;;
-
-(define (authenticated-commit-cache-file)
-  "Return the name of the file that contains the cache of
-previously-authenticated commits."
-  (string-append (cache-directory) "/authentication/channels/guix"))
-
-(define (previously-authenticated-commits)
-  "Return the previously-authenticated commits as a list of commit IDs (hex
-strings)."
-  (catch 'system-error
-    (lambda ()
-      (call-with-input-file (authenticated-commit-cache-file)
-        read))
-    (lambda args
-      (if (= ENOENT (system-error-errno args))
-          '()
-          (apply throw args)))))
-
-(define (cache-authenticated-commit commit-id)
-  "Record in ~/.cache COMMIT-ID and its closure as authenticated (only
-COMMIT-ID is written to cache, though)."
-  (define %max-cache-length
-    ;; Maximum number of commits in cache.
-    200)
-
-  (let ((lst  (delete-duplicates
-               (cons commit-id (previously-authenticated-commits))))
-        (file (authenticated-commit-cache-file)))
-    (mkdir-p (dirname file))
-    (with-atomic-file-output file
-      (lambda (port)
-        (let ((lst (if (> (length lst) %max-cache-length)
-                       (take lst %max-cache-length) ;truncate
-                       lst)))
-          (chmod port #o600)
-          (display ";; List of previously-authenticated commits.\n\n"
-                   port)
-          (pretty-print lst port))))))
 
 
 ;;;
@@ -401,6 +271,8 @@ COMMIT-ID is written to cache, though)."
        (let ((stats (call-with-progress-reporter reporter
                       (lambda (report)
                         (authenticate-commits repository commits
+                                              #:default-authorizations
+                                              %historical-authorized-signing-keys
                                               #:report-progress report)))))
          (cache-authenticated-commit (oid->string (commit-id end-commit)))
 
@@ -408,7 +280,10 @@ COMMIT-ID is written to cache, though)."
            (format #t (G_ "Signing statistics:~%"))
            (for-each (match-lambda
                        ((signer . count)
-                        (format #t "  ~a ~10d~%" signer count)))
+                        (format #t "  ~a ~10d~%"
+                                (openpgp-format-fingerprint
+                                 (openpgp-public-key-fingerprint signer))
+                                count)))
                      (sort stats
                            (match-lambda*
                              (((_ . count1) (_ . count2))
@@ -422,7 +297,3 @@ COMMIT-ID is written to cache, though)."
                (G_ "Usage: git-authenticate START [END]
 
 Authenticate commits START to END or the current head.\n"))))))
-
-;;; Local Variables:
-;;; eval: (put 'with-temporary-files 'scheme-indent-function 2)
-;;; End:

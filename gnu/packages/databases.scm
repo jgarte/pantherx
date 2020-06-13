@@ -11,7 +11,7 @@
 ;;; Copyright © 2016 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016, 2017, 2018 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2016 David Craven <david@craven.ch>
 ;;; Copyright © 2016 Jan Nieuwenhuizen <janneke@gnu.org>
@@ -88,7 +88,9 @@
   #:use-module (gnu packages language)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages linux)
+  #:use-module (gnu packages logging)
   #:use-module (gnu packages man)
+  #:use-module (gnu packages maths)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages onc-rpc)
   #:use-module (gnu packages parallel)
@@ -98,6 +100,7 @@
   #:use-module (gnu packages perl-web)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages popt)
+  #:use-module (gnu packages protobuf)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-web)
@@ -105,6 +108,8 @@
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages rdf)
   #:use-module (gnu packages readline)
+  #:use-module (gnu packages regex)
+  #:use-module (gnu packages rpc)
   #:use-module (gnu packages ruby)
   #:use-module (gnu packages serialization)
   #:use-module (gnu packages sphinx)
@@ -168,7 +173,7 @@
        ("avahi" ,avahi)
        ("cyrus-sasl" ,cyrus-sasl)
        ("openssl" ,openssl)
-       ("util-linux" ,util-linux)))
+       ("util-linux" ,util-linux "lib")))
     ;; http://www.4store.org has been down for a while now.
     (home-page "https://github.com/4store/4store")
     (synopsis "Clustered RDF storage and query engine")
@@ -225,7 +230,7 @@ standard Go idioms.")
 (define-public ephemeralpg
   (package
     (name "ephemeralpg")
-    (version "2.9")
+    (version "3.0")
     (source
      (origin
        (method url-fetch)
@@ -233,17 +238,14 @@ standard Go idioms.")
              "https://eradman.com/ephemeralpg/code/ephemeralpg-"
              version ".tar.gz"))
        (sha256
-        (base32 "1ghp3kya4lxvfwz3c022cx9vqf55jbf9sjw60bxjcb5sszklyc89"))))
+        (base32 "1j0g7g114ma7y7sadbng5p1ss1zsm9zpicm77qspym6565733vvh"))))
     (build-system gnu-build-system)
     (arguments
      '(#:make-flags (list "CC=gcc"
                           (string-append "PREFIX=" %output))
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure)
-         (replace 'check
-           (lambda* (#:key inputs #:allow-other-keys)
-             (invoke "ruby" "test.rb")))
+         (delete 'configure)            ; no configure script
          (add-after 'install 'wrap
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (let ((out (assoc-ref outputs "out")))
@@ -255,11 +257,13 @@ standard Go idioms.")
                                     "/bin")
                     ;; For getsocket.
                     ,(string-append out "/bin")))))
-             #t)))))
+             #t)))
+       #:test-target "test"))
     (inputs
      `(("postgresql" ,postgresql)
        ("util-linux" ,util-linux)))
     (native-inputs
+     ;; For tests.
      `(("ruby" ,ruby)
        ("which" ,which)))
     (home-page "https://eradman.com/ephemeralpg/")
@@ -509,7 +513,7 @@ replacement for the code@{python-memcached} library.")
        ("python" ,python-2)
        ("python2-pymongo" ,python2-pymongo)
        ("python2-pyyaml" ,python2-pyyaml)
-       ("tzdata" ,tzdata)))
+       ("tzdata" ,tzdata-for-tests)))
     (arguments
      `(#:scons ,scons-python2
        #:phases
@@ -762,6 +766,20 @@ Language.")
          "-DINSTALL_SHAREDIR=share")
        #:phases
        (modify-phases %standard-phases
+         ,@(if (string-prefix? "arm" (%current-system))
+               ;; XXX: Because of the GCC 5 input, we need to hide GCC 7 from
+               ;; CPLUS_INCLUDE_PATH so that its headers do not shadow GCC 5.
+               '((add-after 'set-paths 'hide-default-gcc
+                   (lambda* (#:key inputs #:allow-other-keys)
+                     (let ((gcc (assoc-ref inputs "gcc")))
+                       (setenv "CPLUS_INCLUDE_PATH"
+                               (string-join
+                                (delete (string-append gcc "/include/c++")
+                                        (string-split (getenv "CPLUS_INCLUDE_PATH")
+                                                      #\:))
+                                ":"))
+                       #t))))
+               '())
          (add-after 'unpack 'fix-pcre-detection
            (lambda _
              ;; The bundled PCRE in MariaDB has a patch that was upstreamed
@@ -894,7 +912,7 @@ Language.")
      `(("bison" ,bison)
        ;; XXX: On armhf, use GCC 5 to work around <https://bugs.gnu.org/37605>.
        ,@(if (string-prefix? "armhf" (%current-system))
-             `(("gcc", gcc-5))
+             `(("gcc@5", gcc-5))
              '())
        ("perl" ,perl)))
     (inputs
@@ -920,7 +938,7 @@ as a drop-in replacement of MySQL.")
 (define-public mariadb-connector-c
   (package
     (name "mariadb-connector-c")
-    (version "3.1.6")
+    (version "3.1.8")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -929,13 +947,12 @@ as a drop-in replacement of MySQL.")
                     version "-src.tar.gz"))
               (sha256
                (base32
-                "083724f5daaqyzdcx508caz6fk2hs89jff85zg28ih43vxkvnrnj"))))
+                "0yrzhsxmjiwkhchagx8dymzhvxl3k5h40wn9wpicqjvgjb9k8523"))))
     (inputs
      `(("openssl" ,openssl)))
     (build-system cmake-build-system)
     (arguments
-     ;; No tests.
-     '(#:tests? #f))
+     '(#:tests? #f))                    ; no tests
     (home-page "https://mariadb.com/kb/en/mariadb-connector-c/")
     (synopsis "Client library to connect to MySQL or MariaDB")
     (description "The MariaDB Connector/C is used to connect applications
@@ -975,7 +992,7 @@ developed in C/C++ to MariaDB and MySQL databases.")
              (invoke "make" "-C" "contrib" "install"))))))
     (inputs
      `(("readline" ,readline)
-       ("libuuid" ,util-linux)
+       ("libuuid" ,util-linux "lib")
        ("openssl" ,openssl)
        ("zlib" ,zlib)))
     (home-page "https://www.postgresql.org/")
@@ -1130,7 +1147,7 @@ including field and record folding.")))
 (define-public rocksdb
   (package
     (name "rocksdb")
-    (version "6.7.3")
+    (version "6.10.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1139,7 +1156,7 @@ including field and record folding.")))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "19nacd7fb98i97ir07jjsk3l1vf7zzq04c4nqywizq8wakcx99s9"))
+                "0rp8q73dx5f1nkcf2qp6fljm4dpj281y6cqckqgv976kvwvqdgz1"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -1234,19 +1251,20 @@ data in a single database.  RocksDB is partially based on @code{LevelDB}.")
     (name "sparql-query")
     (version "1.1")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/tialaramex/"
-                                  name "/archive/" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/tialaramex/sparql-query")
+                     (commit version)))
               (sha256
-               (base32 "0yq3k20472rv8npcc420q9ab6idy584g5y0q501d360k5q0ggr8w"))
-              (file-name (string-append name "-" version ".tar.gz"))))
+               (base32 "0a84a89idpjhj9w2y3fmvzv7ldps1cva1kxvfmh897k02kaniwxk"))
+              (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (inputs
-     `(("readline" ,readline)
-       ("ncurses" ,ncurses)
+     `(("curl" ,curl)
        ("glib" ,glib)
        ("libxml2" ,libxml2)
-       ("curl" ,curl)))
+       ("ncurses" ,ncurses)
+       ("readline" ,readline)))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (arguments
@@ -1445,7 +1463,7 @@ extremely small.")
 (define-public perl-dbi
   (package
     (name "perl-dbi")
-    (version "1.642")
+    (version "1.643")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1453,7 +1471,7 @@ extremely small.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "0pbzqazrx7pnw4nbyaf27in4b6yddkirbd2ws7mnqa2n7812a81z"))))
+                "1yinx39960y241vf2sknxj0dfz82a5m9gvklq5rw78k0nlyrjawa"))))
     (build-system perl-build-system)
     (synopsis "Database independent interface for Perl")
     (description "This package provides an database interface for Perl.")
@@ -1689,7 +1707,7 @@ columns, primary keys, unique constraints and relationships.")
 (define-public perl-dbd-sqlite
   (package
     (name "perl-dbd-sqlite")
-    (version "1.62")
+    (version "1.64")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1697,7 +1715,7 @@ columns, primary keys, unique constraints and relationships.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "0p78ri1q6xpc1i98i6mlriv8n66iz8r5r11dlsknjm4y58rfz0mx"))))
+                "00gz5aw3xrr92lf9nfk0dhmy7a8jzmxhznddd9b0a8w4a1xqzbpl"))))
     (build-system perl-build-system)
     (inputs `(("sqlite" ,sqlite)))
     (propagated-inputs `(("perl-dbi" ,perl-dbi)))
@@ -1735,14 +1753,14 @@ libmysqlclient.  It will fill an aray with long options, ready to be parsed by
 (define-public perl-sql-abstract
   (package
     (name "perl-sql-abstract")
-    (version "1.86")
+    (version "1.87")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://cpan/authors/id/I/IL/ILMARI/"
                            "SQL-Abstract-" version ".tar.gz"))
        (sha256
-        (base32 "1pwcm8hwxcgidyyrak37lx69d85q728jxsb0b14jz93gbvdgg9z7"))))
+        (base32 "0jhw91b23wc9bkfwcgvka4x5ddxk58m9bcp5ay7a3vx77nla09p9"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-install" ,perl-module-install)
@@ -2035,17 +2053,14 @@ database.")
 (define-public perl-db-file
  (package
   (name "perl-db-file")
-  (version "1.852")
+  (version "1.853")
   (source
     (origin
       (method url-fetch)
-      (uri (string-append
-             "mirror://cpan/authors/id/P/PM/PMQS/DB_File-"
-             version
-             ".tar.gz"))
+      (uri (string-append "mirror://cpan/authors/id/P/PM/PMQS/DB_File-"
+                          version ".tar.gz"))
       (sha256
-        (base32
-          "14c30xyqx9c1hxw40bqbzls41al8gmklxv5jbk2kknmn4dsrbdrs"))))
+        (base32 "1y967si45vj0skip1hnhicbv9da29fv6qcfwnsbnvj06n36mkj6h"))))
   (build-system perl-build-system)
   (inputs `(("bdb" ,bdb)))
   (native-inputs `(("perl-test-pod" ,perl-test-pod)))
@@ -2067,16 +2082,16 @@ database.")
 (define-public lmdb
   (package
     (name "lmdb")
-    (version "0.9.24")
+    (version "0.9.25")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/LMDB/lmdb.git")
+             (url "https://git.openldap.org/openldap/openldap.git")
              (commit (string-append "LMDB_" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "088q6m8fvr12w43s461h7cvpg5hj8csaqj6n9pci150dz7bk5lxm"))))
+        (base32 "0i60zlca8r6fib23gdgl4c80gxpx24772ggpvz94yr7zaai4k11w"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -2088,7 +2103,7 @@ database.")
              (substitute* "Makefile"
                (("/usr/local") (assoc-ref outputs "out")))
             #t)))))
-    (home-page "https://symas.com/products/lightning-memory-mapped-database")
+    (home-page "https://symas.com/lmdb/")
     (synopsis "Lightning Memory-Mapped Database library")
     (description
      "The @dfn{Lightning Memory-Mapped Database} (LMDB) is a high-performance
@@ -2168,14 +2183,14 @@ on another machine, accessed via TCP/IP.")
 (define-public python-peewee
   (package
     (name "python-peewee")
-    (version "2.10.2")
+    (version "3.9.6")
       (source
         (origin
         (method url-fetch)
         (uri (pypi-uri "peewee" version))
         (sha256
          (base32
-          "10f2mrd5hw6rjklrzaix2lsxlgc8vx3xak54arcy6yd791zhchi3"))))
+          "1j4sh946k0736m7pd54z0y6i2hjhgg3kdllx1pwq8xkzzcgrx1xw"))))
     (build-system python-build-system)
     (arguments
      `(#:tests? #f)) ; Fails to import test data
@@ -2197,24 +2212,24 @@ can autogenerate peewee models using @code{pwiz}, a model generator.")
 (define-public python-tortoise-orm
   (package
     (name "python-tortoise-orm")
-    (version "0.16.3")
+    (version "0.16.7")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "tortoise-orm" version))
        (sha256
         (base32
-         "01hbvfyxs2qd1mjc96aipwsdxxhydw8ww686r4gsf87bl6f98dvz"))))
+         "0wr7p4v0b16ypm9fcpwpl99kf491m6w3jkd13xcsgq13fy73fbqc"))))
     (build-system python-build-system)
     ;; Disable tests for now. They pull in a lot of dependencies.
     (arguments `(#:tests? #f))
     (native-inputs
-     `(("python-ciso8601" ,python-ciso8601)
-       ("python-asynctest" ,python-asynctest)
+     `(("python-asynctest" ,python-asynctest)
        ("python-nose2" ,python-nose2)))
     (propagated-inputs
      `(("python-aiosqlite" ,python-aiosqlite)
        ("python-pypika" ,python-pypika)
+       ("python-ciso8601" ,python-ciso8601)
        ("python-typing-extensions"
         ,python-typing-extensions)))
     (home-page
@@ -2368,13 +2383,13 @@ etc., and an SQL engine for performing simple SQL queries.")
 (define-public python-lmdb
   (package
     (name "python-lmdb")
-    (version "0.95")
+    (version "0.98")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "lmdb" version))
               (sha256
                (base32
-                "0nx9f193gzl33r1lbqhb96h1igya7pz8wmahr8m9x5zgc05hal91"))
+                "027pgbdhhdcbwj53vrzr6a60gjhmz4s75gl3180fd4q8pwlbq986"))
               (modules '((guix build utils)))
               (snippet
                ;; Delete bundled lmdb source files.
@@ -2409,9 +2424,6 @@ Memory-Mapped Database} (LMDB), a high-performance key-value store.")
            ;; ‘lib/win32/inttypes.h’ and ‘lib/win32-stdint/stdint.h’ are BSD-3,
            ;; but not actually needed on platforms currently supported by Guix.
            license:bsd-3))))
-
-(define-public python2-lmdb
-  (package-with-python2 python-lmdb))
 
 (define-public python-orator
   (package
@@ -2698,7 +2710,7 @@ PickleShare.")
 (define-public python-apsw
   (package
     (name "python-apsw")
-    (version "3.28.0-r1")
+    (version "3.31.1-r1")
     (source
       (origin
         (method url-fetch)
@@ -2706,7 +2718,7 @@ PickleShare.")
                             "/download/" version "/apsw-" version ".zip"))
         (sha256
           (base32
-           "0x62534l5hcgwrc4k2gxpdzc1sxlhm6m4nwlay74rnmr77qh8wly"))))
+           "1gap5lr6c7bp134nzvfwr693i6d0fqyaysg3ms2cayjldv616yfx"))))
     (build-system python-build-system)
     (native-inputs
      `(("unzip" ,unzip)))
@@ -2743,14 +2755,14 @@ translate the complete SQLite API into Python.")
 (define-public python-aiosqlite
   (package
     (name "python-aiosqlite")
-    (version "0.11.0")
+    (version "0.12.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "aiosqlite" version))
        (sha256
         (base32
-         "1f3zdldp9zgrw6qz5fsp3wa5zw73cjf139pj4vf24ryv895320jg"))))
+         "1w8248yz85xyzvvh4jaxnc59fqil45aka6h82kn1rcih4rjxbnn1"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-aiounittest" ,python-aiounittest)))
@@ -3074,14 +3086,16 @@ transforms idiomatic python function calls to well-formed SQL queries.")
 (define-public python-pypika
   (package
     (name "python-pypika")
-    (version "0.36.0")
+    (version "0.37.2")
     (source
-     (origin
-       (method url-fetch)
-       (uri (pypi-uri "PyPika" version))
-       (sha256
-        (base32
-         "0qzn5vygirg52dlizm6ayzdc5llq8p2krrx0kymr236lrz89wqp8"))))
+     (origin (method git-fetch)
+             (uri (git-reference
+                   (url "https://github.com/kayak/pypika.git")
+                   (commit (string-append "v" version))))
+             (file-name (git-file-name name version))
+             (sha256
+              (base32
+               "089z1c778q1fwhzsc88ws8j5gm2hgxknibabn4wpax8rz2bfs3ck"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-parameterized" ,python-parameterized)))
@@ -3207,20 +3221,22 @@ Monitor read/write activity on a mongo server
 @end table")
     (license license:asl2.0)))
 
+;; There are many wrappers for this in other languages. When touching, please
+;; be sure to ensure all dependencies continue to build.
 (define-public apache-arrow
   (package
     (name "apache-arrow")
-    (version "0.10.0")
+    (version "0.17.1")
     (source
-      (origin
-        (method git-fetch)
-        (uri (git-reference
-               (url "https://github.com/apache/arrow")
-               (commit (string-append "apache-arrow-" version))))
-        (file-name (git-file-name name version))
-        (sha256
-         (base32
-          "04xkp922b8qrrnpvv9ixxnvk7151n1plzx6aqdff6frn9651zvxs"))))
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/apache/arrow")
+             (commit (string-append "apache-arrow-" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "02r6yx3yhywzikd3b0vfkjgddhfiriyx2vpm3jf5880wq59x798a"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f
@@ -3233,91 +3249,135 @@ Monitor read/write activity on a mongo server
              (setenv "BOOST_ROOT" (assoc-ref %build-inputs "boost"))
              (setenv "BROTLI_HOME" (assoc-ref %build-inputs "brotli"))
              (setenv "FLATBUFFERS_HOME" (assoc-ref %build-inputs "flatbuffers"))
-             (setenv "JEMALLOC_HOME" (assoc-ref %build-inputs "jemalloc"))
              (setenv "RAPIDJSON_HOME" (assoc-ref %build-inputs "rapidjson"))
              #t)))
        #:build-type "Release"
        #:configure-flags
        (list "-DARROW_PYTHON=ON"
+             "-DARROW_GLOG=ON"
+             ;; Parquet options
+             "-DARROW_PARQUET=ON"
+             "-DPARQUET_BUILD_EXECUTABLES=ON"
+             ;; The maintainers disallow using system versions of
+             ;; jemalloc:
+             ;; https://issues.apache.org/jira/browse/ARROW-3507. This
+             ;; is unfortunate because jemalloc increases performance:
+             ;; https://arrow.apache.org/blog/2018/07/20/jemalloc/.
+             "-DARROW_JEMALLOC=OFF"
 
-             ;; Install to PREFIX/lib (the default is
-             ;; PREFIX/lib64).
-             (string-append "-DCMAKE_INSTALL_LIBDIR="
-                            (assoc-ref %outputs "out")
+             ;; The CMake option ARROW_DEPENDENCY_SOURCE is a global
+             ;; option that instructs the build system how to resolve
+             ;; each dependency. SYSTEM = Finding the dependency in
+             ;; system paths using CMake's built-in find_package
+             ;; function, or using pkg-config for packages that do not
+             ;; have this feature
+             "-DARROW_DEPENDENCY_SOURCE=SYSTEM"
+
+             ;; Split output into its component packages.
+             (string-append "-DCMAKE_INSTALL_PREFIX="
+                            (assoc-ref %outputs "lib"))
+             (string-append "-DCMAKE_INSTALL_RPATH="
+                            (assoc-ref %outputs "lib")
                             "/lib")
+             (string-append "-DCMAKE_INSTALL_BINDIR="
+                            (assoc-ref %outputs "out")
+                            "/bin")
+             (string-append "-DCMAKE_INSTALL_INCLUDEDIR="
+                            (assoc-ref %outputs "include")
+                            "/share/include")
 
-             ;; XXX These Guix package offer static
-             ;; libraries that are not position independent,
-             ;; and ld fails to link them into the arrow .so
-             "-DARROW_WITH_SNAPPY=OFF"
-             "-DARROW_WITH_ZLIB=OFF"
-             "-DARROW_WITH_ZSTD=OFF"
-             "-DARROW_WITH_LZ4=OFF"
+
+             "-DARROW_WITH_SNAPPY=ON"
+             "-DARROW_WITH_ZLIB=ON"
+             "-DARROW_WITH_ZSTD=ON"
+             "-DARROW_WITH_LZ4=ON"
+             "-DARROW_COMPUTE=ON"
+             "-DARROW_CSV=ON"
+             "-DARROW_DATASET=ON"
+             "-DARROW_FILESYSTEM=ON"
+             "-DARROW_HDFS=ON"
+             "-DARROW_JSON=ON"
+             ;; Arrow Python C++ integration library (required for
+             ;; building pyarrow). This library must be built against
+             ;; the same Python version for which you are building
+             ;; pyarrow. NumPy must also be installed. Enabling this
+             ;; option also enables ARROW_COMPUTE, ARROW_CSV,
+             ;; ARROW_DATASET, ARROW_FILESYSTEM, ARROW_HDFS, and
+             ;; ARROW_JSON.
+             "-DARROW_PYTHON=ON"
 
              ;; Building the tests forces on all the
              ;; optional features and the use of static
              ;; libraries.
              "-DARROW_BUILD_TESTS=OFF"
+             "-DBENCHMARK_ENABLE_GTEST_TESTS=OFF"
+             ;;"-DBENCHMARK_ENABLE_TESTING=OFF"
              "-DARROW_BUILD_STATIC=OFF")))
     (inputs
      `(("boost" ,boost)
-       ("rapidjson" ,rapidjson)
        ("brotli" ,google-brotli)
-       ("flatbuffers" ,flatbuffers)
-       ("jemalloc" ,jemalloc)
+       ("double-conversion" ,double-conversion)
+       ("snappy" ,snappy)
+       ("gflags" ,gflags)
+       ("glog" ,glog)
+       ("apache-thrift" ,apache-thrift "lib")
+       ("protobuf" ,protobuf)
+       ("rapidjson" ,rapidjson)
+       ("zlib" ,zlib)
+       ("bzip2" ,bzip2)
+       ("lz4" ,lz4)
+       ("zstd" ,zstd "lib")
+       ("re2" ,re2)
+       ("grpc" ,grpc)
        ("python-3" ,python)
        ("python-numpy" ,python-numpy)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (outputs '("out" "lib" "include"))
     (home-page "https://arrow.apache.org/")
     (synopsis "Columnar in-memory analytics")
     (description "Apache Arrow is a columnar in-memory analytics layer
-designed to accelerate big data. It houses a set of canonical in-memory
+designed to accelerate big data.  It houses a set of canonical in-memory
 representations of flat and hierarchical data along with multiple
-language-bindings for structure manipulation. It also provides IPC and common
+language-bindings for structure manipulation.  It also provides IPC and common
 algorithm implementations.")
     (license license:asl2.0)))
 
 (define-public python-pyarrow
   (package
+    (inherit apache-arrow)
     (name "python-pyarrow")
-    (version "0.10.0")
-    (source
-      (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/apache/arrow")
-             (commit (string-append "apache-arrow-" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32
-         "04xkp922b8qrrnpvv9ixxnvk7151n1plzx6aqdff6frn9651zvxs"))))
     (build-system python-build-system)
     (arguments
-     '(#:tests? #f ; XXX There are no tests in the "python" directory
+     '(#:tests? #f          ; XXX There are no tests in the "python" directory
        #:phases
        (modify-phases %standard-phases
          (delete 'build) ; XXX the build is performed again during the install phase
          (add-after 'unpack 'enter-source-directory
            (lambda _ (chdir "python") #t))
-         (add-after 'unpack 'set-env
+         (add-after 'unpack 'make-git-checkout-writable
            (lambda _
-             (setenv "ARROW_HOME" (assoc-ref %build-inputs "apache-arrow"))
+             (for-each make-file-writable (find-files "."))
              #t)))))
     (propagated-inputs
-     `(("apache-arrow" ,apache-arrow)
+     `(("apache-arrow" ,apache-arrow "lib")
        ("python-numpy" ,python-numpy)
        ("python-pandas" ,python-pandas)
        ("python-six" ,python-six)))
     (native-inputs
      `(("cmake" ,cmake-minimal)
+       ("pkg-config" ,pkg-config)
        ("python-cython" ,python-cython)
        ("python-pytest" ,python-pytest)
        ("python-pytest-runner" ,python-pytest-runner)
        ("python-setuptools-scm" ,python-setuptools-scm)))
+    (outputs '("out"))
     (home-page "https://arrow.apache.org/docs/python/")
     (synopsis "Python bindings for Apache Arrow")
-    (description "This library provides a Pythonic API wrapper for the reference
-Arrow C++ implementation, along with tools for interoperability with pandas,
-NumPy, and other traditional Python scientific computing packages.")
+    (description
+     "This library provides a Pythonic API wrapper for the reference Arrow C++
+implementation, along with tools for interoperability with pandas, NumPy, and
+other traditional Python scientific computing packages.")
     (license license:asl2.0)))
 
 (define-public python2-pyarrow
@@ -3456,7 +3516,8 @@ The drivers officially supported by @code{libdbi} are:
        ("sqlite" ,sqlite)
        ("odbc" ,unixodbc)
        ("boost" ,boost)
-       ("mysql" ,mysql)))
+       ("mariadb:dev" ,mariadb "dev")
+       ("mariadb:lib" ,mariadb "lib")))
     (arguments
      `(#:tests? #f ; Tests may require running database management systems.
        #:phases
@@ -3464,7 +3525,8 @@ The drivers officially supported by @code{libdbi} are:
          (add-after 'unpack 'fix-lib-path
            (lambda _
              (substitute* "CMakeLists.txt"
-               (("set\\(SOCI_LIBDIR \"lib64\"\\)") "")))))))
+               (("set\\(SOCI_LIBDIR \"lib64\"\\)") ""))
+             #t)))))
     (synopsis "C++ Database Access Library")
     (description
      "SOCI is an abstraction layer for several database backends, including

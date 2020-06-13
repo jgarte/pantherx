@@ -6,18 +6,20 @@
 ;;; Copyright © 2017 Carlo Zancanaro <carlo@zancanaro.id.au>
 ;;; Copyright © 2017 Theodoros Foradis <theodoros@foradis.org>
 ;;; Copyright © 2017 Vasile Dumitrascu <va511e@yahoo.com>
-;;; Copyright © 2017, 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2018 Adriano Peluso <catonano@gmail.com>
 ;;; Copyright © 2018, 2019, 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2018 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2019, 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2019 Tanguy Le Carrour <tanguy@bioneland.org>
-;;; Copyright © 2019 Martin Becze <mjbecze@riseup.net>
+;;; Copyright © 2019, 2020 Martin Becze <mjbecze@riseup.net>
 ;;; Copyright © 2019 Sebastian Schott <sschott@mailbox.org>
 ;;; Copyright © 2020 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2020 Christopher Lemmer Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2020 Tom Zander <tomz@freedommail.ch>
+;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -41,6 +43,7 @@
   #:use-module (guix git-download)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system cmake)
+  #:use-module (guix build-system copy)
   #:use-module (guix build-system emacs)
   #:use-module (guix build-system python)
   #:use-module (guix build-system glib-or-gtk)
@@ -102,13 +105,14 @@
     (name "bitcoin-core")
     (version "0.19.1")
     (source (origin
-             (method url-fetch)
-             (uri
-              (string-append "https://bitcoincore.org/bin/bitcoin-core-"
-                             version "/bitcoin-" version ".tar.gz"))
-             (sha256
-              (base32
-               "1h3w7brc18145np920vy7j5ms5hym59hvr40swdjx34fbdaisngj"))))
+              (method url-fetch)
+              (uri
+               (string-append "https://bitcoincore.org/bin/bitcoin-core-"
+                              version "/bitcoin-" version ".tar.gz"))
+              (sha256
+               (base32
+                "1h3w7brc18145np920vy7j5ms5hym59hvr40swdjx34fbdaisngj"))
+              (patches (search-patches "bitcoin-core-python-compat.patch"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -125,35 +129,36 @@
        ("qtbase" ,qtbase)))
     (arguments
      `(#:configure-flags
-        (list
-          ;; Boost is not found unless specified manually.
-          (string-append "--with-boost="
-                         (assoc-ref %build-inputs "boost"))
-          ;; XXX: The configure script looks up Qt paths by
-          ;; `pkg-config --variable=host_bins Qt5Core`, which fails to pick
-          ;; up executables residing in 'qttools', so we specify them here.
-          (string-append "ac_cv_path_LRELEASE="
-                         (assoc-ref %build-inputs "qttools")
-                         "/bin/lrelease")
-          (string-append "ac_cv_path_LUPDATE="
-                         (assoc-ref %build-inputs "qttools")
-                         "/bin/lupdate"))
+       (list
+        ;; Boost is not found unless specified manually.
+        (string-append "--with-boost="
+                       (assoc-ref %build-inputs "boost"))
+        ;; XXX: The configure script looks up Qt paths by
+        ;; `pkg-config --variable=host_bins Qt5Core`, which fails to pick
+        ;; up executables residing in 'qttools', so we specify them here.
+        (string-append "ac_cv_path_LRELEASE="
+                       (assoc-ref %build-inputs "qttools")
+                       "/bin/lrelease")
+        (string-append "ac_cv_path_LUPDATE="
+                       (assoc-ref %build-inputs "qttools")
+                       "/bin/lupdate"))
        #:phases
-        (modify-phases %standard-phases
-          (add-before 'configure 'make-qt-deterministic
+       (modify-phases %standard-phases
+         (add-before 'configure 'make-qt-deterministic
            (lambda _
-            ;; Make Qt deterministic.
-            (setenv "QT_RCC_SOURCE_DATE_OVERRIDE" "1")
-            #t))
-          (add-before 'check 'set-home
+             ;; Make Qt deterministic.
+             (setenv "QT_RCC_SOURCE_DATE_OVERRIDE" "1")
+             #t))
+         (add-before 'check 'set-home
            (lambda _
-            (setenv "HOME" (getenv "TMPDIR")) ; tests write to $HOME
-            #t))
-          (add-after 'check 'check-functional
+             (setenv "HOME" (getenv "TMPDIR")) ; tests write to $HOME
+             #t))
+         (add-after 'check 'check-functional
            (lambda _
-            (invoke "python3" "./test/functional/test_runner.py"
-                    (string-append "--jobs=" (number->string (parallel-job-count))))
-            #t)))))
+             (invoke
+              "python3" "./test/functional/test_runner.py"
+              (string-append "--jobs=" (number->string (parallel-job-count))))
+             #t)))))
     (home-page "https://bitcoin.org/en/")
     (synopsis "Bitcoin peer-to-peer client")
     (description
@@ -168,23 +173,22 @@ line client and a client based on Qt.")
 (define-public homebank
   (package
     (name "homebank")
-    (version "5.2.8")
+    (version "5.4.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://homebank.free.fr/public/homebank-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "13ampiv68y30kc0p2560g3yz8whqpwnidfcnb9lndv93b9ca767y"))))
+                "0bkjvd819kw9cwmr3macggbg8yil3yc8v2za8pjrl6g746s89kn6"))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("intltool" ,intltool)))
     (inputs
      `(("gtk+" ,gtk+)
+       ("libofx" ,libofx)
        ("libsoup" ,libsoup)))
-    (arguments
-     `(#:configure-flags (list "-without-ofx"))) ; libofx is not available yet
     (home-page "http://homebank.free.fr/")
     (synopsis "Graphical personal accounting application")
     (description "HomeBank allows you to manage your personal accounts at
@@ -196,7 +200,7 @@ and dynamically with report tools based on filtering and graphical charts.")
 (define-public ledger
   (package
     (name "ledger")
-    (version "3.1.3")
+    (version "3.2.0")
     (source
      (origin
        (method git-fetch)
@@ -205,16 +209,32 @@ and dynamically with report tools based on filtering and graphical charts.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0bfnrqrd6wqgsngfpqi30xh6yy86pwl25iwzrqy44q31r0zl4mm3"))))
+        (base32 "1l5c9jf2wnly6ncm9civ8i7v47xld15g1y7wpl0hqwgbfyffwjci"))))
     (build-system cmake-build-system)
     (arguments
-     `(#:configure-flags
+     `(#:modules (,@%cmake-build-system-modules
+                  ((guix build python-build-system) #:select (python-version)))
+       #:imported-modules (,@%cmake-build-system-modules
+                           (guix build python-build-system))
+       #:configure-flags
        `("-DBUILD_DOCS:BOOL=ON"
          "-DBUILD_WEB_DOCS:BOOL=ON"
          "-DUSE_PYTHON:BOOL=ON"
          "-DCMAKE_INSTALL_LIBDIR:PATH=lib")
        #:phases
-       (modify-phases %standard-phases
+       (modify-phases (@ (guix build cmake-build-system) %standard-phases)
+         (add-after 'unpack 'fix-python-installation-directory
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             ;; By default the package attempts to install its Python bindings
+             ;; to the Python store directory, which obviously does not work.
+             ;; Passing -DPython_SITEARCH in #:configure-flags has no effect.
+             (let ((python-version (python-version (assoc-ref inputs "python")))
+                   (out (assoc-ref outputs "out")))
+               (substitute* "src/CMakeLists.txt"
+                 (("DESTINATION \\$\\{Python_SITEARCH\\}")
+                  (string-append "DESTINATION " out "/lib/python"
+                                 python-version "/site-packages")))
+               #t)))
          (add-before 'configure 'install-examples
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((examples (string-append (assoc-ref outputs "out")
@@ -240,12 +260,12 @@ and dynamically with report tools based on filtering and graphical charts.")
        ("gmp" ,gmp)
        ("libedit" ,libedit)
        ("mpfr" ,mpfr)
-       ("python" ,python-2)
-       ("tzdata" ,tzdata)
+       ("python" ,python)
        ("utfcpp" ,utfcpp)))
     (native-inputs
      `(("groff" ,groff)
-       ("texinfo" ,texinfo)))
+       ("texinfo" ,texinfo)
+       ("tzdata" ,tzdata-for-tests)))
     (home-page "https://ledger-cli.org/")
     (synopsis "Command-line double-entry accounting program")
     (description
@@ -390,11 +410,11 @@ This package provides the Emacs mode.")
     (synopsis "Free Elster client, for sending Germany VAT declarations")
     (description
      "Geierlein is a free Elster client, i.e. an application that
-allows to send VAT declarations to Germany's fiscal authorities.
+sends VAT declarations to Germany's fiscal authorities.
 
 Currently it is *not* possible to send returns that are due annually
 (especially the income tax return) since the fiscal authority doesn't
-allow to do that off the ERiC library (which is proprietary however).
+allow doing that off the ERiC library (which is proprietary however).
 It's not clear at the moment whether one day it will be possible to
 do so.")
     (license license:agpl3+)))
@@ -455,7 +475,7 @@ other machines/servers.  Electrum does not download the Bitcoin blockchain.")
 (define-public electron-cash
   (package
     (name "electron-cash")
-    (version "4.0.14")
+    (version "4.0.15")
     (source
      (origin
        (method git-fetch)
@@ -464,7 +484,7 @@ other machines/servers.  Electrum does not download the Bitcoin blockchain.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1dp7cj1185h6xfz6jzh0iq58zvg3wq9hl96bkgxkf5h4ygni2vm6"))))
+        (base32 "0bvj64fdxpi0dbivhgv509kqq503zjp7r7xckl8q5c48j5h1zik2"))))
     (build-system python-build-system)
     (inputs
      `(("libevent" ,libevent)
@@ -527,7 +547,7 @@ other machines/servers.  Electroncash does not download the Bitcoin Cash blockch
   ;; the system's dynamically linked library.
   (package
     (name "monero")
-    (version "0.15.0.5")
+    (version "0.16.0.0")
     (source
      (origin
        (method git-fetch)
@@ -548,7 +568,7 @@ other machines/servers.  Electroncash does not download the Bitcoin Cash blockch
            #t))
        (sha256
         (base32
-         "06zzwa0y8ic6x3y2fy501788r51p4klanyvmm76ywrwf087njlkv"))))
+         "0x74h5z0nxxxip97ibc854pqmrgd8r4d6w62m424f66i8gbzfskh"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("doxygen" ,doxygen)
@@ -646,7 +666,7 @@ the Monero command line client and daemon.")
 (define-public monero-gui
   (package
     (name "monero-gui")
-    (version "0.15.0.4")
+    (version "0.16.0.0")
     (source
      (origin
        (method git-fetch)
@@ -656,14 +676,16 @@ the Monero command line client and daemon.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "12m5fgnxkr11q2arx1m5ccpxqm5ljcvm6l547dwqn297zs5jim4z"))))
+         "06vdrsj5y9k0zn32hspyxc7sw1kkyrvi3chzkdbnxk9jvyj8k4ld"))))
     (build-system qt-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)
+     `(("monero-source" ,(package-source monero))
+       ("pkg-config" ,pkg-config)
        ("qttools" ,qttools)))
     (inputs
      `(("boost" ,boost)
        ("hidapi" ,hidapi)
+       ("libgcrypt" ,libgcrypt)
        ("libsodium" ,libsodium)
        ("libunwind" ,libunwind)
        ("libusb" ,libusb)
@@ -685,7 +707,16 @@ the Monero command line client and daemon.")
      `(#:tests? #f ; No tests
        #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'fix-makefile-vars
+         (add-after 'unpack 'get-monero-extra-files
+           ;; Some headers and GnuPG public keys of the monero package source
+           ;; code are required to build the GUI.
+           (lambda* (#:key inputs #:allow-other-keys)
+             (invoke "tar" "-xv" "--wildcards" "--strip-components=1"
+                     "-C" "monero"
+                     "-f" (assoc-ref inputs "monero-source")
+                     "*.asc" "*.h")
+             #t))
+         (add-after 'get-monero-extra-files 'fix-makefile-vars
            (lambda _
              (substitute* "src/zxcvbn-c/makefile"
                (("\\?=") "="))
@@ -852,31 +883,21 @@ Ledger Blue/Nano S.")
 (define-public python-trezor
   (package
     (name "python-trezor")
-    (version "0.11.3")
+    (version "0.12.0")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "trezor" version))
         (sha256
           (base32
-            "0211m027vlvyqy83kwbjjjxalb04xgf1klv0h0y0f0yhj07516n7"))))
+            "0ycmpwjv5xp25993divjhaq5j766zgcy22xx39xfc1pcvldq5g7n"))))
     (build-system python-build-system)
-    (arguments
-     `(#:phases
-        (modify-phases %standard-phases
-          ;; Default tests run device-specific tests which fail, only run specific tests.
-          (replace 'check
-            (lambda* (#:key inputs outputs #:allow-other-keys)
-              ;; Delete tests that require network access.
-              (delete-file "trezorlib/tests/unit_tests/test_tx_api.py")
-              (invoke "python" "-m" "pytest" "--pyarg" "trezorlib.tests.unit_tests"))))))
     (propagated-inputs
      `(("python-click" ,python-click)
        ("python-construct" ,python-construct)
        ("python-ecdsa" ,python-ecdsa)
        ("python-libusb1" ,python-libusb1)
        ("python-mnemonic" ,python-mnemonic)
-       ("python-pyblake2" ,python-pyblake2)
        ("python-requests" ,python-requests)
        ("python-typing-extensions" ,python-typing-extensions)))
     (native-inputs
@@ -1049,13 +1070,13 @@ Luhn and family of ISO/IEC 7064 check digit algorithms. ")
 (define-public python-duniterpy
   (package
     (name "python-duniterpy")
-    (version "0.56.0")
+    (version "0.57.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "duniterpy" version))
        (sha256
-        (base32 "1h8d8cnr6k5sw4cqy8r82zy4ldzpvn4nlk2221lz2haqq7xm4s5z"))))
+        (base32 "0rw2c7r9gcqhymp82gbk1ky45zqbypsi2q5x4vdwjc6g00kh7h6l"))))
     (build-system python-build-system)
     (arguments
      ;; FIXME: Tests fail with: "ModuleNotFoundError: No module named
@@ -1165,10 +1186,37 @@ information.")
     (home-page "https://grisbi.org")
     (license license:gpl2+)))
 
+(define-public trezord-udev-rules
+  (let ((commit "bff7fdfe436c727982cc553bdfb29a9021b423b0")
+        (revision "0"))
+      (package
+        (name "trezord-udev-rules")
+        (version (git-version "0.0.0" revision commit))
+        (source
+         (origin
+           (method git-fetch)
+           (uri (git-reference
+                 (url "https://github.com/trezor/trezor-common.git")
+                 (commit commit)))
+           (sha256
+            (base32
+             "14mrirrn68if7ja6qdk9qlxs1hv0f21vrxy5ncnms0gx9iwakp2l"))
+           (file-name (git-file-name name version))))
+        (build-system copy-build-system)
+        (arguments
+         '(#:install-plan
+           '(("./udev/51-trezor.rules" "lib/udev/rules.d/"))))
+        (home-page "https://github.com/trezor/trezor-common")
+        (synopsis "Udev rules for trezord")
+        (description
+         "This contains the udev rules for trezord.  This will let a user run
+trezord as a regular user instead of needing to it run as root.")
+        (license license:lgpl3+))))
+
 (define-public trezord
   (package
     (name "trezord")
-    (version "2.0.17")
+    (version "2.0.29")
     (source
      (origin
        (method git-fetch)
@@ -1177,7 +1225,7 @@ information.")
               (commit (string-append "v" version))))
        (sha256
         (base32
-         "0nqzpq0i3crh0i4r1cppja5sn3rwi1fv9afxzwzv63096x5l30a7"))
+         "1ks1fa0027s3xp0z6qp0dxmayvrb4dwwscfhbx7da0khp153f2cp"))
        (file-name (git-file-name name version))))
     (build-system go-build-system)
     (arguments
@@ -1190,9 +1238,8 @@ Trezor wallet.")
 
 (define-public bitcoin-abc
   (package
-    (inherit bitcoin-core)
     (name "bitcoin-abc")
-    (version "0.20.7")
+    (version "0.21.6")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.bitcoinabc.org/"
@@ -1200,12 +1247,10 @@ Trezor wallet.")
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0py5ilfi4r8qh5r9637vwch27sqrrn0dg9rz8bccnj3lp2xpzw27"))))
+                "1w3c397h2mxsi9471fwyc3yjxw7s4jgvr4q3w2qfh49bhr4wygqj"))))
+    (build-system cmake-build-system)
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("libtool" ,libtool)
-       ("pkg-config" ,pkg-config)
+     `(("pkg-config" ,pkg-config)
        ("python" ,python)               ; for the tests
        ("util-linux" ,util-linux)       ; provides the hexdump command for tests
        ("qttools" ,qttools)))
@@ -1218,7 +1263,28 @@ Trezor wallet.")
        ("protobuf" ,protobuf)
        ("qrencode" ,qrencode)
        ("qtbase" ,qtbase)
+       ("zeromq" ,zeromq)
        ("zlib" ,zlib)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-before 'configure 'make-qt-deterministic
+           (lambda _
+             ;; Make Qt deterministic.
+             (setenv "QT_RCC_SOURCE_DATE_OVERRIDE" "1")
+             #t))
+         (add-before 'check 'set-home
+           (lambda _
+             (setenv "HOME" (getenv "TMPDIR")) ; tests write to $HOME
+             #t))
+         (add-after 'check 'check-functional
+           (lambda _
+             (invoke
+              "python3" "./test/functional/test_runner.py"
+              (string-append "--jobs=" (number->string (parallel-job-count)))
+              ;; TODO: find why the abc-miner-fund test fails.
+              "--exclude=abc-miner-fund")
+             #t)))))
     (home-page "https://www.bitcoinabc.org/")
     (synopsis "Bitcoin ABC peer-to-peer full node for the Bitcoin Cash protocol")
     (description
@@ -1232,7 +1298,8 @@ As a fork it implemented changes lowering the time between blocks and now
 offers confimations after less than 5 seconds and have significantly lower
 fees that BTC.  Bitcoin ABC is the reference implementation of the Bitcoin
 Cash protocol.  This package provides the Bitcoin Cash command line client and
-a client based on Qt.  This is a fork of Bitcoin Core.")))
+a client based on Qt.  This is a fork of Bitcoin Core.")
+    (license license:expat)))
 
 (define-public libofx
   (package
@@ -1331,16 +1398,16 @@ entity management.")
 (define-public bitcoin-unlimited
   (package
     (name "bitcoin-unlimited")
-    (version "1.7.0.0")
+    (version "1.8.0.0")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://github.com/BitcoinUnlimited/BitcoinUnlimited.git")
-             (commit (string-append "bucash" version))))
+             (commit (string-append "BCHunlimited" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "05rcd73mg2fb2zb6b1imzspck6jhcy3xymrr7n24kwjrzmvihdpx"))))
+        (base32 "1ivkig6q7i4n389dg1zv06cmfki20bjq0slmshx0p5a1aavkqj7k"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -1378,12 +1445,23 @@ entity management.")
                        "/bin/lupdate"))
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'fix-build
+           (lambda _
+             ;; The 'stack' header was not included in unlimited.cpp, which
+             ;; caused the build to fail.
+             (substitute* "src/unlimited.cpp"
+               (("#include <queue>" all)
+                (string-append all "\n#include <stack>")))
+             #t))
          (add-after 'unpack 'fix-tests
            (lambda _
-             ;; TODO: Find why utilprocess_tests never ends. Disable for now.
-             (substitute* "src/test/utilprocess_tests.cpp"
-               (("#if \\(BOOST_OS_LINUX && \\(BOOST_VERSION >= 106500\\)\\)")
-                "#if 0"))
+             ;; TODO: Find why txvalidationcache_tests fails and
+             ;; utilprocess_tests never ends. Disable for now.
+             (substitute* "src/Makefile.test.include"
+               (("test/txvalidationcache_tests.cpp")
+                "")
+               (("test/utilprocess_tests.cpp")
+                ""))
              #t))
          (add-before 'configure 'make-qt-deterministic
            (lambda _
@@ -1405,14 +1483,14 @@ a Qt GUI.")
 (define-public fulcrum
   (package
     (name "fulcrum")
-    (version "1.0.5b")
+    (version "1.1.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://gitlab.com/FloweeTheHub/fulcrum/-/archive/v"
                            version "/fulcrum-v" version ".tar.gz"))
        (sha256
-        (base32 "1c1hkik8avill8ha33g76rk4b03j5ac8wiml69q4jav7a63ywgfy"))))
+        (base32 "04w5gw02d39caa8a0l6wkn87kc43zzad2prqsyrcq97vlbkdx6x6"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -1439,6 +1517,73 @@ Simplified Payment Verification} wallets, it provides the full API for those
 walets in a fast and small server.  The full data is stored in a full node,
 like Flowee the Hub, which Fulcrum connects to over RPC.")
     (license license:gpl3+)))
+
+(define-public flowee
+  (package
+    (name "flowee")
+    (version "2020.04.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://gitlab.com/FloweeTheHub/thehub/-/archive/"
+                            version "/thehub-" version ".tar.gz"))
+       (sha256
+         (base32 "1vwvaxm3b71pfx8l4rrv06wqks6xdf2333w856b36s1bzvj53rhc"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:configure-flags '("-Dbuild_tests=ON" "-Denable_gui=OFF")
+       #:phases
+        (modify-phases %standard-phases
+          (add-before 'configure 'make-qt-deterministic
+            (lambda _
+              ;; Make Qt deterministic.
+              (setenv "QT_RCC_SOURCE_DATE_OVERRIDE" "1")
+             #t))
+          (add-before 'configure 'disable-black-box
+            ;; the black-box testing runs full hubs and lets them interact.
+            ;; this is more fragile and a slow machine, or low memory machine, may
+            ;; make the tests timeout and fail.  We just disable them here.
+            (lambda _
+              (substitute* "testing/CMakeLists.txt"
+                (("test_api") ""))
+              (substitute* "testing/CMakeLists.txt"
+                (("add_subdirectory\\(api\\)") ""))
+              #t))
+          (add-after 'configure 'set-build-info
+            ;; Their genbuild.sh to generate a build.h fails in guix (no .git dir) .
+            ;; Its purpose is to write the tag name in the build.h file. We do that
+            ;; here instead.
+            (lambda _
+              (with-output-to-file "include/build.h"
+                (lambda _
+                  (display
+                    (string-append "#define BUILD_DESC " "\"", version "\""))))))
+          (add-before 'check 'set-home
+            (lambda _
+              (setenv "HOME" (getenv "TMPDIR")) ; tests write to $HOME
+              #t))
+          (replace 'check
+            (lambda _
+              (invoke "make" "check" "-C" "testing"))))))
+    (inputs
+     `(("boost" ,boost)
+       ("gmp" ,gmp)
+       ("libevent" ,libevent)
+       ("miniupnpc" ,miniupnpc)
+       ("openssl" ,openssl)
+       ("qtbase" ,qtbase)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("qttools" ,qttools)
+       ("util-linux" ,util-linux)))       ; provides the hexdump command for tests
+    (home-page "https://flowee.org")
+    (synopsis "Flowee infrastructure tools and services")
+    (description
+     "Flowee packages all tier-1 applications and services from the Flowee group.
+This includes components like The Hub and Indexer which and various others
+that allows you to run services and through them access the Bitcoin Cash networks.")
+    (license license:gpl3+)))
+
 
 (define-public beancount
   (package

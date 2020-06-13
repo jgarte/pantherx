@@ -56,15 +56,15 @@
 (define-public graphviz
   (package
     (name "graphviz")
-    (version "2.40.1")
+    (version "2.42.3")
     (source (origin
               (method url-fetch)
               (uri (string-append
-                    "http://www.graphviz.org/pub/graphviz/ARCHIVE/graphviz-"
-                    version ".tar.gz"))
+                    "https://www2.graphviz.org/Packages/stable/portable_source/"
+                    "graphviz-" version ".tar.gz"))
               (sha256
                (base32
-                "08d4ygkxz2f553bxj6087da56a23kx1khv0j8ycxa102vvx1hlna"))))
+                "1pbswjbx3fjdlsxcm7cmlsl5bvaa3d6gcnr0cr8x3c8pag13zbwg"))))
     (build-system gnu-build-system)
     (arguments
      ;; FIXME: rtest/rtest.sh is a ksh script (!).  Add ksh as an input.
@@ -104,7 +104,7 @@
        ("libltdl" ,libltdl)
        ("libXaw" ,libxaw)
        ("expat" ,expat)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)))
     (native-inputs
      `(("bison" ,bison)
@@ -315,8 +315,8 @@ structure and layout algorithms.")
     (synopsis "Interactive viewer for graphviz dot files")
     (description "Xdot is an interactive viewer for graphs written in
 @code{graphviz}’s dot language.  Internally, it uses the xdot output format as
-an intermediate format,and @code{gtk} and @code{cairo} for rendering.  Xdot can
-be used either as a standalone application, or as a python library.")
+an intermediate format, and @code{gtk} and @code{cairo} for rendering.  Xdot
+can be used either as a standalone application, or as a Python library.")
     (license license:lgpl3+)))
 
 (define-public python-pydot

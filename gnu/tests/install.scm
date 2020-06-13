@@ -2,6 +2,8 @@
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2017, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2020 Mathieu Othacehe <m.othacehe@gmail.com>
+;;; Copyright © 2020 Danny Milosavljevic <dannym@scratchpost.org>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -21,14 +23,17 @@
 (define-module (gnu tests install)
   #:use-module (gnu)
   #:use-module (gnu bootloader extlinux)
+  #:use-module (gnu image)
   #:use-module (gnu tests)
   #:use-module (gnu tests base)
   #:use-module (gnu system)
+  #:use-module (gnu system image)
   #:use-module (gnu system install)
   #:use-module (gnu system vm)
   #:use-module ((gnu build vm) #:select (qemu-command))
   #:use-module (gnu packages admin)
   #:use-module (gnu packages bootloaders)
+  #:use-module (gnu packages commencement)       ;for 'guile-final'
   #:use-module (gnu packages cryptsetup)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages ocr)
@@ -57,7 +62,9 @@
             %test-raid-root-os
             %test-encrypted-root-os
             %test-btrfs-root-os
+            %test-btrfs-root-on-subvolume-os
             %test-jfs-root-os
+            %test-f2fs-root-os
 
             %test-gui-installed-os
             %test-gui-installed-os-encrypted
@@ -221,20 +228,27 @@ packages defined in installation-os."
 
   (mlet* %store-monad ((_      (set-grafting #f))
                        (system (current-system))
-                       (target (operating-system-derivation target-os))
+                       (target (current-target-system))
+                       (base-image -> (find-image
+                                       installation-disk-image-file-system-type
+                                       target))
 
                        ;; Since the installation system has no network access,
                        ;; we cheat a little bit by adding TARGET to its GC
                        ;; roots.  This way, we know 'guix system init' will
-                       ;; succeed.
-                       (image  (system-disk-image
-                                (operating-system-with-gc-roots
-                                 os (list target))
-                                #:disk-image-size install-size
-                                #:file-system-type
-                                installation-disk-image-file-system-type
-                                ;; Don't provide substitutes; too big.
-                                #:substitutable? #f)))
+                       ;; succeed.  Also add guile-final, which is pulled in
+                       ;; through provenance.drv and may not always be present.
+                       (target (operating-system-derivation target-os))
+                       (image ->
+                        (system-image
+                         (image
+                          (inherit base-image)
+                          (size install-size)
+                          (operating-system
+                            (operating-system-with-gc-roots
+                             os (list target guile-final)))
+                          ;; Don't provide substitutes; too big.
+                          (substitutable? #f)))))
     (define install
       (with-imported-modules '((guix build utils)
                                (gnu build marionette))
@@ -252,7 +266,7 @@ packages defined in installation-os."
               (make-marionette
                `(,(which #$(qemu-command system))
                  "-no-reboot"
-                 "-m" "800"
+                 "-m" "1200"
                  #$@(cond
                      ((string=? "ext4" installation-disk-image-file-system-type)
                       #~("-drive"
@@ -387,6 +401,7 @@ per %test-installed-os, this test is expensive in terms of CPU and storage.")
     (services (cons (service marionette-service-type
                              (marionette-configuration
                               (imported-modules '((gnu services herd)
+                                                  (guix build utils)
                                                   (guix combinators)))))
                     %base-services))))
 
@@ -854,6 +869,99 @@ build (current-guix) and then store a couple of full system images.")
 
 
 ;;;
+;;; Btrfs root file system on a subvolume.
+;;;
+
+(define-os-with-source (%btrfs-root-on-subvolume-os
+                        %btrfs-root-on-subvolume-os-source)
+  ;; The OS we want to install.
+  (use-modules (gnu) (gnu tests) (srfi srfi-1))
+
+  (operating-system
+    (host-name "hurd")
+    (timezone "America/Montreal")
+    (locale "en_US.UTF-8")
+    (bootloader (bootloader-configuration
+                 (bootloader grub-bootloader)
+                 (target "/dev/vdb")))
+    (kernel-arguments '("console=ttyS0"))
+    (file-systems (cons* (file-system
+                           (device (file-system-label "btrfs-pool"))
+                           (mount-point "/")
+                           (options "subvol=rootfs,compress=zstd")
+                           (type "btrfs"))
+                         (file-system
+                           (device (file-system-label "btrfs-pool"))
+                           (mount-point "/home")
+                           (options "subvol=homefs,compress=lzo")
+                           (type "btrfs"))
+                         %base-file-systems))
+    (users (cons (user-account
+                  (name "charlie")
+                  (group "users")
+                  (supplementary-groups '("wheel" "audio" "video")))
+                 %base-user-accounts))
+    (services (cons (service marionette-service-type
+                             (marionette-configuration
+                              (imported-modules '((gnu services herd)
+                                                  (guix combinators)))))
+                    %base-services))))
+
+(define %btrfs-root-on-subvolume-installation-script
+  ;; Shell script of a simple installation.
+  "\
+. /etc/profile
+set -e -x
+guix --version
+
+export GUIX_BUILD_OPTIONS=--no-grafts
+ls -l /run/current-system/gc-roots
+parted --script /dev/vdb mklabel gpt \\
+  mkpart primary ext2 1M 3M \\
+  mkpart primary ext2 3M 2G \\
+  set 1 boot on \\
+  set 1 bios_grub on
+
+# Setup the top level Btrfs file system with its subvolume.
+mkfs.btrfs -L btrfs-pool /dev/vdb2
+mount /dev/vdb2 /mnt
+btrfs subvolume create /mnt/rootfs
+btrfs subvolume create /mnt/homefs
+umount /dev/vdb2
+
+# Mount the subvolumes, ready for installation.
+mount LABEL=btrfs-pool -o 'subvol=rootfs,compress=zstd' /mnt
+mkdir /mnt/home
+mount LABEL=btrfs-pool -o 'subvol=homefs,compress=zstd' /mnt/home
+
+herd start cow-store /mnt
+mkdir /mnt/etc
+cp /etc/target-config.scm /mnt/etc/config.scm
+guix system build /mnt/etc/config.scm
+guix system init /mnt/etc/config.scm /mnt --no-substitutes
+sync
+reboot\n")
+
+(define %test-btrfs-root-on-subvolume-os
+  (system-test
+   (name "btrfs-root-on-subvolume-os")
+   (description
+    "Test basic functionality of an OS installed like one would do by hand.
+This test is expensive in terms of CPU and storage usage since we need to
+build (current-guix) and then store a couple of full system images.")
+   (value
+    (mlet* %store-monad
+        ((image
+          (run-install %btrfs-root-on-subvolume-os
+                       %btrfs-root-on-subvolume-os-source
+                       #:script
+                       %btrfs-root-on-subvolume-installation-script))
+         (command (qemu-command/writable-image image)))
+      (run-basic-test %btrfs-root-on-subvolume-os command
+                      "btrfs-root-on-subvolume-os")))))
+
+
+;;;
 ;;; JFS root file system.
 ;;;
 
@@ -924,6 +1032,79 @@ build (current-guix) and then store a couple of full system images.")
                                                %jfs-root-installation-script))
                          (command (qemu-command/writable-image image)))
       (run-basic-test %jfs-root-os command "jfs-root-os")))))
+
+
+;;;
+;;; F2FS root file system.
+;;;
+
+(define-os-with-source (%f2fs-root-os %f2fs-root-os-source)
+  ;; The OS we want to install.
+  (use-modules (gnu) (gnu tests) (srfi srfi-1))
+
+  (operating-system
+    (host-name "liberigilo")
+    (timezone "Europe/Paris")
+    (locale "en_US.UTF-8")
+
+    (bootloader (bootloader-configuration
+                 (bootloader grub-bootloader)
+                 (target "/dev/vdb")))
+    (kernel-arguments '("console=ttyS0"))
+    (file-systems (cons (file-system
+                          (device (file-system-label "my-root"))
+                          (mount-point "/")
+                          (type "f2fs"))
+                        %base-file-systems))
+    (users (cons (user-account
+                  (name "charlie")
+                  (group "users")
+                  (supplementary-groups '("wheel" "audio" "video")))
+                 %base-user-accounts))
+    (services (cons (service marionette-service-type
+                             (marionette-configuration
+                              (imported-modules '((gnu services herd)
+                                                  (guix combinators)))))
+                    %base-services))))
+
+(define %f2fs-root-installation-script
+  ;; Shell script of a simple installation.
+  "\
+. /etc/profile
+set -e -x
+guix --version
+
+export GUIX_BUILD_OPTIONS=--no-grafts
+ls -l /run/current-system/gc-roots
+parted --script /dev/vdb mklabel gpt \\
+  mkpart primary ext2 1M 3M \\
+  mkpart primary ext2 3M 2G \\
+  set 1 boot on \\
+  set 1 bios_grub on
+mkfs.f2fs -l my-root -q /dev/vdb2
+mount /dev/vdb2 /mnt
+herd start cow-store /mnt
+mkdir /mnt/etc
+cp /etc/target-config.scm /mnt/etc/config.scm
+guix system build /mnt/etc/config.scm
+guix system init /mnt/etc/config.scm /mnt --no-substitutes
+sync
+reboot\n")
+
+(define %test-f2fs-root-os
+  (system-test
+   (name "f2fs-root-os")
+   (description
+    "Test basic functionality of an OS installed like one would do by hand.
+This test is expensive in terms of CPU and storage usage since we need to
+build (current-guix) and then store a couple of full system images.")
+   (value
+    (mlet* %store-monad ((image   (run-install %f2fs-root-os
+                                               %f2fs-root-os-source
+                                               #:script
+                                               %f2fs-root-installation-script))
+                         (command (qemu-command/writable-image image)))
+      (run-basic-test %f2fs-root-os command "f2fs-root-os")))))
 
 
 ;;;
@@ -1058,7 +1239,7 @@ build (current-guix) and then store a couple of full system images.")
 (define* (installation-target-os-for-gui-tests
           #:key (encrypted? #f))
   (operating-system
-    (inherit %minimal-os)
+    (inherit %minimal-os-on-vda)
     (users (append (list (user-account
                           (name "alice")
                           (comment "Bob's sister")
@@ -1074,9 +1255,9 @@ build (current-guix) and then store a couple of full system images.")
                    %base-user-accounts))
     ;; The installer does not create a swap device in guided mode with
     ;; encryption support.
-    (swap-devices (if encrypted? '() '("/dev/vdb2")))
+    (swap-devices (if encrypted? '() '("/dev/vda2")))
     (services (cons (service dhcp-client-service-type)
-                    (operating-system-user-services %minimal-os)))))
+                    (operating-system-user-services %minimal-os-on-vda)))))
 
 (define* (installation-target-desktop-os-for-gui-tests
           #:key (encrypted? #f))

@@ -1,11 +1,15 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015, 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2019 Meiyo Peng <meiyo.peng@gmail.com>
 ;;; Copyright © 2020 Danny Milosavljevic <dannym@scratchpost.org>
+;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
+;;; Copyright © 2020 Florian Pelz <pelzflorian@pelzflorian.de>
+;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <jannek@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -32,11 +36,14 @@
   #:use-module (guix derivations)
   #:use-module (guix profiles)
   #:use-module (guix ui)
+  #:use-module (guix utils)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
+  #:use-module (gnu packages cross-base)
   #:use-module (gnu packages guile)
   #:use-module (gnu packages guile-xyz)
   #:use-module (gnu packages admin)
+  #:use-module (gnu packages hurd)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages pciutils)
   #:use-module (gnu packages package-management)
@@ -78,6 +85,7 @@
             operating-system-packages
             operating-system-host-name
             operating-system-hosts-file
+            operating-system-hurd
             operating-system-kernel
             operating-system-kernel-file
             operating-system-kernel-arguments
@@ -117,10 +125,13 @@
             operating-system-etc-directory
             operating-system-locale-directory
             operating-system-boot-script
+            operating-system-uuid
 
             system-linux-image-file-name
             operating-system-with-gc-roots
             operating-system-with-provenance
+
+            hurd-default-essential-services
 
             boot-parameters
             boot-parameters?
@@ -133,6 +144,7 @@
             boot-parameters-kernel
             boot-parameters-kernel-arguments
             boot-parameters-initrd
+            boot-parameters-multiboot-modules
             read-boot-parameters
             read-boot-parameters-file
             boot-parameters->menu-entry
@@ -142,7 +154,12 @@
             %setuid-programs
             %sudoers-specification
             %base-packages
-            %base-firmware))
+            %base-packages-interactive
+            %base-packages-linux
+            %base-packages-networking
+            %base-packages-utils
+            %base-firmware
+            %default-kernel-arguments))
 
 ;;; Commentary:
 ;;;
@@ -173,7 +190,9 @@
   (kernel-loadable-modules operating-system-kernel-loadable-modules
                     (default '()))                ; list of packages
   (kernel-arguments operating-system-user-kernel-arguments
-                    (default '("quiet")))         ; list of gexps/strings
+                    (default %default-kernel-arguments)) ; list of gexps/strings
+  (hurd operating-system-hurd
+        (default #f))                             ; package
   (bootloader operating-system-bootloader)        ; <bootloader-configuration>
   (label operating-system-label                   ; string
          (thunked)
@@ -267,7 +286,8 @@ directly by the user."
   (store-mount-point boot-parameters-store-mount-point)
   (kernel           boot-parameters-kernel)
   (kernel-arguments boot-parameters-kernel-arguments)
-  (initrd           boot-parameters-initrd))
+  (initrd           boot-parameters-initrd)
+  (multiboot-modules boot-parameters-multiboot-modules))
 
 (define (ensure-not-/dev device)
   "If DEVICE starts with a slash, return #f.  This is meant to filter out
@@ -298,7 +318,7 @@ file system labels."
   (match (read port)
     (('boot-parameters ('version 0)
                        ('label label) ('root-device root)
-                       ('kernel linux)
+                       ('kernel kernel)
                        rest ...)
      (boot-parameters
       (label label)
@@ -314,12 +334,12 @@ file system labels."
          ((_ entries) (map sexp->menu-entry entries))
          (#f          '())))
 
-      ;; In the past, we would store the directory name of the kernel instead
-      ;; of the absolute file name of its image.  Detect that and correct it.
-      (kernel (if (string=? linux (direct-store-path linux))
-                  (string-append linux "/"
+      ;; In the past, we would store the directory name of linux instead of
+      ;; the absolute file name of its image.  Detect that and correct it.
+      (kernel (if (string=? kernel (direct-store-path kernel))
+                  (string-append kernel "/"
                                  (system-linux-image-file-name))
-                  linux))
+                  kernel))
 
       (kernel-arguments
        (match (assq 'kernel-arguments rest)
@@ -332,6 +352,8 @@ file system labels."
           (string-append directory file))
          (('initrd (? string? file))
           file)))
+
+      (multiboot-modules (or (assq 'multiboot-modules rest) '()))
 
       (store-device
        ;; Linux device names like "/dev/sda1" are not suitable GRUB device
@@ -370,14 +392,25 @@ The object has its kernel-arguments extended in order to make it bootable."
                                (boot-parameters-kernel-arguments params))))))
 
 (define (boot-parameters->menu-entry conf)
-  (menu-entry
-   (label (boot-parameters-label conf))
-   (device (boot-parameters-store-device conf))
-   (device-mount-point (boot-parameters-store-mount-point conf))
-   (linux (boot-parameters-kernel conf))
-   (linux-arguments (boot-parameters-kernel-arguments conf))
-   (initrd (boot-parameters-initrd conf))))
-
+  (let* ((kernel (boot-parameters-kernel conf))
+         (multiboot-modules (boot-parameters-multiboot-modules conf))
+         (multiboot? (pair? multiboot-modules)))
+    (menu-entry
+     (label (boot-parameters-label conf))
+     (device (boot-parameters-store-device conf))
+     (device-mount-point (boot-parameters-store-mount-point conf))
+     (linux (and (not multiboot?) kernel))
+     (linux-arguments (if (not multiboot?)
+                          (boot-parameters-kernel-arguments conf)
+                          '()))
+     (initrd (boot-parameters-initrd conf))
+     (multiboot-kernel (and multiboot? kernel))
+     (multiboot-arguments (if multiboot?
+                              (boot-parameters-kernel-arguments conf)
+                              '()))
+     (multiboot-modules (if multiboot?
+                            (boot-parameters-multiboot-modules conf)
+                            '())))))
 
 
 ;;;
@@ -456,46 +489,67 @@ from the initrd."
   "Return the list of swap services for OS."
   (map swap-service (operating-system-swap-devices os)))
 
-(define* (system-linux-image-file-name)
-  "Return the basename of the kernel image file for SYSTEM."
-  ;; FIXME: Evaluate the conditional based on the actual current system.
-  (let ((target (or (%current-target-system) (%current-system))))
-    (cond
-     ((string-prefix? "arm" target) "zImage")
-     ((string-prefix? "mips" target) "vmlinuz")
-     ((string-prefix? "aarch64" target) "Image")
-     (else "bzImage"))))
+(define* (system-linux-image-file-name #:optional
+                                       (target (or (%current-target-system)
+                                                   (%current-system))))
+  "Return the basename of the kernel image file for TARGET."
+  (cond
+   ((string-prefix? "arm" target) "zImage")
+   ((string-prefix? "mips" target) "vmlinuz")
+   ((string-prefix? "aarch64" target) "Image")
+   (else "bzImage")))
 
 (define (operating-system-kernel-file os)
   "Return an object representing the absolute file name of the kernel image of
 OS."
-  (file-append (operating-system-kernel os)
-               "/" (system-linux-image-file-name)))
+  (if (operating-system-hurd os)
+      (file-append (operating-system-kernel os) "/boot/gnumach")
+      (file-append (operating-system-kernel os)
+                      "/" (system-linux-image-file-name))))
+
+(define (package-for-kernel target-kernel module-package)
+  "Return a package like MODULE-PACKAGE, adapted for TARGET-KERNEL, if
+possible (that is if there's a LINUX keyword argument in the build system)."
+  (package
+    (inherit module-package)
+    (arguments
+     (substitute-keyword-arguments (package-arguments module-package)
+       ((#:linux kernel #f)
+        target-kernel)))))
+
+(define %default-modprobe-blacklist
+  ;; List of kernel modules to blacklist by default.
+  '("usbmouse" ;races with bcm5974, see <https://bugs.gnu.org/35574>
+    "usbkbd")) ;races with usbhid, see <https://issues.guix.gnu.org/35574#18>
+
+(define %default-kernel-arguments
+  ;; Default arguments passed to the kernel.
+  (list (string-append "modprobe.blacklist="
+                       (string-join %default-modprobe-blacklist ","))
+        "quiet"))
 
 (define* (operating-system-directory-base-entries os)
   "Return the basic entries of the 'system' directory of OS for use as the
 value of the SYSTEM-SERVICE-TYPE service."
-  (let ((locale (operating-system-locale-directory os)))
-    (mlet* %store-monad ((kernel -> (operating-system-kernel os))
-                         (kernel-modules (package-file kernel "lib/modules"))
-                         (modules ->
-                          (operating-system-kernel-loadable-modules os))
-                         (has-modules? ->
-                          (or (not (null? modules))
-                              (file-exists? kernel-modules)))
-                         (kernel
-                          (profile-derivation
-                           (packages->manifest
-                            (cons kernel modules))
-                           #:hooks (if has-modules?
-                                       (list linux-module-database)
-                                       '())))
-                         (initrd -> (operating-system-initrd-file os))
-                         (params    (operating-system-boot-parameters-file os)))
-      (return `(("kernel" ,kernel)
-                ("parameters" ,params)
-                ("initrd" ,initrd)
-                ("locale" ,locale))))))   ;used by libc
+  (let* ((locale  (operating-system-locale-directory os))
+         (kernel  (operating-system-kernel os))
+         (modules (operating-system-kernel-loadable-modules os))
+         (kernel  (profile
+                   (content (packages->manifest
+                             (cons kernel
+                                   (map (lambda (module)
+                                          (if (package? module)
+                                              (package-for-kernel kernel
+                                                                  module)
+                                              module))
+                                        modules))))
+                   (hooks (list linux-module-database))))
+         (initrd  (operating-system-initrd-file os))
+         (params  (operating-system-boot-parameters-file os)))
+    `(("kernel" ,kernel)
+      ("parameters" ,params)
+      ("initrd" ,initrd)
+      ("locale" ,locale))))   ;used by libc
 
 (define (operating-system-default-essential-services os)
   "Return the list of essential services for OS.  These are special services
@@ -545,6 +599,25 @@ bookkeeping."
                          (service firmware-service-type
                                   (operating-system-firmware os)))))))
 
+(define (hurd-default-essential-services os)
+  (list (service system-service-type '())
+        %boot-service
+        %hurd-startup-service
+        %activation-service
+        %shepherd-root-service
+        (service user-processes-service-type)
+        (account-service (append (operating-system-accounts os)
+                                 (operating-system-groups os))
+                         (operating-system-skeletons os))
+        (root-file-system-service)
+        (service file-system-service-type '())
+        (service fstab-service-type
+                 (filter file-system-needed-for-boot?
+                         (operating-system-file-systems os)))
+        (pam-root-service (operating-system-pam-services os))
+        (operating-system-etc-service os)
+        (service profile-service-type (operating-system-packages os))))
+
 (define* (operating-system-services os)
   "Return all the services of OS, including \"essential\" services."
   (instantiate-missing-services
@@ -581,48 +654,55 @@ of PROVENANCE-SERVICE-TYPE to its services."
   (list ath9k-htc-firmware
         openfwwf-firmware))
 
+(define %base-packages-utils
+  ;; Default set of  utilities packages.
+ (cons* procps psmisc which
+        (@ (gnu packages admin) shadow) ;for 'passwd'
+
+        guile-3.0
+
+        ;; The packages below are also in %FINAL-INPUTS, so take them from
+        ;; there to avoid duplication.
+        (list bash coreutils findutils grep sed
+              diffutils patch gawk tar gzip bzip2 xz lzip)))
+
+(define %base-packages-linux
+  ;; Default set of linux specific packages.
+  (list pciutils usbutils
+        util-linux+udev
+        ;; Get 'insmod' & co. from kmod, not module-init-tools, since udev
+        ;; already depends on it anyway.
+        kmod eudev))
+
+(define %base-packages-interactive
+  ;; Default set of common interactive packages.
+  (list less zile nano
+        man-db
+        info-reader                     ;the standalone Info reader (no Perl)
+        bash-completion
+        kbd
+        ;; The 'sudo' command is already in %SETUID-PROGRAMS, but we also
+        ;; want the other commands and the man pages (notably because
+        ;; auto-completion in Emacs shell relies on man pages.)
+        sudo
+        guile-readline guile-colorized))
+
+(define %base-packages-networking
+  ;; Default set of networking packages.
+  (list inetutils isc-dhcp
+        iproute
+        ;; wireless-tools is deprecated in favor of iw, but it's still what
+        ;; many people are familiar with, so keep it around.
+        iw wireless-tools))
+
 (define %base-packages
   ;; Default set of packages globally visible.  It should include anything
   ;; required for basic administrator tasks.
-  (cons* procps psmisc which less zile nano
-         pciutils usbutils
-         util-linux+udev
-         inetutils isc-dhcp
-         (@ (gnu packages admin) shadow)          ;for 'passwd'
-
-         ;; wireless-tools is deprecated in favor of iw, but it's still what
-         ;; many people are familiar with, so keep it around.
-         iw wireless-tools
-
-         iproute
-         man-db
-         info-reader                     ;the standalone Info reader (no Perl)
-
-         ;; The 'sudo' command is already in %SETUID-PROGRAMS, but we also
-         ;; want the other commands and the man pages (notably because
-         ;; auto-completion in Emacs shell relies on man pages.)
-         sudo
-
-         ;; Get 'insmod' & co. from kmod, not module-init-tools, since udev
-         ;; already depends on it anyway.
-         kmod eudev
-
-         e2fsprogs kbd
-
-         bash-completion
-
-         ;; XXX: We don't use (canonical-package guile-2.2) here because that
-         ;; would create a collision in the global profile between the GMP
-         ;; variant propagated by 'guile-final' and the GMP variant propagated
-         ;; by 'gnutls', itself propagated by 'guix'.
-         guile-2.2
-         guile-readline guile-colorized
-
-         ;; The packages below are also in %FINAL-INPUTS, so take them from
-         ;; there to avoid duplication.
-         (map canonical-package
-              (list bash coreutils findutils grep sed
-                    diffutils patch gawk tar gzip bzip2 xz lzip))))
+  (append (list e2fsprogs)
+          %base-packages-interactive
+          %base-packages-linux
+          %base-packages-networking
+          %base-packages-utils))
 
 (define %default-issue
   ;; Default contents for /etc/issue.
@@ -641,7 +721,7 @@ This is the GNU system.  Welcome.\n")
 (define* (operating-system-etc-service os)
   "Return a <service> that builds containing the static part of the /etc
 directory."
-  (let ((login.defs
+  (let* ((login.defs
           (plain-file "login.defs"
                       (string-append
                         "# Default paths for non-login shells started by su(1).\n"
@@ -652,10 +732,13 @@ directory."
                         "/run/current-system/profile/bin:"
                         "/run/current-system/profile/sbin\n")))
 
-        (issue      (plain-file "issue" (operating-system-issue os)))
-        (nsswitch   (plain-file "nsswitch.conf"
-                                (name-service-switch->string
-                                 (operating-system-name-service-switch os))))
+         (hurd       (operating-system-hurd os))
+         (issue      (plain-file "issue" (operating-system-issue os)))
+         (nsswitch   (operating-system-name-service-switch os))
+         (nsswitch   (and nsswitch
+                          (plain-file "nsswitch.conf"
+                                      (name-service-switch->string nsswitch))))
+         (sudoers    (operating-system-sudoers-file os))
 
         ;; Startup file for POSIX-compliant login shells, which set system-wide
         ;; environment variables.
@@ -745,7 +828,7 @@ fi\n")))
        ("rpc" ,(file-append net-base "/etc/rpc"))
        ("login.defs" ,#~#$login.defs)
        ("issue" ,#~#$issue)
-       ("nsswitch.conf" ,#~#$nsswitch)
+       ,@(if nsswitch `(("nsswitch.conf" ,#~#$nsswitch)) '())
        ("profile" ,#~#$profile)
        ("bashrc" ,#~#$bashrc)
        ("hosts" ,#~#$(or (operating-system-hosts-file os)
@@ -761,7 +844,12 @@ fi\n")))
        ("timezone" ,(plain-file "timezone" (operating-system-timezone os)))
        ("localtime" ,(file-append tzdata "/share/zoneinfo/"
                                   (operating-system-timezone os)))
-       ("sudoers" ,(operating-system-sudoers-file os))))))
+       ,@(if sudoers `(("sudoers" ,sudoers)) '())
+       ,@(if hurd
+             `(("login" ,(file-append hurd "/etc/login"))
+               ("motd"  ,(file-append hurd "/etc/motd"))
+               ("ttys"  ,(file-append hurd "/etc/ttys")))
+             '())))))
 
 (define %root-account
   ;; Default root account.
@@ -950,6 +1038,55 @@ we're running in the final root."
                #:mapped-devices mapped-devices
                #:keyboard-layout (operating-system-keyboard-layout os)))
 
+(define* (operating-system-uuid os #:optional (type 'dce))
+  "Compute UUID object with a deterministic \"UUID\" for OS, of the given
+TYPE (one of 'iso9660 or 'dce).  Return a UUID object."
+  ;; Note: For this to be deterministic, we must not hash things that contains
+  ;; (directly or indirectly) procedures, for example.  That rules out
+  ;; anything that contains gexps, thunk or delayed record fields, etc.
+
+  (define service-name
+    (compose service-type-name service-kind))
+
+  (define (file-system-digest fs)
+    ;; Return a hashable digest that does not contain 'dependencies' since
+    ;; this field can contain procedures.
+    (let ((device (file-system-device fs)))
+      (list (file-system-mount-point fs)
+            (file-system-type fs)
+            (file-system-device->string device)
+            (file-system-options fs))))
+
+  (if (eq? type 'iso9660)
+      (let ((pad (compose (cut string-pad <> 2 #\0)
+                          number->string))
+            (h   (hash (map service-name (operating-system-services os))
+                       3600)))
+        (bytevector->uuid
+         (string->iso9660-uuid
+          (string-append "1970-01-01-"
+                         (pad (hash (operating-system-host-name os) 24)) "-"
+                         (pad (quotient h 60)) "-"
+                         (pad (modulo h 60)) "-"
+                         (pad (hash (map file-system-digest
+                                         (operating-system-file-systems os))
+                                    100))))
+         'iso9660))
+      (bytevector->uuid
+       (uint-list->bytevector
+        (list (hash (map file-system-digest
+                         (operating-system-file-systems os))
+                    (- (expt 2 32) 1))
+              (hash (operating-system-host-name os)
+                    (- (expt 2 32) 1))
+              (hash (map service-name (operating-system-services os))
+                    (- (expt 2 32) 1))
+              (hash (map file-system-digest (operating-system-file-systems os))
+                    (- (expt 2 32) 1)))
+        (endianness little)
+        4)
+       type)))
+
 (define (locale-name->definition* name)
   "Variant of 'locale-name->definition' that raises an error upon failure."
   (match (locale-name->definition name)
@@ -977,9 +1114,13 @@ listed in OS.  The C library expects to find it under
   (locale-directory definitions
                     #:libcs (operating-system-locale-libcs os)))
 
-(define (kernel->boot-label kernel)
+(define* (kernel->boot-label kernel #:key hurd)
   "Return a label for the bootloader menu entry that boots KERNEL."
-  (cond ((package? kernel)
+  (cond ((package? hurd)
+         (string-append "PantherX OS with the "
+                        (string-titlecase (package-name hurd)) " "
+                        (package-version hurd)))
+        ((package? kernel)
          (string-append "PantherX OS with "
                         (string-titlecase (package-name kernel)) " "
                         (package-version kernel)))
@@ -992,7 +1133,8 @@ listed in OS.  The C library expects to find it under
 (define (operating-system-default-label os)
   "Return the default label for OS, as it will appear in the bootloader menu
 entry."
-  (kernel->boot-label (operating-system-kernel os)))
+  (kernel->boot-label (operating-system-kernel os)
+                      #:hurd (operating-system-hurd os)))
 
 (define (store-file-system file-systems)
   "Return the file system object among FILE-SYSTEMS that contains the store."
@@ -1018,31 +1160,63 @@ entry."
 (define* (operating-system-bootcfg os #:optional (old-entries '()))
   "Return the bootloader configuration file for OS.  Use OLD-ENTRIES,
 a list of <menu-entry>, to populate the \"old entries\" menu."
-  (let* ((root-fs         (operating-system-root-file-system os))
+  (let* ((file-systems    (operating-system-file-systems os))
+         (root-fs         (operating-system-root-file-system os))
          (root-device     (file-system-device root-fs))
          (params          (operating-system-boot-parameters
                            os root-device
                            #:system-kernel-arguments? #t))
          (entry           (boot-parameters->menu-entry params))
          (bootloader-conf (operating-system-bootloader os)))
+
     (define generate-config-file
       (bootloader-configuration-file-generator
        (bootloader-configuration-bootloader bootloader-conf)))
 
     (generate-config-file bootloader-conf (list entry)
-                          #:old-entries old-entries)))
+                          #:old-entries old-entries
+                          #:store-directory-prefix
+			  (btrfs-store-subvolume-file-name file-systems))))
+
+(define (operating-system-multiboot-modules os)
+  (if (operating-system-hurd os) (hurd-multiboot-modules os) '()))
+
+(define (hurd-multiboot-modules os)
+  (let* ((hurd (operating-system-hurd os))
+         (root-file-system-command
+          (list (file-append hurd "/hurd/ext2fs.static")
+                "ext2fs"
+                "--multiboot-command-line='${kernel-command-line}'"
+                "--host-priv-port='${host-port}'"
+                "--device-master-port='${device-port}'"
+                "--exec-server-task='${exec-task}'"
+                "--store-type=typed"
+                "'${root}'" "'$(task-create)'" "'$(task-resume)'"))
+         (target (%current-target-system))
+         (libc (if target
+                   (with-parameters ((%current-target-system #f))
+                     ;; TODO: cross-libc has extra patches for the Hurd;
+                     ;; remove in next rebuild cycle
+                     (cross-libc target))
+                   glibc))
+         (exec-server-command
+          (list (file-append libc "/lib/ld.so.1") "exec"
+                (file-append hurd "/hurd/exec") "'$(exec-task=task-create)'")))
+    (list root-file-system-command exec-server-command)))
 
 (define* (operating-system-boot-parameters os root-device
                                            #:key system-kernel-arguments?)
   "Return a monadic <boot-parameters> record that describes the boot
 parameters of OS.  When SYSTEM-KERNEL-ARGUMENTS? is true, add kernel arguments
 such as '--root' and '--load' to <boot-parameters>."
-  (let* ((initrd          (operating-system-initrd-file os))
+  (let* ((initrd          (and (not (hurd-target?))
+                               (operating-system-initrd-file os)))
          (store           (operating-system-store-file-system os))
          (bootloader      (bootloader-configuration-bootloader
                            (operating-system-bootloader os)))
          (bootloader-name (bootloader-name bootloader))
-         (label           (operating-system-label os)))
+         (label           (operating-system-label os))
+         (multiboot-modules (operating-system-multiboot-modules os)))
     (boot-parameters
      (label label)
      (root-device root-device)
@@ -1052,6 +1226,7 @@ such as '--root' and '--load' to <boot-parameters>."
           (operating-system-kernel-arguments os root-device)
           (operating-system-user-kernel-arguments os)))
      (initrd initrd)
+     (multiboot-modules multiboot-modules)
      (bootloader-name bootloader-name)
      (bootloader-menu-entries
       (bootloader-configuration-menu-entries (operating-system-bootloader os)))
@@ -1084,28 +1259,29 @@ being stored into the \"parameters\" file)."
                    os device
                    #:system-kernel-arguments?
                    system-kernel-arguments?)))
-     (gexp->file "parameters"
-                 #~(boot-parameters
-                    (version 0)
-                    (label #$(boot-parameters-label params))
-                    (root-device
-                     #$(device->sexp
-                        (boot-parameters-root-device params)))
-                    (kernel #$(boot-parameters-kernel params))
-                    (kernel-arguments
-                     #$(boot-parameters-kernel-arguments params))
-                    (initrd #$(boot-parameters-initrd params))
-                    (bootloader-name #$(boot-parameters-bootloader-name params))
-                    (bootloader-menu-entries
-                     #$(map menu-entry->sexp
-                            (or (and=> (operating-system-bootloader os)
-                                       bootloader-configuration-menu-entries)
-                                '())))
-                    (store
-                     (device
-                      #$(device->sexp (boot-parameters-store-device params)))
-                     (mount-point #$(boot-parameters-store-mount-point params))))
-                 #:set-load-path? #f)))
+     (scheme-file "parameters"
+                  #~(boot-parameters
+                     (version 0)
+                     (label #$(boot-parameters-label params))
+                     (root-device
+                      #$(device->sexp
+                         (boot-parameters-root-device params)))
+                     (kernel #$(boot-parameters-kernel params))
+                     (kernel-arguments
+                      #$(boot-parameters-kernel-arguments params))
+                     (initrd #$(boot-parameters-initrd params))
+                     (bootloader-name #$(boot-parameters-bootloader-name params))
+                     (bootloader-menu-entries
+                      #$(map menu-entry->sexp
+                             (or (and=> (operating-system-bootloader os)
+                                        bootloader-configuration-menu-entries)
+                                 '())))
+                     (store
+                      (device
+                       #$(device->sexp (boot-parameters-store-device params)))
+                      (mount-point #$(boot-parameters-store-mount-point
+                                      params))))
+                  #:set-load-path? #f)))
 
 (define-gexp-compiler (operating-system-compiler (os <operating-system>)
                                                  system target)

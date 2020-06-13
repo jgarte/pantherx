@@ -14,10 +14,10 @@
 ;;; Copyright © 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016 Alex Kost <alezost@gmail.com>
-;;; Copyright © 2016, 2017, 2019 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2016, 2017, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2016 Petter <petter@mykolab.ch>
 ;;; Copyright © 2017 Mekeor Melire <mekeor.melire@gmail.com>
-;;; Copyright © 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Marek Benc <dusxmt@gmx.com>
 ;;; Copyright © 2017 Mike Gerwitz <mtg@gnu.org>
@@ -27,7 +27,7 @@
 ;;; Copyright © 2018 Nam Nguyen <namn@berkeley.edu>
 ;;; Copyright © 2019 Wiktor Żelazny <wzelazny@vurv.cz>
 ;;; Copyright © 2019 Kyle Andrews <kyle.c.andrews@gmail.com>
-;;; Copyright © 2019 Josh Holland <josh@inv.alid.pw>
+;;; Copyright © 2019, 2020 Josh Holland <josh@inv.alid.pw>
 ;;; Copyright © 2019 Tanguy Le Carrour <tanguy@bioneland.org>
 ;;; Copyright © 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2020 David Wilson <david@daviwil.com>
@@ -35,6 +35,8 @@
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2020 Damien Cassou <damien@cassou.me>
 ;;; Copyright © 2020 John Soo <jsoo1@asu.edu>
+;;; Copyright © 2020 Boris A. Dekshteyn <boris.dekshteyn@gmail.com>
+;;; Copyright © 2020 Alex McGrath <amk@amk.ie>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -56,6 +58,7 @@
   #:use-module (guix packages)
   #:use-module (guix download)
   #:use-module (guix git-download)
+  #:use-module (guix hg-download)
   #:use-module (guix utils)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
@@ -159,7 +162,7 @@ program.")
 (define-public autorandr
   (package
     (name "autorandr")
-    (version "1.9")
+    (version "1.10.1")
     (home-page "https://github.com/phillipberndt/autorandr")
     (source
      (origin
@@ -169,8 +172,10 @@ program.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1bb0l7fcm5lcx9y02zdxv7pfdqf4v4gsc5br3v1x9gzjvqj64l7n"))))
+        (base32 "0msw9b1hdy3gbq9w5d04mfizhyirz1c648x84mlcbzl8salm7vpg"))))
     (build-system python-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
     (inputs
      `(("xrandr" ,xrandr)
        ("libxcb" ,libxcb)))
@@ -185,18 +190,20 @@ program.")
                  (("/usr") (assoc-ref outputs "out")))
                (substitute* "autorandr.py"
                  (("popen\\(\"xrandr") (string-append "popen(\"" xrandr))
-                 (("\\[\"xrandr") (string-append "[\"" xrandr))))
+                 (("\\[\"xrandr") (string-append "[\"" xrandr)))
+               (substitute* "contrib/autorandr_launcher/autorandr_launcher.c"
+                 (("/usr/bin/autorandr")
+                  (string-append (assoc-ref outputs "out") "/bin/autorandr")))
+               (setenv "CC" "gcc"))
              #t))
          (add-after 'install 'install-contrib
            (lambda* (#:key outputs #:allow-other-keys)
              (invoke "make"
                      (string-append "DESTDIR=" (assoc-ref outputs "out"))
                      "PREFIX="
-                     "BASH_COMPLETIONS_DIR=etc/bash_completiond.d"
-                     "install_manpage"
-                     "install_bash_completion"
-                     "install_launcher"
-                     "install_autostart_config"))))))
+                     "BASH_COMPLETIONS_DIR=etc/bash_completion.d"
+                     "install"
+                     "TARGETS=autorandr launcher manpage bash_completion"))))))
     (synopsis "Auto-detect connected displays and load appropriate setup")
     (description "Autorandr wraps around xrandr to help with X11
 multi-screen configuration management.  It allows the user to create profiles
@@ -208,7 +215,7 @@ used to further tweak the behaviour of the different profiles.")
 (define-public bemenu
   (package
     (name "bemenu")
-    (version "0.2.0")
+    (version "0.4.1")
     (source
      (origin
        (method git-fetch)
@@ -217,10 +224,18 @@ used to further tweak the behaviour of the different profiles.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0piax49az5kp96r1g6dcgj87fi6p4jl286wlkxsdvljzpkn8q6gv"))))
-    (build-system cmake-build-system)
+        (base32 "1fjcs9d3533ay3nz79cx3c0lmy2chgragr2lhsy0xl2ckr0iins0"))))
+    (build-system gnu-build-system)
     (arguments
-     '(#:configure-flags '("-DBEMENU_WAYLAND_RENDERER=ON")))
+     '(#:tests? #f
+       #:make-flags (list "CC=gcc"
+                          "CFLAGS=-O2 -fPIC"
+                          (string-append "LDFLAGS=-Wl,-rpath="
+                                         (assoc-ref %outputs "out") "/lib")
+                          (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
     (inputs
      `(("cairo" ,cairo)
        ("libx11" ,libx11)
@@ -239,7 +254,7 @@ used to further tweak the behaviour of the different profiles.")
      "bemenu is a dynamic menu which allows the user to flexibly select from a
 list of options (usually programs to launch).  It renders the menu graphically
 with X11 or Wayland, or in a text terminal with ncurses.")
-    (license (list license:gpl3+        ; client program[s] and other sources
+    (license (list license:gpl3+ ; client program[s] and other sources
                    license:lgpl3+))))   ; library and bindings
 
 (define-public copyq
@@ -463,6 +478,8 @@ following the mouse.")
                 "1ryxzdf048x7wsx4dlvrr1p00gzwfs7lybnhgc7ygbj0dvyxcrns"))
               (patches (search-patches "pixman-CVE-2016-5296.patch"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
      `(("libpng" ,libpng)
        ("zlib" ,zlib)))
@@ -602,7 +619,7 @@ System style license, and has no special dependencies.")
     (home-page "http://tomas.styblo.name/wmctrl/")
     (synopsis "Command-line tool to control X window managers")
     (description
-     "Wmctrl allows to interact with an X window manager that is compatible
+     "Wmctrl interacts with an X window manager that is compatible
 with the EWMH/NetWM specification.  It can query the window manager for
 information, and request for certain window management actions (resize and
 move windows, switch between desktops, etc.).")
@@ -611,7 +628,7 @@ move windows, switch between desktops, etc.).")
 (define-public scrot
   (package
     (name "scrot")
-    (version "1.2")
+    (version "1.3")
     (source
      (origin
        (method git-fetch)
@@ -621,7 +638,7 @@ move windows, switch between desktops, etc.).")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "08gkdby0ysx2mki57z81zlm7vfnq9c1gq692xw67cg5vv2p3320w"))))
+        (base32 "0x70hd59ik37kqd8xqpwrz46np01jv324iz28x2s0kk36d7sblsj"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -635,7 +652,7 @@ move windows, switch between desktops, etc.).")
     (home-page "https://github.com/resurrecting-open-source-projects/scrot")
     (synopsis "Command-line screen capture utility for X Window System")
     (description
-     "Scrot allows to save a screenshot of a full screen, a window or a part
+     "Scrot saves a screenshot of a full screen, a window or a part
 of the screen selected by mouse.")
     ;; This license removes a clause about X Consortium from the original
     ;; X11 license.
@@ -645,7 +662,7 @@ of the screen selected by mouse.")
 (define-public slop
   (package
     (name "slop")
-    (version "7.4")
+    (version "7.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -654,7 +671,7 @@ of the screen selected by mouse.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0fgd8a2dqkg64all0f96sca92sdss9r3pzmv5kck46b99z2325z6"))))
+                "1k8xxb4rj2fylr4vj16yvsf73cyywliz9cy78pl4ibmi03jhg837"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f)) ; no "check" target
@@ -678,7 +695,7 @@ selection's dimensions to stdout.")
 (define-public maim
   (package
     (name "maim")
-    (version "5.5.3")
+    (version "5.6.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -687,7 +704,7 @@ selection's dimensions to stdout.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1kbxsz8whfxl5blwsvpva2q95zwy72argwhi1cfqh5lrhzq5zrpp"))))
+                "181mjjrjb9fs1ficcv9miqbk94v95j1yli7fjp2dj514g7nj9l3x"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f))            ; no "check" target
@@ -789,7 +806,7 @@ to find buttons, etc, on the screen to click on.")
 (define-public xbanish
   (package
     (name "xbanish")
-    (version "1.6")
+    (version "1.7")
     (home-page "https://github.com/jcs/xbanish")
     (source (origin
               (method git-fetch)
@@ -798,14 +815,14 @@ to find buttons, etc, on the screen to click on.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0vp8ja68hpmqkl61zyjar3czhmny1hbm74m8f393incfz1ymr3i8"))))
+                "0ic5f7zgc32p5g1wxas9y5h8dhik0pvsa8wmn6skdry56gw9vg9q"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:tests? #f                      ;no tests
+     `(#:tests? #f                      ; no tests
        #:make-flags (list "CC=gcc"
                           (string-append "PREFIX=" (assoc-ref %outputs "out")))
        #:phases (modify-phases %standard-phases
-                  (delete 'configure))))
+                  (delete 'configure)))) ; no configure script
     (inputs
      `(("libx11" ,libx11)
        ("libxfixes" ,libxfixes)
@@ -882,7 +899,7 @@ transparent text on your screen.")
 (define-public xbindkeys
   (package
     (name "xbindkeys")
-    (version "1.8.6")
+    (version "1.8.7")
     (source (origin
               (method url-fetch)
               ;; Download from the savannah mirror list fails
@@ -892,11 +909,13 @@ transparent text on your screen.")
                     ".tar.gz"))
               (sha256
                (base32
-                "060df6d8y727jp1inp7blp44cs8a7jig7vcm8ndsn6gw36z1h3bc"))))
+                "1wl2vc5alisiwyk8m07y1ryq8w3ll9ym83j27g4apm4ixjl8d6x2"))))
     (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
     (inputs
      `(("libx11" ,libx11)
-       ("guile" ,guile-2.0)))
+       ("guile" ,guile-2.2)))
     (home-page "https://www.nongnu.org/xbindkeys/")
     (synopsis "Associate a combination of keys with a shell command")
     (description
@@ -1055,7 +1074,7 @@ within a single process.")
     (home-page "https://github.com/alols/xcape")
     (synopsis "Use a modifier key in X.org as another key")
     (description
-     "This utility for X.org allows to use modifier key as another key when
+     "This utility for X.org uses a modifier key as another key when
 pressed and released on its own.  The default behaviour is to generate the
 Escape key when Left Control is pressed and released on its own.")
     (license license:gpl3+)))
@@ -1147,6 +1166,50 @@ the X.Org X Server version 1.7 and later (X11R7.5 or later).")
         (base32
          "1fi27b73x85qqar526dbd33av7mahca2ykaqwr7siqiw1qqcby6j"))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:imported-modules (,@%gnu-build-system-modules
+                           (guix build python-build-system))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'split-outputs
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out"))
+                   (gtk (assoc-ref outputs "gtk"))
+                   (desktop-file "/share/applications/redshift-gtk.desktop"))
+               (mkdir-p (string-append gtk "/bin"))
+               (link (string-append out "/bin/redshift-gtk")
+                     (string-append gtk "/bin/redshift-gtk"))
+               (delete-file (string-append out "/bin/redshift-gtk"))
+               (copy-recursively (string-append out "/lib")
+                                 (string-append gtk "/lib"))
+               (delete-file-recursively (string-append out "/lib"))
+               (mkdir-p (string-append gtk "/share/applications"))
+               (link (string-append out desktop-file)
+                     (string-append gtk desktop-file))
+               (delete-file (string-append out desktop-file))
+               (with-directory-excursion (string-append out "/share")
+                 (for-each (lambda (dir)
+                             (copy-recursively
+                              (string-append out "/share/" dir)
+                              (string-append gtk "/share/" dir))
+                             (delete-file-recursively dir))
+                           '("appdata" "icons")))
+               #t)))
+         (add-after 'split-outputs 'wrap
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((gtk (assoc-ref outputs "gtk"))
+                    (python-version
+                     (@ (guix build python-build-system) python-version))
+                    (python (assoc-ref inputs "python"))
+                    (sitedir (string-append gtk "/lib/python"
+                                            (python-version python)
+                                            "/site-packages")))
+               (wrap-program (string-append gtk "/bin/redshift-gtk")
+                 `("PYTHONPATH" ":" prefix
+                   (,(string-append sitedir ":" (getenv "PYTHONPATH"))))
+                 `("GI_TYPELIB_PATH" ":" prefix (,(getenv "GI_TYPELIB_PATH"))))
+               #t))))))
+    (outputs '("out" "gtk"))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("intltool" ,intltool)))
@@ -1155,7 +1218,13 @@ the X.Org X Server version 1.7 and later (X11R7.5 or later).")
        ("libx11" ,libx11)
        ("libxcb" ,libxcb)
        ("libxxf86vm" ,libxxf86vm)
-       ("glib" ,glib)))                 ; for Geoclue2 support
+       ("glib" ,glib)                   ;for Geoclue2 support
+
+       ;; To build the GTK3 GUI, we need these.
+       ("gtk+" ,gtk+)
+       ("python" ,python)
+       ("python-pygobject" ,python-pygobject)
+       ("python-pyxdg" ,python-pyxdg)))
     (home-page "https://github.com/jonls/redshift")
     (synopsis "Adjust the color temperature of your screen")
     (description
@@ -1183,6 +1252,24 @@ color temperature should be set to match the lamps in your room.")
                  (base32
                   "0nbkcw3avmzjg1jr1g9yfpm80kzisy55idl09b6wvzv2sz27n957"))))
       (build-system gnu-build-system)
+      (arguments
+       '(#:phases (modify-phases %standard-phases
+                    (add-after 'install 'create-desktop-file
+                      (lambda* (#:key outputs #:allow-other-keys)
+                        ;; For the GeoClue provider to work, a .desktop file
+                        ;; needs to be provided.  A template is available,
+                        ;; but it only gets installed when the GUI is enabled.
+                        ;; Install it manually for this Wayland variant.
+                        (let* ((out (assoc-ref outputs "out"))
+                               (desktop-file
+                                (string-append
+                                 out "/share/applications/redshift.desktop")))
+                          (mkdir-p (dirname desktop-file))
+                          (copy-file "data/applications/redshift.desktop.in"
+                                     desktop-file)
+                          (substitute* desktop-file
+                            (("^_") ""))
+                          #t))))))
       (native-inputs
        `(("autoconf" ,autoconf)
          ("automake" ,automake)
@@ -1251,7 +1338,7 @@ protocol.")
        ("libglade" ,libglade)
        ("libxml2" ,libxml2)
        ("libsm" ,libsm)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("linux-pam" ,linux-pam)
        ("pango" ,pango)
        ("gtk+" ,gtk+)
@@ -1500,13 +1587,13 @@ program for X11.  It was designed to be fast, tiny and scriptable in any languag
        #:make-flags
        (let ((out (assoc-ref %outputs "out")))
          (list (string-append "DESTDIR=" out)))))
+    (home-page "https://github.com/vixus0/xftwidth")
     (synopsis "Calculator for determining pixel widths of displayed text using Xft fonts")
     (description "xftwidth is a small C program for calculating the pixel
 widths of displayed text using Xft fonts. It is especially useful in scripts
 for displaying text in graphical panels, menus, popups, and notification
 windows generated using dzen. These scripts are often used in conjunction with
 minimalistic tiling window managers such as herbstluftwm and bspwm.")
-    (home-page "http://github.com/vixus0/xftwidth")
     (license license:expat)))
 
 (define-public xcb-util-xrm
@@ -1731,7 +1818,7 @@ commandline).")
        `(#:tests? #f))
       (synopsis "Use external screen locker on events")
       (description "@code{xss-lock} listens to X signals to fire up a
-user-defined screensaver.  In effect this allows to automatically lock the
+user-defined screensaver.  In effect this automatically locks the
 screen when closing a laptop lid or after a period of user inactivity (as set
 with @code{xset s TIMEOUT}).  The notifier command, if specified, is executed
 first.  Additionally, xss-lock uses the inhibition logic to lock the screen
@@ -1824,7 +1911,7 @@ colors on all monitors attached to an XRandR-capable X11 display server.")
 (define-public sct
   (package
     (name "sct")
-    (version "0.4")
+    (version "0.5")
     (source
      (origin
        (method url-fetch)
@@ -1832,12 +1919,12 @@ colors on all monitors attached to an XRandR-capable X11 display server.")
         (string-append "https://www.umaxx.net/dl/sct-"
                        version ".tar.gz"))
        (sha256
-        (base32
-         "0r57z9ki8pvxhawfxys0v5h85z2x211sqxki0xvk1bga88ryldlv"))))
+        (base32 "0lrhx771iccbw04wrhj0ygids1pzmjfc4hvklm30m3p3flvhqf0m"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:make-flags (list "CC=gcc")
-       #:tests? #f ; No tests exist.
+     `(#:make-flags
+       (list ,(string-append "CC=" (cc-for-target)))
+       #:tests? #f                      ; no test suite
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)
@@ -1924,16 +2011,16 @@ binary to setuid-binaries:
 (define-public wl-clipboard
   (package
     (name "wl-clipboard")
-    (version "2.0.0_beta2")
+    (version "2.0.0")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://github.com/bugaevc/wl-clipboard.git")
-             (commit version)))
+             (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0wyqbaph9v1v6lwfcjf8gjhdl70icpss4wapshzfxcz3l9m1p8hv"))))
+        (base32 "0c4w87ipsw09aii34szj9p0xfy0m00wyjpll0gb0aqmwa60p0c5d"))))
     (build-system meson-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -2127,7 +2214,7 @@ Xwrits hides itself until you should take another break.")
                 "env = Environment(
                          ENV = {
                            'PATH': os.environ['PATH'],
-                           'CPATH': os.environ['CPATH'],
+                           'CPATH': os.environ['C_INCLUDE_PATH'],
                            'LIBRARY_PATH': os.environ['LIBRARY_PATH'],
                            'PKG_CONFIG_PATH': os.environ['PKG_CONFIG_PATH']
                          },")
@@ -2184,9 +2271,9 @@ configuring visual settings in different UI toolkits separately.")
                (install-file "clipnotify" bin)
                (install-file "README.md" doc)
                #t))))
-       #:make-flags (list "CC=gcc")
-       ;; the package provides no test suite:
-       #:tests? #f))
+       #:make-flags
+       (list ,(string-append "CC=" (cc-for-target)))
+       #:tests? #f))                    ; no test suite
     (inputs
      `(("libx11" ,libx11)
        ("libXfixes" ,libxfixes)))
@@ -2221,7 +2308,7 @@ tools to complement clipnotify.")
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "12vvircdhl4psqi51cnfd6bqy85v2vwfcmdq1mimjgng727nwzys"))))
+           "0053j4i14lz5m2bzc5sch5id5ilr1bl196mp8fp0q8x74w3vavs9"))))
       (build-system gnu-build-system)
       (arguments
        `(#:phases
@@ -2286,3 +2373,99 @@ to find all available clips and launches @command{dmenu} (or @command{rofi},
 depending on the value of @code{CM_LAUNCHER}) to let the user select a clip.
 After selection, the clip is put onto the PRIMARY and CLIPBOARD X selections.")
       (license license:public-domain))))
+
+(define-public kbdd
+  (package
+    (name "kbdd")
+    (version "0.7.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/qnikst/kbdd.git")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0qkq75grbd4wkx4nlvswgavpijk9ad0pzqyj89a0ayjsbsn36pqy"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("glib" ,glib "bin")
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("dbus-glib", dbus-glib)
+       ("glib" ,glib)
+       ("libx11" ,libx11)))
+    (home-page "https://github.com/qnikst/kbdd")
+    (synopsis "Per-window keyboard layout switching daemon for X")
+    (description "@command{kbdd} is a simple keyboard layout switching
+program, which is designed to run in an X11 session and remember
+keyboard layouts on a per-window basis.  That can be very handy for a
+user of a non-US keyboard who does not want to jump through layouts back
+and forth while typing in terminals (mostly in a latin alphabet) and
+some kind of chat (in native language).
+
+@command{kbdd} also supports D-Bus signals, which makes it possible to
+create layout indicator widgets.")
+    (license license:bsd-2)))
+
+(define-public j4-dmenu-desktop
+  (package
+    (name "j4-dmenu-desktop")
+    (version "2.17")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/enkore/j4-dmenu-desktop.git")
+                    (commit (string-append "r" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0v23fimkn83dcm5p53y2ymhklff3kwppxhf75sm8xmswrzkixpgc"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("catch2" ,catch-framework2)))
+    (arguments
+     `(#:configure-flags '("-DWITH_GIT_CATCH=off")
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (invoke "./j4-dmenu-tests" "exclude:SearchPath/XDG_DATA_HOME"))))))
+    (synopsis "Fast desktop menu")
+    (description
+     "j4-dmenu-desktop is a replacement for i3-dmenu-desktop.  Its purpose
+is to find @file{.desktop} files and offer you a menu to start an application
+using @command{dmenu}.")
+    (home-page "https://github.com/enkore/j4-dmenu-desktop")
+    (license license:gpl3+)))
+
+(define-public wofi
+  (package
+    (name "wofi")
+    (version "1.1.2")
+    (source (origin
+              (method hg-fetch)
+              (uri (hg-reference
+                    (url "https://hg.sr.ht/~scoopta/wofi")
+                    (changeset (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "086j5wshawjbwdmmmldivfagc2rr7g5a2gk11l0snqqslm294xsn"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:glib-or-gtk? #t))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("gtk3" ,gtk+)
+       ("wayland" ,wayland)))
+    (synopsis "Launcher/menu program for wayland")
+    (description
+     "Wofi is a launcher/menu program for wlroots based wayland compositors
+such as sway, similar to @command{rofi}.")
+    (home-page "https://hg.sr.ht/~scoopta/wofi")
+    (license license:gpl3+)))

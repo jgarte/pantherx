@@ -7,9 +7,9 @@
 # Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
 # Copyright © 2017 Leo Famulari <leo@famulari.name>
 # Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
-# Copyright © 2017 Jan Nieuwenhuizen <janneke@gnu.org>
+# Copyright © 2017, 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 # Copyright © 2017 Arun Isaac <arunisaac@systemreboot.net>
-# Copyright © 2018 ng0 <ng0@n0.is>
+# Copyright © 2018 Nikita <nikita@n0.is>
 # Copyright © 2018 Julien Lepiller <julien@lepiller.eu>
 # Copyright © 2018 Oleg Pykhalov <go.wigust@gmail.com>
 # Copyright © 2018 Alex Vong <alexvong1995@gmail.com>
@@ -70,6 +70,7 @@ MODULES =					\
   guix/docker.scm	   			\
   guix/json.scm					\
   guix/records.scm				\
+  guix/openpgp.scm				\
   guix/pki.scm					\
   guix/progress.scm				\
   guix/combinators.scm				\
@@ -94,6 +95,7 @@ MODULES =					\
   guix/repl.scm					\
   guix/inferior.scm				\
   guix/describe.scm				\
+  guix/quirks.scm				\
   guix/channels.scm				\
   guix/gnu-maintenance.scm			\
   guix/self.scm					\
@@ -102,6 +104,7 @@ MODULES =					\
   guix/lint.scm				\
   guix/glob.scm					\
   guix/git.scm					\
+  guix/git-authenticate.scm			\
   guix/graph.scm				\
   guix/cache.scm				\
   guix/cve.scm					\
@@ -174,6 +177,7 @@ MODULES =					\
   guix/build/git.scm				\
   guix/build/hg.scm				\
   guix/build/glib-or-gtk-build-system.scm	\
+  guix/build/gnu-bootstrap.scm			\
   guix/build/gnu-build-system.scm		\
   guix/build/gnu-dist.scm			\
   guix/build/guile-build-system.scm		\
@@ -315,7 +319,8 @@ MODULES += $(STORE_MODULES)
 dist_noinst_DATA =				\
   guix/tests.scm				\
   guix/tests/http.scm				\
-  guix/tests/git.scm
+  guix/tests/git.scm				\
+  guix/tests/gnupg.scm
 
 # Auxiliary files for packages.
 AUX_FILES =						\
@@ -336,12 +341,14 @@ AUX_FILES =						\
   gnu/packages/aux-files/linux-libre/4.9-x86_64.conf	\
   gnu/packages/aux-files/linux-libre/4.4-i686.conf	\
   gnu/packages/aux-files/linux-libre/4.4-x86_64.conf	\
+  gnu/packages/aux-files/pack-audit.c			\
   gnu/packages/aux-files/run-in-namespace.c
 
 # Templates, examples.
 EXAMPLES =					\
   gnu/system/examples/asus-c201.tmpl		\
   gnu/system/examples/bare-bones.tmpl		\
+  gnu/system/examples/bare-hurd.tmpl		\
   gnu/system/examples/beaglebone-black.tmpl	\
   gnu/system/examples/desktop.tmpl		\
   gnu/system/examples/lightweight-desktop.tmpl	\
@@ -399,6 +406,7 @@ SCM_TESTS =					\
   tests/gem.scm				\
   tests/gexp.scm				\
   tests/git.scm					\
+  tests/git-authenticate.scm			\
   tests/glob.scm				\
   tests/gnu-maintenance.scm			\
   tests/grafts.scm				\
@@ -414,6 +422,7 @@ SCM_TESTS =					\
   tests/nar.scm				\
   tests/networking.scm				\
   tests/opam.scm				\
+  tests/openpgp.scm				\
   tests/packages.scm				\
   tests/pack.scm				\
   tests/pki.scm				\
@@ -553,6 +562,7 @@ EXTRA_DIST +=						\
   build-aux/cuirass/guix-modular.scm			\
   build-aux/cuirass/hydra-to-cuirass.scm		\
   build-aux/check-final-inputs-self-contained.scm	\
+  build-aux/check-channel-news.scm			\
   build-aux/compile-as-derivation.scm			\
   build-aux/generate-authors.scm			\
   build-aux/git-authenticate.scm			\
@@ -565,6 +575,13 @@ EXTRA_DIST +=						\
   tests/signing-key.pub					\
   tests/signing-key.sec					\
   tests/cve-sample.json					\
+  tests/civodul.key					\
+  tests/rsa.key						\
+  tests/dsa.key						\
+  tests/ed25519.key					\
+  tests/ed25519.sec					\
+  tests/ed25519bis.key					\
+  tests/ed25519bis.sec					\
   build-aux/config.rpath				\
   bootstrap						\
   doc/build.scm						\
@@ -617,17 +634,17 @@ $(guix_install_go_files): install-nobase_dist_guilemoduleDATA
 install-data-hook:
 	touch "$(DESTDIR)$(guileobjectdir)/guix/config.go"
 
-# Commit corresponding to the 'v1.0.1' tag.
-commit_v1_0_1 = d68de958b60426798ed62797ff7c96c327a672ac
+# Commit corresponding to the 'v1.0.0' tag.
+commit_v1_0_0 = 6298c3ffd9654d3231a6f25390b056483e8f407c
 
 # Authenticate the current Git checkout by checking signatures on every commit
-# starting from $(commit_v1_0_1).
-authenticate:
+# starting from $(commit_v1_0_0).
+authenticate: guix/openpgp.go guix/git-authenticate.go guix/git.go
 	$(AM_V_at)echo "Authenticating Git checkout..." ;	\
 	"$(top_builddir)/pre-inst-env" $(GUILE)			\
 	  --no-auto-compile -e git-authenticate			\
 	  "$(top_srcdir)/build-aux/git-authenticate.scm"	\
-	  "$(commit_v1_0_1)"
+	  "$(commit_v1_0_0)"
 
 # Assuming Guix is already installed and the daemon is up and running, this
 # rule builds from $(srcdir), creating and building derivations.
@@ -663,11 +680,16 @@ AM_DISTCHECK_CONFIGURE_FLAGS =			\
   --enable-daemon				\
   ac_cv_guix_test_root="$(GUIX_TEST_ROOT)"
 
+# Name of the 'guix' package shipped in the binary tarball.
+GUIX_FOR_BINARY_TARBALL = guile3.0-guix
+
 # The self-contained tarball.
 guix-binary.%.tar.xz:
 	$(AM_V_GEN)GUIX_PACKAGE_PATH=					\
-	tarball=`$(top_builddir)/pre-inst-env guix pack -K -C xz	\
-	  -s "$*" --localstatedir --profile-name=current-guix guix` ;	\
+	tarball=`$(top_builddir)/pre-inst-env guix pack -C xz		\
+	  --fallback							\
+	  -s "$*" --localstatedir --profile-name=current-guix		\
+	  $(GUIX_FOR_BINARY_TARBALL)` ;					\
 	cp "$$tarball" "$@.tmp" ; mv "$@.tmp" "$@"
 
 
@@ -700,6 +722,16 @@ gen-AUTHORS:
 	    "$(top_srcdir)/build-aux/generate-authors.scm"	\
 	    "$(top_srcdir)" "$(distdir)/AUTHORS";		\
 	fi
+
+# Like 'dist', but regenerate 'configure' so we get an up-to-date
+# 'PACKAGE_VERSION' string.  (In Gnulib, 'GNUmakefile' has a special trick to
+# do that whenever a 'dist' target is used.)
+dist-with-updated-version:
+	@echo "Running './bootstrap' for new version string..."
+	$(top_srcdir)/bootstrap
+	$(MAKE) $(AM_MAKEFLAGS) $(top_srcdir)/.version dist
+
+.PHONY: dist-with-updated-version
 
 
 #
@@ -756,7 +788,7 @@ system_flags = $(foreach system,$(1),-s $(system))
 #
 # XXX: Depend on 'dist' rather than 'distcheck' to work around the Gettext
 # issue described at <https://savannah.gnu.org/bugs/index.php?51027>.
-release: dist
+release: dist-with-updated-version
 	cd po; git checkout .
 	@if ! git diff-index --quiet HEAD; then			\
 	  echo "There are uncommitted changes; stopping." >&2 ;	\
@@ -770,9 +802,9 @@ release: dist
 	   "`git rev-parse HEAD`" "$(PACKAGE_VERSION)"
 	git add $(top_srcdir)/gnu/packages/package-management.scm
 	git commit -m "gnu: guix: Update to $(PACKAGE_VERSION)."
-	$(top_builddir)/pre-inst-env guix build guix	\
+	$(top_builddir)/pre-inst-env guix build $(GUIX_FOR_BINARY_TARBALL)	\
 	      $(call system_flags,$(SUPPORTED_SYSTEMS))	\
-	      -v1 --no-grafts -K
+	      -v1 --no-grafts --fallback
 	rm -f $(BINARY_TARBALLS)
 	$(MAKE) $(BINARY_TARBALLS)
 	for system in $(SUPPORTED_SYSTEMS) ; do					\
@@ -786,12 +818,12 @@ release: dist
 	git commit -m "gnu: guix: Update to `git rev-parse HEAD | cut -c1-7`."
 	$(top_builddir)/pre-inst-env guix build guix			\
 	      $(call system_flags,$(GUIX_SYSTEM_SUPPORTED_SYSTEMS))	\
-	      -v1 --no-grafts -K
+	      -v1 --no-grafts --fallback
 	for system in $(GUIX_SYSTEM_SUPPORTED_SYSTEMS) ; do				\
 	  image=`$(top_builddir)/pre-inst-env						\
 	    guix system disk-image							\
 	    --file-system-type=iso9660							\
-            --system=$$system								\
+            --system=$$system --fallback						\
 	    gnu/system/install.scm` ;							\
 	  if [ ! -f "$$image" ] ; then							\
 	    echo "failed to produced Guix installation image for $$system" >&2 ;	\
@@ -804,7 +836,8 @@ release: dist
 	for system in $(GUIX_SYSTEM_VM_SYSTEMS) ; do					\
 	  image=`$(top_builddir)/pre-inst-env						\
 	    guix system vm-image $(GUIX_SYSTEM_VM_IMAGE_FLAGS)				\
-	    --system=$$system								\
+	    --save-provenance								\
+	    --system=$$system --fallback						\
 	    gnu/system/examples/vm-image.tmpl` ;					\
 	  if [ ! -f "$$image" ] ; then							\
 	    echo "failed to produced Guix VM image for $$system" >&2 ;			\
@@ -860,6 +893,11 @@ assert-final-inputs-self-contained: $(GOBJECTS)
 	$(AM_V_at)$(top_builddir)/pre-inst-env "$(GUILE)"			\
 	  "$(top_srcdir)/build-aux/check-final-inputs-self-contained.scm"
 
+# Validate channel news.
+check-channel-news: $(GOBJECTS)
+	$(AM_V_at)$(top_builddir)/pre-inst-env "$(GUILE)"	\
+	  "$(top_srcdir)/build-aux/check-channel-news.scm"
+
 # Compute the Hydra jobs and write them in the target file.
 hydra-jobs.scm: $(GOBJECTS)
 	$(AM_V_at)$(MKDIR_P) "`dirname "$@"`"
@@ -879,7 +917,7 @@ cuirass-jobs.scm: $(GOBJECTS)
 
 .PHONY: gen-ChangeLog gen-AUTHORS gen-tarball-version
 .PHONY: assert-no-store-file-names assert-binaries-available
-.PHONY: assert-final-inputs-self-contained
+.PHONY: assert-final-inputs-self-contained check-channel-news
 .PHONY: clean-go make-go as-derivation authenticate
 .PHONY: update-guix-package update-NEWS release
 

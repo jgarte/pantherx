@@ -1,7 +1,10 @@
 ;; GNU Guix news, for use by 'guix pull'.
 ;;
 ;; Copyright © 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;; Copyright © 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;; Copyright © 2020 Mathieu Othacehe <m.othacehe@gmail.com>
+;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
+;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;
 ;; Copying and distribution of this file, with or without modification, are
 ;; permitted in any medium without royalty provided the copyright notice and
@@ -9,6 +12,224 @@
 
 (channel-news
  (version 0)
+
+ (entry (commit "b460ba7992a0b4af2ddb5927dcf062784539ef7b")
+        (title (en "Add support to boot from a Btrfs subvolume")
+               (de "Unterstützung für Systemstart von einem
+Btrfs-Unterlaufwerk hinzugefügt")
+               (fr "Ajout du support pour démarrer depuis un sous-volume Btrfs")
+               (nl "Nieuwe ondersteuning voor het opstarten vanaf een Btrfs-subvolume"))
+        (body
+         (en "The generation of the GRUB configuration file produced from an
+operating system declaration now takes into account the use of a Btrfs
+subvolume for the partition holding @file{/gnu/store}.  Run the command
+@command{info \"(guix) Btrfs file system\"} for more information and
+examples.")
+         (de "Für die Erzeugung einer GRUB-Konfigurationsdatei aus einer
+Betriebssystemdeklaration kann jetzt ein Btrfs-Unterlaufwerk („Subvolume“) für
+die Partition mit @file{/gnu/store} angegeben werden.  Führen Sie
+@command{info \"(guix) Btrfs file system\"} aus, wenn Sie mehr Informationen
+und Beispiele sehen möchten.")
+         (fr "La génération du fichier de configuration de GRUB produite à
+partir de la déclaration d'un @code{operating-system} tient maintenant compte
+de l'utilisation d'un sous-volume Btrfs pour la partition contenant
+@file{/gnu/store}.  Exécutez la commande @command{info\"(guix) Btrfs file
+system\"} pour des exemples et plus d'information.")
+         (nl "Het opmaken van het GRUB-configuratiebestand op basis van
+een @code{operating-system}-declaratie houdt nu rekening met het gebruik van
+een Btrfs-subvolume voor de partitie die @file{/gnu/store} bevat.  Voer
+@command{info \"(guix) Btrfs file system\"} uit voor meer informatie en
+voorbeelden.")))
+
+ (entry (commit "6456232164890dbf5aa20394ee24637feb4b7b9e")
+        (title (en "@command{guix pack -RR} introduces a new execution
+engine")
+               (de "@command{guix pack -RR} führt neuen Ausführungstreiber
+ein"))
+        (body
+         (en "The @command{guix pack -RR} command allows you to create a
+tarball containing @dfn{relocatable binaries}.  Until now, those would rely
+either on Linux ``unprivileged user namespaces'' or on PRoot, when
+unprivileged user namespaces are not supported.  However, PRoot introduces
+significant overhead for some workloads.
+
+To address that, @command{guix pack -RR} introduces a third option based on an
+extension to the GNU run-time linker (ld.so) and on Fakechroot, which incurs
+very little overhead.  You can select the fastest option when executing a
+relocatable binary like this:
+
+@example
+GUIX_EXECUTION_ENGINE=performance
+export GUIX_EXECUTION_ENGINE
+@end example
+
+Run @command{info \"(guix) Invoking guix pack\"} for more information.")
+         (de "Mit dem Befehl @command{guix pack -RR} können Sie einen Tarball
+mit @dfn{verschieblichen Binärdateien} erzeugen (englisch „Relocatable
+Binaries“).  Bisher wurden diese entweder in „unprivilegierten
+Benutzernamensräumen“ ohne Berechtigungen ausgeführt, oder in PRoot, wenn
+keine unprivilegierten Benutzernamensräume unterstützt wurden.  Allerdings
+fällt bei der Ausführung mit PRoot bei manchen Anwendungen deutlich mehr
+Rechenaufwand an.
+
+Um dem entgegenzuwirken, stellt @command{guix pack -RR} nun eine dritte Option
+zur Verfügung, die sich eine Erweiterung des GNU-Laufzeit-Binders („Run-Time
+Linker“, ld.so) und Fakechroot zu Nutze macht.  Dadurch entsteht fast kein
+Mehraufwand.  Sie können sich die schnellste Option aussuchen, wenn Sie eine
+verschiebliche Binärdatei ausführen, zum Beispiel so:
+
+@example
+GUIX_EXECUTION_ENGINE=performance
+export GUIX_EXECUTION_ENGINE
+@end example
+
+Führen Sie @command{info \"(guix.de) Aufruf von guix pack\"} aus, wenn Sie
+mehr wissen wollen.")))
+
+ (entry (commit "88a96c568c47c97d05d883ada5afbc4e1200b10f")
+        (title (en "New @option{--path} option for @command{guix graph}")
+               (de "Neue Option @option{--path} für @command{guix graph}"))
+        (body
+         (en "The @command{guix graph} command has a new @option{--path}
+option that instructs it to display the shortest path between two packages,
+derivations, or store items.  For example, the command below displays the
+shortest path from the @code{libreoffice} package to @code{libunistring}:
+
+@example
+guix graph --path libreoffice libunistring
+@end example
+
+Run @code{info \"(guix) Invoking guix graph\"} for more information.")
+         (de "Der Befehl @command{guix graph} verfügt über eine neue
+Befehlszeilenoption @option{--path}, die ihn den kürzesten Pfad zwischen zwei
+Paketen, Ableitungen oder Store-Objekten ausgeben lässt.  Zum Beispiel zeigt
+folgender Befehl den kürzesten Pfad vom Paket @code{libreoffice} zu
+@code{libunistring}:
+
+@example
+guix graph --path libreoffice libunistring
+@end example
+
+Führen Sie @code{info \"(guix.de) Aufruf von guix graph\"} aus, um mehr zu
+erfahren.")))
+
+ (entry (commit "a33eac038a811603c8b9ed106ae405a5f80a0e9d")
+        (title (en "GNU C Library upgraded")
+               (de "GNU-C-Bibliothek aktualisiert")
+               (es "Actualización de la biblioteca C de GNU")
+               (fr "Mise à jour de la bibliothèque C de GNU")
+               (nl "GNU C-bibliotheek bijgewerkt"))
+        (body
+         (en "The GNU C Library (glibc) has been upgraded to version 2.31.  To
+run previously-installed programs linked against glibc 2.29, you need to
+install locale data for version 2.29 in addition to locale data for 2.31:
+
+@example
+guix install glibc-locales glibc-locales-2.29
+@end example
+
+On Guix System, you can adjust the @code{locale-libcs} field of your
+@code{operating-system} form.  Run @code{info \"(guix) Locales\"}, for more
+info.")
+         (de "Die GNU-C-Bibliothek (glibc) wurde auf Version 2.31
+aktualisiert. Um zuvor installierte Programme, die an glibc 2.29 gebunden
+worden sind, weiter benutzen zu können, müssen Sie Locale-Daten für Version
+2.29 zusätzlich zu den Locale-Daten für 2.31 installieren:
+
+@example
+guix install glibc-locales glibc-locales-2.29
+@end example
+
+Auf Guix System genügt es, das @code{locale-libcs}-Feld Ihrer
+@code{operating-system}-Form anzupassen. Führen Sie @code{info \"(guix.de)
+Locales\"} aus, um weitere Informationen dazu zu erhalten.")
+         (es "Se ha actualizado la biblioteca de C de GNU (glibc) a la versión
+2.31. Para ejecutar programas instalados previamente que se encuentren
+enlazados con glibc 2.29, es necesario que instale los datos de localización
+de la versión 2.29 junto a los datos de localización de la versión 2.31:
+
+@example
+guix install glibc-locales glibc-locales-2.29
+@end example
+
+En el sistema Guix, puede ajustar el campo @code{locale-libcs} de su
+declaración @code{operating-system}. Ejecute @code{info \"(guix.es)
+Localizaciones\"} para obtener más información.")
+         (fr "La bibliothèque C de GNU (glibc) a été mise à jour en version
+2.31.  Pour pouvoir lancer tes programmes déjà installés et liés à glibc 2.29,
+tu dois installer les données pour la version 2.29 en plus des données de
+régionalisation pour la version 2.31:
+
+@example
+guix install glibc-locales glibc-locales-2.29
+@end example
+
+Sur le système Guix, tu peux ajuster le champ @code{locale-libcs} de ta forme
+@code{operating-system}.  Lance @code{info \"(guix.fr) Régionalisation\"} pour
+plus de détails.")
+         (nl "De GNU C-bibliotheek (glibc) werd bijgewerkt naar versie 2.31.
+Om gebruik te maken van reeds geïnstalleerde programma's die aan glibc 2.29
+gebonden zijn, moet u de regionale informatie van versie 2.29 naast die van
+versie 2.31 installeren:
+
+@example
+guix install glibc-locales glibc-locales-2.29
+@end example
+
+Op Guix System kunt u het @code{locale-libcs}-veld van uw
+@code{operating-system}-vorm aanpassen.   Voer @code{info \"(guix) Locales\"}
+uit voor verdere uitleg.")))
+
+ (entry (commit "e1e6491226347d9fb93ff484d78cef98848a510a")
+        (title (en "Guix Cookbook now available as Info")
+               (de "Guix-Kochbuch jetzt als Info-Dokument verfügbar"))
+        ;; TRANSLATORS: Adjust the URL and the 'info' command to refer to the
+        ;; translated manual if it's available.
+        (body (en "The new Guix Cookbook is now fetched by @command{guix pull}
+and thus readily available in the Info format.  It aims to provide tutorials
+and detailed examples covering a variety of use cases.  You can access it by
+typing:
+
+@example
+info guix-cookbook
+@end example
+
+The Cookbook is currently available in English and German.  You can also find
+it @uref{https://guix.gnu.org/cookbook/en/, on-line}.
+
+Your contributions are welcome: @uref{https://guix.gnu.org/contact/, get in
+touch with the developers} to share your recipes!")
+              (de "Das neue Guix-Kochbuch wird nun von @command{guix pull}
+geladen und steht dann im Info-Format zur Verfügung.  Darin sollen Anleitungen
+und detaillierte Beispiele gezeigt werden, die eine breite Spanne an
+Anwendungsfällen abdecken.  Um darauf zuzugreifen, geben Sie dies ein:
+
+@example
+info guix-cookbook.de
+@end example
+
+Das Kochbuch steht derzeit auf Deutsch und Englisch zur Verfügung.  Sie können
+auch @uref{https://guix.gnu.org/cookbook/de/, online} darauf zugreifen.
+
+Ihre Beiträge werden gerne gesehen.  Bitte
+@uref{https://guix.gnu.org/contact/, kontaktieren Sie die Entwickler}, um Ihre
+Rezepte mit uns zu teilen!")))
+
+ (entry (commit "2ca7af43fe17d9acf082dce85d137a27a8ac4887")
+        (title (en "Further reduced binary seed bootstrap")
+               (de "Bootstrapping jetzt mit noch kleinerem Seed"))
+        (body
+         (en "The package graph on x86_64 and i686 is now rooted in a further
+@dfn{reduced set of binary seeds}.  The initial set of binaries from which
+packages are built now weighs in at approximately 60 MiB, a quarter of what it
+used to be.  Run @code{info \"(guix) Bootstrapping\"} to learn more, or watch
+the talk at @uref{https://fosdem.org/2020/schedule/event/gnumes/}.")
+         (de "Der Paketgraph auf x86_64 und i686 hat jetzt eine noch
+@dfn{kleinere Menge an binären Seeds} als Wurzel. Das heißt, die ursprüngliche
+Menge an Binärdateien, aus denen heraus Pakete erstellt werden, machen nun
+ungefähr 60 MiB aus, ein Viertel der früheren Größe. Führen Sie @code{info
+\"(guix.de) Bootstrapping\"} aus, um mehr zu erfahren, oder schauen Sie sich
+den Vortrag auf @uref{https://fosdem.org/2020/schedule/event/gnumes/} an.")))
 
  (entry (commit "0468455e7d279c89ea3ad1b51935efb2b785ec47")
         (title (en "Rottlog service added to @code{%base-services}")
@@ -23,6 +244,21 @@ Log-Rotation wurde zu den @code{%base-services} hinzugefügt.  Wenn der
 Systemdienst bereits in Ihrer Konfiguration für Guix System ausdrücklich
 genannt wurde, sollten Sie ihn jetzt daraus entfernen.  Siehe den Abschnitt
 „Log-Rotation“ im Handbuch für weitere Informationen.")))
+
+ (entry (commit "b6bee63bed4f013064c0d902e7c8b83ed7514ade")
+        (title (en "@code{guile} package now refers to version 3.0")
+               (de "Das @code{guile}-Paket bezeichnet jetzt Version 3.0"))
+        (body (en "The @code{guile} package has been upgraded to version 3.0
+ (instead of 2.2).  The @code{guile3.0-} packages have been renamed to their
+original name, and @code{guile2.2-} variants of these packages have been
+defined.  Additionally, derivations are now all built with Guile 3.0, and
+system services also run on 3.0.")
+              (de "Das @code{guile}-Paket wurde auf Version 3.0
+ (statt 2.2) aktualisiert. Die Pakete, deren Namen mit @code{guile3.0-}
+beginnen, wurden umbenannt, so dass sie nun den unveränderten Namen tragen,
+während ihre Varianten mit @code{guile2.2-} hinzugefügt wurden.  Des Weiteren
+werden jetzt alle Ableitungen mit Guile 3.0 erstellt und die Systemdienste
+laufen auch auf 3.0.")))
 
  (entry (commit "e3e1a7ba08af2d58c47264c543617e499c239444")
         (title (en "@command{guix pull} now supports SSH authenticated

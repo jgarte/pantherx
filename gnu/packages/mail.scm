@@ -15,22 +15,23 @@
 ;;; Copyright © 2016 Lukas Gradl <lgradl@openmailbox.org>
 ;;; Copyright © 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016, 2017 Troy Sankey <sankeytms@gmail.com>
-;;; Copyright © 2016, 2017, 2018 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017, 2018 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Clément Lassieur <clement@lassieur.org>
-;;; Copyright © 2016, 2017, 2018, 2019 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2016, 2017, 2018, 2019, 2020 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2016 John Darrington <jmd@gnu.org>
 ;;; Copyright © 2016, 2018 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017 Thomas Danckaert <post@thomasdanckaert.be>
 ;;; Copyright © 2017 Kyle Meyer <kyle@kyleam.com>
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
-;;; Copyright © 2017, 2018 Rene Saavedra <pacoon@protonmail.com>
-;;; Copyright © 2018, 2019 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2017, 2018, 2020 Rene Saavedra <pacoon@protonmail.com>
+;;; Copyright © 2018, 2019, 2020 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2018 Alex Vong <alexvong1995@gmail.com>
 ;;; Copyright © 2018 Gábor Boskovits <boskovits@gmail.com>
 ;;; Copyright © 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2019 Tanguy Le Carrour <tanguy@bioneland.org>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Justus Winter <justus@sequoia-pgp.org>
+;;; Copyright © 2020 Eric Brown <ecbrown@ericcbrown.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -89,6 +90,7 @@
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages libidn)
   #:use-module (gnu packages libunistring)
+  #:use-module (gnu packages libunwind)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lsof)
   #:use-module (gnu packages lua)
@@ -226,7 +228,7 @@
        ("dejagnu" ,dejagnu)))
     (inputs
      `(("m4" ,m4)
-       ("guile" ,guile-2.2)
+       ("guile" ,guile-3.0)
        ("gsasl" ,gsasl)
        ("gnutls" ,gnutls)
        ("ncurses" ,ncurses)
@@ -250,13 +252,16 @@ software.")
      ;; Libraries are under LGPLv3+, and programs under GPLv3+.
      (list gpl3+ lgpl3+))))
 
-(define-public guile3.0-mailutils
+(define-public guile2.2-mailutils
   (package
     (inherit mailutils)
-    (name "guile3.0-mailutils")
+    (name "guile2.2-mailutils")
     (inputs
-     `(("guile" ,guile-3.0)
+     `(("guile" ,guile-2.2)
        ,@(alist-delete "guile" (package-inputs mailutils))))))
+
+(define-public guile3.0-mailutils
+  (deprecated-package "guile3.0-mailutils" mailutils))
 
 (define-public nullmailer
   (package
@@ -342,7 +347,7 @@ to run without any changes.")
 (define-public fetchmail
   (package
     (name "fetchmail")
-    (version "6.4.1")
+    (version "6.4.6")
     (source
      (origin
        (method url-fetch)
@@ -350,21 +355,14 @@ to run without any changes.")
                            (version-major+minor version) "/"
                            "fetchmail-" version ".tar.xz"))
        (sha256
-        (base32 "1859wvfc9fq72mwp4njdiy0x89hnddlfr3nix71qqglcs0fz2crz"))))
+        (base32 "04b0sq1xad6gs1bfhkbmhsn1kq6y4gsx9l9ywjvd5d0rc15yrvqn"))))
     (build-system gnu-build-system)
     (inputs
      `(("openssl" ,openssl)))
     (arguments
      `(#:configure-flags
        (list (string-append "--with-ssl="
-                            (assoc-ref %build-inputs "openssl")))
-       #:phases
-       (modify-phases %standard-phases
-         (add-before 'check 'create-test-environment
-           (lambda _
-             ;; Fix ‘Cannot find absolute path for user's home directory’.
-             (setenv "HOME" "/tmp")
-             #t)))))
+                            (assoc-ref %build-inputs "openssl")))))
     (home-page "https://www.fetchmail.info/")
     (synopsis "Remote-mail retrieval and forwarding utility")
     (description
@@ -384,7 +382,7 @@ aliasing facilities to work just as they would on normal mail.")
 (define-public mutt
   (package
     (name "mutt")
-    (version "1.13.4")
+    (version "1.14.2")
     (source (origin
              (method url-fetch)
              (uri (list
@@ -394,7 +392,7 @@ aliasing facilities to work just as they would on normal mail.")
                                    version ".tar.gz")))
              (sha256
               (base32
-               "016dzx2c0kr9xgnw4nfzpkn4nvpk56rdlcqhrwa820fq8083yzdm"))
+               "0cdcls0x6f2w99hkjz48hxhnx86w3bnyxzibchdc9yspih770bz2"))
              (patches (search-patches "mutt-store-references.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -418,8 +416,8 @@ aliasing facilities to work just as they would on normal mail.")
                            "--with-sasl"
                            "--with-sqlite3" ; required for Autocrypt
                            "--with-idn2" ; recommended for Autocrypt
-                           ;; so that mutt does not check whether the path
-                           ;; exists, which it does not in the chroot
+                           ;; So that mutt does not check whether the path
+                           ;; exists, which it does not in the chroot.
                            "--with-mailpath=/var/mail")))
     (home-page "http://www.mutt.org/")
     (synopsis "Mail client")
@@ -713,22 +711,21 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
 (define-public mu
   (package
     (name "mu")
-    (version "1.2.0")
+    (version "1.4.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/djcb/mu/releases/"
-                                  "download/" (version-major+minor version) "/"
+                                  "download/" version "/"
                                   "mu-" version ".tar.xz"))
               (sha256
                (base32
-                "0fh5bxvhjqv1p9z783lym8y1k3p4jcc3wg6wf7zl8s6w8krcfd7n"))))
+                "0vbyrmv3d2bja4vx86za93gq46vxg18j12g0lca3x1dl8d5g2xa6"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("glib" ,glib "bin")             ; for gtester
        ("emacs" ,emacs-minimal)
        ("tzdata" ,tzdata-for-tests)))   ; for mu/test/test-mu-query.c
-    ;; TODO: Add webkit and gtk to build the mug GUI.
     (inputs
      `(("xapian" ,xapian)
        ("guile" ,guile-2.2)
@@ -756,13 +753,14 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
                             "guile/mu/Makefile.in")
                (("share/guile/site/2.0/") "share/guile/site/2.2/"))
              #t))
-         (add-after 'patch-configure 'fix-date-tests
-           ;; Loosen test tolerances to prevent failures caused by daylight
-           ;; saving time (DST).  See: https://github.com/djcb/mu/issues/1214.
+         (add-after 'unpack 'patch-bin-sh-in-tests
            (lambda _
-             (substitute* "lib/parser/test-utils.cc"
-               (("\\* 60 \\* 60, 1 },")
-                "* 60 * 60, 3600 + 1 },"))
+             (substitute* '("guile/tests/test-mu-guile.c"
+                            "mu/test-mu-cmd.c"
+                            "mu/test-mu-cmd-cfind.c"
+                            "mu/test-mu-query.c"
+                            "mu/test-mu-threads.c")
+               (("/bin/sh") (which "sh")))
              #t))
          (add-before 'install 'fix-ffi
            (lambda* (#:key outputs #:allow-other-keys)
@@ -793,53 +791,6 @@ Maildir-format.  Mu's purpose in life is to help you to quickly find the
 messages you need; in addition, it allows you to view messages, extract
 attachments, create new maildirs, and so on.")
     (license gpl3+)))
-
-(define mumimu
-  ;; This is a fork of mu for use in Mumi that stores message bug IDs in its
-  ;; database.  It also renames the library to "mumimu" to avoid confusion.
-  (let ((commit "6b42431052c7cc9a2e147938e1b67f14a93e4ee5")
-        (revision "2"))
-    (package
-      (inherit mu)
-      (name "mumimu")
-      (version (git-version (package-version mu) revision commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://git.elephly.net/software/mumimu.git")
-                      (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "044scxmjrckidqx935yza3aqnjyzrmhyvgx2gs2jyf68hl2qzb89"))))
-      (arguments
-       (substitute-keyword-arguments (package-arguments mu)
-         ((#:tests? anything '())
-          #f)
-         ((#:phases phases)
-          `(modify-phases ,phases
-             (replace 'patch-configure
-               (lambda _ (delete-file "autogen.sh") #t))
-             (replace 'fix-ffi
-               (lambda* (#:key outputs #:allow-other-keys)
-                 (substitute* "guile/mumimu.scm"
-                   (("\"libguile-mu\"")
-                    (format #f "\"~a/lib/libguile-mumimu\""
-                            (assoc-ref outputs "out"))))
-                 #t))
-             (delete 'install-emacs-autoloads)))
-         ((#:configure-flags flags)
-          '("--disable-gtk"
-            "--disable-webkit"
-            "--disable-mu4e"))))
-      (native-inputs
-       `(("pkg-config" ,pkg-config)
-         ("autoconf" ,autoconf)
-         ("automake" ,automake)
-         ("libtool" ,libtool)
-         ("glib" ,glib "bin")
-         ("tzdata" ,tzdata-for-tests)
-         ("texinfo" ,texinfo))))))
 
 (define-public alot
   (package
@@ -1161,13 +1112,7 @@ useful features.")
        ("expat" ,expat)
        ("zlib" ,zlib)))
     (arguments
-      '(#:phases
-        (modify-phases %standard-phases
-          (replace 'bootstrap
-            (lambda _
-              (setenv "NOCONFIGURE" "true")
-              (invoke "sh" "autogen.sh"))))
-        #:configure-flags
+      '(#:configure-flags
         '("--disable-static" "--disable-db")))
     (home-page "https://www.etpan.org/libetpan.html")
     (synopsis "Portable middleware for email access")
@@ -1264,14 +1209,14 @@ which can add many functionalities to the base client.")
 (define-public msmtp
   (package
     (name "msmtp")
-    (version "1.8.7")
+    (version "1.8.11")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://marlam.de/msmtp/releases/"
                            "/msmtp-" version ".tar.xz"))
        (sha256
-        (base32 "1waiiksa57byb7gvx1zmh6srvl6r8rvwqklk0slb3iaf4kfbqlws"))))
+        (base32 "0q0fg235qk448l1xjcwyxr7vcpzk6w57jzhjbkb0m7nffyhhypzj"))))
     (build-system gnu-build-system)
     (inputs
      `(("libsecret" ,libsecret)
@@ -1314,7 +1259,7 @@ delivery.")
 (define-public exim
   (package
     (name "exim")
-    (version "4.93.0.4")
+    (version "4.94")
     (source
      (origin
        (method url-fetch)
@@ -1328,7 +1273,7 @@ delivery.")
                     (string-append "https://ftp.exim.org/pub/exim/exim4/old/"
                                    file-name))))
        (sha256
-        (base32 "01g4sfycv13glnmfrapwhjbdw6z1z7w5bwjldxjmglwfw5p3czak"))))
+        (base32 "1nsb2i5mqxfz1sl1bmbxmpb2qiaf3wffhfiw4j9vfpagy3xfhzpp"))))
     (build-system gnu-build-system)
     (inputs
      `(("bdb" ,bdb-5.3) ; ‘#error Version 6 and later BDB API is not supported’
@@ -1420,7 +1365,7 @@ facilities for checking incoming mail.")
 (define-public dovecot
   (package
     (name "dovecot")
-    (version "2.3.10")
+    (version "2.3.10.1")
     (source
      (origin
        (method url-fetch)
@@ -1428,13 +1373,18 @@ facilities for checking incoming mail.")
                            (version-major+minor version) "/"
                            "dovecot-" version ".tar.gz"))
        (sha256
-        (base32 "1ibiz3k2flablkcqbkvfzsjnq5b5kxximhcrplflsjl57mr88ca7"))))
+        (base32 "035idr2j81s5mngnhd58rih79dhwwak7q01mqbx3rcmi4cpychk6"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
      `(("bzip2" ,bzip2)
        ("libsodium" ,libsodium)         ; extra password algorithms
+       ;; FIXME: The 'test-backtrace' tests fail on arm when using glibc's
+       ;; backtrace_symbol() function so fallback to using libunwind.
+       ,@(if (target-arm?)
+          `(("libunwind" ,libunwind))
+          '())
        ("linux-pam" ,linux-pam)
        ("lz4" ,lz4)
        ("openssl" ,openssl)
@@ -1958,26 +1908,26 @@ maintained.")
 (define-public khard
   (package
     (name "khard")
-    (version "0.15.1")
+    (version "0.16.1")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri name version))
               (sha256
                (base32
-                "18ba2xgfq8sw0bg6xmlfjpizid1hkzgswcfcc54gl21y2dwfda2w"))))
+                "0fg4qh5gzki5wg958wlpc8a2icnk74gzg33lqxjm755cfnjng7qd"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         (add-after 'install 'install-doc
+         (add-after 'install 'install-completions
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
-                    (doc (string-append out "/share/doc/khard")))
-               (copy-recursively "misc/khard" doc)
+                    (zsh (string-append out "/share/zsh/site-functions")))
+               (copy-recursively "misc/zsh" zsh)
                #t))))))
     (native-inputs
      `(("python-setuptools-scm" ,python-setuptools-scm)))
-    (propagated-inputs
+    (inputs
      `(("python-atomicwrites" ,python-atomicwrites)
        ("python-configobj" ,python-configobj)
        ("python-pyyaml" ,python-pyyaml)
@@ -2209,14 +2159,14 @@ converts them to maildir format directories.")
 (define-public mpop
   (package
     (name "mpop")
-    (version "1.4.7")
+    (version "1.4.10")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://marlam.de/mpop/releases/"
                            "mpop-" version ".tar.xz"))
        (sha256
-        (base32 "0c6n5afn9pr4p7gxkv462lysrw52w9fhvavzm99c78dcp9dj5xnk"))))
+        (base32 "1243hazpiwgvz2m3p48cdh0yw1019i6xjxgc7qyhmxcdy0inb6wy"))))
     (build-system gnu-build-system)
     (inputs
      `(("gnutls" ,gnutls)))
@@ -2341,14 +2291,14 @@ transfer protocols.")
 (define-public opensmtpd
   (package
     (name "opensmtpd")
-    (version "6.6.4p1")
+    (version "6.7.1p1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.opensmtpd.org/archives/"
                            "opensmtpd-" version ".tar.gz"))
        (sha256
-        (base32 "1kyph9ycq0j21dl9n1sq5fns9p4gckdi0fmnf8awrcwrdcm9dyg2"))))
+        (base32 "1jh8vxfajm1mvp1v5yh6llrhjzv0n9fgab88mlwllwqynhcfjy3l"))))
     (build-system gnu-build-system)
     (inputs
      `(("bdb" ,bdb)
@@ -2372,6 +2322,13 @@ transfer protocols.")
              "--with-table-db")
        #:phases
        (modify-phases %standard-phases
+         ;; See: https://github.com/OpenSMTPD/OpenSMTPD/issues/1069.
+         (add-after 'unpack 'fix-smtpctl-encrypt-bug
+           (lambda _
+             (substitute* "smtpd/smtpctl.c"
+               (("\"encrypt\", \"--\",")
+                "\"encrypt\","))
+             #t))
          ;; Fix some incorrectly hard-coded external tool file names.
          (add-after 'unpack 'patch-FHS-file-names
            (lambda _
@@ -2672,7 +2629,7 @@ on the fly.  Both programs are written in C and are very fast.")
 (define-public swaks
   (package
     (name "swaks")
-    (version "20181104.0")
+    (version "20190914.0")
     (source
      (origin
        (method url-fetch)
@@ -2681,7 +2638,7 @@ on the fly.  Both programs are written in C and are very fast.")
              version ".tar.gz"))
        (sha256
         (base32
-         "0n1yd27xcyb1ylp5gln3yv5gzi9r377hjy1j32367kgb3247ygq2"))))
+         "12awq5z4sdd54cxprj834zajxhkpy4jwhzf1fhigcx1zbhdaacsp"))))
     (build-system perl-build-system)
     (inputs
      `(("perl-net-dns" ,perl-net-dns)
@@ -2724,7 +2681,7 @@ operators and scripters.")
     ;; Upstream doesn't use git tags, but does ‘tag’ their releases in the
     ;; commit message.  Hence the lack of GIT-VERSIONing despite using a commit
     ;; ID below.  Don't forget to update it…
-    (version "2.21.99999")
+    (version "2.22")
     (source
      (origin
        (method git-fetch)
@@ -2734,10 +2691,10 @@ operators and scripters.")
        ;; http://alpine.freeiz.com/alpine/readme/README.patches
        (uri (git-reference
              (url "http://repo.or.cz/alpine.git")
-             (commit "abeb2c25935ef8c75f1e5deef0f81276754dc975")))
+             (commit "b50297779a4becb9ceca9c6b5b375d526fe3df78")))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0rqgbw08a5lj41dkp82aq480lqkc4bnxagna7wpqffi821n8gkwz"))
+        (base32 "06js44fvdl7l33hfd4lsxpcd1cz3c0h796cswyzz0lkrzx89yl48"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -2746,7 +2703,8 @@ operators and scripters.")
            #t))))
     (build-system gnu-build-system)
     (arguments
-     `(#:make-flags (list "CC=gcc")
+     `(#:make-flags
+       (list (string-append "CC=" ,(cc-for-target)))
        #:configure-flags (list (string-append "--with-ssl-include-dir="
                                               (assoc-ref %build-inputs "openssl")
                                               "/include/openssl")
@@ -2763,6 +2721,13 @@ operators and scripters.")
                                "--with-date-stamp=Thu  1 Jan 01:00:01 CET 1970")
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'assume-shadow-passwords
+           ;; Alpine's configure script confuses ‘shadow password support’ with
+           ;; ‘/etc/shadow exists in the build environment’.  It does not.
+           (lambda _
+             (substitute* "configure"
+               (("test -f /etc/shadow") "true"))
+             #t))
          (add-after 'unpack 'make-reproducible
            (lambda _
              ;; This removes time-dependent code to make alpine reproducible.
@@ -2794,14 +2759,14 @@ tools and applications:
 (define-public balsa
   (package
     (name "balsa")
-    (version "2.5.7")
+    (version "2.6.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://pawsa.fedorapeople.org/balsa/"
-                           name "-" version ".tar.bz2"))
+                           "balsa-" version ".tar.bz2"))
        (sha256
-        (base32 "0yfqhfpwm1qnwmbpr6dfn2f5w8a8xxq51pn8ypgg0fw973l1c1nx"))))
+        (base32 "1xkxx801p7sbfkn0bh3cz85wra4xf1z1zhjqqc80z1z1nln7fhb4"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -2819,7 +2784,7 @@ tools and applications:
      `(("cyrus-sasl" ,cyrus-sasl)
        ("enchant" ,enchant)
        ("gdk-pixbuf" ,gdk-pixbuf)
-       ("gmime" ,gmime-2.6)
+       ("gmime" ,gmime)
        ("gnutls" ,gnutls)
        ("gpgme" ,gpgme)
        ("gtk+" ,gtk+)
@@ -2827,7 +2792,9 @@ tools and applications:
        ("gtkspell3" ,gtkspell3)
        ("libcanberra" ,libcanberra)
        ("libesmtp" ,libesmtp)
+       ("libical" ,libical)
        ("libnotify" ,libnotify)
+       ("libsecret" ,libsecret)
        ("openldap" ,openldap)
        ("sqlite" ,sqlite)
        ("webkitgtk" ,webkitgtk)))
@@ -3003,11 +2970,11 @@ replacement for the @code{urlview} program.")
     (license gpl2+)))
 
 (define-public mumi
-  (let ((commit "c85015dac8110bd7a4c37375b9eb05ebeadedf74")
-        (revision "15"))
+  (let ((commit "5a578328199bab51a147fbadbce12c8d06959ed6")
+        (revision "2"))
     (package
       (name "mumi")
-      (version (git-version "0.0.0" revision commit))
+      (version (git-version "0.0.1" revision commit))
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
@@ -3016,7 +2983,7 @@ replacement for the @code{urlview} program.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "05nma73kqnva6ci92aq8jb3718ry5dz3sd64ibpxn5w77z5kpwr7"))))
+                  "0hngv82gd19l4q7nnbf97r120z1yagsmkp0x3lc8haza5q4mc12c"))))
       (build-system gnu-build-system)
       (arguments
        `(#:modules ((guix build gnu-build-system)
@@ -3045,18 +3012,16 @@ replacement for the @code{urlview} program.")
                      (,go ,(getenv "GUILE_LOAD_COMPILED_PATH"))))
                  #t))))))
       (inputs
-       `(("guile-debbugs" ,guile-debbugs)
-         ("guile-email" ,guile-email)
+       `(("guile-email" ,guile-email)
+         ("guile-fibers" ,guile-fibers)
          ("guile-gcrypt" ,guile-gcrypt)
          ("guile-json" ,guile-json-3)
          ("guile-redis" ,guile-redis)
-         ("guile-sqlite3" ,guile-sqlite3)
          ("guile-syntax-highlight" ,guile-syntax-highlight)
          ("guile-webutils" ,guile-webutils)
-         ("gnutls" ,gnutls)         ;needed to talk to https://debbugs.gnu.org
-         ("guile" ,guile-2.2)
-         ("mailutils" ,mailutils)
-         ("mumimu" ,mumimu)))   ;'mumimu' executable recorded in (mumi config)
+         ("guile-xapian" ,guile-xapian)
+         ("guile" ,guile-3.0)
+         ("mailutils" ,mailutils)))
       (native-inputs
        `(("autoconf" ,autoconf)
          ("automake" ,automake)
@@ -3175,3 +3140,35 @@ related tools to process winmail.dat files.")
 complement or replace traditional mailing lists.  Readers may read via NNTP,
 Atom feeds or HTML archives.")
      (license agpl3+))))
+
+(define-public sylpheed
+  (package
+    (name "sylpheed")
+    (version "3.7.0")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://sylpheed.sraoss.jp/sylpheed/v3.7/"
+                                  name "-" version ".tar.xz"))
+              (sha256
+               (base32
+                "0j9y5vdzch251s264diw9clrn88dn20bqqkwfmis9l7m8vmwasqd"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("bogofilter" ,bogofilter)
+       ("compface" ,compface)
+       ("gnupg" ,gnupg-1)
+       ("gpgme" ,gpgme)
+       ("gtk+-2.0" ,gtk+-2)
+       ("gtkspell" ,gtkspell3)
+       ("libnsl" ,libnsl)
+       ("openldap" ,openldap)
+       ("openssl" ,openssl)))
+    (home-page "https://sylpheed.sraoss.jp/en/")
+    (synopsis "Lightweight GTK+ email client")
+    (description
+     "Sylpheed is a simple, lightweight but featureful, and easy-to-use e-mail
+client.  Sylpheed provides intuitive user-interface.  Sylpheed is also
+designed for keyboard-oriented operation.")
+    (license gpl2+)))

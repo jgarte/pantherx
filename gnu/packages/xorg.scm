@@ -7,21 +7,25 @@
 ;;; Copyright © 2016 Mathieu Lirzin <mthl@gnu.org>
 ;;; Copyright © 2015 Cyrill Schenkel <cyrill.schenkel@gmail.com>
 ;;; Copyright © 2016, 2017, 2019 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016 ng0 <ng0@n0.is>
+;;; Copyright © 2016 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016 David Craven <david@craven.ch>
 ;;; Copyright © 2016, 2017 John Darrington <jmd@gnu.org>
 ;;; Copyright © 2017, 2018, 2019 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017, 2018, 2019 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2017, 2020 Arun Isaac <arunisaac@systemreboot.net>
-;;; Copyright © 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2018 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2018 Benjamin Slade <slade@jnanam.net>
 ;;; Copyright © 2019 nee <nee@cock.li>
 ;;; Copyright © 2019 Yoshinori Arai <kumagusu08@gmail.com>
+;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Leo Prikler <leo.prikler@student.tugraz.at>
 ;;; Copyright © 2020 Florian Pelz <pelzflorian@pelzflorian.de>
+;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
+;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2020 Jean-Baptiste Note <jean-baptiste.note@m4x.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -63,7 +67,9 @@
   #:use-module (gnu packages gnupg)
   #:use-module (gnu packages gperf)
   #:use-module (gnu packages gtk)
+  #:use-module (gnu packages inkscape)
   #:use-module (gnu packages image)
+  #:use-module (gnu packages imagemagick)
   #:use-module (gnu packages libbsd)
   #:use-module (gnu packages libedit)
   #:use-module (gnu packages linux)
@@ -213,14 +219,14 @@ which can be read by any architecture.")
 (define-public xorgproto
   (package
     (name "xorgproto")
-    (version "2019.1")
+    (version "2019.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://xorg/individual/proto/"
                                   "xorgproto-" version ".tar.bz2"))
               (sha256
                (base32
-                "16yll1kaffnslik5sizlw3qrigj1gpsgfgyq6903g3mwdixamnm6"))))
+                "13kvir8dz9dvzhvyfndpff1z7k8h14s7kkl7mbl427andhax1v26"))))
     (build-system gnu-build-system)
     (propagated-inputs
      ;; To get util-macros in (almost?) all package inputs.
@@ -1041,6 +1047,8 @@ of new capabilities and controls for text keyboards.")
           (base32
             "0hvjfhrcym770cr0zpqajdy3cda30aiwbjzv16iafkqkbl090gr5"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
       `(("xorgproto" ,xorgproto)
         ("libxext" ,libxext)
@@ -1067,6 +1075,8 @@ of new capabilities and controls for text keyboards.")
                (base32
                 "1ir0j92mnd1nk37mrv9bz5swnccqldicgszvfsh62jd14q6k115q"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (native-inputs `(("pkg-config" ,pkg-config)))
     (inputs `(("xorgproto" ,xorgproto)))
     (home-page "https://www.x.org/")
@@ -1094,6 +1104,8 @@ synchronization between the X server and direct-rendering clients.")
           (base32
             "0y90170dp8wsidr1dzza0grxr1lfh30ji3b5vkjz4j6x1n0wxz1c"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
       `(("zlib" ,zlib)
         ("xorgproto" ,xorgproto)))
@@ -1221,11 +1233,13 @@ hit when running single-threaded.")
           (base32
             "1fwwfq9v3sqmpzpscymswxn76xhxnysa24pfim1mcpxhvjcl89id"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("libice" ,libice))) ; SMlib.h includes ICElib.h
     (inputs
       `(("xtrans" ,xtrans)
-        ("util-linux" ,util-linux)))
+        ("libuuid" ,util-linux "lib")))
     (native-inputs
       `(("pkg-config" ,pkg-config)))
     (home-page "https://www.x.org/wiki/")
@@ -1280,6 +1294,8 @@ with the Cygwin XWin server when running X11 in a rootless mode.")
           (base32
             "13sfcglvz87vl58hd9rszwr73z0z4nwga3c12rfh7f5s2ln8l8dk"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      ;; xcomposite.pc refers to all these.
       `(("xorgproto" ,xorgproto)
@@ -1309,6 +1325,8 @@ with the Cygwin XWin server when running X11 in a rootless mode.")
           (base32
             "0ab53h0rkq721ihk5hi469x500f3pgbkm1wy01yf24x5m923nli0"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
       `(("libbsd" ,libbsd)
         ("xorgproto" ,xorgproto)))
@@ -1335,6 +1353,8 @@ with the Cygwin XWin server when running X11 in a rootless mode.")
           (base32
             "05lja9s54090xwh31r0bqms4v3pimng5xr09g2rdnafx2vk6hp12"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      ;; xft.pc refers to all these.
       `(("libxrender" ,libxrender)
@@ -1369,6 +1389,8 @@ configuration files.")
           (base32
             "1irq9crvscd3yb8sr802dhvvfr35jdy1n2yz094xplmd42mbv3bm"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
       `(("libx11" ,libx11)))
     (native-inputs
@@ -1394,6 +1416,8 @@ configuration files.")
           (base32
             "0cdpqnx6258i4l6qhphvkdiyspysg0i5caqjy820kp63wwjk4d4w"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
       `(("libxt" ,libxt)
         ("xorgproto" ,xorgproto)
@@ -1414,7 +1438,7 @@ treat it as part of their software base when porting.")
 (define-public libxpm
   (package
     (name "libxpm")
-    (version "3.5.12")
+    (version "3.5.13")
     (source
       (origin
         (method url-fetch)
@@ -1424,15 +1448,17 @@ treat it as part of their software base when porting.")
                ".tar.bz2"))
         (sha256
           (base32
-            "1v5xaiw4zlhxspvx76y3hq4wpxv7mpj6parqnwdqvpj8vbinsspx"))))
+            "09dc6nwlb2122h02vl64k9x56mxnyqz2gwpga0abfv4bb1bxmlcw"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
-      `(("gettext" ,gettext-minimal)
-        ("libxt" ,libxt)
+      `(("libxt" ,libxt)
         ("xorgproto" ,xorgproto)
         ("libxext" ,libxext)))
     (native-inputs
-      `(("pkg-config" ,pkg-config)))
+     `(("gettext" ,gettext-minimal)
+       ("pkg-config" ,pkg-config)))
     (home-page "https://www.x.org/wiki/")
     (synopsis "Xorg XPM library")
     (description "XPM (X Pixmap) image file format library.")
@@ -1454,6 +1480,8 @@ treat it as part of their software base when porting.")
           (base32
             "1m0jr0lbz9ixpp9ihk68349q0i7ry2379lnfzdy4mrl86ijc2xgz"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
       `(("xorgproto" ,xorgproto)
         ("libxext" ,libxext)
@@ -1481,6 +1509,8 @@ treat it as part of their software base when porting.")
           (base32
             "1y4vx1vabg7j9hamp0vrfrax5b0lmgm3h0lbgbb3hnkv3dd0f5zr"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
       `(("libxext" ,libxext)
         ("libx11" ,libx11)))
@@ -1506,6 +1536,8 @@ treat it as part of their software base when porting.")
        (sha256
         (base32 "00vjvcdlc1sga251jkxn6gkxmx9h5n290ffxxpa40qbca1gvr61b"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      `(("xorgproto" ,xorgproto)))
     (inputs
@@ -2103,17 +2135,16 @@ emulate a TI-30 or an HP-10C.")
 (define-public xcb-proto
   (package
     (name "xcb-proto")
-    (version "1.13")
+    (version "1.14")
     (source
       (origin
         (method url-fetch)
         (uri (string-append
                "https://xcb.freedesktop.org/dist/xcb-proto-"
-               version
-               ".tar.bz2"))
+               version ".tar.xz"))
         (sha256
           (base32
-           "1qdxw9syhbvswiqj5dvj278lrmfhs81apzmvx6205s4vcqg7563v"))))
+           "01d62r286yfc3rpz714nqdgkl0wk9j0wqkd4ylas1d7r4vmkqshq"))))
     (build-system gnu-build-system)
     (native-inputs
       `(("pkg-config" ,pkg-config) ("python" ,python-minimal-wrapper)))
@@ -2217,6 +2248,65 @@ X11 Inter-Client Communication Conventions Manual (ICCCM).")
 X server: @code{handhelds}, @code{redglass} and @code{whiteglass}.")
     (license license:x11)))
 
+
+(define-public hackneyed-x11-cursors
+  ;; The current release 0.8 suffers from non-deterministic build problems.
+  (let ((revision "1")
+        (commit "9423cef2e2e5ff6b1d65d61f7108c97bc7f5fdfb"))
+    (package
+      (name "hackneyed-x11-cursors")
+      (version (git-version "0.8.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://gitlab.com/Enthymeme/hackneyed-x11-cursors.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "0f637i76sdwz3nm1g1iynamq6j0i6k3c70fpl0fmd0dlynm8ga96"))))
+      (build-system gnu-build-system)
+      (arguments
+       `(#:tests? #f                    ;no test suite
+         #:make-flags (list (string-append "PREFIX=" %output))
+         #:phases
+         (modify-phases %standard-phases
+           (delete 'configure)
+           (add-before 'build 'set-inkscape-environment-variable
+             (lambda* (#:key inputs #:allow-other-keys)
+               (let ((inkscape (string-append (assoc-ref inputs "inkscape")
+                                              "/bin/inkscape")))
+                 (setenv "INKSCAPE" inkscape)
+                 #t)))
+           (add-before 'build 'placate-inkscape-warnings
+             (lambda _
+               (setenv "HOME" (getcwd))
+               #t))
+           (add-after 'build 'generate-black-cursors
+             (lambda* (#:key make-flags parallel-build #:allow-other-keys)
+               (let ((build (assoc-ref %standard-phases 'build))
+                     (make-flags/extended
+                      `(,@make-flags
+                        "THEME_NAME=Hackneyed-Dark"
+                        "COMMON_SOURCE=theme/common-dark.svg"
+                        "RSVG_SOURCE=theme/right-handed-dark.svg"
+                        "LSVG_SOURCE=theme/left-handed-dark.svg")))
+                 (build #:make-flags make-flags/extended
+                        #:parallel-build parallel-build))))
+           (add-after 'install 'install-black-cursors
+             (lambda* (#:key make-flags #:allow-other-keys)
+               (apply invoke `("make" "install" ,@make-flags
+                               "THEME_NAME=Hackneyed-Dark")))))))
+      (native-inputs `(("imagemagick" ,imagemagick)
+                       ("inkscape" ,inkscape)
+                       ("xcursorgen" ,xcursorgen)))
+      (home-page "https://gitlab.com/Enthymeme/hackneyed-x11-cursors")
+      (synopsis "Classic cursor theme for X11")
+      (description "Hackneyed is a scalable cursor theme mildly resembling old
+Windows 3.x cursors.  The cursors are available in white and black colors.  A
+left-handed version of the cursors is also included.")
+      (license license:x11))))
 
 (define-public xcursorgen
   (package
@@ -2466,7 +2556,7 @@ including most mice, keyboards, tablets and touchscreens.")
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
-     `(("libinput" ,libinput)
+     `(("libinput" ,libinput-minimal)
        ("xorg-server" ,xorg-server)))
     (home-page "https://www.x.org/wiki/")
     (synopsis "Input driver for X server based on libinput")
@@ -2955,13 +3045,7 @@ X server.")
                                     (string-prefix? "x86_64-" system)))
                %supported-systems))
       (arguments
-       '(#:configure-flags '("--with-default-accel=uxa")
-         #:phases (modify-phases %standard-phases
-                    (add-before 'bootstrap 'pre-bootstrap
-                      (lambda _
-                        ;; Inhibit autogen.sh from running configure.
-                        (setenv "NOCONFIGURE" "1")
-                        #t)))))
+       '(#:configure-flags '("--with-default-accel=uxa")))
       (home-page "https://www.x.org/wiki/")
       (synopsis "Intel video driver for X server")
       (description
@@ -3825,7 +3909,7 @@ alternative implementations like XRandR or TwinView.")
 (define xkbcomp-intermediate ; used as input for xkeyboard-config
   (package
     (name "xkbcomp-intermediate")
-    (version "1.4.2")
+    (version "1.4.3")
     (source
       (origin
         (method url-fetch)
@@ -3835,7 +3919,7 @@ alternative implementations like XRandR or TwinView.")
                ".tar.bz2"))
         (sha256
          (base32
-          "0944rrkkf0dxp07vhh9yr4prslxhqyw63qmbjirbv1bypswvrn3d"))))
+          "0dflr250nlj6rrnv658f6dm8qx37sj0xfimc3ihay761kwb2q906"))))
     (build-system gnu-build-system)
     (inputs
       `(("xorgproto" ,xorgproto)
@@ -4654,6 +4738,13 @@ cannot be adequately worked around on the client side of the wire.")
           (base32
             "0azqxllcsfxc3ilhz6kwc6x7m8wc477p59ir9p0yrsldx766zbar"))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list "--disable-static"
+             ;; Disable zero malloc check that fails when cross-compiling.
+             ,@(if (%current-target-system)
+                   '("--disable-malloc0returnsnull")
+                   '()))))
     (propagated-inputs
       `(("xorgproto" ,xorgproto)))
     (inputs
@@ -4683,6 +4774,8 @@ cannot be adequately worked around on the client side of the wire.")
           (base32
             "086p0axqj57nvkaqa6r00dnr9kyrn1m8blgf0zjy25zpxkbxn200"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("xorgproto" ,xorgproto)))
     (inputs
@@ -4739,6 +4832,13 @@ cannot be adequately worked around on the client side of the wire.")
           (base32
             "0j89cnb06g8x79wmmnwzykgkkfdhin9j7hjpvsxwlr3fz1wmjvf0"))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list "--disable-static"
+             ;; Disable zero malloc check that fails when cross-compiling.
+             ,@(if (%current-target-system)
+                   '("--disable-malloc0returnsnull")
+                   '()))))
     (propagated-inputs
       `(("xorgproto" ,xorgproto)))
     (inputs
@@ -4765,6 +4865,8 @@ cannot be adequately worked around on the client side of the wire.")
           (base32
             "012jpyj7xfm653a9jcfqbzxyywdmwb2b5wr1dwylx14f3f54jma6"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      `(("libxi" ,libxi)
        ("xorgproto" ,xorgproto)))
@@ -4802,6 +4904,8 @@ protocol and arbitrary X extension protocol.")
           (base32
             "125hn06bd3d8y97hm2pbf5j55gg4r2hpd3ifad651i4sr7m16v6j"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      `(("xorgproto" ,xorgproto)))
     (inputs
@@ -4830,8 +4934,21 @@ protocol and arbitrary X extension protocol.")
             "0c3563kw9fg15dpgx4dwvl12qz6sdqdns1pxa574hc7i5m42mman"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:phases
+     `(#:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'fix-configure
+           (lambda* (#:key inputs native-inputs #:allow-other-keys)
+             ;; Replace outdated config.sub and config.guess:
+             (for-each (lambda (file)
+                         (install-file (string-append
+                                        (assoc-ref
+                                         (or native-inputs inputs) "automake")
+                                        "/share/automake-"
+                                        ,(version-major+minor
+                                          (package-version automake))
+                                        "/" file) "."))
+                       '("config.sub" "config.guess"))
+             #t))
          (add-after 'install 'wrap-mkfontdir
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (wrap-program (string-append (assoc-ref outputs "out")
@@ -4843,7 +4960,8 @@ protocol and arbitrary X extension protocol.")
     (inputs
       `(("mkfontscale" ,mkfontscale)))
     (native-inputs
-      `(("pkg-config" ,pkg-config)))
+     `(("pkg-config" ,pkg-config)
+       ("automake" ,automake))) ;For up to date 'config.guess' and 'config.sub'.
     (home-page "https://www.x.org/wiki/")
     (synopsis "Create an index of X font files in a directory")
     (description
@@ -4900,6 +5018,8 @@ common definitions and porting layer.")
           (base32
             "0j638yvmyna2k4mz465jywgdybgdchdqppfx6xfazg7l5khxr1kg"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("xorgproto" ,xorgproto)))
     (inputs
@@ -4928,6 +5048,8 @@ common definitions and porting layer.")
           (base32
             "1v3krc6x0zliaa66qq1bf9j60x5nqfy68v8axaiglxpnvgqcpy6c"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("xorgproto" ,xorgproto)))
     (native-inputs
@@ -4954,6 +5076,8 @@ an X Window System display.")
           (base32
             "1miana3y4hwdqdparsccmygqr3ic3hs5jrqfzp70hvi2zwxd676y"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("xorgproto" ,xorgproto)))
     (inputs
@@ -4980,6 +5104,8 @@ an X Window System display.")
           (base32
             "0hiji1bvpl78aj3a3141hkk353aich71wv8l5l2z51scfy878zqs"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("freetype" ,freetype)
         ("libfontenc" ,libfontenc)
@@ -5027,6 +5153,8 @@ new API's in libXft, or the legacy API's in libX11.")
           (base32
             "0q8hz3slga3w3ch8wp0k7ay9ilhz315qnab0w1y2x9w3cf7hv8rn"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("xorgproto" ,xorgproto)
         ("libx11" ,libx11)
@@ -5054,6 +5182,8 @@ new API's in libXft, or the legacy API's in libX11.")
           (base32
             "08z0mqywrm7ij8bxlfrx0d2wy6kladdmkva1nw5k6qix82z0xsla"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       ;; In accordance with xrandr.pc.
       `(("libx11" ,libx11)
@@ -5083,6 +5213,8 @@ new API's in libXft, or the legacy API's in libX11.")
           (base32
             "1kbdjsvkm5l7axv7g477qj18sab2wnqhliy6197syzizgfbsfgbb"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("libxv" ,libxv)))
     (inputs
@@ -5111,6 +5243,8 @@ new API's in libXft, or the legacy API's in libX11.")
           (base32
             "0mydhlyn72i7brjwypsqrpkls3nm6vxw0li8b2nw0caz7kwjgvmg"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("libxext" ,libxext)
         ("xorgproto" ,xorgproto)))
@@ -5131,15 +5265,15 @@ protocol.")
 (define-public libxcb
   (package
     (name "libxcb")
-    (version "1.13")
+    (version "1.14")
     (source
       (origin
         (method url-fetch)
         (uri (string-append "https://xcb.freedesktop.org/dist/"
-                            "libxcb-" version ".tar.bz2"))
+                            "libxcb-" version ".tar.xz"))
         (sha256
           (base32
-           "1ahxhmdqp4bhb90zmc275rmf5wixqra4bnw9pqnzyl1w3598g30q"))))
+           "0d2chjgyn5lr9sfhacfvqgnj9l9faz11vn322a06jd6lk3dxcpm5"))))
     (build-system gnu-build-system)
     (propagated-inputs
       `(("libpthread-stubs" ,libpthread-stubs)
@@ -5152,7 +5286,8 @@ protocol.")
       `(("pkg-config" ,pkg-config)
         ("python" ,python-minimal-wrapper)))
     (arguments
-     `(#:configure-flags '("--enable-xkb")))
+     `(#:configure-flags '("--enable-xkb"
+                           "--disable-static")))
     (home-page "https://xcb.freedesktop.org/")
     (synopsis "The X C Binding (XCB) library")
     (description
@@ -5306,16 +5441,7 @@ draggable titlebars and borders.")
 (define-public xorg-server-for-tests
   (hidden-package
    (package
-     (inherit xorg-server)
-     (version "1.20.5")
-     (source (origin
-               (inherit (package-source xorg-server))
-               (uri (string-append
-                     "mirror://xorg/individual/xserver/"
-                     "xorg-server-" version ".tar.bz2"))
-               (sha256
-                (base32
-                 "17dc3g8cc55nbkx3np64dsz04n621dnzjmcc9wys0xbyyd1q47d8")))))))
+     (inherit xorg-server))))
 
 (define-public xorg-server-xwayland
   (package
@@ -5341,7 +5467,7 @@ draggable titlebars and borders.")
 (define-public libx11
   (package
     (name "libx11")
-    (version "1.6.8")
+    (version "1.6.9")
     (source
       (origin
         (method url-fetch)
@@ -5351,21 +5477,29 @@ draggable titlebars and borders.")
                ".tar.bz2"))
         (sha256
           (base32
-            "1mbkwhhprhf49s2iwx7kiliprsdvd690zk44x3h53ql9q52si2dj"))))
+            "1ldyn9c6pyx54sxzaw120n3q42rqi7b503aqmyjky6fn038fiiww"))))
     (build-system gnu-build-system)
     (outputs '("out"
                "doc"))                            ;8 MiB of man pages + XML
     (arguments
-     '(#:configure-flags (list (string-append "--mandir="
-                                              (assoc-ref %outputs "doc")
-                                              "/share/man"))))
+     `(#:configure-flags
+       (list (string-append "--mandir="
+                            (assoc-ref %outputs "doc")
+                            "/share/man")
+             "--disable-static"
+
+             ;; Disable zero malloc check that fails when cross-compiling.
+             ,@(if (%current-target-system)
+                   '("--disable-malloc0returnsnull")
+                   '()))))
     (propagated-inputs
       `(("xorgproto" ,xorgproto)
         ("libxcb" ,libxcb)))
     (inputs
       `(("xtrans" ,xtrans)))
     (native-inputs
-      `(("pkg-config" ,pkg-config)))
+     `(("pkg-config" ,pkg-config)
+       ("xorgproto" ,xorgproto)))
     (home-page "https://www.x.org/wiki/")
     (synopsis "Xorg Core X11 protocol client library")
     (description "Xorg Core X11 protocol client library.")
@@ -5388,6 +5522,8 @@ draggable titlebars and borders.")
           (base32
             "10l7c9fm0jmpkm9ab9dz8r6m1pr87vvgqjnbx1psz50h4pwfklrs"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("libx11" ,libx11)
         ("libxrender" ,libxrender)
@@ -5428,9 +5564,15 @@ draggable titlebars and borders.")
     (outputs '("out"
                "doc"))                            ;2 MiB of man pages + XML
     (arguments
-     '(#:configure-flags (list (string-append "--mandir="
-                                              (assoc-ref %outputs "doc")
-                                              "/share/man"))))
+     `(#:configure-flags
+       (list (string-append "--mandir="
+                            (assoc-ref %outputs "doc")
+                            "/share/man")
+             "--disable-static"
+             ;; Disable zero malloc check that fails when cross-compiling.
+             ,@(if (%current-target-system)
+                   '("--disable-malloc0returnsnull")
+                   '()))))
     (propagated-inputs
       `(("libx11" ,libx11)
         ("libice" ,libice)
@@ -5460,6 +5602,8 @@ draggable titlebars and borders.")
           (base32
             "1kdhxplwrn43d9jp3v54llp05kwx210lrsdvqb6944jp29rhdy4f"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
       `(("libxext" ,libxext)
         ("libxmu" ,libxmu)
@@ -5519,6 +5663,8 @@ keyboard focus, and user-specified key and pointer button bindings.")
               (base32
                "1sahmrgbpyki4bb72hxym0zvxwnycmswsxiisgqlln9vrdlr9r26"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      `(("libxcb" ,libxcb)))
     (native-inputs
@@ -5555,6 +5701,8 @@ The XCB util module provides the following libraries:
                (base32
                 "0krr4rcw6r42cncinzvzzdqnmxk3nrgpnadyg2h8k9x10q3hm885"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (native-inputs
      `(("m4" ,m4)
        ("pkg-config" ,pkg-config)))
@@ -5637,6 +5785,8 @@ numbers.")
               (base32
                "1z1gxacg7q4cw6jrd26gvi5y04npsyavblcdad1xccc8swvnmf9d"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      `(("libxcb" ,libxcb)))
     (inputs
@@ -5671,6 +5821,8 @@ The XCB util-image module provides the following library:
               (base32
                "1nbd45pzc1wm6v5drr5338j4nicbgxa5hcakvsvm5pnyy47lky0f"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      `(("libxcb" ,libxcb)))
     (native-inputs
@@ -5703,6 +5855,8 @@ The XCB util-keysyms module provides the following library:
               (base32
                "0nza1csdvvxbmk8vgv8vpmq7q8h05xrw3cfx9lwxd1hjzd47xsf6"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      `(("libxcb" ,libxcb)))
     (native-inputs
@@ -5735,6 +5889,8 @@ The XCB util-renderutil module provides the following library:
               (base32
                "0gra7hfyxajic4mjd63cpqvd20si53j1q3rbdlkqkahfciwq3gr8"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (propagated-inputs
      `(("libxcb" ,libxcb)))
     (native-inputs
@@ -5911,7 +6067,7 @@ to answer a question.  Xmessage can also exit after a specified time.")
 (define-public xterm
   (package
     (name "xterm")
-    (version "351")
+    (version "353")
     (source (origin
               (method url-fetch)
               (uri (list
@@ -5921,7 +6077,7 @@ to answer a question.  Xmessage can also exit after a specified time.")
                                    "xterm-" version ".tgz")))
               (sha256
                (base32
-                "05kf586my4irrzz2bxgmwjdvynyrg9ybhvfqmx29g70w4888l2kn"))))
+                "0s5pkfn4r8iy09s1q1y78zhnr9f3sm6wgbqir7azaqggkppd68g5"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--enable-wide-chars" "--enable-load-vt-fonts"
@@ -6082,12 +6238,6 @@ Conventions Manual) and some of the @dfn{EWMH}
         (base32 "11i7vyk3pynw8q8aczpy56qncm84y0cmhlvyja3sj8dgy60g03q2"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
-    (arguments
-     `(#:phases (modify-phases %standard-phases
-                  (add-after 'unpack 'autogen
-                              (lambda _
-                                (setenv "NOCONFIGURE" "t")
-                                (invoke "sh" "autogen.sh"))))))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("autoconf" ,autoconf)
@@ -6123,7 +6273,7 @@ basic eye-candy effects.")
     (inputs `(("ffmpeg" ,ffmpeg)
               ("flac" ,flac)
               ("gtk+-2" ,gtk+-2) ;; no full GTK3 support yet
-              ("libjpeg" ,libjpeg)
+              ("libjpeg" ,libjpeg-turbo)
               ("libpng" ,libpng)
               ("libvpx" ,libvpx)
               ("libx264" ,libx264)
@@ -6465,15 +6615,15 @@ output.")
 (define-public console-setup
   (package
     (name "console-setup")
-    (version "1.194")
+    (version "1.195")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://salsa.debian.org/installer-team/console-setup.git")
-             (commit version)))
+             (commit "38512eb9a97f57ead1f87f6aee6df455f721c645"))) ; no tag
        (sha256
-        (base32 "0fkabv05j5dj10mfrpjyvv7lnxl9qaqkbjhwj72r18i9i4019vgh"))
+        (base32 "0d0xagigs5k3appzz5lzxdjncvnkgz4amz6ks7imiq8kkjixvmfy"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -6481,7 +6631,7 @@ output.")
        (let ((bash (assoc-ref %build-inputs "bash"))
              (out (assoc-ref %outputs "out")))
          (list (string-append "SHELL=" bash "/bin/bash")))
-       #:tests? #f                                ;no tests
+       #:tests? #f                      ; no tests
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)
@@ -6495,27 +6645,30 @@ output.")
                                " ")))
              #t))
          (add-before 'build 'make-doubled-bdfs
-           (lambda* (#:key inputs #:allow-other-keys)
+           (lambda* (#:key native-inputs inputs #:allow-other-keys)
              (invoke "make" "-C" "Fonts"
                      "doubled_bdfs"
                      (string-append "SHELL="
-                                    (assoc-ref inputs "bash")
+                                    (assoc-ref (or native-inputs inputs)
+                                               "bash")
                                     "/bin/bash"))))
          (replace 'install
-           (lambda* (#:key inputs outputs #:allow-other-keys)
+           (lambda* (#:key native-inputs inputs outputs #:allow-other-keys)
              (let ((out (assoc-ref %outputs "out")))
                (invoke "make" "install-linux"
                        (string-append "prefix=" out)
                        (string-append "SHELL="
-                                      (assoc-ref inputs "bash")
+                                      (assoc-ref (or native-inputs inputs)
+                                                 "bash")
                                       "/bin/bash"))))))))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("bdftopcf" ,bdftopcf)
        ("bdfresize" ,bdfresize)
-       ("sharutils" ,sharutils)))                 ;for 'uuencode'
+       ("sharutils" ,sharutils)         ; for 'uuencode'
+       ("perl" ,perl)))
     (inputs
-     `(("perl" ,perl)))                           ;used by 'ckbcomp'
+     `(("perl" ,perl)))                 ; used by 'ckbcomp'
     (synopsis "Set up the Linux console font and keyboard")
     (description
      "console-setup provides the console with the same keyboard
@@ -6562,3 +6715,24 @@ Thai).")
 a configuration file reusable by xcursorgen.")
     (home-page "https://github.com/eworm-de/xcur2png")
     (license license:gpl3+)))
+
+(define-public gccmakedep
+  (package
+    (name "gccmakedep")
+    (version "1.0.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://xorg/individual/util/gccmakedep-"
+                           version ".tar.bz2"))
+       (sha256
+        (base32 "1r1fpy5ni8chbgx7j5sz0008fpb6vbazpy1nifgdhgijyzqxqxdj"))))
+    (build-system gnu-build-system)
+    (synopsis "Create dependencies in makefiles using 'gcc -M'")
+    (description
+     "@command{gccmakedep} is a deprecated program which calls @code{gcc -M}
+to output Makefile rules describing the dependencies of each source file, so
+that Make knows which object files must be recompiled when a dependency has
+changed.")
+    (home-page "https://gitlab.freedesktop.org/xorg/util/gccmakedep")
+    (license license:x11)))

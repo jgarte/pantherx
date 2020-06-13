@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2014, 2017, 2018 Ludovic Courtès <ludo@gnu.org>
-;;; Copyright © 2015, 2016, 2017, 2018 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2016, 2017, 2018, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015, 2016, 2017 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2016 Raimon Grau <raimonster@gmail.com>
@@ -8,7 +8,7 @@
 ;;; Copyright © 2016 John Darrington <jmd@gnu.org>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2016 Eric Bavier <bavier@member.fsf.org>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016, 2017, 2018 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2016 Benz Schenk <benz.schenk@uzh.ch>
 ;;; Copyright © 2016, 2017 Pjotr Prins <pjotr.guix@thebird.nl>
@@ -33,7 +33,7 @@
 ;;; Copyright © 2019 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2019 Tonton <tonton@riseup.net>
 ;;; Copyright © 2019, 2020 Alex Griffin <a@ajgrf.com>
-;;; Copyright © 2019 Jan Wielkiewicz <tona_kosmicznego_smiecia@interia.pl>
+;;; Copyright © 2019, 2020 Jan Wielkiewicz <tona_kosmicznego_smiecia@interia.pl>
 ;;; Copyright © 2019 Daniel Schaefer <git@danielschaefer.me>
 ;;; Copyright © 2019 Diego N. Barbato <dnbarbato@posteo.de>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
@@ -72,6 +72,7 @@
   #:use-module (gnu packages adns)
   #:use-module (gnu packages algebra)
   #:use-module (gnu packages audio)
+  #:use-module (gnu packages autogen)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bison)
@@ -86,12 +87,14 @@
   #:use-module (gnu packages dejagnu)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages flex)
+  #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages gnupg)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages image)
+  #:use-module (gnu packages libevent)
   #:use-module (gnu packages libidn)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lua)
@@ -105,12 +108,15 @@
   #:use-module (gnu packages perl)
   #:use-module (gnu packages perl-check)
   #:use-module (gnu packages pkg-config)
+  #:use-module (gnu packages polkit)
   #:use-module (gnu packages pretty-print)
+  #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages readline)
+  #:use-module (gnu packages samba)
   #:use-module (gnu packages serialization)
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages ssh)
@@ -121,6 +127,120 @@
   #:use-module (gnu packages wxwidgets)
   #:use-module (gnu packages xml)
   #:use-module (ice-9 match))
+
+(define-public blueman
+  (package
+    (name "blueman")
+    (version "2.1.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/blueman-project/blueman/releases"
+                           "/download/" version "/blueman-" version ".tar.xz"))
+       (sha256
+        (base32 "1pngqbwapbvywhkmflapqvs0wa0af7d1a87wy56l5hg2r462xl1v"))))
+    (build-system glib-or-gtk-build-system)
+    (arguments
+     `(#:configure-flags (list "--enable-polkit"
+                               "--without-systemdsystemunitdir" ; Not required
+                               "--without-systemduserunitdir")  ; Not required
+       #:phases
+       (modify-phases %standard-phases
+         ;; Python references are not being patched in patch-phase of build,
+         ;; despite using python-wrapper as input. So we patch them manually.
+         (add-after 'unpack 'patch-python-references
+           (lambda* (#:key inputs #:allow-other-keys)
+             (with-directory-excursion "apps"
+               (substitute* '("blueman-adapters.in" "blueman-applet.in"
+                              "blueman-assistant.in" "blueman-manager.in"
+                              "blueman-mechanism.in" "blueman-report.in"
+                              "blueman-rfcomm-watcher.in" "blueman-sendto.in"
+                              "blueman-services.in" "blueman-tray.in")
+                 (("@PYTHON@") (string-append (assoc-ref inputs "python")
+                                              "/bin/python"
+                                              ,(version-major+minor
+                                                (package-version python))))))
+             #t))
+         ;; Fix loading of external programs.
+         (add-after 'unpack 'patch-external-programs
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* '("apps/blueman-report.in" "blueman/main/NetConf.py"
+                            "blueman/main/PPPConnection.py")
+               (("/usr/sbin/bluetoothd")
+                (string-append (assoc-ref inputs "bluez")
+                               "/libexec/bluetooth/bluetoothd"))
+               (("/sbin/iptables")
+                (string-append (assoc-ref inputs "iptables")
+                               "/sbin/iptables"))
+               (("/usr/sbin/pppd")
+                (string-append (assoc-ref inputs "ppp")
+                               "/sbin/pppd")))
+             #t))
+         ;; Fix loading of pulseaudio libraries.
+         (add-after 'unpack 'patch-pulseaudio-libraries
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let* ((pulseaudio (assoc-ref inputs "pulseaudio"))
+                    (pulse (string-append pulseaudio "/lib/libpulse.so.0"))
+                    (pulse-glib (string-append pulseaudio
+                                               "/lib/libpulse-mainloop-glib.so.0")))
+               (with-directory-excursion "blueman/main"
+                 (substitute* "PulseAudioUtils.py"
+                   (("libpulse.so.0") pulse)
+                   (("libpulse-mainloop-glib.so.0") pulse-glib)))
+               #t)))
+         ;; Fix running of blueman programs.
+         (add-after 'glib-or-gtk-wrap 'wrap-blueman-progs
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin/blueman-"))
+                    (libexec (string-append out "/libexec/blueman-"))
+                    (lib (string-append out "/lib/python"
+                                        ,(version-major+minor
+                                          (package-version python))
+                                        "/site-packages")))
+               (for-each
+                (lambda (program)
+                  (wrap-program program
+                    `("PYTHONPATH" = (,(getenv "PYTHONPATH") ,lib))
+                    `("GI_TYPELIB_PATH" = (,(getenv "GI_TYPELIB_PATH")))))
+                (append
+                 (map (lambda (prog) (string-append bin prog))
+                      '("adapters" "applet" "assistant" "manager" "report"
+                        "sendto" "services" "tray"))
+                 (map (lambda (prog) (string-append libexec prog))
+                      '("mechanism" "rfcomm-watcher"))))
+               #t))))))
+    (native-inputs
+     `(("cython" ,python-cython)
+       ("glib:bin" ,glib "bin")
+       ("gobject-introspection" ,gobject-introspection)
+       ("gtk+:bin" ,gtk+ "bin")
+       ("intltool" ,intltool)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("bluez" ,bluez)
+       ("dbus" ,dbus)
+       ("gdkpixbuf" ,gdk-pixbuf+svg)
+       ("glib" ,glib)
+       ("gtk+" ,gtk+)
+       ("iproute2" ,iproute)
+       ("iptables" ,iptables)
+       ("net-tools" ,net-tools)
+       ("pango" ,pango)
+       ("polkit" ,polkit)
+       ("ppp" ,ppp)
+       ("pulseaudio" ,pulseaudio)
+       ("pycairo" ,python-pycairo)
+       ("pygobject" ,python-pygobject)
+       ("python" ,python-wrapper)
+       ("libappindicator" ,libappindicator)
+       ("libnm" ,network-manager)))
+    (synopsis "GTK+ Bluetooth manager")
+    (description "Blueman is a Bluetooth management utility using the Bluez
+D-Bus backend.  It is designed to be easy to use for most common Bluetooth
+tasks.")
+    (home-page "https://github.com/blueman-project/blueman")
+    (license license:gpl3+)))
 
 ;; The gnu.org ‘home’ for this GNU project is a directory listing with 1.6.0 as
 ;; the latest version.  The author's git repository, mentioned in the 1.6.0
@@ -336,7 +456,7 @@ more.")
                       #t)))))
     (inputs
      `(("zeromq" ,zeromq)))
-    (home-page "http://zeromq.org")
+    (home-page "https://zeromq.org")
     (synopsis "High-level C bindings for ØMQ")
     (description
      "czmq provides bindings for the ØMQ core API that hides the differences
@@ -367,26 +487,61 @@ between different versions of ØMQ.")
      `(("pkg-config" ,pkg-config)))
     (inputs
      `(("zeromq" ,zeromq)))
-    (home-page "http://zeromq.org")
+    (home-page "https://zeromq.org")
     (synopsis "C++ bindings for the ØMQ messaging library")
     (description
      "This package provides header-only C++ bindings for ØMQ.  The header
 files contain direct mappings of the abstractions provided by the ØMQ C API.")
     (license license:expat)))
 
-(define-public librdkafka
+(define-public libnatpmp
   (package
-    (name "librdkafka")
-    (version "0.9.1")
+    (name "libnatpmp")
+    (version "20150609")
     (source (origin
               (method url-fetch)
               (uri (string-append
-                    "https://github.com/edenhill/librdkafka/archive/"
-                    version ".tar.gz"))
-              (file-name (string-append name "-" version ".tar.gz"))
+                    "http://miniupnp.free.fr/files/"
+                    name "-" version ".tar.gz"))
               (sha256
                (base32
-                "10ldx7g7ymmg17snzx78vy4n8ma1rjx0agzi34g15j2fk867xmas"))))
+                "1c1n8n7mp0amsd6vkz32n8zj3vnsckv308bb7na0dg0r8969rap1"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (delete 'check)) ; no tests
+       #:make-flags
+       (let* ((target ,(%current-target-system))
+              (gcc (if target
+                       (string-append target "-gcc")
+                       "gcc")))
+         (list
+          (string-append "CC=" gcc)
+          (string-append "INSTALLPREFIX=" (assoc-ref %outputs "out"))
+          (string-append "LDFLAGS=-Wl,-rpath=" %output "/lib")))))
+    (home-page "http://miniupnp.free.fr/libnatpmp.html")
+    (synopsis "C library implementing NAT-PMP")
+    (description
+     "@code{libnatpmp} is a portable and asynchronous implementation of
+the Network Address Translation - Port Mapping Protocol (NAT-PMP)
+written in the C programming language.")
+    (license license:bsd-3)))
+
+(define-public librdkafka
+  (package
+    (name "librdkafka")
+    (version "1.4.2")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/edenhill/librdkafka.git")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "05mgrdzacn9kdpr68r5j0cvsvl54s52glnsc1ww9rcxx6p7hq1ly"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -434,15 +589,19 @@ receiving NDP messages.")
 (define-public ethtool
   (package
     (name "ethtool")
-    (version "5.4")
+    (version "5.7")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://kernel.org/software/network/"
                                   "ethtool/ethtool-" version ".tar.xz"))
               (sha256
                (base32
-                "0srbqp4a3x9ryrbm5q854375y04ni8j0bmsrl89nmsyn4x4ixy12"))))
+                "0f9w0pqkvwn540rasmj6c8897g9gj2hmjnbkhpi9yf1s7jyvhkkj"))))
     (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libmnl" ,libmnl)))
     (home-page "https://www.kernel.org/pub/software/network/ethtool/")
     (synopsis "Display or change Ethernet device settings")
     (description
@@ -608,14 +767,14 @@ of the same name.")
 (define-public wireshark
   (package
     (name "wireshark")
-    (version "3.2.2")
+    (version "3.2.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.wireshark.org/download/src/wireshark-"
                            version ".tar.xz"))
        (sha256
-        (base32 "0ygdxpz0i4jxp55fg9x4xcan093wycjb66yas073gviz9kpj6naz"))))
+        (base32 "1amqgn94g6h6cfnsccm2zb4c73pfv1qmzi1i6h1hnbcyhhg4czfi"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -867,14 +1026,15 @@ TCP connection, TLS handshake and so on) in the terminal.")
 (define-public squid
   (package
     (name "squid")
-    (version "4.10")
+    (version "4.11")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://www.squid-cache.org/Versions/v4/squid-"
                            version ".tar.xz"))
        (sha256
-        (base32 "07sz0adv8nkhy797675bpra7lvdkwjq9isw1ddgylhlazl511w4q"))))
+        (base32
+          "0z986kykx539wjqd7mr8y0abf3z6hz8byf8fmmbky9hh4ihlgnaf"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -978,12 +1138,6 @@ live network and disk I/O bandwidth monitor.")
                         (("/bin/sh")
                          (which "sh")))
                       #t))
-                  (replace 'bootstrap
-                    (lambda _
-                      ;; Patch shebangs in generated files before running
-                      ;; ./configure.
-                      (setenv "NOCONFIGURE" "please")
-                      (invoke "bash" "./autogen.sh")))
                   (add-after 'build 'absolutize-tools
                     (lambda* (#:key inputs #:allow-other-keys)
                       (let ((ethtool (string-append (assoc-ref inputs "ethtool")
@@ -1132,7 +1286,7 @@ private (reserved).")
 (define-public perl-net-dns
  (package
   (name "perl-net-dns")
-  (version "1.21")
+  (version "1.24")
   (source
     (origin
       (method url-fetch)
@@ -1143,7 +1297,7 @@ private (reserved).")
         (string-append "mirror://cpan/authors/id/N/NL/NLNETLABS/Net-DNS-"
                        version ".tar.gz")))
       (sha256
-       (base32 "0yknrsh0wqr9s43c0wf3dyzrsi2r7k0v75hay74gqkq850xy3vyx"))))
+       (base32 "0qyy5k4k0llqjjmkkfg96919gqybdc1z5fy9047n9imidjxc59hi"))))
   (build-system perl-build-system)
   (inputs
     `(("perl-digest-hmac" ,perl-digest-hmac)))
@@ -1451,14 +1605,14 @@ HTTP proxies.")
 (define-public enet
   (package
     (name "enet")
-    (version "1.3.14")
+    (version "1.3.15")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://enet.bespin.org/download/"
                                   "enet-" version ".tar.gz"))
               (sha256
                (base32
-                "0w780zc6cy8yq4cskpphx0f91lzh51vh9lwyc5ll8hhamdxgbxlq"))))
+                "1yxxf9bkx6dx3j8j70fj17c05likyfibb1419ls74hp58qrzdgas"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -1569,25 +1723,29 @@ the bandwidth, loss, and other parameters.")
 (define-public nethogs
   (package
     (name "nethogs")
-    (version "0.8.5")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/raboof/nethogs/archive/v"
-                                  version ".tar.gz"))
-              (sha256
-               (base32
-                "1k4x8r7s4dgcb6n2rjn28h2yyij92mwm69phncl3597cdxr954va"))
-              (file-name (string-append name "-" version ".tar.gz"))))
+    (version "0.8.6")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/raboof/nethogs")
+             (commit (string-append "v" version))))
+       (hash
+        (content-hash
+         (base32 "0sn1sdp86akwlm4r1vmkxjjl50c0xaisk91bbz57z7kcsaphxna9")
+         sha256))
+       (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (inputs
      `(("libpcap" ,libpcap)
        ("ncurses" ,ncurses)))
     (arguments
      `(#:make-flags `("CC=gcc"
-                      ,(string-append "PREFIX=" %output))
+                      ,(string-append "PREFIX=" %output)
+                      ,(string-append "VERSION=" ,version))
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure)))) ; No ./configure script.
+         (delete 'configure))))         ; no ./configure script.
     (home-page "https://github.com/raboof/nethogs")
     (synopsis "Per-process bandwidth monitor")
     (description "NetHogs is a small 'net top' tool for Linux.  Instead of
@@ -1801,14 +1959,14 @@ returns the user name and other information about the connection.")
 (define-public spiped
   (package
     (name "spiped")
-    (version "1.6.0")
+    (version "1.6.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://www.tarsnap.com/spiped/spiped-"
                                   version ".tgz"))
               (sha256
                (base32
-                "1r51rdcl7nib1yv3yvgd5alwlkkwmr387brqavaklb0p2bwzixz6"))))
+                "04rpnc53whfky7pp2m9h35gwzwn6788pnl6c1qd576mpknbqjw4d"))))
     (build-system gnu-build-system)
     (arguments
      '(#:test-target "test"
@@ -2030,14 +2188,14 @@ displays the results in real time.")
 (define-public strongswan
   (package
     (name "strongswan")
-    (version "5.8.2")
+    (version "5.8.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://download.strongswan.org/strongswan-"
                            version ".tar.bz2"))
        (sha256
-        (base32 "03j3fx357bh89n44a5v9wdc92azdx2d37j7jmlyr4z1kwzdhv446"))))
+        (base32 "0g2m08gmgdi3qvvqz6zy7n16np53sp232xd0rdc2vdhk73img6id"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -2178,12 +2336,6 @@ remotely.")
                (base32
                 "0qz2730bng1gs9xbqxhkw88qbsmszgmmrl2g9k6xrg6r3bqvsdc7"))))
     (build-system gnu-build-system)
-    (arguments
-     `(;; Ensure the kernel headers are treated as system headers to suppress
-       ;; harmless -Werror=pedantic warnings.
-       #:make-flags (list (string-append "C_INCLUDE_PATH="
-                                         (assoc-ref %build-inputs "kernel-headers")
-                                         "/include"))))
     (inputs `(("zeromq" ,zeromq)
               ("czmq" ,czmq)
               ("libsodium" ,libsodium)))
@@ -2387,7 +2539,7 @@ SNMP v3 using both IPv4 and IPv6.")
 (define-public ubridge
   (package
     (name "ubridge")
-    (version "0.9.16")
+    (version "0.9.18")
     (source
      (origin
        (method git-fetch)
@@ -2396,11 +2548,12 @@ SNMP v3 using both IPv4 and IPv6.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1bind7ylgxs743vfdmpdrpp4iamy461bc3i7nxza91kj7hyyjz6h"))))
+        (base32 "0jg66jhhpv4c9340fsdp64hf9h253i8r81fknxa0gq241ripp3jn"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no tests
-       #:make-flags '("CC=gcc")
+       #:make-flags
+       (list ,(string-append "CC=" (cc-for-target)))
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)            ; no configure script
@@ -2448,15 +2601,7 @@ Ethernet and TAP interfaces is supported.  Packet capture is also supported.")
        #:tests? #f                      ; no test suite
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure)
-         (add-after 'unpack 'set-environment
-           (lambda* (#:key inputs #:allow-other-keys)
-             (setenv "C_INCLUDE_PATH"
-                     (string-append (assoc-ref inputs "curl") "/include:"
-                                    (assoc-ref inputs "libpcap") "/include:"
-                                    (assoc-ref inputs "openssl") "/include:"
-                                    (assoc-ref inputs "zlib") "/include"))
-             #t)))))
+         (delete 'configure))))
     (home-page "https://github.com/ZerBea/hcxtools")
     (synopsis "Capture wlan traffic to hashcat and John the Ripper")
     (description
@@ -2467,7 +2612,7 @@ packets from wireless devices for use with hashcat or John the Ripper.")
 (define-public hcxdumptool
   (package
     (name "hcxdumptool")
-    (version "5.2.0")
+    (version "6.0.6")
     (source
      (origin
        (method git-fetch)
@@ -2475,17 +2620,19 @@ packets from wireless devices for use with hashcat or John the Ripper.")
              (url "https://github.com/ZerBea/hcxdumptool.git")
              (commit version)))
        (sha256
-        (base32 "0pg1pvg029gm4rj0fj5kcsjb32hixgn4cxsgiir7spkmacf1qm4q"))
+        (base32 "1b4d543y64ib92w9gcmiyjn5hz2vyjqmxk3f3yr1zk04fhw16gmf"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
-       (list "CC=gcc"
+       (list ,(string-append "CC=" (cc-for-target))
              (string-append "INSTALLDIR=" (assoc-ref %outputs "out") "/bin"))
        #:tests? #f                      ; no test suite
        #:phases
        (modify-phases %standard-phases
          (delete 'configure))))
+    (inputs
+     `(("openssl" ,openssl)))
     (home-page "https://github.com/ZerBea/hcxdumptool")
     (synopsis "Small tool to capture packets from wlan devices")
     (description
@@ -2580,7 +2727,7 @@ communication over HTTP.")
 (define-public restinio
   (package
     (name "restinio")
-    (version "0.6.0.1")
+    (version "0.6.1.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2589,7 +2736,7 @@ communication over HTTP.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1c25kpx652nng8m1sqf5an2c3c4g3k6zj85mkkaxzk88iwfzq1s8"))))
+                "141a96hx8zhcdv121g6cs91n46kb47y040v25pnvz5f54964z7f5"))))
     (build-system cmake-build-system)
     (inputs                             ; TODO: Need to force-keep references on some inputs, e.g. boost.
      `(("zlib" ,zlib)
@@ -2622,7 +2769,7 @@ and targeted primarily for asynchronous processing of HTTP-requests.")
 (define-public opendht
   (package
     (name "opendht")
-    (version "2.0.0beta2")
+    (version "2.0.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2631,7 +2778,7 @@ and targeted primarily for asynchronous processing of HTTP-requests.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "02ix0rvvyhq22gd5djcq84qz08ji7ln93faf23b27zjzni2klzv5"))))
+                "1q1fwk8wwk9r6bp0indpr60ql668lsk16ykslacyhrh7kg97kvhr"))))
     ;; Since 2.0, the gnu-build-system does not seem to work anymore, upstream bug?
     (build-system cmake-build-system)
     (inputs
@@ -2757,14 +2904,14 @@ maximum extent possible.")
 (define-public batctl
   (package
    (name "batctl")
-   (version "2020.0")
+   (version "2020.1")
    (source
     (origin
      (method url-fetch)
      (uri (string-append "https://downloads.open-mesh.org/batman/releases/batman-adv-"
                          version "/batctl-" version ".tar.gz"))
      (sha256
-      (base32 "01414ywhlb2b9ng9d5kd5rr1s7wzvi234j8hj6ra2spn92qykvv0"))))
+      (base32 "0fy252q1my3a57v6pfz8i97h6zv7v03di01dhwjkj47pqnx1rqm3"))))
    (inputs
     `(("libnl" ,libnl)))
    (native-inputs
@@ -2959,7 +3106,7 @@ cables.")
 (define-public haproxy
   (package
     (name "haproxy")
-    (version "2.1.3")
+    (version "2.1.6")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://www.haproxy.org/download/"
@@ -2967,7 +3114,7 @@ cables.")
                                   "/src/haproxy-" version ".tar.gz"))
               (sha256
                (base32
-                "0n8bw3d6gikr8c56ycrvksp1sl0b4yfzp19867cxkl3l0daqwrxv"))))
+                "1pyz4gckdn8982vpb1iiw9agwp2s5p8wc0nn1qh1ic0wq3lrnpg6"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -2998,3 +3145,50 @@ thousands of connections is clearly realistic with today's hardware.")
     (license (list license:gpl2+
                    license:lgpl2.1
                    license:lgpl2.1+))))
+
+(define-public lldpd
+  (package
+    (name "lldpd")
+    (version "1.0.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://media.luffy.cx/files/lldpd/lldpd-"
+                           version ".tar.gz"))
+       (sha256
+        (base32
+         "16fbqrs3l976gdslx647nds8x7sz4h5h3h4l4yxzrayvyh9b5lrd"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Drop bundled library.
+           (delete-file-recursively "libevent")
+           #t))))
+    (arguments
+     `(#:configure-flags
+       (list
+        "--with-privsep-user=nobody"
+        "--with-privsep-group=nogroup"
+        "--localstatedir=/var"
+        "--enable-pie"
+        "--without-embedded-libevent"
+        (string-append "--with-systemdsystemunitdir="
+                       (assoc-ref %outputs "out")
+                       "/lib/systemd/system"))))
+    (build-system gnu-build-system)
+    (inputs
+     `(("libevent" ,libevent)
+       ("libxml2" ,libxml2)
+       ("openssl" ,openssl)
+       ("readline" ,readline)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (home-page "https://vincentbernat.github.io/lldpd/")
+    (synopsis "Locate neighbors of your network equipment")
+    (description
+     "The @dfn{Link Layer Discovery Protocol} (LLDP) is an industry standard
+protocol designed to supplant proprietary Link-Layer protocols such as EDP or
+CDP.  The goal of LLDP is to provide an inter-vendor compatible mechanism to
+deliver Link-Layer notifications to adjacent network devices.  @code{lldpd} is
+an implementation of LLDP.  It also supports some proprietary protocols.")
+    (license license:isc)))

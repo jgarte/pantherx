@@ -37,6 +37,7 @@
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages qt)
   #:use-module (gnu packages java)
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages telephony)
@@ -49,6 +50,8 @@
   #:use-module (guix packages)
   #:use-module (guix download)
   #:use-module (guix build-system cmake)
+  #:use-module (guix build-system qt)
+  #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu))
 
 (define-public bcunit
@@ -67,12 +70,11 @@
     (arguments
      '(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO")))         ; Not required
+       (list "-DENABLE_STATIC=NO")))    ; Not required
     (synopsis "Belledonne Communications Unit Testing Framework")
-    (description "BCUnit is a fork of the defunct project CUnit,
-with several fixes and patches applied.  It is an unit testing
-framework for writing, administering, and running unit tests in C.")
+    (description "BCUnit is a fork of the defunct project CUnit, with several
+fixes and patches applied.  It is an unit testing framework for writing,
+administering, and running unit tests in C.")
     (home-page "https://gitlab.linphone.org/BC/public/bcunit")
     (license license:lgpl2.0+)))
 
@@ -92,14 +94,13 @@ framework for writing, administering, and running unit tests in C.")
     (arguments
      '(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=OFF")))        ; Not required
+       (list "-DENABLE_STATIC=OFF")))   ; Not required
     (inputs
      `(("bcunit" ,bcunit)
        ("mbedtls" ,mbedtls-apache)))
     (synopsis "Belledonne Communications Tool Box")
     (description "BcToolBox is an utilities library used by Belledonne
-Communications softwares like belle-sip, mediastreamer2 and linphone.")
+Communications software like belle-sip, mediastreamer2 and linphone.")
     (home-page "https://gitlab.linphone.org/BC/public/bctoolbox")
     (license license:gpl2+)))
 
@@ -119,14 +120,14 @@ Communications softwares like belle-sip, mediastreamer2 and linphone.")
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=OFF")))        ; Not required
+       (list "-DENABLE_STATIC=OFF")))   ; Not required
     (inputs
      `(("bctoolbox" ,bctoolbox)))
     (synopsis "Belledonne Communications Language Recognition Library")
-    (description "Belr is Belledonne Communications' language recognition library,
-written in C++11.  It parses text inputs formatted according to a language
-defined by an ABNF grammar, such as the protocols standardized at IETF.")
+    (description "Belr is Belledonne Communications' language recognition
+library, written in C++11.  It parses text inputs formatted according to a
+language defined by an ABNF grammar, such as the protocols standardized at
+IETF.")
     (home-page "https://gitlab.linphone.org/BC/public/belr")
     (license license:gpl3+)))
 
@@ -146,13 +147,13 @@ defined by an ABNF grammar, such as the protocols standardized at IETF.")
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=OFF")))        ; Not required
+       (list "-DENABLE_STATIC=OFF")))   ; Not required
     (inputs
      `(("bctoolbox" ,bctoolbox)
        ("belr" ,belr)))
     (synopsis "Belledonne Communications VCard Library")
-    (description "Belcard is a C++ library to manipulate VCard standard format.")
+    (description "Belcard is a C++ library to manipulate VCard standard
+format.")
     (home-page "https://gitlab.linphone.org/BC/public/belcard")
     (license license:gpl3+)))
 
@@ -175,16 +176,16 @@ defined by an ABNF grammar, such as the protocols standardized at IETF.")
        (list
         "-DENABLE_STATIC=NO")))         ; Not required
     (synopsis "Belledonne Communications Media Container")
-    (description "BcMatroska is a free and open standard multi-media
-container format.  It can hold an unlimited number of video, audio,
-picture, or subtitle tracks in one file. ")
+    (description "BcMatroska is a free and open standard multi-media container
+format.  It can hold an unlimited number of video, audio, picture, or subtitle
+tracks in one file. ")
     (home-page "https://gitlab.linphone.org/BC/public/bcmatroska2")
     (license
      (list
-      ;; That license applies for Core C and LibEBML2.
+      ;; For Core C and LibEBML2.
       ;; https://www.matroska.org/node/47
       license:bsd-4
-      ;; That license applies for LibMatroska2.
+      ;; For LibMatroska2.
       ;; https://www.matroska.org/node/47
       license:lgpl2.1+))))
 
@@ -204,8 +205,7 @@ picture, or subtitle tracks in one file. ")
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO")))         ; Not required
+       (list "-DENABLE_STATIC=NO")))    ; Not required
     (synopsis "Belledonne Communications G729 Codec")
     (description "BcG729 is an implementation of both encoder and decoder of
 the ITU G729 speech codec.  The library written in C 99 is fully portable and
@@ -231,8 +231,7 @@ such as conferencing.")
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO")))         ; Not required
+       (list "-DENABLE_STATIC=NO")))    ; Not required
     (native-inputs
      `(("dot" ,graphviz)
        ("doxygen" ,doxygen)))
@@ -260,16 +259,15 @@ implements the RFC 3550 standard.")
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO")))
+       (list "-DENABLE_STATIC=NO")))    ; Not required
     (inputs
      `(("bctoolbox" ,bctoolbox)
        ("sqlite3" ,sqlite)
        ("xml2" ,libxml2)))
     (synopsis "Belledonne Communications ZRTP Library")
-    (description "BZRTP is an implementation of ZRTP keys exchange
-protocol, written in C.  It is fully portable and can be executed on many
-platforms including both ARM and x86.")
+    (description "BZRTP is an implementation of ZRTP keys exchange protocol,
+written in C.  It is fully portable and can be executed on many platforms
+including both ARM and x86.")
     (home-page "https://gitlab.linphone.org/BC/public/bzrtp")
     (license license:gpl2+)))
 
@@ -289,16 +287,15 @@ platforms including both ARM and x86.")
     (arguments
      `(#:tests? #f                      ; Requires network access
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO")
+       (list "-DENABLE_STATIC=NO")      ; Not required
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'patch
            (lambda _
              (substitute* "src/CMakeLists.txt"
-              ;; ANTLR would use multithreaded DFA generation
-              ;; otherwise--which would not be reproducible.
-              (("-Xmultithreaded ") ""))
+               ;; ANTLR would use multithreaded DFA generation otherwise,
+               ;; which would not be reproducible.
+               (("-Xmultithreaded ") ""))
              #t)))))
     (inputs
      `(("antlr3" ,antlr3-3.3)
@@ -331,12 +328,11 @@ API.  It also comprises a simple HTTP/HTTPS client implementation.")
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO"            ; Not required
-        "-DENABLE_STRICT=NO"            ; Would otherwise treat warnings as err
-        "-DENABLE_BV16=NO"              ; Not available
-        "-DCMAKE_C_FLAGS=-DMS2_GIT_VERSION=\\\"unknown\\\""
-        "-DCMAKE_CXX_FLAGS=-DMS2_GIT_VERSION=\\\"unknown\\\"")
+       (list "-DENABLE_STATIC=NO"      ; Not required
+             "-DENABLE_STRICT=NO"      ; Would otherwise treat warnings as err
+             "-DENABLE_BV16=NO"        ; Not available
+             "-DCMAKE_C_FLAGS=-DMS2_GIT_VERSION=\\\"unknown\\\""
+             "-DCMAKE_CXX_FLAGS=-DMS2_GIT_VERSION=\\\"unknown\\\"")
        #:phases
        (modify-phases %standard-phases
          (add-after 'install 'separate-outputs
@@ -393,13 +389,12 @@ API.  It also comprises a simple HTTP/HTTPS client implementation.")
        ("vpx" ,libvpx)
        ("x11" ,libx11)
        ("xv" ,libxv)
-       ("zrtp", bzrtp)))
+       ("zrtp" ,bzrtp)))
     (synopsis "Belledonne Communications Streaming Engine")
-    (description "Mediastreamer2 is a powerful and lightweight
-streaming engine for telephony applications.  This media processing
-and streaming toolkit is responsible for receiving and sending all
-multimedia streams in Linphone, including media capture, encoding and
-decoding, and rendering.")
+    (description "Mediastreamer2 is a powerful and lightweight streaming engine
+for telephony applications.  This media processing and streaming toolkit is
+responsible for receiving and sending all multimedia streams in Linphone,
+including media capture, encoding and decoding, and rendering.")
     (home-page "https://gitlab.linphone.org/BC/public/mediastreamer2")
     (license license:gpl2+)))
 
@@ -415,19 +410,25 @@ decoding, and rendering.")
                        "/linphone-" version ".tar.gz"))
        (sha256
         (base32 "0phhkx55xdyg28d4wn8l8q4yvsmdgzmjiw584d4s190sq1azm91x"))))
+    (outputs '("out" "doc" "tester"))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        (string-append "-DGTK2_GDKCONFIG_INCLUDE_DIR="
-                       (string-append (assoc-ref %build-inputs "gtk2")
-                                      "/lib/gtk-2.0/include"))
-        (string-append "-DGTK2_GLIBCONFIG_INCLUDE_DIR="
-                       (string-append (assoc-ref %build-inputs "glib")
-                                      "/lib/glib-2.0/include"))
-        "-DENABLE_STATIC=NO"            ; Not required
-        "-DENABLE_GTK_UI=YES")          ; For Legacy UI
+       (list (string-append "-DGTK2_GDKCONFIG_INCLUDE_DIR="
+                            (string-append (assoc-ref %build-inputs "gtk2")
+                                           "/lib/gtk-2.0/include"))
+             (string-append "-DGTK2_GLIBCONFIG_INCLUDE_DIR="
+                            (string-append (assoc-ref %build-inputs "glib")
+                                           "/lib/glib-2.0/include"))
+             "-DENABLE_STATIC=NO"       ; Not required
+             "-DENABLE_STRICT=NO"
+             "-DENABLE_GTK_UI=YES")     ; for legacy UI
+       #:imported-modules (,@%cmake-build-system-modules
+                           (guix build glib-or-gtk-build-system))
+       #:modules ((guix build cmake-build-system)
+                  ((guix build glib-or-gtk-build-system) #:prefix glib-or-gtk:)
+                  (guix build utils))
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'patch
@@ -435,31 +436,55 @@ decoding, and rendering.")
              (substitute* "gtk/main.c"
                (("#include \"liblinphone_gitversion.h\"")
                 ""))
-             #t)))))
+             #t))
+         (add-after 'install 'separate-outputs
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (doc (assoc-ref outputs "doc"))
+                    (tester (assoc-ref outputs "tester"))
+                    (tester-name (string-append ,name "_tester")))
+               ;; Copy the tester executable.
+               (mkdir-p (string-append tester "/bin"))
+               (rename-file (string-append out "/bin/" tester-name)
+                            (string-append tester "/bin/" tester-name))
+               ;; Copy the tester data files.
+               (mkdir-p (string-append tester "/share/"))
+               (rename-file (string-append out "/share/" tester-name)
+                            (string-append tester "/share/" tester-name))
+               ;; Copy the HTML and XML documentation.
+               (copy-recursively
+                (string-append out "/share/doc/linphone-" ,version)
+                (string-append doc "/share/doc/" ,name "-" ,version))
+               (delete-file-recursively
+                (string-append out "/share/doc/linphone-" ,version))
+               #t)))
+         (add-after 'separate-outputs 'glib-or-gtk-compile-schemas
+           (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-compile-schemas))
+         (add-after 'glib-or-gtk-compile-schemas 'glib-or-gtk-wrap
+           (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-wrap)))))
     (native-inputs
-     `(("dot" ,graphviz)
+     `(("gettext" ,gettext-minimal)
+       ("udev" ,eudev)                  ;for libudev.h
+       ;; For generating the C++ wrappers.
+       ("dot" ,graphviz)
        ("doxygen" ,doxygen)
-       ("gettext" ,gettext-minimal)
-       ("iconv" ,libiconv)
        ("python" ,python)
-       ("xml2" ,libxml2)
-       ("zlib" ,zlib)))
+       ("pystache" ,python-pystache)
+       ("six" ,python-six)))
     (inputs
      `(("bctoolbox" ,bctoolbox)
        ("belcard" ,belcard)
        ("bellesip" ,belle-sip)
        ("bzrtp", bzrtp)
+       ("iconv" ,libiconv)
        ("glib" ,glib)
        ("gtk2" ,gtk+-2)
        ("mediastreamer2" ,mediastreamer2)
        ("notify" ,libnotify)
        ("ortp" ,ortp)
-       ("pystache" ,python-pystache)
-       ("six" ,python-six)
        ("sqlite" ,sqlite)
-       ("udev" ,eudev)))
-    (propagated-inputs
-     `(("murrine" ,murrine)))           ; Required for GTK UI
+       ("xml2" ,libxml2)
+       ("zlib" ,zlib)))
     (synopsis "Belledonne Communications Softphone Library")
     (description "Liblinphone is a high-level SIP library integrating
 all calling and instant messaging features into an unified
@@ -467,6 +492,90 @@ easy-to-use API.  It is the cross-platform VoIP library on which the
 Linphone application is based on, and that anyone can use to add audio
 and video calls or instant messaging capabilities to an application.")
     (home-page "https://gitlab.linphone.org/BC/public/liblinphone")
+    (license license:gpl2+)))
+
+(define-public linphoneqt
+  (package
+    (name "linphoneqt")
+    (version "4.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri
+        (string-append "https://www.linphone.org/releases/sources/" name
+                       "/" name "-" version ".tar.gz"))
+       (sha256
+        (base32 "1g2zrr9li0g1hgs6vys06vr98h5dx36z22hx7a6ry231536c002a"))
+       (patches (search-patches "linphoneqt-tabbutton.patch"))))
+    (build-system qt-build-system)
+    (arguments
+     `(#:tests? #f                      ; No test target
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'set-paths 'set-qt-rcc-source-date-override
+           (lambda _
+             ;; This fixes a reproducibility problem where the Qt Resource
+             ;; Compiler (RCC) includes timestamp of its source files
+             ;; (see: https://reproducible-builds.org/docs/
+             ;;       deterministic-build-systems/#cmake-notes).
+             (setenv "QT_RCC_SOURCE_DATE_OVERRIDE" "1")
+             #t))
+         (add-after 'unpack 'fix-cmake-error
+           (lambda _
+             ;; This is fixed in commit efed2fd8 of the master branch.
+             (substitute* "CMakeLists.txt"
+               (("js)\\$\"")
+                "js$\""))
+             #t))
+         (add-after 'unpack 'set-version-string
+           (lambda _
+             (substitute* "src/app/AppController.cpp"
+               (("LINPHONE_QT_GIT_VERSION")
+                (format #f "~s" ,version)))
+             #t))
+         (add-after 'install 'extend-shared-resources
+           ;; Not using the FHS exposes an issue where the client refers to
+           ;; its own "share" directory, which lacks sound files installed by
+           ;; liblinphone.
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let ((liblinphone (assoc-ref inputs "linphone"))
+                    (out (assoc-ref outputs "out")))
+               (symlink (string-append liblinphone "/share/sounds")
+                        (string-append out "/share/sounds"))
+               #t))))))
+    (native-inputs
+     `(("qttools" ,qttools)))
+    (inputs
+     `(("bctoolbox" ,bctoolbox)
+       ("belcard" ,belcard)
+       ("bellesip" ,belle-sip)
+       ("linphone" ,liblinphone)
+       ("mediastreamer2" ,mediastreamer2)
+       ("qtbase" ,qtbase)
+       ("qtdeclarative" ,qtdeclarative)
+       ("qtgraphicaleffects" ,qtgraphicaleffects)
+       ("qtquickcontrols" ,qtquickcontrols)
+       ("qtquickcontrols2" ,qtquickcontrols2)
+       ("qtsvg" ,qtsvg)))
+    (synopsis "Desktop client for the Linphone SIP softphone")
+    (description "Linphone is a SIP softphone for voice and video over IP calling
+(VoIP) and instant messaging.  Amongst its features are:
+@itemize
+@item High Definition (HD) audio and video calls
+@item Multiple call management (pause and resume)
+@item Call transfer
+@item Audio conferencing (merge calls into a conference call)
+@item Call recording and replay (audio only)
+@item Instant Messaging with message delivery status (IMDN)
+@item Picture and file sharing
+@item Echo cancellation
+@item Secure user authentication using TLS client certificates
+@item SRTP, zRTP and SRTP-DTLS voice and video encryption
+@item Telephone tone (DTMF) support using SIP INFO or RFC 4733
+@item Audio codecs: opus, speex, g711, g729, gsm, iLBC, g722, SILK, etc.
+@item Video codecs: VP8, H.264 and H.265 with resolutions up to 1080P, MPEG4
+@end itemize")
+    (home-page "https://gitlab.linphone.org/BC/public/linphone-desktop")
     (license license:gpl2+)))
 
 (define-public msopenh264
@@ -487,17 +596,18 @@ and video calls or instant messaging capabilities to an application.")
          (origin
            (method url-fetch)
            (uri
-            (string-append "https://gitlab.linphone.org/BC/public/msopenh264/commit/"
-                           "493d147d28c9a0f788ba4e50b47a1ce7b18bf326.diff"))
+            (string-append "https://gitlab.linphone.org/BC/public/msopenh264/"
+                           "commit/493d147d28c9a0f788ba4e50b47a1ce7b18bf326"
+                           ".diff"))
            (file-name "msopenh264-openh264.patch")
            (sha256
-            (base32 "0mmd7nz5n9ian4rcwn200nldmy5j0dpdrna7r32rqnaw82bx3kdb")))))))
+            (base32
+             "0mmd7nz5n9ian4rcwn200nldmy5j0dpdrna7r32rqnaw82bx3kdb")))))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO")))         ; Not required
+       (list "-DENABLE_STATIC=NO")))    ; Not required
     (inputs
      `(("mediastreamer2" ,mediastreamer2)
        ("openh264" ,openh264)
@@ -524,14 +634,13 @@ mediastreamer2 based on the openh264 library.")
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO")))         ; Not required
+       (list "-DENABLE_STATIC=NO")))    ; Not required
     (inputs
      `(("mediastreamer2" ,mediastreamer2)
        ("ortp" ,ortp)))
     (synopsis "Media Streamer SILK Codec")
-    (description "MSSILK is a plugin of MediaStreamer, adding support for
-AMR codec.  It is based on the Skype's SILK implementation.")
+    (description "MSSILK is a plugin of MediaStreamer, adding support for AMR
+codec.  It is based on the Skype's SILK implementation.")
     (home-page "https://gitlab.linphone.org/BC/public/mssilk")
     (license license:gpl2+)))
 
@@ -552,7 +661,7 @@ AMR codec.  It is based on the Skype's SILK implementation.")
      `(#:tests? #f                      ; No test target
        #:configure-flags
        (list
-        "-DENABLE_STATIC=NO")))
+        "-DENABLE_STATIC=NO")))         ; Not required
     (inputs
      `(("bctoolbox" ,bctoolbox)
        ("mediastreamer2" ,mediastreamer2)
@@ -579,16 +688,15 @@ WebRTC codec.  It includes features from WebRTC, such as, iSAC and AECM.")
     (arguments
      `(#:tests? #f                      ; No test target
        #:configure-flags
-       (list
-        "-DENABLE_STATIC=NO"            ; Not required
-        "-DENABLE_WIDEBAND=YES")))
+       (list "-DENABLE_STATIC=NO"       ; Not required
+             "-DENABLE_WIDEBAND=YES")))
     (inputs
      `(("mediastreamer2" ,mediastreamer2)
        ("opencoreamr" ,opencore-amr)
        ("ortp" ,ortp)
        ("voamrwbenc" ,vo-amrwbenc)))
     (synopsis "Media Streamer AMR Codec")
-    (description "MSAMR is a plugin of MediaStreamer, adding support for
-AMR codec.  It is based on the opencore-amr implementation.")
+    (description "MSAMR is a plugin of MediaStreamer, adding support for AMR
+codec.  It is based on the opencore-amr implementation.")
     (home-page "https://gitlab.linphone.org/BC/public/msamr")
     (license license:gpl3+)))

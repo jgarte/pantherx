@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2019 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014, 2015, 2018 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015, 2017 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
@@ -38,8 +38,11 @@
   #:use-module (guix store)
   #:use-module (guix build-system gnu)
   #:autoload   (guix gnupg) (gnupg-verify*)
-  #:autoload   (gcrypt hash) (port-sha256)
   #:autoload   (guix base32) (bytevector->nix-base32-string)
+
+  ;; See <https://bugs.gnu.org/41457> for why not #:autoload here.
+  #:use-module ((gcrypt hash) #:select (port-sha256))
+
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 format))
@@ -48,12 +51,12 @@
   "Return the URL of Bash patch number SEQNO."
   (format #f "mirror://gnu/bash/bash-5.0-patches/bash50-~3,'0d" seqno))
 
-(define (bash-patch seqno sha256)
-  "Return the origin of Bash patch SEQNO, with expected hash SHA256"
+(define (bash-patch seqno sha256-bv)
+  "Return the origin of Bash patch SEQNO, with expected hash SHA256-BV."
   (origin
     (method url-fetch)
     (uri (patch-url seqno))
-    (sha256 sha256)))
+    (sha256 sha256-bv)))
 
 (define-syntax-rule (patch-series (seqno hash) ...)
   (list (bash-patch seqno (base32 hash))
@@ -69,7 +72,16 @@
     (4 "021gqqvgydixkrmqss64b6srfdlkvnx88lyfzpxfrn5d6bc7li0l")
     (5 "0xl2kyzm84nlyklrqzkn73ixabhzfhn9x91lzcmis89cppclvxav")
     (6 "0844749ixk1z60437nkznzms1f0nzh9an62kj7sny6r0zyk2k1fn")
-    (7 "16xg37gp1b8zlj5969w8mcrparwqlcbj9695vn3qhgb7wdz1xd0p")))
+    (7 "16xg37gp1b8zlj5969w8mcrparwqlcbj9695vn3qhgb7wdz1xd0p")
+    (8 "1qyp19krjh8zxvb0jgwmyjz40djslwcf4xi7kc1ab0iaca44bipf")
+    (9 "00yrjjqd95s81b21qq3ba1y7h879q8jaajlkjggc6grhcwbs4g7d")
+    (10 "04ca5bjv456v538mkspzvn4xb2zdphh31r4fpvfm9p5my0jw7yyn")
+    (11 "1sklyixvsv8993kxzs0jigacpdchjrq7jv5xpdx7kbqyp4rf6k9c")
+    (12 "0cz21qg2gbr40lfgza7g02bqi2qknwqgxnq459pjj640d0cywhr9")
+    (13 "16h9nwz3yzwj7fnxvlidjymdc4yr30h818433gh9j1x3in6igmzm")
+    (14 "12gm5bvv2pd3m72z2ilj26pa08c61az253dsgfl24vpf2ijywvjx")
+    (15 "0pm0px758w4i23s55wajcv6lqfiym7zgxvq0pxf6vclkv8nxy5x5")
+    (16 "0vdha332km2iwx8g2ld15jy7d24cbplzgr1531dpzylr9ajxglgz")))
 
 (define (download-patches store count)
   "Download COUNT Bash patches into store.  Return a list of
@@ -116,7 +128,8 @@ number/base32-hash tuples, directly usable in the 'patch-series' form."
                (base32
                 "0kgvfwqdcd90waczf4gx39xnrxzijhjrzyzv7s8v4w31qqm0za5l"))
               (patch-flags '("-p0"))
-              (patches %patch-series-5.0)))
+              (patches (cons (search-patch "bash-linux-pgrp-pipe.patch")
+                             %patch-series-5.0))))
      (version (string-append version "." (number->string (length %patch-series-5.0))))
      (build-system gnu-build-system)
 

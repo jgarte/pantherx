@@ -18,17 +18,17 @@
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2016, 2018 Rene Saavedra <pacoon@protonmail.com>
 ;;; Copyright © 2016 Carlos Sánchez de La Lama <csanchezdll@gmail.com>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017, 2018 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2017 José Miguel Sánchez García <jmi2k@openmailbox.com>
 ;;; Copyright © 2017 Gábor Boskovits <boskovits@gmail.com>
-;;; Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
+;;; Copyright © 2017, 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2017 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2017, 2018, 2019 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2017 nee <nee-git@hidamari.blue>
 ;;; Copyright © 2017 Dave Love <fx@gnu.org>
 ;;; Copyright © 2018 Pierre-Antoine Rouby <pierre-antoine.rouby@inria.fr>
-;;; Copyright © 2018 Brendan Tildesley <mail@brendan.scot>
+;;; Copyright © 2018, 2020 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2018 Manuel Graf <graf@init.at>
 ;;; Copyright © 2018 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2018 Vasile Dumitrascu <va511e@yahoo.com>
@@ -42,6 +42,8 @@
 ;;; Copyright © 2020 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2020 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2020 Morgan Smith <Morgan.J.Smith@outlook.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -63,7 +65,6 @@
   #:use-module (gnu packages acl)
   #:use-module (gnu packages admin)
   #:use-module (gnu packages algebra)
-  #:use-module (gnu packages attr)
   #:use-module (gnu packages audio)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages backup)
@@ -192,17 +193,17 @@ defconfig.  Return the appropriate make target if applicable, otherwise return
                               "deblob-check"))
           (sha256 deblob-check-hash))))
 
-(define deblob-scripts-5.6
+(define deblob-scripts-5.7
   (linux-libre-deblob-scripts
-   "5.6"
-   (base32 "09hxrr4xzllq5lmipfb6if30318lksrk9py1axc36m9ynql4w0rc")
-   (base32 "09qz5d31g5zwicsnncjnjij193hk0g6kg0ss9jyzh6lp3wilcm71")))
+   "5.7.1"
+   (base32 "1c0n39wg6xij4x63ppg0m80kfcffkn3iilm3chyiix09n9g7vb78")
+   (base32 "02is246xaql1br3kizqicrkp982nw4gdwpn7nlzjazvsmyd1hcv2")))
 
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
-   "5.4.28"
+   "5.4.37"
    (base32 "0ckxn7k5zgcqk30dq943bnamr6a6zjbw2aqjl3x30f4kvh5f6k25")
-   (base32 "08ls4gx5vanyiq9rn0869nfq4piw4lx1dl8hh9w9xgkr4ypc1j4k")))
+   (base32 "10qb890is4z58vr8czh3xx69q62l3b3j38y410kgiw8nii3zx5lr")))
 
 (define deblob-scripts-4.19
   (linux-libre-deblob-scripts
@@ -369,50 +370,50 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
     (sha256 hash)))
 
 
-(define-public linux-libre-5.6-version "5.6.3")
-(define-public linux-libre-5.6-pristine-source
-  (let ((version linux-libre-5.6-version)
-        (hash (base32 "1ajh1iw3bplm6ckcycg45wfmmqkvfiqmh6i3m1895dfapfd6h4qx")))
+(define-public linux-libre-5.7-version "5.7.2")
+(define-public linux-libre-5.7-pristine-source
+  (let ((version linux-libre-5.7-version)
+        (hash (base32 "02brxm78n0kg4mh48acvjsr7mpvaqd279ycyaixaflid1s1awrb0")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
-                            deblob-scripts-5.6)))
+                            deblob-scripts-5.7)))
 
-(define-public linux-libre-5.4-version "5.4.31")
+(define-public linux-libre-5.4-version "5.4.46")
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "1svf4wf4j1vqhdpgx63ry4c99fc54d9nfi4d1xm7z209z3w86451")))
+        (hash (base32 "13hvnfdcbcb9a21zizq8d90mc8maxz03zmzsj6iqsjd2y7r4y1rh")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.114")
+(define-public linux-libre-4.19-version "4.19.128")
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "03hz6vg5bg728ilbm4z997pf52cgxzsxb03vz5cs55gwdbfa0h0y")))
+        (hash (base32 "0g31ad3wziy4xqna0yvwjcnza3jhd93syjpfvmwh0b4pkj2adar9")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.175")
+(define-public linux-libre-4.14-version "4.14.184")
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "0b12w0d21sk261jr4p1pm32v0r20a5c2j1p5hasdqw80sb2hli6b")))
+        (hash (base32 "0h6r06c1d7amkfglsr66ic89p0zxpmk7jkq1ylcbknmkiwkixx9g")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.218")
+(define-public linux-libre-4.9-version "4.9.227")
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "1ka98c8sbfipzll6ss9fcsn26lh4cy60372yfw27pif4brhnwfnz")))
+        (hash (base32 "0pqc0wld4s4zjas95xm54mrkk00l9zkc59b6i9gq4km126s8bi1q")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.218")
+(define-public linux-libre-4.4-version "4.4.227")
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "0qzhcy8i111jbpnkpzq7hqf9nkwq4s7smi820hfvnmd2ky7cns7a")))
+        (hash (base32 "196x57w740firg8zchypq4vq6a83ymmwn9amqrscym9zr0pcgm40")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -445,14 +446,10 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
     (patches (append (origin-patches source)
                      patches))))
 
-(define-public linux-libre-5.6-source
-  (source-with-patches linux-libre-5.6-pristine-source
+(define-public linux-libre-5.7-source
+  (source-with-patches linux-libre-5.7-pristine-source
                        (list %boot-logo-patch
-                             %linux-libre-arm-export-__sync_icache_dcache-patch
-                             ;; Pinebook Pro patch from linux-next,
-                             ;; can be dropped for linux-libre 5.7
-                             (search-patch
-                              "linux-libre-support-for-Pinebook-Pro.patch"))))
+                             %linux-libre-arm-export-__sync_icache_dcache-patch)))
 
 (define-public linux-libre-5.4-source
   (source-with-patches linux-libre-5.4-pristine-source
@@ -553,9 +550,9 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
     (description "Headers of the Linux-Libre kernel.")
     (license license:gpl2)))
 
-(define-public linux-libre-headers-5.6
-  (make-linux-libre-headers* linux-libre-5.6-version
-                             linux-libre-5.6-source))
+(define-public linux-libre-headers-5.7
+  (make-linux-libre-headers* linux-libre-5.7-version
+                             linux-libre-5.7-source))
 
 (define-public linux-libre-headers-5.4
   (make-linux-libre-headers* linux-libre-5.4-version
@@ -579,11 +576,11 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The following package is used in the early bootstrap, and thus must be kept
 ;; stable and with minimal build requirements.
-(define-public linux-libre-headers-4.19.56
-  (make-linux-libre-headers "4.19.56"
-                            "1zqiic55viy065lhnkmhn33sz3bbbr2ykbm5f92yzd8lpc9zl7yx"))
+(define-public linux-libre-headers-5.4.20
+  (make-linux-libre-headers "5.4.20"
+                            "1qxhf6dmcwjblzx8fgn6vr10p38xw10iwh6d1y1v1mxb25y30b47"))
 
-(define-public linux-libre-headers linux-libre-headers-4.19.56)
+(define-public linux-libre-headers linux-libre-headers-5.4.20)
 
 
 ;;;
@@ -711,27 +708,6 @@ for ARCH and optionally VARIANT, or #f if there is no such configuration."
              #t))
          (replace 'configure
            (lambda* (#:key inputs native-inputs target #:allow-other-keys)
-             ;; On AArch64 (at least), we need to remove glibc headers from
-             ;; CPATH (they are still available as "system headers"), so that
-             ;; the kernel can override uint64_t.  See
-             ;; <https://bugs.gnu.org/37593>. This is also true when
-             ;; cross-compiling, except in that case, cross-libc must be
-             ;; removed from CROSS_CPATH.
-             (let ((var ,(if (%current-target-system)
-                             "CROSS_CPATH"
-                             "CPATH"))
-                   (libc ,(if (%current-target-system)
-                              "cross-libc"
-                              "libc")))
-               (setenv var
-                       (string-join
-                        (remove
-                         (cut string-prefix? (assoc-ref inputs libc) <>)
-                         (string-split (getenv var) #\:))
-                        ":"))
-               (format #t "environment variable `~a' changed to `~a'~%"
-                       var (getenv var)))
-
              ;; Avoid introducing timestamps
              (setenv "KCONFIG_NOTIMESTAMP" "1")
              (setenv "KBUILD_BUILD_TIMESTAMP" (getenv "SOURCE_DATE_EPOCH"))
@@ -879,9 +855,9 @@ It has been modified to remove all non-free binary blobs.")
                         ("CONFIG_RTC_DRV_RK808" . #t))
                       %default-extra-linux-options)))
 
-(define-public linux-libre-arm-generic-5.6
-  (make-linux-libre* linux-libre-5.6-version
-                     linux-libre-5.6-source
+(define-public linux-libre-arm-generic-5.7
+  (make-linux-libre* linux-libre-5.7-version
+                     linux-libre-5.7-source
                      '("armhf-linux")
                      #:defconfig "multi_v7_defconfig"
                      #:extra-version "arm-generic"
@@ -941,9 +917,9 @@ It has been modified to remove all non-free binary blobs.")
                         ("CONFIG_RTC_DRV_RK808" . #t))
                       %default-extra-linux-options)))
 
-(define-public linux-libre-arm64-generic-5.6
-  (make-linux-libre* linux-libre-5.6-version
-                     linux-libre-5.6-source
+(define-public linux-libre-arm64-generic-5.7
+  (make-linux-libre* linux-libre-5.7-version
+                     linux-libre-5.7-source
                      '("aarch64-linux")
                      #:defconfig "defconfig"
                      #:extra-version "arm64-generic"
@@ -965,55 +941,51 @@ It has been modified to remove all non-free binary blobs.")
 ;;;
 
 (define-public acpi-call-linux-module
-  (package
-    (name "acpi-call-linux-module")
-    (version "3.17")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/teleshoes/acpi_call.git")
-             (commit version)))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32 "04mbv4lasm3vv1j4ndxhnz4hvp5wg8f5fc9q6qxv0nhvwjynmsl3"))))
-    (build-system linux-module-build-system)
-    (arguments
-     `(#:tests? #f                      ; no tests
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'fix-for-linux-4.12
-           (lambda _
-             (substitute* "acpi_call.c"
-               (("asm/uaccess\\.h")
-                "linux/uaccess.h"))
-             #t))
-         (add-after 'install 'install-documentation
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (doc (string-append out "/share/doc/" ,name "-" ,version)))
-               (for-each (lambda (file)
-                           (let ((target (string-append doc "/" file)))
-                             (mkdir-p (dirname target))
-                             (copy-recursively file target)))
-                         (list "README.md" "examples"))
-               #t))))))
-    (home-page "https://github.com/teleshoes/acpi_call")
-    (synopsis "Linux kernel module to perform ACPI method calls")
-    (description
-     "This simple Linux kernel module allows calls from user space to any
+  (let ((commit "70b9c80bd700e6a4d10797eaac9fd34b7e8cbd4a")
+        (revision "0"))
+    (package
+      (name "acpi-call-linux-module")
+      (version (git-version "3.17" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/teleshoes/acpi_call.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "09c1vw6vcrkqxbwhpgfgpj4d1grzn4qq6ka8pwwzm7cvm405xj7x"))))
+      (build-system linux-module-build-system)
+      (arguments
+       `(#:tests? #f                    ; no tests
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'install 'install-documentation
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let* ((out (assoc-ref outputs "out"))
+                      (doc (string-append out "/share/doc/" ,name "-" ,version)))
+                 (for-each (lambda (file)
+                             (let ((target (string-append doc "/" file)))
+                               (mkdir-p (dirname target))
+                               (copy-recursively file target)))
+                           (list "README.md" "examples"))
+                 #t))))))
+      (home-page "https://github.com/teleshoes/acpi_call")
+      (synopsis "Linux kernel module to perform ACPI method calls")
+      (description
+       "This simple Linux kernel module allows calls from user space to any
 @acronym{ACPI, Advanced Configuration and Power Interface} method provided by
 your computer's firmware, by writing to @file{/proc/acpi/call}.  You can pass
-any number of parameters of types @code{ACPI_INTEGER},  @code{ACPI_STRING},
+any number of parameters of types @code{ACPI_INTEGER}, @code{ACPI_STRING},
 and @code{ACPI_BUFFER}.
 
 It grants direct and undocumented access to your hardware that may cause damage
 and should be used with caution, especially on untested models.")
-    (license license:gpl3+)))           ; see README.md (no licence headers)
+      (license license:gpl3+))))        ; see README.md (no licence headers)
 
 (define-public rtl8812au-aircrack-ng-linux-module
-  (let ((commit "945d6ed6505c32f0993b1dba576388e92e78101b")
-        (revision "0"))
+  (let ((commit "df2b8dfd8cb7d9f6cfeb55abaeab8a5372011fc9")
+        (revision "1"))
     (package
       (name "rtl8812au-aircrack-ng-linux-module")
       (version (git-version "5.6.4.2" revision commit))
@@ -1025,7 +997,7 @@ and should be used with caution, especially on untested models.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "1pjws7qb5l4z9k80vgz4zdxmqhbwxjjrmkpf0hijf821byyddvi7"))
+          (base32 "1qcr0j8yhg8l9l0f5y55zcsk1mgf3qd46yh9xfqgg91szxa3yvca"))
          (modules '((guix build utils)))
          (snippet
           '(begin
@@ -1037,15 +1009,15 @@ and should be used with caution, especially on untested models.")
              #t))))
       (build-system linux-module-build-system)
       (arguments
-       `(#:phases
+       `(#:make-flags
+         (list (string-append "KSRC="
+                              (assoc-ref %build-inputs "linux-module-builder")
+                              "/lib/modules/build"))
+         #:phases
          (modify-phases %standard-phases
            (replace 'build
-             (lambda* (#:key inputs make-flags #:allow-other-keys)
-               (apply invoke "make"
-                      (string-append "KSRC="
-                                     (assoc-ref inputs "linux-module-builder")
-                                     "/lib/modules/build")
-                      (or make-flags '())))))
+             (lambda* (#:key (make-flags '()) #:allow-other-keys)
+               (apply invoke "make" make-flags))))
          #:tests? #f))                  ; no test suite
       (supported-systems '("x86_64-linux" "i686-linux"))
       (home-page "https://github.com/aircrack-ng/rtl8812au")
@@ -1056,6 +1028,41 @@ network adapters, modified by the aircrack-ng project to support monitor mode
 and frame injection.  It provides a @code{88XXau} kernel module that supports
 RTL8812AU, RTL8821AU, and RTL8814AU chips.")
       (license license:gpl2+))))
+
+(define-public rtl8821ce-linux-module
+  (let ((commit "69765eb288a8dfad3b055b906760b53e02ab1dea")
+        (revision "0"))
+    (package
+      (name "rtl8821ce-linux-module")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/tomaspinho/rtl8821ce.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "17jiw25k74kv5lnvgycvj2g1n06hbrpjz6p4znk4a62g136rhn4s"))))
+      (build-system linux-module-build-system)
+      (arguments
+       `(#:make-flags
+         (list "CC=gcc"
+               (string-append "KSRC="
+                              (assoc-ref %build-inputs "linux-module-builder")
+                              "/lib/modules/build"))
+         #:phases
+         (modify-phases %standard-phases
+           (replace 'build
+             (lambda* (#:key (make-flags '()) #:allow-other-keys)
+               (apply invoke "make" make-flags))))
+         #:tests? #f))                  ; no test suite
+      (home-page "https://github.com/tomaspinho/rtl8821ce")
+      (synopsis "Linux driver for Realtek RTL8821CE wireless network adapters")
+      (description "This is Realtek's RTL8821CE Linux driver for wireless
+network adapters.")
+      (license license:gpl2))))
 
 (define-public vhba-module
   (package
@@ -1123,6 +1130,35 @@ interface.  The ddcci module creates a character device for each DDC/CI
 monitors in @file{/dev/bus/ddcci/[I²C busnumber]}.  While the ddcci-backlight
 module allows the control of the backlight level or luminance property when
 supported under @file{/sys/class/backlight/}.")
+    (license license:gpl2+)))
+
+(define-public v4l2loopback-linux-module
+  (package
+    (name "v4l2loopback-linux-module")
+    (version "0.12.5")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/umlaeute/v4l2loopback.git")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1qi4l6yam8nrlmc3zwkrz9vph0xsj1cgmkqci4652mbpbzigg7vn"))))
+    (build-system linux-module-build-system)
+    (arguments
+     `(#:tests? #f))                    ; no test suite
+    (home-page "https://github.com/umlaeute/v4l2loopback")
+    (synopsis "Linux kernel module to create virtual V4L2 video devices")
+    (description
+     "This Linux module creates virtual video devices.  @acronym{V4L2, Video
+for Linux 2} applications will treat these as ordinary video devices but read
+video data generated by another application, instead of a hardware device such
+as a capture card.
+
+This lets you apply nifty effects to your Jitsi video, for example, but also
+allows some more serious things like adding streaming capabilities to an
+application by hooking GStreamer into the loopback device.")
     (license license:gpl2+)))
 
 
@@ -1199,6 +1235,50 @@ at login.  Local and dynamic reconfiguration are its key features.")
 ;;; Miscellaneous.
 ;;;
 
+(define-public powerstat
+  (package
+    (name "powerstat")
+    (version "0.02.22")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://kernel.ubuntu.com/~cking/tarballs/"
+                           "powerstat/powerstat-" version ".tar.gz"))
+       (sha256
+        (base32 "0r355b9syqa2nhfy8ksvxyy5d58v0isf983842js091s6liy0x7g"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             (string-append "prefix=" (assoc-ref %outputs "out")))
+       #:tests? #f                      ; no test suite
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'respect-$prefix
+           ;; https://bugs.launchpad.net/ubuntu/+source/powerstat/+bug/1877744
+           (lambda _
+             (substitute* "Makefile"
+               (("DIR=/usr/") "DIR=$(prefix)/"))
+             #t))
+         (delete 'configure))))         ; no configure script
+    (home-page "https://kernel.ubuntu.com/~cking/powerstat/")
+    (synopsis "Measure system power consumption")
+    (description
+     "Powerstat measures and reports your computer's power consumption in real
+time.  On mobile PCs, it uses ACPI battery information to measure the power
+drain of the entire system.
+
+Powerstat can also report @acronym{RAPL, Running Average Power Limit} power
+domain measurements.  These are available only on some hardware such as Intel
+Sandybridge and newer, and cover only part of the machine's components such as
+CPU, DRAM, and graphics.  However, they provide accurate and immediate readings
+and don't require a battery at all.
+
+The output is like @command{vmstat} but also shows power consumption statistics:
+at the end of a run, @command{powerstat} will calculate the average, standard
+deviation, and minimum and maximum values.  It can show a nice histogram too.")
+    (license license:gpl2)))
+
 (define-public psmisc
   (package
     (name "psmisc")
@@ -1230,7 +1310,7 @@ providing the system administrator with some help in common tasks.")
 (define-public util-linux
   (package
     (name "util-linux")
-    (version "2.34")
+    (version "2.35.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://kernel.org/linux/utils/"
@@ -1238,7 +1318,7 @@ providing the system administrator with some help in common tasks.")
                                   "util-linux-" version ".tar.xz"))
               (sha256
                (base32
-                "1db2kydkwjmvgd1glkcba3adhidxw0f1x735dcjdpdjjf869sgvl"))
+                "1yfpy6bkab4jw61mpx48gfy24yrqp4a7arvpis8csrkk53fkxpnr"))
               (patches (search-patches "util-linux-tests.patch"))
               (modules '((guix build utils)))
               (snippet
@@ -1251,19 +1331,33 @@ providing the system administrator with some help in common tasks.")
                     (("build_kill=yes") "build_kill=no"))
                   #t))))
     (build-system gnu-build-system)
-    (outputs '("out"
-               "static"))               ;>2 MiB of static .a libraries
+    (outputs '("out"            ;6.4 MiB executables and documentation
+               "lib"            ;8.8 MiB shared libraries, headers and locales
+               "static"))       ;2.9 MiB static .a libraries
     (arguments
      `(#:configure-flags (list "--disable-use-tty-group"
                                "--enable-fs-paths-default=/run/current-system/profile/sbin"
                                ;; Don't try to chown root:root mount and umount
                                "--disable-makeinstall-chown"
+                               "--localstatedir=/var"
+                               (string-append "--localedir="
+                                              (assoc-ref %outputs "lib")
+                                              "/share/locale")
                                ;; Install completions where our
                                ;; bash-completion package expects them.
                                (string-append "--with-bashcompletiondir="
                                               (assoc-ref %outputs "out")
                                               "/etc/bash_completion.d"))
        #:phases (modify-phases %standard-phases
+                  (add-before 'configure 'patch-build-scripts
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (substitute* "configure"
+                        ;; The build system assumes that we want to install
+                        ;; libraries below $exec_prefix when $libdir does not
+                        ;; match any of the "usual" locations.  Fix that.
+                        (("usrlib_execdir='\\$\\{exec_prefix\\}'\\$libdir")
+                         "usrlib_execdir=$libdir"))
+                      #t))
                   (add-before 'build 'set-umount-file-name
                     (lambda* (#:key outputs #:allow-other-keys)
                       ;; Tell 'eject' the right file name of 'umount'.
@@ -1280,13 +1374,34 @@ providing the system administrator with some help in common tasks.")
                         (substitute* "tests/ts/misc/mcookie"
                           (("/etc/services")
                            (string-append net "/etc/services")))
+
+                        ;; The C.UTF-8 locale does not exist in our libc.
+                        (substitute* "tests/ts/column/invalid-multibyte"
+                          (("C\\.UTF-8") "en_US.utf8"))
                         #t)))
+                  ;; TODO: Remove the conditional on the next rebuild cycle.
+                  ,@(if (string-prefix? "arm" (%current-system))
+                        '((add-before 'check 'disable-setarch-test
+                            (lambda _
+                              ;; The setarch tests are unreliable in QEMU's
+                              ;; user-mode emulation, which is our primary
+                              ;; method of building ARMv7 packages.
+                              ;; <https://github.com/karelzak/util-linux/issues/601>
+                              (substitute* "tests/ts/misc/setarch"
+                                (("ts_init_subtest.*" all)
+                                 (string-append
+                                  all "\n"
+                                  "ts_skip \"setarch tests are unreliable under QEMU\"")))
+                              #t)))
+                        '())
                   (add-after 'install 'move-static-libraries
                     (lambda* (#:key outputs #:allow-other-keys)
-                      (let ((out    (assoc-ref outputs "out"))
+                      (let ((lib    (assoc-ref outputs "lib"))
                             (static (assoc-ref outputs "static")))
+
+                        ;; Move static libraries to the "static" output.
                         (mkdir-p (string-append static "/lib"))
-                        (with-directory-excursion out
+                        (with-directory-excursion lib
                           (for-each (lambda (file)
                                       (rename-file file
                                                    (string-append static "/"
@@ -1299,7 +1414,16 @@ providing the system administrator with some help in common tasks.")
                           (substitute* (find-files "lib" "\\.la$")
                             (("old_library=.*") "old_library=''\n")))
 
-                        #t))))))
+                        #t)))
+                  (add-after 'install 'adjust-pkg-config-files
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let ((lib (assoc-ref outputs "lib")))
+                        ;; Drop the unused "prefix=" and "exec_prefix=" variables from
+                        ;; the pkg-config files to avoid a cyclic reference on "out".
+                        (substitute* (find-files (string-append lib "/lib/pkgconfig")
+                                                 "\\.pc$")
+                          (("^(exec_)?prefix=.*") "")))
+                        #t)))))
     (inputs `(("zlib" ,zlib)
               ("ncurses" ,ncurses)
 
@@ -1423,10 +1547,16 @@ parameters.")
                 "1br0g93ysqhlv13i1k4lfbimsgxnpy5rgs4lxfc9rkzdbpbaqplj"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:modules ((guix build utils)
+     `(#:modules ((guix build utils)
                   (guix build gnu-build-system)
                   (srfi srfi-1)
                   (srfi srfi-26))
+       ,@(if (%current-target-system)
+             '(#:configure-flags
+               (list
+                "ac_cv_func_malloc_0_nonnull=yes"
+                "ac_cv_func_realloc_0_nonnull=yes"))
+             '())
        #:phases
        (modify-phases %standard-phases
          (add-after
@@ -1505,18 +1635,18 @@ slabtop, and skill.")
 (define-public e2fsprogs
   (package
     (name "e2fsprogs")
-    (version "1.45.5")
+    (version "1.45.6")
     (source (origin
              (method url-fetch)
              (uri (string-append
                    "mirror://kernel.org/linux/kernel/people/tytso/"
-                   name "/v" version "/"
-                   name "-" version ".tar.xz"))
+                   "e2fsprogs/v" version "/"
+                   "e2fsprogs-" version ".tar.xz"))
              (sha256
               (base32
-               "1pmf8inp736l587rqq7qsd8bv0mmg5cwrivxg5p5awqgv70crypr"))))
+               "0mj2yizwygs7xww8jfy5mxjn8ww4pvc0b1hg1p2vsnirailsx9zz"))))
     (build-system gnu-build-system)
-    (inputs `(("util-linux" ,util-linux)))
+    (inputs `(("util-linux" ,util-linux "lib")))
     (native-inputs `(("pkg-config" ,pkg-config)
                      ("texinfo" ,texinfo)       ;for the libext2fs Info manual
 
@@ -1685,7 +1815,7 @@ Zerofree requires the file system to be unmounted or mounted read-only.")
 (define-public strace
   (package
     (name "strace")
-    (version "5.5")
+    (version "5.7")
     (home-page "https://strace.io")
     (source (origin
              (method url-fetch)
@@ -1693,7 +1823,7 @@ Zerofree requires the file system to be unmounted or mounted read-only.")
                                  "/strace-" version ".tar.xz"))
              (sha256
               (base32
-               "1zrhpzjlgfwfl8dd53llswmmharm5rbi0zch7lln5sjris69an4z"))))
+               "1n6cfz3i2krkyvxpdp3kmxhf7sy5xp0danzaiirbk5fdkfgvb15j"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -1702,6 +1832,12 @@ Zerofree requires the file system to be unmounted or mounted read-only.")
            (lambda _
              (substitute* "strace.c"
                (("/bin/sh") (which "sh")))
+             #t))
+         (add-after 'unpack 'disable-failing-tests
+           (lambda _
+             ;; XXX These hang forever even if the test time-out is extended.
+             (substitute* "tests/Makefile.in"
+               (("^\tstrace-DD?D?\\.test \\\\.*") ""))
              #t)))
        ;; Don't fail if the architecture doesn't support different personalities.
        #:configure-flags '("--enable-mpers=check")
@@ -1800,12 +1936,13 @@ MIDI functionality to the Linux-based operating system.")
                (("\\$\\(MKDIR_P\\) .*ASOUND_STATE_DIR.*")
                 "true\n"))
              #t)))))
+    (native-inputs
+     `(("gettext" ,gettext-minimal)))
     (inputs
      `(("libsamplerate" ,libsamplerate)
        ("ncurses" ,ncurses)
        ("alsa-lib" ,alsa-lib)
-       ("xmlto" ,xmlto)
-       ("gettext" ,gettext-minimal)))
+       ("xmlto" ,xmlto)))
     (home-page "http://www.alsa-project.org/")
     (synopsis "Utilities for the Advanced Linux Sound Architecture (ALSA)")
     (description
@@ -1885,15 +2022,17 @@ external rate conversion.")
 (define-public iptables
   (package
     (name "iptables")
-    (version "1.8.4")
-    (source (origin
-             (method url-fetch)
-             (uri (string-append
-                   "mirror://netfilter.org/iptables/iptables-"
-                   version ".tar.bz2"))
-             (sha256
-              (base32
-               "0z0mgs1ghvn3slc868mgbf2g26njgrzcy5ggyb5w4i55j1a3lflr"))))
+    ;; XXX When updating, remove the ‘install-missing-script’ phase.
+    (version "1.8.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (list (string-append "mirror://netfilter.org/iptables/iptables-"
+                                 version ".tar.bz2")
+                  (string-append "https://www.netfilter.org/projects/iptables/"
+                                 "files/iptables-" version ".tar.bz2")))
+       (sha256
+        (base32 "02a3575ypdpg6a2x752mhk3f7h1381ymkq1n0gss6fp6292xfmyl"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -1905,7 +2044,19 @@ external rate conversion.")
     (arguments
      '(#:tests? #f       ; no test suite
        #:configure-flags ; add $libdir to the RUNPATH of executables
-       (list (string-append "LDFLAGS=-Wl,-rpath=" %output "/lib"))))
+       (list (string-append "LDFLAGS=-Wl,-rpath=" %output "/lib"))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'install-missing-script
+           ;; A typo prevents installation of /sbin/iptables-apply.  It's been
+           ;; fixed upstream (d4ed0c741fc789bb09d977d74d30875fdd50d08b), but
+           ;; a patch would require bootstrapping and more inputs.  Simply copy
+           ;; the file ourselves.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (sbin (string-append out "/sbin")))
+               (install-file "iptables/iptables-apply" sbin)
+               #t))))))
     (home-page "https://www.netfilter.org/projects/iptables/index.html")
     (synopsis "Programs to configure Linux IP packet filtering rules")
     (description
@@ -1968,7 +2119,7 @@ that the Ethernet protocol is much simpler than the IP protocol.")
 (define-public iproute
   (package
     (name "iproute2")
-    (version "5.5.0")
+    (version "5.7.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1976,7 +2127,7 @@ that the Ethernet protocol is much simpler than the IP protocol.")
                     version ".tar.xz"))
               (sha256
                (base32
-                "0ywg70f98wgfai35jl47xzpjp45a6n7crja4vc8ql85cbi1l7ids"))))
+                "088gs56iqhdlpw1iqjwrss4zxd4zbl2wl8s2implrrdajjxcfpbj"))))
     (build-system gnu-build-system)
     (arguments
      `( ;; There is a test suite, but it wants network namespaces and sudo.
@@ -2046,7 +2197,7 @@ inadequately in modern network environments, and both should be deprecated.")
       (home-page "http://net-tools.sourceforge.net/")
       (build-system gnu-build-system)
       (arguments
-       '(#:modules ((guix build gnu-build-system)
+       `(#:modules ((guix build gnu-build-system)
                     (guix build utils)
                     (srfi srfi-1)
                     (srfi srfi-26))
@@ -2086,12 +2237,13 @@ inadequately in modern network environments, and both should be deprecated.")
 
          #:tests? #f                                ; no test suite
          #:make-flags (let ((out (assoc-ref %outputs "out")))
-                        (list "CC=gcc"
+                        (list ,(string-append "CC=" (cc-for-target))
                               (string-append "BASEDIR=" out)
                               (string-append "INSTALLNLSDIR=" out "/share/locale")
                               (string-append "mandir=/share/man")))))
       (native-inputs `(("gettext" ,gettext-minimal)
                        ("unzip" ,unzip)))
+      (supported-systems (delete "i586-gnu" %supported-systems))
       (synopsis "Tools for controlling the network subsystem in Linux")
       (description
        "This package includes the important tools for controlling the network
@@ -2104,7 +2256,7 @@ configuration (iptunnel, ipmaddr).")
 (define-public libcap
   (package
     (name "libcap")
-    (version "2.27")
+    (version "2.31")
     (source (origin
              (method url-fetch)
              (uri (string-append
@@ -2112,7 +2264,7 @@ configuration (iptunnel, ipmaddr).")
                    "libcap2/libcap-" version ".tar.xz"))
              (sha256
               (base32
-               "0sj8kidl7qgf2qwxcbw1vadnlb30y4zvjzxswsmfdghq04npkhfs"))))
+               "0ikwm0kngrqa4ci80lqnrkk17kg09q7dxrz28y0gm5qw3vj8s266"))))
     (build-system gnu-build-system)
     (arguments '(#:phases
                  (modify-phases %standard-phases
@@ -2124,13 +2276,13 @@ configuration (iptunnel, ipmaddr).")
                                  (string-append "LDFLAGS := -Wl,-rpath="
                                                 %output "/lib")))
                               #t)))
-                 #:tests? #f                      ; no 'check' target
+                 #:test-target "test"
                  #:make-flags (list "lib=lib"
                                     (string-append "prefix="
                                                    (assoc-ref %outputs "out"))
                                     "RAISE_SETFCAP=no")))
     (native-inputs `(("perl" ,perl)))
-    (inputs `(("attr" ,attr)))
+    (supported-systems (delete "i586-gnu" %supported-systems))
     (home-page "https://sites.google.com/site/fullycapable/")
     (synopsis "Library for working with POSIX capabilities")
     (description
@@ -2139,6 +2291,21 @@ Linux-based operating systems.")
 
     ;; License is BSD-3 or GPLv2, at the user's choice.
     (license license:gpl2)))
+
+;; libcap 2.31 causes problems for 'fakeroot', so provide this newer variant.
+;; To be merged with libcap on the next rebuild cycle.
+(define-public libcap/next
+  (package
+    (inherit libcap)
+    (version "2.34")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "mirror://kernel.org/linux/libs/security/linux-privs/"
+                    "libcap2/libcap-" version ".tar.xz"))
+              (sha256
+               (base32
+                "048n1gy2p48vl9hkrr9wymfxxcpwj2aslz2bv79nhl4m2lhd9kdf"))))))
 
 (define-public bridge-utils
   (package
@@ -2213,35 +2380,18 @@ transparently through a bridge.")
                  "/libnl-doc-" version ".tar.gz"))
            (sha256
             (base32 "19p5y8q3cm5wqvamqc4s5syxnnkvzxy3gw8ivxk6fv9ybn8jm35h"))))))
-    (inputs
-     `(("python-2" ,python-2)
-       ("python-3" ,python-3)))
-    (outputs '("out" "doc" "python2" "python3"))
+    (outputs `("out" "doc"))
     (arguments
-     `(#:modules ((guix build gnu-build-system)
-                  (guix build utils)
-                  (srfi srfi-1))
-       #:phases
+     `(#:phases
        (modify-phases %standard-phases
-         (add-after 'install 'install-python
-           (lambda* (#:key outputs #:allow-other-keys)
-             (define (python-inst python)
-               (invoke python "setup.py" "build")
-               (invoke python "setup.py" "install"
-                       (string-append "--prefix="
-                                      (assoc-ref %outputs python)))
-               (invoke python "setup.py" "clean"))
-             (setenv "LDFLAGS" (format #f "-Wl,-rpath=~a/lib"
-                                       (assoc-ref %outputs "out")))
-             (with-directory-excursion "./python"
-               (for-each python-inst '("python2" "python3")))
-             #t))
          (add-after 'install 'install-doc
-           (lambda* (#:key inputs outputs #:allow-other-keys)
+           (lambda* (#:key inputs native-inputs outputs #:allow-other-keys)
              (let ((dest (string-append (assoc-ref outputs "doc")
                                         "/share/doc/libnl")))
                (mkdir-p dest)
-               (invoke "tar" "xf" (assoc-ref inputs "libnl3-doc")
+               (invoke "tar" "xf" (assoc-ref
+                                   (or native-inputs inputs)
+                                   "libnl3-doc")
                        "--strip-components=1" "-C" dest)))))))
     (home-page "https://www.infradead.org/~tgr/libnl/")
     (synopsis "NetLink protocol library suite")
@@ -2255,6 +2405,43 @@ configuration and monitoring interfaces.")
     ;; Most files are LGPLv2.1-only, but some are GPLv2-only (like
     ;; 'nl-addr-add.c'), so the result is GPLv2-only.
     (license license:gpl2)))
+
+;; libnl python extensions used to be outputs of libnl. However, as
+;; cross-compiling python extensions is currently broken, create separate
+;; packages for libnl python extensions.
+(define (libnl-python-package python)
+  (let ((name (string-append "libnl-" python)))
+    (package
+      (inherit libnl)
+      (name name)
+      (inputs `(,@(cond
+                   ((string=? python "python2")
+                    `(("python-2" ,python-2)))
+                   ((string=? python "python3")
+                    `(("python-3" ,python-3))))))
+      (propagated-inputs `(("libnl" ,libnl)))
+      (outputs '("out"))
+      (arguments
+       `(#:modules ((guix build gnu-build-system)
+                    (guix build utils)
+                    (srfi srfi-1))
+         #:phases
+         (modify-phases %standard-phases
+           (replace 'install
+             (lambda* (#:key inputs outputs #:allow-other-keys)
+               (define (python-inst python)
+                 (invoke python "setup.py" "build")
+                 (invoke python "setup.py" "install"
+                         (string-append "--prefix="
+                                        (assoc-ref %outputs "out")))
+                 (invoke python "setup.py" "clean"))
+               (setenv "LDFLAGS" (format #f "-Wl,-rpath=~a/lib"
+                                         (assoc-ref inputs "libnl")))
+               (with-directory-excursion "./python" (python-inst ,python))
+               #t))))))))
+
+(define-public libnl-python2 (libnl-python-package "python2"))
+(define-public libnl-python3 (libnl-python-package "python3"))
 
 (define-public iw
   (package
@@ -2274,12 +2461,11 @@ configuration and monitoring interfaces.")
     (arguments
      `(#:make-flags
        (let* ((target ,(%current-target-system))
-              (gcc (if target (string-append target "-gcc") "gcc"))
               (pkg-config (if target
                               (string-append target "-pkg-config")
                               "pkg-config")))
          (list
-          (string-append "CC=" gcc)
+          ,(string-append "CC=" (cc-for-target))
           (string-append "PKG_CONFIG="
                          (assoc-ref %build-inputs "pkg-config")
                          "/bin/" pkg-config)
@@ -2295,14 +2481,14 @@ devices.  It replaces @code{iwconfig}, which is deprecated.")
 (define-public powertop
   (package
     (name "powertop")
-    (version "2.11")
+    (version "2.12")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://01.org/sites/default/files/downloads/"
-                           "powertop-v" version "-1-g7ef7f79.tar_0.gz"))
+                           "powertop-" version ".tar.gz"))
        (sha256
-        (base32 "0kynypj5cydfbma0ssblq1k4m1arixc1s2vf0ybv8y2gg09wjs5f"))))
+        (base32 "1kiiwa5p2r7h1lzcf53xq61ckaa4wk565s9fs6vw4bfk84y3mfsw"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -2442,6 +2628,7 @@ processes currently causing I/O.")
                (("-DFUSERMOUNT_DIR=[[:graph:]]+")
                 "-DFUSERMOUNT_DIR=\\\"/var/empty\\\""))
              #t)))))
+    (supported-systems (delete "i586-gnu" %supported-systems))
     (home-page "https://github.com/libfuse/libfuse")
     (synopsis "Support file systems implemented in user space")
     (description
@@ -2824,6 +3011,7 @@ to use Linux' inotify mechanism, which allows file accesses to be monitored.")
                          '("insmod" "rmmod" "lsmod" "modprobe"
                            "modinfo" "depmod"))
                #t))))))
+    (supported-systems (delete "i586-gnu" %supported-systems))
     (home-page "https://www.kernel.org/")
     (synopsis "Kernel module tools")
     (description "Kmod is a set of tools to handle common tasks with Linux
@@ -2865,7 +3053,7 @@ from the module-init-tools project.")
                         (install-file "contrib/notify_all_users.py" contrib)
                         #t))))
        #:make-flags (let* ((prefix (assoc-ref %outputs "out")))
-                      (list "CC=gcc"
+                      (list ,(string-append "CC=" (cc-for-target))
                             (string-append "VERSION=v" ,version)
                             (string-append "PREFIX=" prefix)
                             (string-append "SYSCONFDIR=" prefix "/etc")))
@@ -2895,7 +3083,7 @@ to the in-kernel OOM killer.")
               (patches (search-patches "eudev-rules-directory.patch"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:phases
+     `(#:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'make-source-writable
            (lambda _
@@ -2904,12 +3092,23 @@ to the in-kernel OOM killer.")
              (for-each make-file-writable (find-files "."))
              #t))
          (add-before 'bootstrap 'patch-file-names
-           (lambda* (#:key inputs #:allow-other-keys)
+           (lambda* (#:key inputs native-inputs #:allow-other-keys)
             (substitute* "man/make.sh"
               (("/usr/bin/xsltproc")
-                (string-append (assoc-ref inputs "xsltproc")
+               (string-append (assoc-ref
+                               (or native-inputs inputs) "xsltproc")
                                "/bin/xsltproc")))
             #t))
+         (add-before 'configure 'patch-bindir-in-btrfs-rules
+           (lambda* (#:key outputs #:allow-other-keys)
+             ;; The "@bindir@" substitution incorrectly expands to a literal
+             ;; "${exec_prefix}" (see <https://bugs.gnu.org/39926>).  Work
+             ;; around it.
+             (let ((out (assoc-ref outputs "out")))
+               (substitute* "rules/64-btrfs.rules.in"
+                 (("@bindir@")
+                  (string-append out "/bin")))
+               #t)))
          (add-after 'install 'move-static-library
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
@@ -2929,9 +3128,14 @@ to the in-kernel OOM killer.")
            (lambda* (#:key outputs #:allow-other-keys)
              ;; Build OUT/etc/udev/hwdb.bin.  This allows 'lsusb' and
              ;; similar tools to display product names.
+             ;;
+             ;; XXX: This can't be done when cross-compiling. Find another way
+             ;; to generate hwdb.bin for cross-built systems.
              (let ((out (assoc-ref outputs "out")))
-               (invoke (string-append out "/bin/udevadm")
-                       "hwdb" "--update")))))
+               ,@(if (%current-target-system)
+                     '(#t)
+                     '((invoke (string-append out "/bin/udevadm")
+                               "hwdb" "--update")))))))
        #:configure-flags (list "--enable-manpages")))
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -2951,7 +3155,7 @@ to the in-kernel OOM killer.")
      ;; When linked against libblkid, eudev can populate /dev/disk/by-label
      ;; and similar; it also installs the '60-persistent-storage.rules' file,
      ;; which contains the rules to do that.
-     `(("util-linux" ,util-linux)                 ;for blkid
+     `(("util-linux" ,util-linux "lib")           ;for blkid
        ("kmod" ,kmod)))
     (outputs '("out" "static"))
     (home-page "https://wiki.gentoo.org/wiki/Project:Eudev")
@@ -2961,30 +3165,47 @@ device nodes from /dev/, handles hotplug events and loads drivers at boot
 time.")
     (license license:gpl2+)))
 
-;; TODO: Merge with eudev on the next rebuild cycle.
-(define-public eudev/btrfs-fix
-  (package/inherit
-   eudev
-   (version (string-append (package-version eudev) "-1"))
-   (arguments
-    (substitute-keyword-arguments (package-arguments eudev)
-      ((#:phases phases '%standard-phases)
-       `(modify-phases ,phases
-          (add-before 'configure 'patch-bindir-in-btrfs-rules
-            (lambda* (#:key outputs #:allow-other-keys)
-              ;; The "@bindir@" substitution incorrectly expands to a literal
-              ;; "${exec_prefix}" (see <https://bugs.gnu.org/39926>).  Work
-              ;; around it.
-              (let ((out (assoc-ref outputs "out")))
-                (substitute* "rules/64-btrfs.rules.in"
-                  (("@bindir@")
-                   (string-append out "/bin")))
-                #t)))))))))
+(define-public python-evdev
+  (package
+    (name "python-evdev")
+    (version "1.3.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "evdev" version))
+       (sha256
+        (base32 "0kb3636yaw9l8xi8s184w0r0n9ic5dw3b8hx048jf9fpzss4kimi"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("kernel-headers" ,linux-libre-headers)))
+    (arguments
+     `(#:tests? #f                      ;no rule for tests
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'build 'fix-hard-coded-directory
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "setup.py"
+               (("/usr/include/linux")
+                (string-append
+                 (assoc-ref inputs "kernel-headers") "/include/linux")))
+             #t)))))
+    (home-page "https://github.com/gvalkov/python-evdev")
+    (synopsis "Bindings to the Linux input handling subsystem")
+    (description
+     "Python-evdev provides bindings to the generic input event interface in
+Linux.  The @code{evdev} interface serves the purpose of passing events
+generated in the kernel directly to userspace through character devices that
+are typically located in @file{/dev/input/}.
+
+This package also comes with bindings to @code{uinput}, the userspace input
+subsystem.  @code{uinput} allows userspace programs to create and handle input
+devices that can inject events directly into the input subsystem.")
+    (license license:bsd-3)))
 
 (define-public lvm2
   (package
     (name "lvm2")
-    (version "2.03.08")
+    (version "2.03.09")
     (source (origin
               (method url-fetch)
               (uri (list (string-append "ftp://sourceware.org/pub/lvm2/LVM2."
@@ -2993,7 +3214,7 @@ time.")
                                         version ".tgz")))
               (sha256
                (base32
-                "1j0yis658564rk1ddabkl8vbavp0fdd10gd6qhgyzc3akzf620kf"))
+                "0xdr9qbqw6kja267wmx6ajnfv1nhw056gpxx9v2qmfh3bj6qnfn0"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -3015,7 +3236,7 @@ time.")
      `(("libaio" ,libaio)
        ("udev" ,eudev)))
     (arguments
-     '(#:phases
+     `(#:phases
        (modify-phases %standard-phases
          (add-after 'configure 'set-makefile-shell
            (lambda _
@@ -3042,10 +3263,16 @@ time.")
                                               (assoc-ref %outputs "out")
                                               "/lib,-rpath="
                                               (assoc-ref %outputs "out")
-                                              "/lib/device-mapper"))
+                                              "/lib/device-mapper")
+                               ;; This is needed when cross-compiling.
+                               ,@(if (%current-target-system)
+                                     '("ac_cv_func_malloc_0_nonnull=yes"
+                                       "ac_cv_func_realloc_0_nonnull=yes")
+                                     '()))
 
        ;; The tests use 'mknod', which requires root access.
        #:tests? #f))
+    (supported-systems (delete "i586-gnu" %supported-systems))
     (home-page "https://sourceware.org/lvm2/")
     (synopsis "Logical volume management for Linux")
     (description
@@ -3156,13 +3383,23 @@ interface.")
               (patches (search-patches "crda-optional-gcrypt.patch"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:phases (modify-phases %standard-phases
+     `(#:phases (modify-phases %standard-phases
                   (delete 'configure)
                   (add-after 'unpack 'gzip-determinism
                     (lambda _
                       (substitute* "Makefile"
                         (("gzip") "gzip --no-name"))
                       #t))
+                  ,@(if (%current-target-system)
+                        '((add-after
+                            'unpack 'fix-pkg-config
+                            (lambda* (#:key target #:allow-other-keys)
+                                     (substitute*
+                                       "Makefile"
+                                       (("pkg-config")
+                                        (string-append target "-pkg-config")))
+                                     #t)))
+                        '())
                   (add-before
                    'build 'no-werror-no-ldconfig
                    (lambda _
@@ -3172,37 +3409,41 @@ interface.")
                      #t))
                   (add-before
                    'build 'set-regulator-db-file-name
-                   (lambda* (#:key inputs #:allow-other-keys)
+                   (lambda* (#:key native-inputs inputs #:allow-other-keys)
                      ;; Tell CRDA where to find our database.
-                     (let ((regdb (assoc-ref inputs "wireless-regdb")))
+                     (let ((regdb (assoc-ref (or native-inputs inputs)
+                                             "wireless-regdb")))
                        (substitute* "crda.c"
                          (("\"/lib/crda/regulatory.bin\"")
                           (string-append "\"" regdb
                                          "/lib/crda/regulatory.bin\"")))
                        #t))))
        #:test-target "verify"
-       #:make-flags (let ((out   (assoc-ref %outputs "out"))
-                          (regdb (assoc-ref %build-inputs "wireless-regdb")))
-                      (list "CC=gcc" "V=1"
+       #:make-flags (let ((out     (assoc-ref %outputs "out"))
+                          (regdb   (assoc-ref %build-inputs "wireless-regdb")))
+                      (list
+                       (string-append "CC=" ,(cc-for-target))
+                       "V=1"
 
-                            ;; Disable signature-checking on 'regulatory.bin'.
-                            ;; The reason is that this simplifies maintenance
-                            ;; on our side (no need to manage a distro key
-                            ;; pair), and we can guarantee integrity of
-                            ;; 'regulatory.bin' by other means anyway, such as
-                            ;; 'guix gc --verify'.  See
-                            ;; <https://wireless.wiki.kernel.org/en/developers/regulatory/wireless-regdb>
-                            ;; for a discssion.
-                            "USE_OPENSSL=0"
+                       ;; Disable signature-checking on 'regulatory.bin'.
+                       ;; The reason is that this simplifies maintenance
+                       ;; on our side (no need to manage a distro key
+                       ;; pair), and we can guarantee integrity of
+                       ;; 'regulatory.bin' by other means anyway, such as
+                       ;; 'guix gc --verify'.  See
+                       ;; <https://wireless.wiki.kernel.org/en/developers/regulatory/wireless-regdb>
+                       ;; for a discssion.
+                       "USE_OPENSSL=0"
 
-                            (string-append "PREFIX=" out)
-                            (string-append "SBINDIR=" out "/sbin/")
-                            (string-append "UDEV_RULE_DIR="
-                                           out "/lib/udev/rules.d")
-                            (string-append "LDFLAGS=-Wl,-rpath="
-                                           out "/lib -L.")
-                            (string-append "REG_BIN=" regdb
-                                           "/lib/crda/regulatory.bin")))))
+                       (string-append "PREFIX=" out)
+                       (string-append "SBINDIR=" out "/sbin/")
+                       (string-append "UDEV_RULE_DIR="
+                                      out "/lib/udev/rules.d")
+                       (string-append "LDFLAGS=-Wl,-rpath="
+                                      out "/lib -L.")
+                       (string-append "REG_BIN=" regdb
+                                      "/lib/crda/regulatory.bin")
+                       "all_noverify"))))
     (native-inputs `(("pkg-config" ,pkg-config)
                      ("wireless-regdb" ,wireless-regdb)))
     (inputs `(("libnl" ,libnl)))
@@ -3340,9 +3581,9 @@ country-specific regulations for the wireless spectrum.")
                (("cat ")
                 (string-append (assoc-ref inputs "coreutils")
                                "/bin/cat "))
-               (("grep ")
+               (("e?grep " match)
                 (string-append (assoc-ref inputs "grep")
-                               "/bin/grep "))
+                               "/bin/" match))
                (("sed -e")
                 (string-append (assoc-ref inputs "sed")
                                "/bin/sed -e"))
@@ -3400,10 +3641,10 @@ create a firmware image suitable for the Linux kernel, and more.")
                 "000pvg995qy1b15ks59gd0klri55hb33kqpg5czy84hw1pbdgm0l"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:tests? #f  ; no 'check' target
+     `(#:tests? #f                      ; no 'check' target
        #:make-flags (list (string-append "prefix=" %output)
-                          "CC=gcc")
-       ;; no configure script
+                          ,(string-append "CC=" (cc-for-target)))
+       ;; No configure script.
        #:phases (modify-phases %standard-phases (delete 'configure))))
     (inputs
      `(("perl" ,perl)))
@@ -3626,10 +3867,13 @@ isolation or root privileges.")
                 "03z1qm8zbgpxagk3994lvp24yqsshjibkwg05v9p3q1w7y48xrws"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:make-flags (let ((out (assoc-ref %outputs "out")))
-                      (list (string-append "binprefix=" out)
-                            (string-append "manprefix=" out)
-                            "CC=gcc"))
+     `(#:make-flags
+       (let ((out (assoc-ref %outputs "out")))
+         (list (string-append "binprefix=" out)
+               (string-append "manprefix=" out)
+               ,(string-append "CC=" (cc-for-target))
+               ;; Let Guix strip the binaries and not break cross-compilation.
+               "STRIP=true"))
        #:phases
        (modify-phases %standard-phases
          (delete 'configure))           ; no configure script
@@ -3652,7 +3896,7 @@ Translation (@dfn{SAT}) are also supported.")
 (define-public nvme-cli
   (package
     (name "nvme-cli")
-    (version "1.10.1")
+    (version "1.11.2")
     (home-page "https://github.com/linux-nvme/nvme-cli")
     (source (origin
               (method git-fetch)
@@ -3660,19 +3904,21 @@ Translation (@dfn{SAT}) are also supported.")
                     (url home-page)
                     (commit (string-append "v" version))))
               (sha256
-               (base32 "12wp2wxmsw2v8m9bhvwvdbhdgx1md8iilhbl19sfzz2araiwi2x8"))
+               (base32 "0ngh7zffjf6ac8b22hdi4ry7hjlafih172hrbpw8j17r7c0wjy9i"))
               (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
-     `(#:make-flags (list "CC=gcc")
+     `(#:make-flags
+       (list ,(string-append "CC=" (cc-for-target)))
        #:phases (modify-phases %standard-phases
-                  (delete 'configure) ; No ./configure script
+                  (delete 'configure)   ; no ./configure script
                   (replace 'install
                     (lambda _
                       (invoke "make" "install-spec" "PREFIX="
                               (string-append "DESTDIR=" %output)))))
-       #:tests? #f)) ; The tests require sysfs, which is not accessible from
-                     ; the build environment
+       ;; The tests require sysfs, which is not accessible from from the build
+       ;; environment
+       #:tests? #f))
     (synopsis "NVM-Express user space tooling for Linux")
     (description "Nvme-cli is a utility to provide standards compliant tooling
 for NVM-Express drives.  It was made specifically for Linux as it relies on the
@@ -3912,7 +4158,7 @@ MPEG-2 and audio over Linux IEEE 1394.")
      `(("udev" ,eudev)))
     (arguments
      `(#:make-flags (let ((out (assoc-ref %outputs "out")))
-                      (list "CC=gcc"
+                      (list ,(string-append "CC=" (cc-for-target))
                             "INSTALL=install"
                             "CHECK_RUN_DIR=0"
                             ;; TODO: tell it where to find 'sendmail'
@@ -3923,8 +4169,9 @@ MPEG-2 and audio over Linux IEEE 1394.")
        #:phases
        (modify-phases %standard-phases
          (add-before 'build 'patch-program-paths
-           (lambda* (#:key inputs #:allow-other-keys)
-             (let ((coreutils (assoc-ref inputs "coreutils")))
+           (lambda* (#:key native-inputs inputs #:allow-other-keys)
+             (let ((coreutils (assoc-ref (or native-inputs inputs)
+                                         "coreutils")))
                (substitute* "udev-md-raid-arrays.rules"
                  (("/usr/bin/(readlink|basename)" all program)
                   (string-append coreutils "/bin/" program))))
@@ -3939,6 +4186,7 @@ MPEG-2 and audio over Linux IEEE 1394.")
          (delete 'configure))
        ;;tests must be done as root
        #:tests? #f))
+    (supported-systems (delete "i586-gnu" %supported-systems))
     (home-page "http://neil.brown.name/blog/mdadm")
     (synopsis "Tool for managing Linux Software RAID arrays")
     (description
@@ -3979,15 +4227,17 @@ arrays when needed.")
 (define-public multipath-tools
   (package
     (name "multipath-tools")
-    (version "0.8.3")
+    (version "0.8.4")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://git.opensvc.com/?p=multipath-tools/"
-                                  ".git;a=snapshot;h=" version ";sf=tgz"))
-              (file-name (string-append name "-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://git.opensvc.com/multipath-tools/.git")
+                    (commit version)))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1c6ay97wlfv1fl0y8hcfpxhkps14hlnw9gzmj7884micsp7pa9yv"))
+                "14n8pcgnliicqxzc40xvjxk4cafm4qx7a3rsx5qva74r3ydzx8rn"))
+              (patches (search-patches "multipath-tools-sans-systemd.patch"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -4000,17 +4250,14 @@ arrays when needed.")
                   #t))))
     (build-system gnu-build-system)
     (arguments
-     '(#:tests? #f                      ; no tests
+     '(#:test-target "test"
+       #:parallel-build? #f             ;XXX: broken in 0.8.4
        #:make-flags (list "CC=gcc"
                           (string-append "DESTDIR="
                                          (assoc-ref %outputs "out"))
+                          ;; Install Udev rules below this directory, relative
+                          ;; to the prefix.
                           "SYSTEMDPATH=lib"
-                          ;; Add the libaio headers to GCCs system header
-                          ;; search path to suppress -Werror=cast-qual on
-                          ;; the included headers.
-                          (string-append "C_INCLUDE_PATH="
-                                         (assoc-ref %build-inputs "libaio")
-                                         "/include")
                           (string-append "LDFLAGS=-Wl,-rpath="
                                          (assoc-ref %outputs "out")
                                          "/lib"))
@@ -4031,11 +4278,31 @@ arrays when needed.")
                  (("/usr/include/libudev.h")
                   (string-append udev "/include/libudev.h")))
                #t)))
+         (add-after 'unpack 'fix-maybe-uninitialized-variable
+           (lambda _
+             ;; This variable gets initialized later if needed, but GCC 7
+             ;; fails to notice.  Should be fixed for > 0.8.4.
+             ;; https://www.redhat.com/archives/dm-devel/2020-March/msg00137.html
+             (substitute* "libmultipath/structs_vec.c"
+               (("bool is_queueing;")
+                "bool is_queueing = false;"))
+             #t))
+         (add-after 'unpack 'fix-linking-tests
+           (lambda _
+             ;; Add missing linker flag for -lmpathcmd.  This should be fixed
+             ;; for versions > 0.8.4.
+             (substitute* "tests/Makefile"
+               (("-lmultipath -lcmocka")
+                "-lmultipath -L$(mpathcmddir) -lmpathcmd -lcmocka"))
+             #t))
          (delete 'configure))))         ; no configure script
     (native-inputs
      `(("perl" ,perl)
        ("pkg-config" ,pkg-config)
-       ("valgrind" ,valgrind)))
+       ("valgrind" ,valgrind)
+
+       ;; For tests.
+       ("cmocka" ,cmocka)))
     (inputs
      `(("json-c" ,json-c)
        ("libaio" ,libaio)
@@ -4072,8 +4339,14 @@ Linux Device Mapper multipathing driver:
                 "14mlqdapjqq1dhpkdgy5z83mvsaz36fcxca7a4z6hinmr7r6415b"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:make-flags
-       (list "CC=gcc" (string-append "prefix=" %output))
+     `(#:make-flags
+       (let ((target ,(%current-target-system)))
+         (list (string-append "prefix=" %output)
+               (string-append
+                "CC=" (if target
+                          (string-append (assoc-ref %build-inputs "cross-gcc")
+                                         "/bin/" target "-gcc")
+                          "gcc"))))
        #:test-target "partcheck" ; need root for a full 'check'
        #:phases
        (modify-phases %standard-phases (delete 'configure)))) ; no configure script
@@ -4104,12 +4377,13 @@ applications.")
                 (file-name (git-file-name name version))))
       (build-system gnu-build-system)
       (arguments
-       '(#:make-flags
-         (list "CC=gcc" (string-append "prefix=" %output))
-         #:tests? #f ; no tests
+       `(#:make-flags
+         (list ,(string-append "CC=" (cc-for-target))
+               (string-append "prefix=" %output))
+         #:tests? #f                    ; no tests
          #:phases
          (modify-phases %standard-phases
-           (delete 'configure) ; no configure script
+           (delete 'configure)          ; no configure script
            (add-after 'unpack 'fix-gnuplot-path
              (lambda* (#:key inputs #:allow-other-keys)
                (let ((gnuplot (assoc-ref inputs "gnuplot")))
@@ -4153,13 +4427,13 @@ Bluetooth audio output devices like headphones or loudspeakers.")
 (define-public bluez
   (package
     (name "bluez")
-    (replacement bluez/fixed)
     (version "5.53")
     (source (origin
               (method url-fetch)
               (uri (string-append
                     "mirror://kernel.org/linux/bluetooth/bluez-"
                     version ".tar.xz"))
+              (patches (search-patches "bluez-CVE-2020-0556.patch"))
               (sha256
                (base32
                 "1g1qg6dz6hl3csrmz75ixr12lwv836hq3ckb259svvrg62l2vaiq"))))
@@ -4219,14 +4493,6 @@ Bluetooth audio output devices like headphones or loudspeakers.")
 is flexible, efficient and uses a modular implementation.")
     (license license:gpl2+)))
 
-(define bluez/fixed
-  (package
-    (inherit bluez)
-    (source (origin
-              (inherit (package-source bluez))
-              (patches (append (origin-patches (package-source bluez))
-                               (search-patches "bluez-CVE-2020-0556.patch")))))))
-
 (define-public fuse-exfat
   (package
     (name "fuse-exfat")
@@ -4284,8 +4550,8 @@ Ridge, Joliet, and zisofs.")
     (source (origin
               (method url-fetch)
               (uri (string-append
-                    "http://www.nico.schottelius.org/software/gpm/archives/gpm-"
-                    version ".tar.bz2"))
+                    "https://www.nico.schottelius.org/software/gpm/archives/"
+                    "gpm-" version ".tar.bz2"))
               (patches (search-patches "gpm-glibc-2.26.patch"))
               (sha256
                (base32
@@ -4314,7 +4580,7 @@ Ridge, Joliet, and zisofs.")
        ("autoconf" ,autoconf)
        ("automake" ,automake)
        ("libtool" ,libtool)))
-    (home-page "http://www.nico.schottelius.org/software/gpm/")
+    (home-page "https://www.nico.schottelius.org/software/gpm/")
     (synopsis "Mouse support for the Linux console")
     (description
      "The GPM (general-purpose mouse) daemon is a mouse server for
@@ -4367,11 +4633,9 @@ and copy/paste text in the console and in xterm.")
        #:test-target "test"
        #:parallel-tests? #f)) ; tests fail when run in parallel
     (inputs `(("e2fsprogs" ,e2fsprogs)  ; for btrfs-convert
-              ("libblkid" ,util-linux)
-              ("libblkid:static" ,util-linux "static")
-              ("libuuid" ,util-linux)
-              ("libuuid:static" ,util-linux "static")
               ("lzo" ,lzo)
+              ("util-linux:lib" ,util-linux "lib")       ;for libblkid and libuuid
+              ("util-linux:static" ,util-linux "static") ;ditto
               ("zlib" ,zlib)
               ("zlib:static" ,zlib "static")
               ("zstd" ,zstd "lib")
@@ -4537,7 +4801,7 @@ obviously it can be shared with files outside our set).")
        ("libtool" ,libtool)
        ("pkg-config" ,pkg-config)))
     (inputs
-     `(("libuuid" ,util-linux)
+     `(("libuuid" ,util-linux "lib")
        ("libselinux" ,libselinux)))
     (home-page "https://f2fs.wiki.kernel.org/")
     (synopsis "Userland tools for f2fs")
@@ -4563,7 +4827,77 @@ disks and SD cards.  This package provides the userland utilities.")
                (base32
                 "0z9c0y3qq75iyqknl5k0v7v46l8c3pcifpqb0yqalrs24blkm7dk"))))
     (inputs
-     `(("libuuid" ,util-linux)))))
+     `(("libuuid" ,util-linux "lib")))))
+
+(define-public f2fs-tools/static
+  (static-package
+   (package
+     (inherit f2fs-tools)
+     (name "f2fs-tools-static")
+     (arguments
+     `(#:configure-flags
+       (let ((libuuid-static (assoc-ref %build-inputs "libuuid:static"))
+             (libuuid (assoc-ref %build-inputs "libuuid")))
+         (list
+          (string-append "libuuid_CFLAGS=-I" libuuid "/include")
+          (string-append "libuuid_LIBS=-L" libuuid-static "/lib -luuid")
+          (string-append "libblkid_CFLAGS=-I" libuuid "/include")
+          (string-append "libblkid_LIBS=-L" libuuid-static "/lib -lblkid")))
+       #:disallowed-references (,util-linux)
+       #:phases
+       (modify-phases %standard-phases ; TODO: f2fs phases.
+         (add-after 'unpack 'make-static
+           (lambda _
+             (define (append-to-file name body)
+               (let ((file (open-file name "a")))
+                 (display body file)
+                 (close-port file)))
+             (append-to-file "mkfs/Makefile.am" "\nmkfs_f2fs_LDFLAGS = -all-static\n")
+             (append-to-file "fsck/Makefile.am" "\nfsck_f2fs_LDFLAGS = -all-static\n")
+             (append-to-file "tools/Makefile.am" "\nf2fscrypt_LDFLAGS = -all-static -luuid\n")
+             #t))
+          (add-after 'install 'remove-store-references
+            (lambda* (#:key outputs #:allow-other-keys)
+              ;; Work around bug in our util-linux.
+              ;; <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=41019>.
+              (remove-store-references (string-append (assoc-ref outputs "out")
+                                                      "/sbin/mkfs.f2fs"))
+              #t)))))
+     (inputs
+      `(("libuuid:static" ,util-linux "static")
+        ("libuuid" ,util-linux "lib")))))) ; for include files
+
+(define-public f2fs-fsck/static
+  (package
+    (name "f2fs-fsck-static")
+    (version (package-version f2fs-tools/static))
+    (source #f)
+    (build-system trivial-build-system)
+    (arguments
+     `(#:modules ((guix build utils))
+       #:builder
+       (begin
+         (use-modules (guix build utils)
+                      (ice-9 ftw)
+                      (srfi srfi-26))
+         (let* ((f2fs-tools (assoc-ref %build-inputs "f2fs-tools-static"))
+                (fsck "fsck.f2fs")
+                (out (assoc-ref %outputs "out"))
+                (sbin (string-append out "/sbin")))
+           (mkdir-p sbin)
+           (with-directory-excursion sbin
+             (install-file (string-append f2fs-tools "/sbin/" fsck)
+                           ".")
+             (remove-store-references fsck)
+             (chmod fsck #o555))
+           #t))))
+    (inputs
+     `(("f2fs-tools-static" ,f2fs-tools/static)))
+    (home-page (package-home-page f2fs-tools/static))
+    (synopsis "Statically-linked fsck.f2fs command from f2fs-tools")
+    (description "This package provides statically-linked fsck.f2fs command taken
+from the f2fs-tools package. It is meant to be used in initrds.")
+    (license (package-license f2fs-tools/static))))
 
 (define-public freefall
   (package
@@ -4603,7 +4937,7 @@ feature, and a laptop with an accelerometer.  It has no effect on SSDs.")
 (define-public thinkfan
   (package
     (name "thinkfan")
-    (version "1.1")
+    (version "1.2")
     (source
      (origin
        (method git-fetch)
@@ -4612,7 +4946,7 @@ feature, and a laptop with an accelerometer.  It has no effect on SSDs.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1fxd1w3z65glw6y04myn7ihgswkx6sqnkky159mik4n96pfrsvr5"))))
+        (base32 "0vmkpj575a1w52zx1jn6kdrk8rc9vp0f1bldi1bajicpgbs6rjd3"))))
     (build-system cmake-build-system)
     (arguments
      `(#:modules ((guix build cmake-build-system)
@@ -4638,7 +4972,7 @@ feature, and a laptop with an accelerometer.  It has no effect on SSDs.")
                     (share (string-append out "/share/" ,name)))
                (substitute* "CMakeLists.txt"
                  (("pkg_check_modules\\((OPENRC|SYSTEMD) .*" _ package)
-                  (format "option(~a_FOUND \"Faked\" ON)\n" package))
+                  (format #f "option(~a_FOUND \"Faked\" ON)\n" package))
                  ;; That was easy!  Now we just need to fix the destinations.
                  (("/etc" directory)
                   (string-append out directory)))
@@ -4648,7 +4982,7 @@ feature, and a laptop with an accelerometer.  It has no effect on SSDs.")
     (inputs
      `(("libatasmart" ,libatasmart)
        ("yaml-cpp" ,yaml-cpp)))
-    (home-page "http://thinkfan.sourceforge.net/")
+    (home-page "https://github.com/vmatare/thinkfan")
     (synopsis "Simple fan control program")
     (description
      "Thinkfan is a simple fan control program.  It reads temperatures,
@@ -4680,11 +5014,11 @@ from userspace.")
            (lambda _
              (substitute* "tpacpi-bat"
                (("cat ")
-                (format "~a " (which "cat")))
+                (format #f "~a " (which "cat")))
                ;; tpacpi-bat modprobes the acpi_call kernel module if it's not
                ;; loaded.  That's the administrator's prerogative; disable it.
                (("system \"(modprobe .*)\"" _ match)
-                (format "die \"Please run ‘~a’ first.\\n\"" match)))
+                (format #f "die \"Please run ‘~a’ first.\\n\"" match)))
              #t))
          (delete 'configure)            ; nothing to configure
          (delete 'build)                ; nothing to build
@@ -4894,7 +5228,7 @@ The collection contains a set of bandwidth and latency benchmark such as:
   (package
     (name "rng-tools")
     (home-page "https://github.com/nhorman/rng-tools")
-    (version "6.9")
+    (version "6.10")
     (source (origin
               (method git-fetch)
               (uri (git-reference (url home-page)
@@ -4902,18 +5236,22 @@ The collection contains a set of bandwidth and latency benchmark such as:
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "065jf26s8zkicb95zc9ilksjdq9gqrh5vcx3mhi6mypbnamn6w98"))))
+                "0hbml37yxs0fs69g7f2x4ixq61z0029swy99rn7ykma9mi6b7ni9"))))
     (build-system gnu-build-system)
     (arguments
-     `(;; Avoid using OpenSSL, curl, and libxml2, reducing the closure by 166 MiB.
+     `(;; Disable support for various hardware entropy sources as they need
+       ;; dependencies that are not yet in Guix, and would significantly
+       ;; increase closure size.
        #:configure-flags '("--without-nistbeacon"
-                           "--without-pkcs11")))
+                           "--without-pkcs11"
+                           "--without-rtlsdr")))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
        ("pkg-config" ,pkg-config)))
     (inputs
-     `(("libsysfs" ,sysfsutils)))
+     `(("libsysfs" ,sysfsutils)
+       ("openssl" ,openssl)))
     (synopsis "Random number generator daemon")
     (description
      "Monitor a hardware random number generator, and supply entropy
@@ -5175,14 +5513,14 @@ the default @code{nsswitch} and the experimental @code{umich_ldap}.")
 (define-public mcelog
   (package
     (name "mcelog")
-    (version "168")
+    (version "170")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://git.kernel.org/cgit/utils/cpu/mce/"
                                   "mcelog.git/snapshot/v" version ".tar.gz"))
               (sha256
                (base32
-                "1c4faayg1gcm3002b2fdrfnv76z92mvfzccvx8w9crjp0d17sp24"))
+                "1m11v1y7cvpm7hwsghj23z77ps1w5jzn8000iwiyxpb939h2km5l"))
               (file-name (string-append name "-" version ".tar.gz"))
               (modules '((guix build utils)))
               (snippet
@@ -5199,7 +5537,8 @@ the default @code{nsswitch} and the experimental @code{umich_ldap}.")
        #:make-flags (let ((out (assoc-ref %outputs "out")))
                       (list "CC=gcc"
                             (string-append "prefix=" out)
-                            (string-append "DOCDIR=" out "/share/doc/mcelog")
+                            (string-append "DOCDIR=" out "/share/doc/"
+                                           ,name "-" ,version)
                             "etcprefix=$(DOCDIR)/examples"))
        ;; The tests will only run as root on certain supported CPU models.
        #:tests? #f))
@@ -5207,10 +5546,10 @@ the default @code{nsswitch} and the experimental @code{umich_ldap}.")
     (home-page "https://mcelog.org/")
     (synopsis "Machine check monitor for x86 Linux systems")
     (description
-     "The mcelog daemon is required by the Linux kernel to log memory, I/O, CPU,
-and other hardware errors on x86 systems.  It can also perform user-defined
-tasks, such as bringing bad pages off-line, when configurable error thresholds
-are exceeded.")
+     "The mcelog daemon logs memory, I/O, CPU, and other hardware errors on x86
+systems running the kernel Linux.  It can also perform user-defined tasks, such
+as bringing bad pages off-line, when configurable error thresholds are
+exceeded.")
     (license license:gpl2)))
 
 (define-public mtd-utils
@@ -5232,7 +5571,7 @@ are exceeded.")
        ("pkg-config" ,pkg-config)))
     (inputs
      `(("acl" ,acl)                     ; extended attributes (xattr)
-       ("libuuid" ,util-linux)
+       ("libuuid" ,util-linux "lib")
        ("lzo" ,lzo)
        ("openssl" ,openssl)             ; optional crypto support
        ("zlib" ,zlib)
@@ -5340,14 +5679,7 @@ under OpenGL graphics workloads.")
                           (string-append "LDFLAGS=-Wl,-rpath=" %output "/lib"))
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure)
-         (add-before 'build 'kernel-headers-are-system-headers
-           (lambda* (#:key inputs #:allow-other-keys)
-             (let ((kernel-headers (assoc-ref inputs "kernel-headers")))
-               ;; Make sure the kernel headers are treated as system headers
-               ;; to suppress a conflict between "util.h" and <linux/fs.h>.
-             (setenv "C_INCLUDE_PATH" (string-append kernel-headers "/include"))
-             #t))))))
+         (delete 'configure))))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
@@ -5380,12 +5712,7 @@ interface to the variable facility of UEFI boot firmware.")
                           ;; installed (known as OS_VENDOR in the code).
                           ;; GRUB overrides this, as such it's only used if
                           ;; nothing else is specified on the command line.
-                          "EFIDIR=gnu"
-                          ;; Treat kernel headers as system headers to prevent
-                          ;; warnings about conflicting types.
-                          (string-append "C_INCLUDE_PATH="
-                                         (assoc-ref %build-inputs "kernel-headers")
-                                         "/include"))
+                          "EFIDIR=gnu")
        #:phases (modify-phases %standard-phases (delete 'configure))))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -5704,16 +6031,14 @@ re-use code and to avoid re-inventing the wheel.")
 (define-public libnftnl
   (package
     (name "libnftnl")
-    (version "1.1.5")
+    (version "1.1.7")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://netfilter.org/libnftnl/"
                            "libnftnl-" version ".tar.bz2"))
        (sha256
-        (base32 "1wqlxf76bkqf3qhka9sw32qhb2ni20q1k6rn3iril2kw482lvpk6"))
-       (patches
-        (search-patches "libnftnl-dont-check-NFTNL_FLOWTABLE_SIZE.patch"))))
+        (base32 "13zd90bfrr0q3j0l0cbc8kiizccw6n8gp727kqnfljh024zw3nr0"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -5730,7 +6055,7 @@ used by nftables.")
 (define-public nftables
   (package
     (name "nftables")
-    (version "0.9.3")
+    (version "0.9.5")
     (source
      (origin
        (method url-fetch)
@@ -5739,7 +6064,7 @@ used by nftables.")
                   (string-append "https://www.nftables.org/projects/nftables"
                                  "/files/nftables-" version ".tar.bz2")))
        (sha256
-        (base32 "0y6vbqp6x8w165q65h4n9sba1406gaz0d4744gqszbm7w9f92swm"))))
+        (base32 "05kyri19q776mymkbcxq3786l6nrf4xg7f3n8my0aw63mdz9bhgj"))))
     (build-system gnu-build-system)
     (arguments `(#:configure-flags
                  '("--disable-man-doc"))) ; FIXME: Needs docbook2x.
@@ -5848,7 +6173,16 @@ userspace queueing component and the logging subsystem.")
     (native-inputs `(("which" ,which)
 
                      ;; For 'mcookie', used by some of the tests.
-                     ("util-linux" ,util-linux)))
+                     ("util-linux" ,util-linux)
+
+                     ;; XXX: Choose the old coreutils because its 'stat'
+                     ;; program does not use statx(2) when running 'stat -c
+                     ;; %a' or similar, which PRoot doesn't properly support.
+                     ("coreutils-old" ,coreutils-8.30)
+
+                     ;; XXX: 'test-c6b77b77.sh' runs 'make' and that leads
+                     ;; make 4.3 to segfault.
+                     ("make-old" ,gnu-make-4.2)))
     (inputs `(("talloc" ,talloc)))
     (home-page "https://github.com/proot-me/PRoot")
     (synopsis "Unprivileged chroot, bind mount, and binfmt_misc")
@@ -6031,7 +6365,7 @@ libraries, which are often integrated directly into libfabric.")
                  "psm-disable-memory-stats.patch"))))
     (build-system gnu-build-system)
     (outputs '("out" "debug"))
-    (inputs `(("libuuid" ,util-linux)))
+    (inputs `(("libuuid" ,util-linux "lib")))
     (arguments
      '(#:make-flags `("PSM_USE_SYS_UUID=1" "CC=gcc" "WERROR="
                       ,(string-append "INSTALL_PREFIX=" %output)
@@ -6207,10 +6541,10 @@ interface to this kernel feature.")
         (base32 "0aijyxrqh01x0s80yr4cgxgd001iiqqph65pxvby7f0wz8lnxnqj"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:tests? #f                      ; tests ask to be run as root
+     `(#:tests? #f                      ; tests ask to be run as root
        #:make-flags (let ((out (assoc-ref %outputs "out")))
                       (list (string-append "DESTDIR=" out)
-                            "CC=gcc"))
+                            ,(string-append "CC=" (cc-for-target))))
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'patch-paths
@@ -6408,7 +6742,7 @@ IP addresses and routes, and configure IPsec.")
     (native-inputs
      `(("gettext" ,gettext-minimal)))
     (inputs
-     `(("libuuid" ,util-linux)
+     `(("libuuid" ,util-linux "lib")
        ("python" ,python-wrapper)))
     (home-page "https://xfs.wiki.kernel.org/")
     (synopsis "XFS file system tools")
@@ -6506,13 +6840,21 @@ the superuser to make device nodes.")
             ;; We don't have an /etc/passwd entry for "root" - use numeric IDs.
             (substitute* "test/compare-tar"
              (("tar -tvf") "tar --numeric-owner -tvf"))
+
+            ;; coreutils 8.32 changed 'ls' to use the statx() syscall instead
+            ;; of lstat().  fakeroot 1.24 does not support the former, so
+            ;; adjust these tests to use 'test -b' instead of 'ls' to test for
+            ;; block device.  See <https://bugs.gnu.org/41090>.
+            (substitute* '("test/t.mknod" "test/t.chmod_dev")
+              (("ls -ld? \\$tmp/hda3")
+               "test -b $tmp/hda3 && echo block || echo fail"))
             #t)))))
     (native-inputs
      `(("acl" ,acl)
        ("sharutils" ,sharutils) ; for the tests
        ("xz" ,xz))) ; for the tests
     (inputs
-     `(("libcap" ,libcap)
+     `(("libcap" ,libcap/next)
        ("util-linux" ,util-linux)))
     (synopsis "Provides a fake root environment")
     (description "@command{fakeroot} runs a command in an environment where
@@ -6524,6 +6866,36 @@ the correct permissions and ownership, and then pack them up, or one would
 have to construct the archives directly, without using the archiver.")
     (home-page "http://freshmeat.sourceforge.net/projects/fakeroot")
     (license license:gpl3+)))
+
+(define-public fakechroot
+  (package
+    (name "fakechroot")
+    (version "2.20.1")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "https://github.com/dex4er/fakechroot/releases/download/"
+                    version "/fakechroot-" version ".tar.gz"))
+              (sha256
+               (base32
+                "1aijkd0b45wav25v01qhw8zxwa3pl0nnp9fabmmy1nlx7hr09gas"))))
+    (build-system gnu-build-system)
+    (arguments
+     ;; XXX: The tests heavily assume they run on an FHS system so for now
+     ;; skip them.
+     '(#:tests? #f
+       #:configure-flags '("--disable-static")))
+    (synopsis "Emulate @code{chroot} by overriding file system calls")
+    (description
+     "@command{fakechroot} runs a command in an environment were is additional
+possibility to use @code{chroot} command without root privileges.  This is
+useful for allowing users to create own chrooted environment with possibility
+to install another packages without need for root privileges.
+
+It works by providing @file{libfakechroot.so}, a shared library meant to be
+set as @code{LD_PRELOAD} to override the C library file system functions.")
+    (home-page "https://github.com/dex4er/fakechroot/")
+    (license license:lgpl2.1+)))
 
 (define-public inputattach
   (package
@@ -6695,3 +7067,36 @@ utilities.  Using @code{kexec}, it is possible to boot directly into a new
 kernel from the context of an already-running kernel, bypassing the normal
 system boot process.")
     (license license:gpl2)))
+
+(define-public cachefilesd
+  (package
+    (name "cachefilesd")
+    (version "0.10.10")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells"
+                    "/cachefilesd.git/snapshot/cachefilesd-"
+                    version ".tar.gz"))
+              (sha256
+               (base32
+                "0g40ljjnn3wzh9gp6il21c95f977298qrrkrxfnwfl3k3asfmnbi"))))
+    (build-system gnu-build-system)
+    (outputs '("out"))
+    (arguments
+     `(#:tests? #f ; there are no tests
+       #:make-flags
+       (let ((prefix-dir (lambda (var dir)
+                           (string-append var "=" %output "/" dir))))
+         (list (string-append "CC=" ,(cc-for-target))
+               (prefix-dir "SBINDIR" "sbin/")
+               (prefix-dir "ETCDIR" "etc/")
+               (prefix-dir "MANDIR" "share/man/")))
+       #:phases (modify-phases %standard-phases (delete 'configure))))
+    (home-page "https://people.redhat.com/~dhowells/cachefs/")
+    (synopsis "CacheFiles userspace management daemon")
+    (description "@code{cachefilesd} is a userspace daemon that manages the
+cache data store that is used by network file systems such as @code{AFS} and
+@code{NFS} to cache data locally on disk.  The content of the cache is
+persistent over reboots.")
+    (license license:gpl2+)))

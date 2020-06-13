@@ -12,6 +12,7 @@
 ;;; Copyright © 2019 John Soo <jsoo1@asu.edu>
 ;;; Copyright © 2019 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2020 Florian Pelz <pelzflorian@pelzflorian.de>
+;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -46,7 +47,7 @@
                 #:select (alsa-utils crda eudev e2fsprogs fuse gpm kbd lvm2 rng-tools))
   #:use-module (gnu packages bash)
   #:use-module ((gnu packages base)
-                #:select (canonical-package coreutils glibc glibc-utf8-locales))
+                #:select (coreutils glibc glibc-utf8-locales))
   #:use-module (gnu packages package-management)
   #:use-module ((gnu packages gnupg) #:select (guile-gcrypt))
   #:use-module (gnu packages linux)
@@ -61,11 +62,11 @@
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 match)
   #:use-module (ice-9 format)
+  #:re-export (user-processes-service-type)       ;backwards compatibility
   #:export (fstab-service-type
             root-file-system-service
             file-system-service-type
             swap-service
-            user-processes-service-type
             host-name-service
             console-keymap-service
             %default-console-font
@@ -92,6 +93,7 @@
             udev-service
             udev-rule
             file->udev-rule
+            udev-rules-service
 
             login-configuration
             login-configuration?
@@ -184,128 +186,6 @@
 ;;;
 ;;; Code:
 
-
-
-;;;
-;;; User processes.
-;;;
-
-(define %do-not-kill-file
-  ;; Name of the file listing PIDs of processes that must survive when halting
-  ;; the system.  Typical example is user-space file systems.
-  "/etc/shepherd/do-not-kill")
-
-(define (user-processes-shepherd-service requirements)
-  "Return the 'user-processes' Shepherd service with dependencies on
-REQUIREMENTS (a list of service names).
-
-This is a synchronization point used to make sure user processes and daemons
-get started only after crucial initial services have been started---file
-system mounts, etc.  This is similar to the 'sysvinit' target in systemd."
-  (define grace-delay
-    ;; Delay after sending SIGTERM and before sending SIGKILL.
-    4)
-
-  (list (shepherd-service
-         (documentation "When stopped, terminate all user processes.")
-         (provision '(user-processes))
-         (requirement requirements)
-         (start #~(const #t))
-         (stop #~(lambda _
-                   (define (kill-except omit signal)
-                     ;; Kill all the processes with SIGNAL except those listed
-                     ;; in OMIT and the current process.
-                     (let ((omit (cons (getpid) omit)))
-                       (for-each (lambda (pid)
-                                   (unless (memv pid omit)
-                                     (false-if-exception
-                                      (kill pid signal))))
-                                 (processes))))
-
-                   (define omitted-pids
-                     ;; List of PIDs that must not be killed.
-                     (if (file-exists? #$%do-not-kill-file)
-                         (map string->number
-                              (call-with-input-file #$%do-not-kill-file
-                                (compose string-tokenize
-                                         (@ (ice-9 rdelim) read-string))))
-                         '()))
-
-                   (define (now)
-                     (car (gettimeofday)))
-
-                   (define (sleep* n)
-                     ;; Really sleep N seconds.
-                     ;; Work around <http://bugs.gnu.org/19581>.
-                     (define start (now))
-                     (let loop ((elapsed 0))
-                       (when (> n elapsed)
-                         (sleep (- n elapsed))
-                         (loop (- (now) start)))))
-
-                   (define lset= (@ (srfi srfi-1) lset=))
-
-                   (display "sending all processes the TERM signal\n")
-
-                   (if (null? omitted-pids)
-                       (begin
-                         ;; Easy: terminate all of them.
-                         (kill -1 SIGTERM)
-                         (sleep* #$grace-delay)
-                         (kill -1 SIGKILL))
-                       (begin
-                         ;; Kill them all except OMITTED-PIDS.  XXX: We would
-                         ;; like to (kill -1 SIGSTOP) to get a fixed list of
-                         ;; processes, like 'killall5' does, but that seems
-                         ;; unreliable.
-                         (kill-except omitted-pids SIGTERM)
-                         (sleep* #$grace-delay)
-                         (kill-except omitted-pids SIGKILL)
-                         (delete-file #$%do-not-kill-file)))
-
-                   (let wait ()
-                     ;; Reap children, if any, so that we don't end up with
-                     ;; zombies and enter an infinite loop.
-                     (let reap-children ()
-                       (define result
-                         (false-if-exception
-                          (waitpid WAIT_ANY (if (null? omitted-pids)
-                                                0
-                                                WNOHANG))))
-
-                       (when (and (pair? result)
-                                  (not (zero? (car result))))
-                         (reap-children)))
-
-                     (let ((pids (processes)))
-                       (unless (lset= = pids (cons 1 omitted-pids))
-                         (format #t "waiting for process termination\
- (processes left: ~s)~%"
-                                 pids)
-                         (sleep* 2)
-                         (wait))))
-
-                   (display "all processes have been terminated\n")
-                   #f))
-         (respawn? #f))))
-
-(define user-processes-service-type
-  (service-type
-   (name 'user-processes)
-   (extensions (list (service-extension shepherd-root-service-type
-                                        user-processes-shepherd-service)))
-   (compose concatenate)
-   (extend append)
-
-   ;; The value is the list of Shepherd services 'user-processes' depends on.
-   ;; Extensions can add new services to this list.
-   (default-value '())
-
-   (description "The @code{user-processes} service is responsible for
-terminating all the processes so that the root file system can be re-mounted
-read-only, just before rebooting/halting.  Processes still running after a few
-seconds after @code{SIGTERM} has been sent are terminated with
-@code{SIGKILL}.")))
 
 
 ;;;
@@ -679,7 +559,7 @@ down.")))
         (documentation "Add TRNG to entropy pool.")
         (requirement '(udev))
         (provision '(trng))
-        (start #~(make-forkexec-constructor #$@rngd-command))
+        (start #~(make-forkexec-constructor '#$rngd-command))
         (stop #~(make-kill-destructor))))))
 
 (define* (rngd-service #:key
@@ -1213,7 +1093,7 @@ the tty to run, among other things."
   (name-services nscd-configuration-name-services ;list of <packages>
                  (default '()))
   (glibc      nscd-configuration-glibc            ;<package>
-              (default (canonical-package glibc))))
+              (default glibc)))
 
 (define-record-type* <nscd-cache> nscd-cache make-nscd-cache
   nscd-cache?
@@ -1503,7 +1383,7 @@ information on the configuration file syntax."
                               (module "pam_limits.so")
                               (arguments '("conf=/etc/security/limits.conf")))))
              (if (member (pam-service-name pam)
-                         '("login" "su" "slim" "gdm-password"))
+                         '("login" "su" "slim" "gdm-password" "sddm"))
                  (pam-service
                   (inherit pam)
                   (session (cons pam-limits
@@ -1961,7 +1841,7 @@ archive}).  If that is not the case, the service will fail to start."
   udev-configuration make-udev-configuration
   udev-configuration?
   (udev   udev-configuration-udev                 ;<package>
-          (default eudev/btrfs-fix))
+          (default eudev))
   (rules  udev-configuration-rules                ;list of <package>
           (default '())))
 
@@ -2159,11 +2039,31 @@ the udev rules in use.")
 directory dynamically.  Get extra rules from the packages listed in the
 @code{rules} field of its value, @code{udev-configuration} object.")))
 
-(define* (udev-service #:key (udev eudev/btrfs-fix) (rules '()))
+(define* (udev-service #:key (udev eudev) (rules '()))
   "Run @var{udev}, which populates the @file{/dev} directory dynamically.  Get
 extra rules from the packages listed in @var{rules}."
   (service udev-service-type
            (udev-configuration (udev udev) (rules rules))))
+
+(define* (udev-rules-service name rules #:key (groups '()))
+  "Return a service that extends udev-service-type with RULES and
+account-service-type with GROUPS as system groups.  This works by creating a
+singleton service type NAME-udev-rules, of which the returned service is an
+instance."
+  (let* ((name (symbol-append name '-udev-rules))
+         (account-extension
+          (const (map (lambda (group)
+                        (user-group (name group) (system? #t)))
+                      groups)))
+         (udev-extension (const (list rules)))
+         (type (service-type
+                (name name)
+                (extensions (list
+                             (service-extension
+                              account-service-type account-extension)
+                             (service-extension
+                              udev-service-type udev-extension))))))
+    (service type #f)))
 
 (define swap-service-type
   (shepherd-service-type
@@ -2497,9 +2397,7 @@ to handle."
                    (rules (list lvm2 fuse alsa-utils crda))))
 
         (service special-files-service-type
-                 `(("/bin/sh" ,(file-append (canonical-package bash)
-                                            "/bin/sh"))
-                   ("/usr/bin/env" ,(file-append (canonical-package coreutils)
-                                                 "/bin/env"))))))
+                 `(("/bin/sh" ,(file-append bash "/bin/sh"))
+                   ("/usr/bin/env" ,(file-append coreutils "/bin/env"))))))
 
 ;;; base.scm ends here

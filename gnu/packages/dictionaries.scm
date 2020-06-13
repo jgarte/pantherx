@@ -119,7 +119,7 @@ acronyms distributed as an info document.")
      "GCIDE is a free dictionary based on a combination of sources.  It can
 be used via the GNU Dico program or accessed online at
 http://gcide.gnu.org.ua/")
-    (home-page "http://gcide.gnu.org.ua/")
+    (home-page "https://gcide.gnu.org.ua/")
     (license license:gpl3+)))
 
 (define-public diction
@@ -205,24 +205,24 @@ It comes with a German-English dictionary with approximately 270,000 entries.")
 (define-public grammalecte
   (package
     (name "grammalecte")
-    (version "1.8.0")
+    (version "1.10.0")
     (source
      (origin
        (method url-fetch/zipbomb)
        (uri (string-append "https://grammalecte.net/grammalecte/zip/"
                            "Grammalecte-fr-v" version ".zip"))
        (sha256
-        (base32 "06z2na1zs5q6vla45q5b8fzjwpckanmwh42r8in8vhb7a8v2fkyp"))))
+        (base32 "0lyngnvg995qdm9bhqj8vd8aywpcdqmzv3j4j77wxhsfa9k0pz08"))))
     (build-system python-build-system)
     (home-page "https://grammalecte.net")
     (synopsis "French spelling and grammar checker")
-    (description "Grammalecte is a grammar checker dedicated to the French
-language, derived from Lightproof.
+    (description "Grammalecte is a grammar checker for the French language,
+derived from Lightproof.
 
-Grammalecte aims at helping to write a proper French without distracting users
-with false positives.  This grammar checker follows the principle: the less
-false positives, the better; if it cannot know with a good chance if
-a dubious expression is wrong, it will keep silent.
+Grammalecte helps writing a proper French, without distracting users with
+false positives.  This grammar checker follows the principle: the less false
+positives, the better; if it cannot know with a good chance that a dubious
+expression is wrong, it keeps silent.
 
 The package provides the command line interface, along with a server
 and a Python library.")
@@ -231,7 +231,7 @@ and a Python library.")
 (define-public translate-shell
   (package
     (name "translate-shell")
-    (version "0.9.6.11")
+    (version "0.9.6.12")
     (source
       (origin
         (method git-fetch)
@@ -240,7 +240,7 @@ and a Python library.")
                (commit (string-append "v" version))))
         (file-name (git-file-name name version))
         (sha256
-         (base32 "137fz3ahzf65hfqcs4k7hhrmfjlhlw7wr3gfsvk88bnyqkyw44sm"))))
+         (base32 "075vqnha21rhr1b61dim7dqlfwm1yffyzcaa83s36rpk9r5sddzx"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases

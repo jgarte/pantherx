@@ -2,8 +2,8 @@
 ;;; Copyright © 2015 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2016 Jan Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2016, 2017 Mathieu Lirzin <mthl@gnu.org>
-;;; Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
-;;; Copyright © 2017, 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2017, 2020 Mathieu Othacehe <m.othacehe@gmail.com>
+;;; Copyright © 2017, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2018 Clément Lassieur <clement@lassieur.org>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -47,20 +47,20 @@
   #:use-module (guix build-system gnu))
 
 (define-public cuirass
-  (let ((commit "b9031db946ff89a39e1507b430f64402b0e9572a")
-        (revision "28"))
+  (let ((commit "2280ae18eb25aa7034636c58bf288c9bd5a8fa3b")
+        (revision "31"))
     (package
       (name "cuirass")
-      (version (string-append "0.0.1-" revision "." (string-take commit 7)))
+      (version (git-version "0.0.1" revision commit))
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
                       (url "https://git.savannah.gnu.org/git/guix/guix-cuirass.git")
                       (commit commit)))
-                (file-name (string-append name "-" version))
+                (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "103smfbdpgaw17xw3vc9cb3nfisrx64k71rpzn8g35f3jz7bxdcf"))))
+                  "1gbmpwgiwy740d936b052gfivzw52pgrny7j7lbl56wi9wnawkc9"))))
       (build-system gnu-build-system)
       (arguments
        '(#:modules ((guix build utils)
@@ -120,10 +120,10 @@
                    `("GUILE_LOAD_COMPILED_PATH" ":" prefix (,objs)))
                  #t))))))
       (inputs
-       `(("guile" ,guile-2.2)
+       `(("guile" ,guile-3.0)
          ("guile-fibers" ,guile-fibers)
          ("guile-gcrypt" ,guile-gcrypt)
-         ("guile-json" ,guile-json-3)
+         ("guile-json" ,guile-json-4)
          ("guile-sqlite3" ,guile-sqlite3)
          ("guile-git" ,guile-git)
          ;; FIXME: this is propagated by "guile-git", but it needs to be among

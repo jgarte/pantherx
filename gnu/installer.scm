@@ -118,9 +118,8 @@ version of this file."
         ;; printed on the console.
         (parameterize ((shepherd-message-port
                         (%make-void-port "w")))
-          (lambda ()
-            (stop-service 'term-tty2)
-            (start-service 'term-tty2 (list locale)))))))
+          (stop-service 'term-tty2)
+          (start-service 'term-tty2 (list locale))))))
 
 (define* (compute-locale-step #:key
                               locales-name
@@ -302,25 +301,6 @@ selected keymap."
              ((installer-final-page current-installer)
               result prev-steps))))))))
 
-(define guile-newt
-  ;; Guile-Newt with 'form-watch-fd'.
-  ;; TODO: Remove once a new release is out.
-  (let ((commit "c3cdeb0b53ac71aedabee669f57d44563c662446")
-        (revision "2"))
-    (package
-      (inherit (@ (gnu packages guile-xyz) guile-newt))
-      (name "guile-newt")
-      (version (git-version "0.0.1" revision commit))
-      (source  (origin
-                 (method git-fetch)
-                 (uri (git-reference
-                       (url "https://gitlab.com/mothacehe/guile-newt")
-                       (commit commit)))
-                 (file-name (git-file-name name version))
-                 (sha256
-                  (base32
-                   "1gksd1lzgjjh1p9vczghg8jw995d22hm34kbsiv8rcryirv2xy09")))))))
-
 (define (installer-program)
   "Return a file-like object that runs the given INSTALLER."
   (define init-gettext
@@ -333,18 +313,18 @@ selected keymap."
   (define set-installer-path
     ;; Add the specified binary to PATH for later use by the installer.
     #~(let* ((inputs
-              '#$(append (list bash ;start subshells
-                               connman ;call connmanctl
-                               cryptsetup
-                               dosfstools ;mkfs.fat
-                               e2fsprogs ;mkfs.ext4
-                               btrfs-progs ;mkfs.btrfs
-                               jfsutils ;jfs_mkfs
-                               kbd ;chvt
-                               guix ;guix system init call
-                               util-linux ;mkwap
-                               shadow)
-                         (map canonical-package (list coreutils)))))
+              '#$(list bash ;start subshells
+                       connman ;call connmanctl
+                       cryptsetup
+                       dosfstools ;mkfs.fat
+                       e2fsprogs ;mkfs.ext4
+                       btrfs-progs
+                       jfsutils ;jfs_mkfs
+                       kbd ;chvt
+                       guix ;guix system init call
+                       util-linux ;mkwap
+                       shadow
+                       coreutils)))
         (with-output-to-port (%make-void-port "w")
           (lambda ()
             (set-path-environment-variable "PATH" '("bin" "sbin") inputs)))))
@@ -378,6 +358,7 @@ selected keymap."
                          (gnu installer services)
                          (gnu installer timezone)
                          (gnu installer user)
+                         (gnu installer utils)
                          (gnu installer newt)
                          ((gnu installer newt keymap)
                           #:select (keyboard-layout->configuration))

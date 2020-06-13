@@ -125,6 +125,15 @@
             profile-derivation
             profile-search-paths
 
+            profile
+            profile?
+            profile-name
+            profile-content
+            profile-hooks
+            profile-locales?
+            profile-allow-collisions?
+            profile-relative-symlinks?
+
             generation-number
             generation-profile
             generation-numbers
@@ -1162,6 +1171,8 @@ for both major versions of GTK+."
     ;; Don't run the hook when there's nothing to do.
     (let* ((pkg-gtk+ (module-ref        ; lazy reference
                       (resolve-interface '(gnu packages gtk)) 'gtk+))
+           (pkg-gtk+2 (module-ref        ; lazy reference
+                       (resolve-interface '(gnu packages gtk)) 'gtk+-2))
            (gexp #~(begin
                      #$(if gtk+
                            (build
@@ -1175,7 +1186,7 @@ for both major versions of GTK+."
                            (build
                             gtk+-2 "2.10.0"
                             #~(string-append
-                               #$gtk+-2 "/bin/gtk-query-immodules-2.0"))
+                               #$pkg-gtk+2:bin "/bin/gtk-query-immodules-2.0"))
                            #t))))
       (if (or gtk+ gtk+-2)
           (gexp->derivation "gtk-im-modules" gexp
@@ -1478,6 +1489,7 @@ the entries in MANIFEST."
                     ;; <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=29654#23>.
                     #:env-vars `(("MALLOC_PERTURB_" . "1"))
 
+                    #:substitutable? #f
                     #:local-build? #t
                     #:properties
                     `((type . profile-hook)
@@ -1547,6 +1559,7 @@ MANIFEST."
 
 (define* (profile-derivation manifest
                              #:key
+                             (name "profile")
                              (hooks %default-profile-hooks)
                              (locales? #t)
                              (allow-collisions? #f)
@@ -1614,8 +1627,10 @@ are cross-built for TARGET."
                          (guix search-paths)
                          (srfi srfi-1))
 
-            (setvbuf (current-output-port) _IOLBF)
-            (setvbuf (current-error-port) _IOLBF)
+            (let ((line (cond-expand (guile-2.2 'line)
+                                     (else _IOLBF)))) ;Guile 2.0
+              (setvbuf (current-output-port) line)
+              (setvbuf (current-error-port) line))
 
             #+(if locales? set-utf8-locale #t)
 
@@ -1634,7 +1649,7 @@ are cross-built for TARGET."
                            #:manifest '#$(manifest->gexp manifest)
                            #:search-paths search-paths))))
 
-    (gexp->derivation "profile" builder
+    (gexp->derivation name builder
                       #:system system
                       #:target target
 
@@ -1654,6 +1669,33 @@ are cross-built for TARGET."
                                       (count
                                        . ,(length
                                            (manifest-entries manifest))))))))
+
+;; Declarative profile.
+(define-record-type* <profile> profile make-profile
+  profile?
+  (name               profile-name (default "profile")) ;string
+  (content            profile-content)                  ;<manifest>
+  (hooks              profile-hooks                     ;list of procedures
+                      (default %default-profile-hooks))
+  (locales?           profile-locales?            ;Boolean
+                      (default #t))
+  (allow-collisions?  profile-allow-collisions?   ;Boolean
+                      (default #f))
+  (relative-symlinks? profile-relative-symlinks?  ;Boolean
+                      (default #f)))
+
+(define-gexp-compiler (profile-compiler (profile <profile>) system target)
+  "Compile PROFILE to a derivation."
+  (match profile
+    (($ <profile> name manifest hooks
+                  locales? allow-collisions? relative-symlinks?)
+     (profile-derivation manifest
+                         #:name name
+                         #:hooks hooks
+                         #:locales? locales?
+                         #:allow-collisions? allow-collisions?
+                         #:relative-symlinks? relative-symlinks?
+                         #:system system #:target target))))
 
 (define* (profile-search-paths profile
                                #:optional (manifest (profile-manifest profile))

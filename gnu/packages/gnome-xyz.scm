@@ -1,11 +1,12 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2019 Leo Prikler <leo.prikler@student.tugraz.at>
+;;; Copyright © 2019, 2020 Leo Prikler <leo.prikler@student.tugraz.at>
 ;;; Copyright © 2019 Alexandros Theodotou <alex@zrythm.org>
 ;;; Copyright © 2019 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2020 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2020 Jack Hill <jackhill@jackhill.us>
 ;;; Copyright © 2020 Ekaitz Zarraga <ekaitz@elenq.tech>
 ;;; Copyright © 2020 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2020 Ryan Prior <rprior@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -46,18 +47,18 @@
 (define-public matcha-theme
   (package
     (name "matcha-theme")
-    (version "2019-11-02")
+    (version "2020-05-09")
     (source
       (origin
         (method git-fetch)
         (uri
           (git-reference
-            (url "https://github.com/vinceliuice/matcha")
+            (url "https://github.com/vinceliuice/Matcha-gtk-theme")
             (commit version)))
         (file-name (git-file-name name version))
         (sha256
           (base32
-            "0wci9ahap8kynq8cbyxr7aba9ndb1d4kiq42xvzr34vw1rhcahrr"))))
+            "0fp3ijynyvncy2byjjyba573p81x2pl2hdzv17mg40r8d5mjlkww"))))
     (build-system trivial-build-system)
     (arguments
      '(#:modules ((guix build utils))
@@ -73,9 +74,9 @@
                    (string-append coreutils "/bin:"
                                   (string-append bash "/bin:")))
            (copy-recursively source (getcwd))
-           (patch-shebang "Install")
+           (patch-shebang "install.sh")
            (mkdir-p themesdir)
-           (invoke "./Install" "-d" themesdir)
+           (invoke "./install.sh" "-d" themesdir)
            #t))))
     (inputs
      `(("gtk-engines" ,gtk-engines)))
@@ -92,7 +93,7 @@ like Gnome, Unity, Budgie, Pantheon, XFCE, Mate and others.")
 (define-public delft-icon-theme
   (package
     (name "delft-icon-theme")
-    (version "1.11")
+    (version "1.12")
     (source
      (origin
        (method git-fetch)
@@ -101,7 +102,7 @@ like Gnome, Unity, Budgie, Pantheon, XFCE, Mate and others.")
              (commit (string-append "v" version))))
        (sha256
         (base32
-         "1m3r4i4m3y3xsjb5f4bik0ylmi64amkfyr0y8pjbvv6gyj492mi6"))
+         "1r6b6jf793jxz15ljniwbqy3vcvsl2712qiigfrfrm46fdxlshjd"))
        (file-name (git-file-name name version))))
     (build-system copy-build-system)
     (arguments
@@ -148,6 +149,53 @@ GNOME Shell.")
     (home-page "https://github.com/ubuntu/gnome-shell-extension-appindicator/")
     (license license:gpl2+)))
 
+(define-public gnome-shell-extension-clipboard-indicator
+  (package
+    (name "gnome-shell-extension-clipboard-indicator")
+    (version "34")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url (string-append "https://github.com/Tudmotu/"
+                                        "gnome-shell-extension-clipboard-indicator.git"))
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0i00psc1ky70zljd14jzr627y7nd8xwnwrh4xpajl1f6djabh12s"))
+              (modules '((guix build utils)))
+              (snippet
+               ;; Remove pre-compiled settings schemas and translations from
+               ;; source, as they are generated as part of build. Upstream
+               ;; includes them for people who want to run the software
+               ;; directly from source tree.
+               '(begin (delete-file "schemas/gschemas.compiled")
+                       (for-each delete-file (find-files "locale" "\\.mo$"))
+                       #t))))
+    (build-system copy-build-system)
+    (arguments
+     '(#:install-plan
+       '(("." "share/gnome-shell/extensions/clipboard-indicator@tudmotu.com"
+          #:include-regexp ("\\.css$" "\\.compiled$" "\\.js(on)?$" "\\.mo$" "\\.xml$")))
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'install 'compile-schemas
+           (lambda _
+             (with-directory-excursion "schemas"
+               (invoke "glib-compile-schemas" "."))
+             #t))
+         (add-before 'install 'compile-locales
+           (lambda _ (invoke "./compile-locales.sh")
+                   #t)))))
+    (native-inputs
+     `(("gettext" ,gettext-minimal)
+       ("glib:bin" ,glib "bin")))       ; for glib-compile-schemas
+    (home-page "https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator")
+    (synopsis "Clipboard manager extension for GNOME Shell")
+    (description "Clipboard Indicator is a clipboard manager for GNOME Shell
+that caches clipboard history.")
+    (license license:expat)))
+
 (define-public gnome-shell-extension-topicons-redux
   (package
     (name "gnome-shell-extension-topicons-redux")
@@ -192,7 +240,7 @@ easier to keep track of apps running in the backround.")
 (define-public gnome-shell-extension-dash-to-dock
   (package
     (name "gnome-shell-extension-dash-to-dock")
-    (version "66")
+    (version "67")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -201,7 +249,7 @@ easier to keep track of apps running in the backround.")
                                            version))))
               (sha256
                (base32
-                "04krl6rxlp1qc97psraf2kwin7h0mx4c7pnfpi7vhplmvasrwkfh"))
+                "1746xm0iyvyzj6m3pvjx11smh9w1s7naz426ki0dlr5l7jh3mpy5"))
               (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -229,8 +277,8 @@ faster window switching.")
 (define-public gnome-shell-extension-gsconnect
   (package
     (name "gnome-shell-extension-gsconnect")
-    ;; v28 is the last version to support GNOME 3.32
-    (version "28")
+    ;; v33 is the last version to support GNOME 3.34
+    (version "33")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -240,7 +288,7 @@ faster window switching.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0grqkzqm7mlkbzin4nx9w7bh5cgygph8pn0cvim4a4gg99nfcp5z"))))
+                "1q03axhn75i864vgmd6myhmgwrmnpf01gsd1wl0di5x9q8mic2zn"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags
@@ -294,7 +342,6 @@ faster window switching.")
      `(("at-spi2-core" ,at-spi2-core)
        ("caribou" ,caribou)
        ("evolution-data-server" ,evolution-data-server)
-       ("folks" ,folks)
        ("gjs" ,gjs)
        ("glib" ,glib)
        ("glib:bin" ,glib "bin")
@@ -359,7 +406,7 @@ control.")
       (propagated-inputs
        `(("glib" ,glib)))
       (synopsis "Hide app icon from GNOME's panel")
-      (description "This extension allows to hide the icon and/or title of the
+      (description "This extension hides the icon and/or title of the
 currently focused application in the top panel of the GNOME shell.")
       (home-page
        "https://github.com/michael-rapp/gnome-shell-extension-hide-app-icon/")
@@ -508,8 +555,8 @@ dark elements.  It supports GNOME, Unity, Xfce, and Openbox.")
 
 (define-public papirus-icon-theme
   (let ((version "0.0.0") ;; The package does not use semver
-        (revision "0")
-        (tag "20191201"))
+        (revision "1")
+        (tag "20200430"))
     (package
       (name "papirus-icon-theme")
       (version (git-version version revision tag))
@@ -521,7 +568,7 @@ dark elements.  It supports GNOME, Unity, Xfce, and Openbox.")
                (commit tag)))
          (sha256
           (base32
-           "0lnz1kmz28xh1f4slbsx7ycji5hgszyiyprbf5w5fbjhvi5gzw1h"))
+           "19dfiifc7cjwy0nb1hgzryzaijszsyix303xsgk5xbmhpwrv92hq"))
          (file-name (git-file-name name version))))
       (build-system gnu-build-system)
     (arguments
@@ -539,3 +586,36 @@ dark elements.  It supports GNOME, Unity, Xfce, and Openbox.")
       (description "Papirus is a fork of the icon theme Paper with a lot of new icons
 and a few extra features.")
       (license license:gpl3))))
+
+(define-public vala-language-server
+  (package
+    (name "vala-language-server")
+    ;; Note to maintainer: VLS must be built with a Vala toolchain the same
+    ;; version or newer. Therefore when you update this package you may need
+    ;; to update Vala too.
+    (version "0.48")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/benwaffle/vala-language-server.git")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32 "0chgfpci247skrvsiq1l8cas8sj2z6z42dlarka3df3qwxmh0if0"))))
+    (build-system meson-build-system)
+    (arguments '(#:glib-or-gtk? #t))
+    (inputs
+     `(("glib" ,glib)
+       ("json-glib" ,json-glib)
+       ("jsonrpc-glib" ,jsonrpc-glib)
+       ("libgee" ,libgee)
+       ("vala" ,vala-0.48)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (home-page "https://github.com/benwaffle/vala-language-server")
+    (synopsis "Language server for Vala")
+    (description "The Vala language server is an implementation of the Vala
+language specification for the Language Server Protocol (LSP).  This tool is
+used in text editing environments to provide a complete and integrated
+feature-set for programming Vala effectively.")
+    (license license:lgpl2.1+)))

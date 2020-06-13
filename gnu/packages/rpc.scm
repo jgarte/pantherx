@@ -23,11 +23,18 @@
   #:use-module (guix packages)
   #:use-module (guix git-download)
   #:use-module (guix download)
+  #:use-module (guix utils)
   #:use-module (guix build-system cmake)
+  #:use-module (guix build-system gnu)
   #:use-module (guix build-system python)
   #:use-module (gnu packages adns)
+  #:use-module (gnu packages autotools)
+  #:use-module (gnu packages bison)
+  #:use-module (gnu packages boost)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages cpp)
+  #:use-module (gnu packages flex)
+  #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
@@ -122,7 +129,23 @@ browsers to backend services.")
               (file-name (git-file-name "grpc" version))
               (sha256
                (base32
-                "1jimqz3115f9pli5w6ik9wi7mjc7ix6y7yrq4a1ab9fc3dalj7p2"))))))
+                "1jimqz3115f9pli5w6ik9wi7mjc7ix6y7yrq4a1ab9fc3dalj7p2"))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments grpc)
+       ((#:phases phases)
+        `(modify-phases ,phases
+           ;; Note: This would be nicer as a snippet, but that creates a tarball
+           ;; instead of a checkout and breaks assumptions made by the builder.
+           (add-after 'unpack 'rename-gettid
+             (lambda _
+               ;; Rename custom gettid() syscall wrapper to avoid conflict
+               ;; with gettid() from glibc 2.30.
+               (substitute* '("src/core/lib/gpr/log_linux.cc"
+                              "src/core/lib/gpr/log_posix.cc"
+                              "src/core/lib/iomgr/ev_epollex_linux.cc")
+                 (("gettid\\(")
+                  "sys_gettid("))
+               #t))))))))
 
 (define-public python-grpcio
   (package
@@ -174,4 +197,47 @@ browsers to backend services.")
     (synopsis "HTTP/2-based RPC framework")
     (description "This package provides a Python library for communicating
 with the HTTP/2-based RPC framework gRPC.")
+    (license license:asl2.0)))
+
+(define-public apache-thrift
+  (package
+    (name "apache-thrift")
+    (version "0.13.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/apache/thrift.git")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "17ckl7p7s3ga33yrjisilsimp80ansqxl54wvpkv0j7vx2zvc13y"))))
+    (build-system gnu-build-system)
+    (arguments
+     '(#:tests? #f
+       #:configure-flags
+       (list (string-append "--with-boost="
+                            (assoc-ref %build-inputs "boost")))))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)
+       ("flex" ,flex)
+       ("bison" ,bison)))
+    (inputs
+     `(("boost" ,boost)
+       ("libressl" ,libressl)))
+    (outputs '("out" "lib" "include"))
+    (home-page "https://thrift.apache.org/")
+    (synopsis
+     "Lightweight, language-independent software stack for point-to-point
+RPC")
+    (description
+     "Thrift provides clean abstractions and implementations for data
+transport, data serialization, and application level processing.  The code
+generation system takes a simple definition language as input and generates
+code across programming languages that uses the abstracted stack to build
+interoperable RPC clients and servers.")
     (license license:asl2.0)))

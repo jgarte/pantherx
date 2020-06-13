@@ -4,8 +4,9 @@
 ;;; Copyright © 2016 Matthew Jordan <matthewjordandevops@yandex.com>
 ;;; Copyright © 2017 Vasile Dumitrascu <va511e@yahoo.com>
 ;;; Copyright © 2017 Stefan Reichör <stefan@xsteve.at>
-;;; Copyright © 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2019 Oleg Pykhalov <go.wigust@gmail.com>
+;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -38,7 +39,7 @@
 (define-public tmux
   (package
     (name "tmux")
-    (version "3.0a")
+    (version "3.1b")
     (source (origin
              (method url-fetch)
              (uri (string-append
@@ -46,7 +47,7 @@
                     version "/tmux-" version ".tar.gz"))
              (sha256
               (base32
-               "1fcdbw77nz918f7gqc1ga7zlkp1g112in1h8kkjnkadgnhldzlaa"))))
+               "1fbd93hzaz64h7j0h9nsll29avbq1ikqa438wrgsf1dga0fkagyr"))))
     (build-system gnu-build-system)
     (inputs
      `(("libevent" ,libevent)
@@ -140,7 +141,7 @@ windows.")
 (define-public tmux-xpanes
   (package
     (name "tmux-xpanes")
-    (version "4.1.1")
+    (version "4.1.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -149,7 +150,7 @@ windows.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "13q02vdk229chgbn547wwv29cj4njvz02lmw840g8qmwh73qb2pi"))))
+                "0vm5mi6dqdbg0b5qh4r8sr1plpc00jryd8a2qxpp3a72cigjvvf0"))))
     (build-system trivial-build-system)
     (inputs
      `(("bash" ,bash)))

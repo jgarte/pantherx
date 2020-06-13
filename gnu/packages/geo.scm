@@ -140,7 +140,7 @@ topology functions.")
 (define-public gnome-maps
   (package
     (name "gnome-maps")
-    (version "3.32.2.1")
+    (version "3.34.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -148,7 +148,7 @@ topology functions.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "1m191iq1gjaqz79ci3dkbmwrkxp7pzknngimlf5bqib5x8yairlb"))))
+                "00xslcnhhwslqglgfv2im7vq3awa49y2jxzr8wsby7f713k28vf5"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -189,11 +189,12 @@ topology functions.")
                                                  ,geocode-glib-path)))
                #t))))))
     (native-inputs
-     `(("gobject-introspection" ,gobject-introspection)
-       ("intltool" ,intltool)
+     `(("gettext" ,gettext-minimal)
+       ("gobject-introspection" ,gobject-introspection)
        ("pkg-config" ,pkg-config)))
     (inputs
-     `(("folks" ,folks)
+     `(("evolution-data-server" ,evolution-data-server)
+       ("folks" ,folks)
        ("libchamplain" ,libchamplain)
        ("libgee" ,libgee)
        ("libsecret" ,libsecret)
@@ -209,10 +210,9 @@ topology functions.")
        ("glib" ,glib)
        ("gnome-online-accounts:lib" ,gnome-online-accounts "lib")
        ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+       ("gtk+" ,gtk+)
        ("rest" ,rest)
        ("webkitgtk" ,webkitgtk)))
-    (propagated-inputs
-     `(("gtk+3" ,gtk+)))
     (synopsis "Graphical map viewer and wayfinding program")
     (description "GNOME Maps is a graphical map viewer.  It uses map data from
 the OpenStreetMap project.  It can provide directions for walking, bicycling,
@@ -745,6 +745,7 @@ utilities for data translation and processing.")
     (inputs
      `(("gdal" ,gdal)
        ("geos" ,geos)
+       ("giflib" ,giflib)
        ("json-c" ,json-c)
        ("libjpeg" ,libjpeg-turbo)
        ("libxml2" ,libxml2)
@@ -1150,11 +1151,12 @@ persisted.
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((dir (string-append (assoc-ref outputs "out") "/share/java/")))
                (mkdir-p dir)
-               (copy-file "JMapViewer.jar" (string-append dir "JMapViewer.jar"))))))))
+               (copy-file "JMapViewer.jar" (string-append dir "JMapViewer.jar"))
+               #t))))))
     (home-page "https://wiki.openstreetmap.org/wiki/JMapViewer")
     (synopsis "OSM map integration in Java")
-    (description "JMapViewer is a Java component which allows to easily
-integrate an OSM map view into your Java application.  It is maintained as
+    (description "JMapViewer is a Java component which easily
+integrates an OSM map view into your Java application.  It is maintained as
 an independent project by the JOSM team.")
     (license license:gpl2)))
 
@@ -1292,7 +1294,7 @@ an independent project by the JOSM team.")
     (synopsis "OSM editor")
     (description "JOSM is an extensible editor for OpenStreetMap (OSM).  It
 supports loading GPX tracks, background imagery and OSM data from local
-sources as well as from online sources and allows to edit the OSM data (nodes,
+sources as well as from online sources and allows editing the OSM data (nodes,
 ways, and relations) and their metadata tags.")
     (license license:gpl2+)))
 
@@ -1444,7 +1446,7 @@ using the dataset of topographical information collected by
        ("qtwebengine" ,qtwebengine)
        ("quazip" ,quazip)
        ("routino" ,routino)
-       ("sqlite" ,sqlite-with-column-metadata) ; See wrap phase
+       ("sqlite" ,sqlite)                      ; See wrap phase
        ("zlib" ,zlib)))
     (arguments
      `(#:tests? #f
@@ -1465,23 +1467,15 @@ using the dataset of topographical information collected by
              (invoke "patch" "-p1" "-i" "FindQuaZip5.patch")
              #t))
          (add-after 'install 'wrap
-           ;; The program fails to run with the error:
-           ;;   undefined symbol: sqlite3_column_table_name16
-           ;; Forcing the program to use sqlite-with-column-metadata instead
-           ;; of sqlite using LD_LIBRARY_PATH solves the problem.
-           ;;
-           ;; The program also fails to find the QtWebEngineProcess program,
+           ;; The program fails to find the QtWebEngineProcess program,
            ;; so we set QTWEBENGINEPROCESS_PATH to help it.
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (let ((bin (string-append (assoc-ref outputs "out") "/bin"))
                    (qtwebengineprocess (string-append
                                         (assoc-ref inputs "qtwebengine")
-                                        "/lib/qt5/libexec/QtWebEngineProcess"))
-                   (sqlite-lib (string-append (assoc-ref inputs "sqlite")
-                                              "/lib")))
+                                        "/lib/qt5/libexec/QtWebEngineProcess")))
                (for-each (lambda (program)
                            (wrap-program program
-                             `("LD_LIBRARY_PATH" ":" prefix (,sqlite-lib))
                              `("QTWEBENGINEPROCESS_PATH" =
                                (,qtwebengineprocess))))
                          (find-files bin ".*")))
@@ -1993,7 +1987,7 @@ growing set of geoscientific methods.")
        ("qtwebkit" ,qtwebkit)
        ("qwt" ,qwt)
        ("saga" ,saga)
-       ("sqlite" ,sqlite-with-column-metadata)))
+       ("sqlite" ,sqlite)))
     (native-inputs
      `(("bison" ,bison)
        ("flex" ,flex)

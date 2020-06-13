@@ -1,6 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016 Chris Marusich <cmmarusich@gmail.com>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -33,6 +34,7 @@
   #:use-module (guix modules)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
+  #:use-module (gnu packages hurd)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-9 gnu)
@@ -91,6 +93,8 @@
             activation-service-type
             activation-service->script
             %linux-bare-metal-service
+            %hurd-rc-script
+            %hurd-startup-service
             special-files-service-type
             extra-special-file
             etc-service-type
@@ -318,11 +322,10 @@ This is a shorthand for (map (lambda (svc) ...) %base-services)."
 ;;; Core services.
 ;;;
 
-(define (system-derivation mentries mextensions)
+(define (system-derivation entries mextensions)
   "Return as a monadic value the derivation of the 'system' directory
 containing the given entries."
-  (mlet %store-monad ((entries    mentries)
-                      (extensions (mapm/accumulate-builds identity
+  (mlet %store-monad ((extensions (mapm/accumulate-builds identity
                                                           mextensions)))
     (lower-object
      (file-union "system"
@@ -604,6 +607,39 @@ ACTIVATION-SCRIPT-TYPE."
                   activation-service-type
                   %linux-kernel-activation))
 
+(define %hurd-rc-script
+  ;; The RC script to be started upon boot.
+  (program-file "rc"
+                (with-imported-modules (source-module-closure
+                                        '((guix build utils)
+                                          (gnu build hurd-boot)
+                                          (guix build syscalls)))
+                  #~(begin
+                      (use-modules (guix build utils)
+                                   (gnu build hurd-boot)
+                                   (guix build syscalls)
+                                   (ice-9 match)
+                                   (system repl repl)
+                                   (srfi srfi-1)
+                                   (srfi srfi-26))
+                      (boot-hurd-system)))))
+
+(define (hurd-rc-entry rc)
+  "Return, as a monadic value, an entry for the RC script in the system
+directory."
+  (mlet %store-monad ((rc (lower-object rc)))
+    (return `(("rc" ,rc)))))
+
+(define hurd-startup-service-type
+  ;; The service that creates the initial SYSTEM/rc startup file.
+  (service-type (name 'startup)
+                (extensions
+                 (list (service-extension system-service-type hurd-rc-entry)))
+                (default-value %hurd-rc-script)))
+
+(define %hurd-startup-service
+  ;; The service that produces the RC script.
+  (service hurd-startup-service-type %hurd-rc-script))
 
 (define special-files-service-type
   ;; Service to install "special files" such as /bin/sh and /usr/bin/env.
@@ -632,6 +668,23 @@ and FILE could be \"/usr/bin/env\"."
   (files->etc-directory (service-value service)))
 
 (define (files->etc-directory files)
+  (define (assert-no-duplicates files)
+    (let loop ((files files)
+               (seen (set)))
+      (match files
+        (() #t)
+        (((file _) rest ...)
+         (when (set-contains? seen file)
+           (raise (condition
+                   (&message
+                    (message (format #f (G_ "duplicate '~a' entry for /etc")
+                                     file))))))
+         (loop rest (set-insert file seen))))))
+
+  ;; Detect duplicates early instead of letting them through, eventually
+  ;; leading to a build failure of "etc.drv".
+  (assert-no-duplicates files)
+
   (file-union "etc" files))
 
 (define (etc-entry files)
@@ -674,10 +727,10 @@ executables, making them setuid-root.")))
 
 (define (packages->profile-entry packages)
   "Return a system entry for the profile containing PACKAGES."
-  (mlet %store-monad ((profile (profile-derivation
-                                (packages->manifest
-                                 (delete-duplicates packages eq?)))))
-    (return `(("profile" ,profile)))))
+  (with-monad %store-monad
+    (return `(("profile" ,(profile
+                           (content (packages->manifest
+                                     (delete-duplicates packages eq?)))))))))
 
 (define profile-service-type
   ;; The service that populates the system's profile---i.e.,

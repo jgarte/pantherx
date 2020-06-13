@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2019 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2016, 2017, 2018 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2017, 2018 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
 ;;;
@@ -73,6 +73,7 @@ in the Mozilla clients.")
   (package
     (name "nss")
     (version "3.50")
+    (replacement nss/fixed)
     (source (origin
               (method url-fetch)
               (uri (let ((version-with-underscores
@@ -191,3 +192,11 @@ applications.  Applications built with NSS can support SSL v2 and v3, TLS,
 PKCS #5, PKCS #7, PKCS #11, PKCS #12, S/MIME, X.509 v3 certificates, and other
 security standards.")
     (license license:mpl2.0)))
+
+(define nss/fixed
+  (package
+    (inherit nss)
+    (source (origin
+              (inherit (package-source nss))
+              (patches (append (search-patches "nss-CVE-2020-12399.patch")
+                               (origin-patches (package-source nss))))))))

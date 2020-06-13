@@ -5,11 +5,11 @@
 ;;; Copyright © 2016, 2017 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2017 Rene Saavedra <rennes@openmailbox.org>
 ;;; Copyright © 2017 Leo Famulari <leo@famulari.name>
-;;; Copyright © 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017, 2018 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2018, 2019 Ludovic Courtès <ludo@gnu.org>
-;;; Copyright © 2019 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2020 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;;
@@ -37,6 +37,7 @@
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages autotools)
+  #:use-module (gnu packages fonts)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
@@ -60,7 +61,9 @@
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system python)
-  #:use-module (guix build-system meson))
+  #:use-module (guix build-system meson)
+  #:use-module (guix utils)
+  #:use-module (srfi srfi-1))
 
 (define-public freetype
   (package
@@ -290,19 +293,26 @@ fonts to/from the WOFF2 format.")
 (define-public fontconfig
   (package
    (name "fontconfig")
+
+   ;; This replacement is not security-related, but works around the fact
+   ;; that gs-fonts are not recognized by newer versions of Pango, causing
+   ;; many applications to fail to find fonts otherwise.
+   (replacement fontconfig/font-dejavu)
+
    (version "2.13.1")
    (source (origin
             (method url-fetch)
             (uri (string-append
                    "https://www.freedesktop.org/software/fontconfig/release/fontconfig-"
                    version ".tar.bz2"))
+            (patches (search-patches "fontconfig-hurd-path-max.patch"))
             (sha256 (base32
                      "0hb700a68kk0ip51wdlnjjc682kvlrmb6q920mzajykdk0mdsmgn"))))
    (build-system gnu-build-system)
    ;; In Requires or Requires.private of fontconfig.pc.
    (propagated-inputs `(("expat" ,expat)
                         ("freetype" ,freetype)
-                        ("libuuid" ,util-linux)))
+                        ("libuuid" ,util-linux "lib")))
    (inputs `(("gs-fonts" ,gs-fonts)))
    (native-inputs
     `(("gperf" ,gperf)
@@ -344,6 +354,13 @@ high quality, anti-aliased and subpixel rendered text on a display.")
    (license (license:non-copyleft "file://COPYING"
                        "See COPYING in the distribution."))
    (home-page "https://www.freedesktop.org/wiki/Software/fontconfig")))
+
+(define fontconfig/font-dejavu
+  (package
+    (inherit fontconfig)
+    (inputs
+     ;; XXX: Reuse the name to avoid having to override the configure flags.
+     `(("gs-fonts" ,font-dejavu)))))
 
 (define-public t1lib
   (package
@@ -397,6 +414,8 @@ X11-system or any other graphical user interface.")
        (sha256
         (base32 "0gbxyip4wdibirdg2pvzayzyy927vxyd6dfyfiflx8zg88qzn8v8"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
      `(("zlib" ,zlib)
        ("expat" ,expat)))
@@ -465,7 +484,7 @@ and returns a sequence of positioned glyphids from the font.")
 (define-public potrace
   (package
     (name "potrace")
-    (version "1.15")
+    (version "1.16")
     (source
      (origin
       (method url-fetch)
@@ -473,8 +492,7 @@ and returns a sequence of positioned glyphids from the font.")
                           "/potrace-" version ".tar.gz"))
       (sha256
        (base32
-        "17ajildjp14shsy339xarh1lw1p0k60la08ahl638a73mh23kcx9"))
-      (patches (search-patches "potrace-tests.patch"))))
+        "1k3sxgjqq0jnpk9xxys05q32sl5hbf1lbk1gmfxcrmpdgnhli0my"))))
     (build-system gnu-build-system)
     (native-inputs `(("ghostscript" ,ghostscript))) ;for tests
     (inputs `(("zlib" ,zlib)))
@@ -519,16 +537,18 @@ using the above tables.")
 (define-public libspiro
   (package
     (name "libspiro")
-    (version "0.5.20150702")
+    (version "20190731")
     (source
      (origin
       (method url-fetch)
       (uri (string-append "https://github.com/fontforge/libspiro/releases"
-                          "/download/" version "/libspiro-dist-" version ".tar.gz"))
+                          "/download/" version "/libspiro-" version ".tar.gz"))
       (sha256
        (base32
-        "153ckwj6h3wwlsgcppzqj8cymv1927hi8ar8fzpchq5q89cj2kai"))))
+        "0m63x97b7aciviijprvy85gm03p2jsgslxn323zl9zn7qz6d3ir4"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (synopsis "Clothoid to bezier conversion library")
     (description
      "Raph Levien's Spiro package as a library.  A mechanism for drawing
@@ -539,7 +559,7 @@ smooth contours with constant curvature at the spline joins.")
 (define-public libuninameslist
   (package
     (name "libuninameslist")
-    (version "20190701")
+    (version "20200313")
     (home-page "https://github.com/fontforge/libuninameslist")
     (source
      (origin
@@ -548,7 +568,7 @@ smooth contours with constant curvature at the spline joins.")
                            "/libuninameslist-dist-" version ".tar.gz"))
        (sha256
         (base32
-         "18c9pcz81wm26q2m7npmvh9j3ibjs2hycxfh5xic2xgjfw40v2qn"))))
+         "10ri80c64xb4rhbif3sr87y5vhi3m702zb0m02imvj1jib9rq0m8"))))
     (build-system gnu-build-system)
     (synopsis "Unicode names and annotation list")
     (description
@@ -565,15 +585,15 @@ definitions.")
 (define-public fontforge
   (package
    (name "fontforge")
-   (version "20190801")
+   (version "20200314")
    (source (origin
             (method url-fetch)
             (uri (string-append
                   "https://github.com/fontforge/fontforge/releases/download/"
-                  version "/fontforge-" version ".tar.gz"))
+                  version "/fontforge-" version ".tar.xz"))
             (sha256
-             (base32 "0lh8yx01asbzxm6car5cfi64njh5p4lxc7iv8dldr5rwg357a86r"))))
-   (build-system gnu-build-system)
+             (base32 "0qf88wd6riycq56d24brybyc93ns74s0nyyavm43zp2kfcihn6fd"))))
+   (build-system cmake-build-system)
    (native-inputs
     `(("pkg-config" ,pkg-config)))
    (inputs `(("cairo"           ,cairo)
@@ -584,7 +604,7 @@ definitions.")
              ("libSM"           ,libsm)
              ("libX11"          ,libx11)
              ("libXi"           ,libxi)
-             ("libjpeg"         ,libjpeg)
+             ("libjpeg"         ,libjpeg-turbo)
              ("libltdl"         ,libltdl)
              ("libpng"          ,libpng)
              ("libspiro"        ,libspiro)
@@ -598,8 +618,20 @@ definitions.")
              ("python"          ,python)
              ("zlib"            ,zlib)))
    (arguments
-    '(#:phases
+    '(#:configure-flags '(;; TODO: Provide GTK+ for the Wayland-friendly GDK
+                          ;; backend, instead of the legacy X11 backend.
+                          ;; Currently it introduces a circular dependency.
+                          "-DENABLE_X11=ON")
+      #:phases
       (modify-phases %standard-phases
+        (add-after 'unpack 'do-not-override-RPATH
+          (lambda _
+            ;; Do not attempt to set a default RPATH, as our ld-wrapper
+            ;; already does the right thing.
+            (substitute* "CMakeLists.txt"
+              (("^set_default_rpath\\(\\)")
+               ""))
+            #t))
         (add-after 'install 'set-library-path
           (lambda* (#:key inputs outputs #:allow-other-keys)
             (let ((out (assoc-ref outputs "out"))
@@ -623,6 +655,31 @@ opentype fonts.  You can save fonts in many different outline formats, and
 generate bitmaps.")
    (license license:gpl3+)
    (home-page "https://fontforge.github.io")))
+
+;; This is the last version that supports Python 2, which is needed for
+;; GNU FreeFont.  Remove once no longer required.
+(define-public fontforge-20190801
+  (package
+    (inherit fontforge)
+    (version "20190801")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "https://github.com/fontforge/fontforge/releases/download/"
+                    version "/fontforge-" version ".tar.gz"))
+              (sha256
+               (base32 "0lh8yx01asbzxm6car5cfi64njh5p4lxc7iv8dldr5rwg357a86r"))))
+    (build-system gnu-build-system)
+    (arguments
+     (substitute-keyword-arguments (package-arguments fontforge)
+       ((#:configure-flags _)
+        ''())
+       ((#:phases phases)
+        `(modify-phases ,phases
+           (delete 'do-not-override-RPATH)))))
+    (inputs
+     `(("python" ,python-2)
+       ,@(alist-delete "python" (package-inputs fontforge))))))
 
 (define-public python2-ufolib
   (package
@@ -727,7 +784,7 @@ maintain the Noto Fonts project.")
 (define-public fontmanager
   (package
    (name "fontmanager")
-   (version "0.7.5")
+   (version "0.7.7")
    (source
     (origin
       (method git-fetch)
@@ -737,7 +794,7 @@ maintain the Noto Fonts project.")
       (file-name (git-file-name name version))
       (sha256
        (base32
-        "16hma8rrkam6ngn5vbdaryn31vdixvii6920g9z928gylz9xkd3g"))))
+        "1bzqvspplp1zj0n0869jqbc60wgbjhf0vdrn5bj8dfawxynh8s5f"))))
    (build-system meson-build-system)
    (arguments
     `(#:glib-or-gtk? #t
@@ -756,7 +813,7 @@ maintain the Noto Fonts project.")
       ("desktop-file-utils" ,desktop-file-utils)))
    (inputs
     `(("json-glib" ,json-glib)
-      ("sqlite-with-column-metadata" ,sqlite-with-column-metadata)
+      ("sqlite" ,sqlite)
       ("fonconfig" ,fontconfig)
       ("freetype" ,freetype)
       ("gtk+" ,gtk+)))

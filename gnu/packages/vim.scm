@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
@@ -851,7 +851,7 @@ through its msgpack-rpc API.")
 (define-public vim-asyncrun
   (package
     (name "vim-asyncrun")
-    (version "2.7.1")
+    (version "2.7.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -860,7 +860,7 @@ through its msgpack-rpc API.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0f7slvz28772qsbrb8xfwrkprfm90wc9i36xhn797lacxcxgwqpw"))))
+                "02fiqf4rcrxbcgvj02mpd78wkxsrnbi54aciwh9fv5mnz5ka249m"))))
     (build-system copy-build-system)
     (arguments
      '(#:install-plan
@@ -872,3 +872,31 @@ through its msgpack-rpc API.")
 NeoVim) to enable you to run shell commands in background and read output in the
 quickfix window in realtime.")
     (license license:expat)))
+
+(define-public vim-dispatch
+  (package
+    (name "vim-dispatch")
+    (version "1.8")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/tpope/vim-dispatch")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32
+          "1m8b5mn2zqlphzs6xfwykwmghf6p0wabrhpjmh7vav35jgcxc4wl"))))
+    (build-system copy-build-system)
+    (arguments
+     '(#:install-plan
+       '(("autoload" "share/vim/vimfiles/")
+         ("doc" "share/vim/vimfiles/")
+         ("plugin" "share/vim/vimfiles/"))))
+    (home-page "https://github.com/tpope/vim-dispatch")
+    (synopsis "Asynchronous build and test dispatcher")
+    (description "Leverage the power of Vim's compiler plugins without being
+bound by synchronicity.  Kick off builds and test suites using one of several
+asynchronous adapters (including tmux, screen, and a headless mode), and when
+the job completes, errors will be loaded and parsed automatically.")
+    (license license:vim)))

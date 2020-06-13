@@ -7,10 +7,13 @@
 ;;; Copyright © 2016, 2017 Danny Milosavljevic <dannym@scratchpost.org>
 ;;; Copyright © 2016, 2017 David Craven <david@craven.ch>
 ;;; Copyright © 2017, 2018 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2019 nee <nee@cock.li>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2018, 2019, 2020 Vagrant Cascadian <vagrant@debian.org>
+;;; Copyright © 2020 Pierre Langlois <pierre.langlois@gmx.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -91,7 +94,10 @@
              (sha256
               (base32
                "0zgp5m3hmc9jh8wpjx6czzkh5id2y8n1k823x2mjvm2sk6b28ag5"))
-             (patches (search-patches "grub-efi-fat-serial-number.patch"))))
+             (patches (search-patches
+                       "grub-efi-fat-serial-number.patch"
+                       "grub-setup-root.patch"
+                       "grub-verifiers-Blocklist-fallout-cleanup.patch"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -152,11 +158,19 @@
 
        ;; Depend on LVM2 for libdevmapper, used by 'grub-probe' and
        ;; 'grub-install' to recognize mapped devices (LUKS, etc.)
-       ("lvm2" ,lvm2)
+       ,@(if (member (or (%current-target-system)
+                         (%current-system))
+                     (package-supported-systems lvm2))
+             `(("lvm2" ,lvm2))
+             '())
 
        ;; Depend on mdadm, which is invoked by 'grub-probe' and 'grub-install'
        ;; to determine whether the root file system is RAID.
-       ("mdadm" ,mdadm)
+       ,@(if (member (or (%current-target-system)
+                         (%current-system))
+                     (package-supported-systems mdadm))
+             `(("mdadm" ,mdadm))
+             '())
 
        ;; Console-setup's ckbcomp is invoked by grub-kbdcomp.  It is required
        ;; for generating alternative keyboard layouts.
@@ -164,7 +178,11 @@
 
        ;; Needed for ‘grub-mount’, the only reliable way to tell whether a given
        ;; file system will be readable by GRUB without rebooting.
-       ("fuse" ,fuse)
+       ,@(if (member (or (%current-target-system)
+                         (%current-system))
+                     (package-supported-systems fuse))
+             `(("fuse" ,fuse))
+             '())
 
        ("freetype" ,freetype)
        ;; ("libusb" ,libusb)
@@ -196,7 +214,9 @@
        ;; Dependencies for the test suite.  The "real" QEMU is needed here,
        ;; because several targets are used.
        ("parted" ,parted)
-       ("qemu" ,qemu-minimal)
+       ,@(if (member (%current-system) (package-supported-systems qemu-minimal))
+             `(("qemu" ,qemu-minimal))
+             '())
        ("xorriso" ,xorriso)))
     (home-page "https://www.gnu.org/software/grub/")
     (synopsis "GRand Unified Boot loader")
@@ -209,6 +229,33 @@ on the same computer; upon booting the computer, the user is presented with a
 menu to select one of the installed operating systems.")
     (license license:gpl3+)
     (properties '((cpe-name . "grub2")))))
+
+(define-public grub-minimal
+  (package
+    (inherit grub)
+    (name "grub-minimal")
+    (inputs
+     (fold alist-delete (package-inputs grub)
+           '("lvm2" "mdadm" "fuse" "console-setup")))
+    (native-inputs
+     (fold alist-delete (package-native-inputs grub)
+           '("help2man" "texinfo" "parted" "qemu" "xorriso")))
+    (arguments
+     `(#:configure-flags (list "PYTHON=true")
+       #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'patch-stuff
+                   (lambda* (#:key native-inputs inputs #:allow-other-keys)
+                     (substitute* "grub-core/Makefile.in"
+                       (("/bin/sh") (which "sh")))
+
+                     ;; Make the font visible.
+                     (copy-file (assoc-ref (or native-inputs inputs)
+                                           "unifont")
+                                "unifont.bdf.gz")
+                     (system* "gunzip" "unifont.bdf.gz")
+
+                     #t)))
+       #:tests? #f))))
 
 (define-public grub-efi
   (package
@@ -303,7 +350,7 @@ menu to select one of the installed operating systems.")
          ("perl" ,perl)
          ("python-2" ,python-2)))
       (inputs
-       `(("libuuid" ,util-linux)
+       `(("libuuid" ,util-linux "lib")
          ("mtools" ,mtools)))
       (arguments
        `(#:parallel-build? #f
@@ -399,7 +446,7 @@ tree binary files.  These are board description files used by Linux and BSD.")
 (define u-boot
   (package
     (name "u-boot")
-    (version "2020.01")
+    (version "2020.04")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -407,7 +454,7 @@ tree binary files.  These are board description files used by Linux and BSD.")
                     "u-boot-" version ".tar.bz2"))
               (sha256
                (base32
-                "1w9ml4jl15q6ixpdqzspxjnl7d3rgxd7f99ms1xv5c8869h3qida"))))
+                "0wjkasnz87q86hx93inspdjfjsinmxi87bcvj30c773x0fpjlwzy"))))
     (native-inputs
      `(("bc" ,bc)
        ("bison" ,bison)
@@ -418,7 +465,7 @@ tree binary files.  These are board description files used by Linux and BSD.")
        ("python" ,python)
        ("python-coverage" ,python-coverage)
        ("python-pytest" ,python-pytest)
-       ("sdl" ,sdl)
+       ("sdl2" ,sdl2)
        ("swig" ,swig)))
     (build-system  gnu-build-system)
     (home-page "https://www.denx.de/wiki/U-Boot/")
@@ -834,6 +881,35 @@ to Novena upstream, does not load u-boot.img from the first partition.")
        `(("firmware" ,arm-trusted-firmware-rk3399)
          ,@(package-native-inputs base))))))
 
+(define-public u-boot-pinebook-pro-rk3399
+  (let ((base (make-u-boot-package "pinebook-pro-rk3399" "aarch64-linux-gnu")))
+    (package
+     (inherit base)
+     (source (origin
+              (inherit (package-source u-boot))
+              (patches
+               (search-patches "u-boot-add-boe-nv140fhmn49-display.patch"
+                               "u-boot-gpio-keys-binding-cons.patch"
+                               "u-boot-leds-common-binding-con.patch"
+                               "u-boot-DT-for-Pinebook-Pro.patch"
+                               "u-boot-support-Pinebook-Pro-laptop.patch"
+                               "u-boot-video-rockchip-fix-build.patch"))))
+      (arguments
+        (substitute-keyword-arguments (package-arguments base)
+          ((#:phases phases)
+           `(modify-phases ,phases
+              (add-after 'unpack 'set-environment
+                (lambda* (#:key inputs #:allow-other-keys)
+                  (setenv "BL31" (string-append (assoc-ref inputs "firmware")
+                                                "/bl31.elf"))
+                  #t))
+              ;; Phases do not succeed on the bl31 ELF.
+              (delete 'strip)
+              (delete 'validate-runpath)))))
+      (native-inputs
+       `(("firmware" ,arm-trusted-firmware-rk3399)
+         ,@(package-native-inputs base))))))
+
 (define-public vboot-utils
   (package
     (name "vboot-utils")
@@ -912,7 +988,7 @@ to Novena upstream, does not load u-boot.img from the first partition.")
        ("libyaml" ,libyaml)
        ("openssl" ,openssl)
        ("openssl:static" ,openssl "static")
-       ("util-linux" ,util-linux)))
+       ("util-linux" ,util-linux "lib")))
     (home-page
      "https://dev.chromium.org/chromium-os/chromiumos-design-docs/verified-boot")
     (synopsis "ChromiumOS verified boot utilities")
@@ -941,7 +1017,8 @@ tools, and more.")
                   (guix build utils)
                   (ice-9 regex)         ; for string-match
                   (srfi srfi-26))       ; for cut
-       #:make-flags (list "CC=gcc")
+       #:make-flags
+       (list ,(string-append "CC=" (cc-for-target)))
        #:tests? #f                      ; no tests
        #:phases
        (modify-phases %standard-phases

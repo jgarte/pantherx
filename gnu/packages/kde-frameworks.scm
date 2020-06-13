@@ -1561,11 +1561,13 @@ integrated it into your application's other widgets.")
      `(("extra-cmake-modules" ,extra-cmake-modules)
        ("xorg-server" ,xorg-server))) ; for the tests
     (inputs
-     `(("kcodecs" ,kcodecs)
+     `(("qtbase" ,qtbase)))
+    (propagated-inputs
+     `(;; As required by KF5ContactsConfig.cmake.
+       ("kcodecs" ,kcodecs)
        ("kconfig" ,kconfig)
        ("kcoreaddons" ,kcoreaddons)
-       ("ki18n" ,ki18n)
-       ("qtbase" ,qtbase)))
+       ("ki18n" ,ki18n)))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -3537,7 +3539,7 @@ workspace.")
        ("shared-mime-info" ,shared-mime-info)
        ("kjobwidgets" ,kjobwidgets) ;; required for running the tests
        ("strace" ,strace)
-       ("tzdata" ,tzdata)))
+       ("tzdata" ,tzdata-for-tests)))
     (propagated-inputs
      ;; These are required to be installed along with this package, see
      ;; lib64/cmake/KF5KDELibs4Support/KF5KDELibs4SupportConfig.cmake
@@ -3663,7 +3665,7 @@ http://community.kde.org/Frameworks/Porting_Notes should help with this.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kwindowsystem" ,kwindowsystem)
        ("kxmlgui" ,kxmlgui)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("openssl" ,openssl)
        ("phonon" ,phonon)

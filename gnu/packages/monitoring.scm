@@ -5,6 +5,8 @@
 ;;; Copyright © 2018 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Gábor Boskovits <boskovits@gmail.com>
 ;;; Copyright © 2018, 2019 Oleg Pykhalov <go.wigust@gmail.com>
+;;; Copyright © 2020 Alex ter Weele <alex.ter.weele@gmail.com>
+;;; Copyright © 2020 Lars-Dominik Braun <ldb@leibniz-psychology.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -31,6 +33,7 @@
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
   #:use-module (guix utils)
+  #:use-module (gnu packages)
   #:use-module (gnu packages admin)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages base)
@@ -47,16 +50,19 @@
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
+  #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages rrdtool)
   #:use-module (gnu packages time)
-  #:use-module (gnu packages tls))
+  #:use-module (gnu packages tls)
+  #:use-module (gnu packages web))
 
 (define-public nagios
   (package
     (name "nagios")
-    (version "4.3.4")
+    (version "4.4.6")
     ;; XXX: Nagios 4.2.x and later bundle a copy of AngularJS.
     (source (origin
               (method url-fetch)
@@ -65,7 +71,7 @@
                     version "/nagios-" version ".tar.gz"))
               (sha256
                (base32
-                "1wa4m952sb23dqi5w759adimsp21bkhp598rpq9dnhz3v497h2y9"))
+                "1x5hb97zbvkm73q53ydp1gwj8nnznm72q9c4rm6ny7phr995l3db"))
               (modules '((guix build utils)))
               (snippet
                ;; Ensure reproducibility.
@@ -371,14 +377,13 @@ demand.")
 (define-public python-prometheus-client
   (package
     (name "python-prometheus-client")
-    (version "0.5.0")
+    (version "0.7.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "prometheus_client" version))
        (sha256
-        (base32
-         "0g7rpv1pq2lab1nfqdx98z9d3bqwc400alg1j4ynrpjkrbsizhg8"))))
+        (base32 "1ni2yv4ixwz32nz39ckia76lvggi7m19y5f702w5qczbnfi29kbi"))))
     (build-system python-build-system)
     (arguments
      '(;; No included tests.
@@ -445,3 +450,47 @@ written in Go with pluggable metric collectors.")
     (description "This package provides a file system monitor.")
     (home-page "https://github.com/emcrisostomo/fswatch")
     (license license:gpl3+)))
+
+(define-public collectd
+  (package
+    (name "collectd")
+    (version "5.11.0")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "https://storage.googleapis.com/collectd-tarballs/collectd-"
+                    version
+                    ".tar.bz2"))
+              (sha256
+               (base32
+                "1cjxksxdqcqdccz1nbnc2fp6yy84qq361ynaq5q8bailds00mc9p"))
+              (patches (search-patches "collectd-5.11.0-noinstallvar.patch"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags (list "--localstatedir=/var" "--sysconfdir=/etc")
+       #:phases (modify-phases %standard-phases
+                  (add-before 'configure 'autoreconf
+                    (lambda _
+                      ;; Required because of patched sources.
+                      (invoke "autoreconf" "-vfi"))))))
+    (inputs
+     `(("rrdtool" ,rrdtool)
+       ("curl" ,curl)
+       ("libyajl" ,libyajl)))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
+    (home-page "https://collectd.org/")
+    (synopsis "Collect system and application performance metrics periodically")
+    (description
+     "collectd gathers metrics from various sources such as the operating system,
+applications, log files and external devices, and stores this information or
+makes it available over the network.  Those statistics can be used to monitor
+systems, find performance bottlenecks (i.e., performance analysis) and predict
+future system load (i.e., capacity planning).")
+    ;; license:expat for the daemon in src/daemon/ and some plugins,
+    ;; license:gpl2 for other plugins
+    (license (list license:expat license:gpl2))))
+

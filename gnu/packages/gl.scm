@@ -3,7 +3,7 @@
 ;;; Copyright © 2013 Joshua Grant <tadni@riseup.net>
 ;;; Copyright © 2014, 2016 David Thompson <davet@gnu.org>
 ;;; Copyright © 2014, 2015, 2016, 2017 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2016 ng0 <ng0@n0.is>
+;;; Copyright © 2016 Nikita <nikita@n0.is>
 ;;; Copyright © 2016, 2017, 2018, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016 David Thompson <davet@gnu.org>
 ;;; Copyright © 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
@@ -12,6 +12,7 @@
 ;;; Copyright © 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2019 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -293,7 +294,7 @@ also known as DXTn or DXTC) for Mesa.")
        '(,@(match (%current-system)
              ((or "armhf-linux" "aarch64-linux")
               ;; TODO: Fix svga driver for aarch64 and armhf.
-              '("-Dgallium-drivers=etnaviv,freedreno,nouveau,r300,r600,swrast,tegra,v3d,vc4,virgl"))
+              '("-Dgallium-drivers=etnaviv,freedreno,kmsro,lima,nouveau,panfrost,r300,r600,swrast,tegra,v3d,vc4,virgl"))
              (_
               '("-Dgallium-drivers=iris,nouveau,r300,r600,radeonsi,svga,swrast,virgl")))
          ;; Enable various optional features.  TODO: opencl requires libclc,
@@ -663,6 +664,53 @@ OpenGL graphics API.")
      "A library for handling OpenGL function pointer management.")
     (license license:x11)))
 
+(define-public libglvnd
+  (package
+    (name "libglvnd")
+    (version "1.3.1")
+    (home-page "https://gitlab.freedesktop.org/glvnd/libglvnd")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url home-page)
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0mkzdzdxjxjl794rblq4mq33wmb8ikqmfswbqdbr8gw2kw4wlhdl"))))
+    (build-system meson-build-system)
+    (arguments
+     '(#:configure-flags '("-Dx11=enabled")
+       #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'disable-glx-tests
+                    (lambda _
+                      ;; This package is meant to be used alongside Mesa.
+                      ;; To avoid a circular dependency, disable tests that
+                      ;; require a running Xorg server.
+                      (substitute* "tests/meson.build"
+                        (("if with_glx")
+                         "if false"))
+                      #t)))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("xorgproto" ,xorgproto)))
+    (synopsis "Vendor-neutral OpenGL dispatch library")
+    (description
+     "libglvnd is a vendor-neutral dispatch layer for arbitrating OpenGL
+API calls between multiple vendors.  It allows multiple drivers from
+different vendors to coexist on the same filesystem, and determines which
+vendor to dispatch each API call to at runtime.
+
+Both GLX and EGL are supported, in any combination with OpenGL and OpenGL ES.")
+    ;; libglvnd is available under a custom X11-style license, and incorporates
+    ;; code with various other licenses.  See README.md for details.
+    (license (list (license:x11-style "file://README.md")
+                   license:x11
+                   license:expat))))
+
 (define-public soil
   (package
     (name "soil")
@@ -742,35 +790,39 @@ and surfaces, receiving input and events.")
     (license license:zlib)))
 
 (define-public nanovg-for-extempore
-  (package
-    (name "nanovg-for-extempore")
-    (version "0.7.1")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/extemporelang/nanovg/"
-                                  "archive/"  version ".tar.gz"))
-              (file-name (string-append name "-" version ".tar.gz"))
-              (sha256
-               (base32
-                "0ivs1sagq19xiw8jxd9f8w2b39svi0n9hrbmdvckwvqg95r8701g"))))
-    (build-system cmake-build-system)
-    (arguments `(#:tests? #f)) ; no tests included
-    (inputs
-     `(("mesa" ,mesa)))
-    ;; Extempore refuses to build on architectures other than x86_64
-    (supported-systems '("x86_64-linux"))
-    (home-page "https://github.com/extemporelang/nanovg")
-    (synopsis "2D vector drawing library on top of OpenGL")
-    (description "NanoVG is small antialiased vector graphics rendering
+  (let ((version "0.7.1")
+        (revision "0")
+        (commit "3c60175fcc2e5fe305b04355cdce35d499c80310"))
+    (package
+      (name "nanovg-for-extempore")
+      (version (git-version version revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/extemporelang/nanovg.git")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "0ddn3d3mxqn8hj9967v3pss7lz1wn08pcdnqzc118g7yjkq7hxzy"))))
+      (build-system cmake-build-system)
+      (arguments `(#:tests? #f))        ; no tests included
+      (inputs
+       `(("mesa" ,mesa)))
+      ;; Extempore refuses to build on architectures other than x86_64
+      (supported-systems '("x86_64-linux"))
+      (home-page "https://github.com/extemporelang/nanovg")
+      (synopsis "2D vector drawing library on top of OpenGL")
+      (description "NanoVG is small antialiased vector graphics rendering
 library for OpenGL.  It has lean API modeled after HTML5 canvas API.  It is
 aimed to be a practical and fun toolset for building scalable user interfaces
 and visualizations.")
-    (license license:zlib)))
+      (license license:zlib))))
 
 (define-public gl2ps
   (package
     (name "gl2ps")
-    (version "1.4.0")
+    (version "1.4.2")
     (source
      (origin
        (method url-fetch)
@@ -778,15 +830,14 @@ and visualizations.")
              "http://geuz.org/gl2ps/src/gl2ps-"
              version ".tgz"))
        (sha256
-        (base32
-         "1qpidkz8x3bxqf69hlhyz1m0jmfi9kq24fxsp7rq6wfqzinmxjq3"))))
+        (base32 "1sgzv547h7hrskb9qd0x5yp45kmhvibjwj2mfswv95lg070h074d"))))
     (build-system cmake-build-system)
     (inputs
      `(("libpng" ,libpng)
        ("mesa" ,mesa)
        ("zlib" ,zlib)))
     (arguments
-     `(#:tests? #f))  ;; no tests
+     `(#:tests? #f))                    ; no tests
     (home-page "http://www.geuz.org/gl2ps/")
     (synopsis "OpenGL to PostScript printing library")
     (description "GL2PS is a C library providing high quality vector

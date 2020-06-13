@@ -1,10 +1,11 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2017, 2018, 2019 Arun Isaac <arunisaac@systemreboot.net>
-;;; Copyright © 2019 Christopher Howard <christopher@librehacker.com>
+;;; Copyright © 2017, 2018, 2019, 2020 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2019, 2020 Christopher Howard <christopher@librehacker.com>
 ;;; Copyright © 2019, 2020 Evan Straw <evan.straw99@gmail.com>
 ;;; Copyright © 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2020 Danny Milosavljevic <dannym@scratchpost.org>
 ;;; Copyright © 2020 Charlie Ritter <chewzerita@posteo.net>
+;;; Copyright © 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -26,6 +27,7 @@
   #:use-module (guix packages)
   #:use-module (guix download)
   #:use-module (guix git-download)
+  #:use-module (guix utils)
   #:use-module (gnu packages algebra)
   #:use-module (gnu packages audio)
   #:use-module (gnu packages autotools)
@@ -34,6 +36,10 @@
   #:use-module (gnu packages boost)
   #:use-module (gnu packages check)
   #:use-module (gnu packages documentation)
+  #:use-module (gnu packages engineering)
+  #:use-module (gnu packages fltk)
+  #:use-module (gnu packages gcc)
+  #:use-module (gnu packages gd)
   #:use-module (gnu packages ghostscript)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gstreamer)
@@ -42,8 +48,10 @@
   #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages logging)
+  #:use-module (gnu packages lua)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages multiprecision)
+  #:use-module (gnu packages ncurses)
   #:use-module (gnu packages networking)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages pulseaudio)
@@ -51,9 +59,13 @@
   #:use-module (gnu packages python-science)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
+  #:use-module (gnu packages readline)
+  #:use-module (gnu packages ruby)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages swig)
+  #:use-module (gnu packages tcl)
   #:use-module (gnu packages tex)
+  #:use-module (gnu packages texinfo)
   #:use-module (gnu packages version-control)
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
@@ -113,19 +125,42 @@ mathematical operations, and much more.")
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (arguments
-     `(#:configure-flags '("-DDETACH_KERNEL_DRIVER=ON")
-       #:tests? #f)) ; No tests
+     `(#:configure-flags '("-DDETACH_KERNEL_DRIVER=ON"
+                           "-DINSTALL_UDEV_RULES=ON")
+       #:tests? #f ; No tests
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "CMakeLists.txt"
+               (("DESTINATION \"/etc/udev/")
+                (string-append "DESTINATION \""
+                               (assoc-ref outputs "out")
+                               "/lib/udev/")))
+             #t)))))
     (home-page "https://osmocom.org/projects/sdr/wiki/rtl-sdr")
     (synopsis "Software defined radio driver for Realtek RTL2832U")
     (description "DVB-T dongles based on the Realtek RTL2832U can be used as a
 cheap software defined radio, since the chip allows transferring the raw I/Q
-samples to the host.  @code{rtl-sdr} provides drivers for this purpose.")
+samples to the host.  @code{rtl-sdr} provides drivers for this purpose.
+
+The default Linux driver managing DVB-T dongles as TV devices doesn't work for
+SDR purposes and clashes with this package.  Therefore you must prevent the
+kernel from loading it automatically by adding the following line to your
+system configuration:
+
+@lisp
+(kernel-arguments '(\"modprobe.blacklist=dvb_usb_rtl28xxu\"))
+@end lisp
+
+To install the rtl-sdr udev rules, you must extend 'udev-service-type' with
+this package.  E.g.: @code{(udev-rules-service 'rtl-sdr rtl-sdr)}")
     (license license:gpl2+)))
 
 (define-public chirp
   (package
     (name "chirp")
-    (version "20181205")
+    (version "20200430")
     (source
      (origin
        (method url-fetch)
@@ -133,7 +168,7 @@ samples to the host.  @code{rtl-sdr} provides drivers for this purpose.")
                            version "/chirp-daily-" version ".tar.gz"))
        (sha256
         (base32
-         "1cp280b95j39xaxs50zn55jigg7pyfpm9n098hmsyxrplqn8z43c"))))
+         "060fzplgmpfrk6wkfaasx7phpfk90mmylk6drbwzk4f9r1655vda"))))
     (build-system python-build-system)
     (inputs
      `(("python2-libxml2" ,python2-libxml2)
@@ -157,7 +192,7 @@ memory contents between them.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/csete/aptdec")
+             (url "https://github.com/Xerbo/aptdec")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -168,7 +203,15 @@ memory contents between them.")
      `(("libpng" ,libpng)
        ("libsndfile" ,libsndfile)))
     (arguments
-     `(#:make-flags (list "CC=gcc")
+     `(#:make-flags
+       (list
+        (string-append "CC="
+                       (if ,(%current-target-system)
+                           (string-append (assoc-ref %build-inputs "cross-gcc")
+                                          "/bin/" ,(%current-target-system) "-gcc")
+                           "gcc"))
+        (string-append "PREFIX=" %output)
+        (string-append "RPM_BUILD_ROOT=" %output))
        #:tests? #f ; no tests
        #:phases
        (modify-phases %standard-phases
@@ -178,7 +221,7 @@ memory contents between them.")
              (let ((out (assoc-ref outputs "out")))
                (install-file "atpdec" (string-append out "/bin")))
              #t)))))
-    (home-page "https://github.com/csete/aptdec")
+    (home-page "https://github.com/Xerbo/aptdec")
     (synopsis "NOAA Automatic Picture Transmission (APT) decoder")
     (description "Aptdec decodes Automatic Picture Transmission (APT) images.
 These are medium resolution images of the Earth transmitted by, among other
@@ -243,7 +286,13 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
        (uri (string-append "https://www.gnuradio.org/releases/gnuradio/"
                            "gnuradio-" version ".tar.xz"))
        (sha256
-        (base32 "0aw55gf5549b0fz2qdi7vplcmaf92bj34h40s34b2ycnqasv900r"))))
+        (base32 "0aw55gf5549b0fz2qdi7vplcmaf92bj34h40s34b2ycnqasv900r"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Delete bundled volk to use the shared one.
+           (delete-file-recursively "volk")
+           #t))))
     (build-system cmake-build-system)
     (native-inputs
      `(("doxygen" ,doxygen)
@@ -251,7 +300,6 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
        ("ghostscript" ,ghostscript)
        ("orc" ,orc)
        ("pkg-config" ,pkg-config)
-       ("python" ,python)
        ("python-cheetah" ,python-cheetah)
        ("python-mako" ,python-mako)
        ("python-pyzmq" ,python-pyzmq)
@@ -278,6 +326,7 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
        ("log4cpp" ,log4cpp)
        ("pango" ,pango)
        ("portaudio" ,portaudio)
+       ("python" ,python)
        ("python-click" ,python-click)
        ("python-click-plugins" ,python-click-plugins)
        ("python-lxml" ,python-lxml)
@@ -288,6 +337,7 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
        ("python-pyyaml" ,python-pyyaml)
        ("qtbase" ,qtbase)
        ("qwt" ,qwt)
+       ("volk" ,volk)
        ("zeromq" ,zeromq)))
     (arguments
      `(#:modules ((guix build cmake-build-system)
@@ -298,6 +348,8 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
        #:imported-modules (,@%cmake-build-system-modules
                            (guix build glib-or-gtk-build-system)
                            (guix build python-build-system))
+       #:configure-flags
+       '("-DENABLE_INTERNAL_VOLK=OFF")
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'fix-paths
@@ -345,6 +397,17 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
                (wrap-program (string-append out "/bin/gnuradio-companion")
                  `("GI_TYPELIB_PATH" ":" prefix ,(filter identity paths))))
              #t)))))
+    (native-search-paths
+     ;; Variables required to find third-party plugins at runtime.
+     (list (search-path-specification
+            (variable "GRC_BLOCKS_PATH")
+            (files '("share/gnuradio/grc/blocks")))
+           (search-path-specification
+            (variable "PYTHONPATH")
+            (files (list (string-append "lib/python"
+                                        (version-major+minor
+                                         (package-version python))
+                                        "/site-packages"))))))
     (synopsis "Toolkit for software-defined radios")
     (description
      "GNU Radio is a development toolkit that provides signal processing blocks
@@ -381,9 +444,10 @@ environment.")
        ("fftwf" ,fftwf)
        ("gmp" ,gmp)
        ("gnuradio" ,gnuradio)
+       ("hackrf" ,hackrf)
        ("log4cpp" ,log4cpp)
-       ;; TODO: Add more drivers.
-       ("rtl-sdr" ,rtl-sdr)))
+       ("rtl-sdr" ,rtl-sdr)
+       ("volk" ,volk)))
     (synopsis "GNU Radio block for interfacing with various radio hardware")
     (description "This is a block for GNU Radio allowing to use a common API
 to access different radio hardware.")
@@ -462,7 +526,8 @@ primitives for SDR (Software Defined Radio).")
        ("gmp" ,gmp)
        ("gnuradio" ,gnuradio)
        ("libosmo-dsp" ,libosmo-dsp)
-       ("log4cpp" ,log4cpp)))
+       ("log4cpp" ,log4cpp)
+       ("volk" ,volk)))
     (synopsis "GNU Radio block to correct IQ imbalance")
     (description
      "This is a GNU Radio block to correct IQ imbalance in quadrature
@@ -504,7 +569,8 @@ to the fix block above.
        ("portaudio" ,portaudio)
        ("pulseaudio" ,pulseaudio)
        ("qtbase" ,qtbase)
-       ("qtsvg" ,qtsvg)))
+       ("qtsvg" ,qtsvg)
+       ("volk" ,volk)))
     (arguments
      `(#:tests? #f)) ; No tests
     (synopsis "Software defined radio receiver")
@@ -512,3 +578,495 @@ to the fix block above.
 using GNU Radio and the Qt GUI toolkit.")
     (home-page "https://gqrx.dk/")
     (license license:gpl3+)))
+
+(define-public fldigi
+  (package
+    (name "fldigi")
+    (version "4.1.13")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://www.w1hkj.com/files/fldigi/fldigi-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "0mlq4z5k3h466plij8hg9xn5xbjxk557g4pw13cplpf32fhng224"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("fltk" ,fltk)
+       ("hamlib" ,hamlib)
+       ("libpng" ,libpng)
+       ("libsamplerate" ,libsamplerate)
+       ("libusb" ,libusb)
+       ("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("libxfixes" ,libxfixes)
+       ("libxft" ,libxft)
+       ("portaudio" ,portaudio)
+       ("pulseaudio" ,pulseaudio)))
+    (synopsis "Software modem for amateur radio use")
+    (description
+     "Fldigi is a software modem for amateur radio use.  It is a sound card
+based program that is used for both transmitting and receiving data by
+connecting the microphone and headphone connections of a computer to some radio
+hardware.")
+    (home-page "http://www.w1hkj.com/")
+    (license license:gpl3+)))
+
+(define-public flrig
+  (package
+    (name "flrig")
+    (version "1.3.50")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://www.w1hkj.com/files/flrig/flrig-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "0fzrknzzi8kmzmrcfpc8rxr7v4a4ny6z6z5q5qwh95sp2kn2qzp9"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("fltk" ,fltk)
+       ("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("libxfixes" ,libxfixes)
+       ("libxft" ,libxft)))
+    (synopsis "Radio transceiver control program")
+    (description
+     "Flrig is a transceiver control program for amateur radio use.
+It provides computer aided control of various radios using a serial
+or USB connection.")
+    (home-page "http://www.w1hkj.com/")
+    (license license:gpl3+)))
+
+(define-public flamp
+  (package
+    (name "flamp")
+    (version "2.2.05")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://www.w1hkj.com/files/flamp/flamp-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "19z1kghhdf7bq6hi2j0mzlsn2nhpn3gl1a623x3inmsk80yw3ck4"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("fltk" ,fltk)
+       ("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("libxfixes" ,libxfixes)
+       ("libxft" ,libxft)))
+    (synopsis "Tool for AMP file transfer")
+    (description
+     "FLAMP is a program for transfering files by radio waves using AMP
+(Amateur Multicast Protocol).")
+    (home-page "http://www.w1hkj.com/")
+    (license license:gpl3+)))
+
+(define-public flwrap
+  (package
+    (name "flwrap")
+    (version "1.3.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://www.w1hkj.com/files/flwrap/flwrap-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "0qqivqkkravcg7j45740xfky2q3k7czqpkj6y364qff424q2pppg"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("fltk" ,fltk)
+       ("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("libxfixes" ,libxfixes)
+       ("libxft" ,libxft)))
+    (synopsis "File encapsulation program")
+    (description
+     "Flwrap is a software utility for amateur radio use.  Its purpose is to
+encapsulate both text and binary files in a way that allows them to be
+transmitted over any of several digital modes and verified at the receipt end
+for correctness.")
+    (home-page "http://www.w1hkj.com/")
+    (license license:gpl3+)))
+
+(define-public hackrf
+  ;; Using a git commit because there have been many many commits
+  ;; since the relase two years ago, but no sign of a promised
+  ;; release for many months now.
+  (let ((commit "43e6f99fe8543094d18ff3a6550ed2066c398862")
+        (revision "0"))
+    (package
+     (name "hackrf")
+     (version (git-version "2018.01.1" revision commit))
+     (source
+      (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/mossmann/hackrf.git")
+             (commit commit)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0avnv693xi0zsnrvkbfn0ln1r3s1iyj0bz7sc3gxay909av0pvbc"))))
+     (build-system cmake-build-system)
+     (arguments
+      '(#:configure-flags
+        (list "-DUDEV_RULES_GROUP=dialout"
+              (string-append "-DUDEV_RULES_PATH="
+                             (assoc-ref %outputs "out")
+                             "/lib/udev/rules.d"))
+        #:phases
+        (modify-phases %standard-phases
+          (add-before 'configure 'enter-source-directory
+            (lambda _
+              (chdir "host")
+              #t))
+          (add-after 'install 'delete-static-library
+            (lambda* (#:key outputs #:allow-other-keys)
+              (delete-file (string-append (assoc-ref outputs "out")
+                                          "/lib/libhackrf.a"))
+              #t))
+          (add-before 'install-license-files 'leave-source-directory
+            (lambda _
+              (chdir "..")
+              #t)))
+        #:tests? #f)) ; no test suite
+     (native-inputs
+      `(("pkg-config" ,pkg-config)))
+     (inputs
+      `(("fftw" ,fftw)
+        ("fftwf" ,fftwf)
+        ("libusb" ,libusb)))
+     (home-page "https://greatscottgadgets.com/hackrf/")
+     (synopsis "User-space library and utilities for HackRF SDR")
+     (description
+      "Command line utilities and a C library for controlling the HackRF
+Software Defined Radio (SDR) over USB.  Installing this package installs the
+userspace hackrf utilities and C library.  To install the hackrf udev rules,
+you must extend 'udev-service-type' with this package.  E.g.:
+@code{(udev-rules-service 'hackrf hackrf #:groups '(\"dialout\"))}.")
+     (license license:gpl2))))
+
+(define-public hamlib
+  (package
+    (name "hamlib")
+    (version "3.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://github.com/Hamlib/Hamlib/releases/download/"
+             version "/hamlib-" version ".tar.gz"))
+       (sha256
+        (base32 "10788mgrhbc57zpzakcxv5aqnr2819pcshml6fbh8zvnkja562y9"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("doxygen" ,doxygen)
+       ("lua" ,lua)
+       ("pkg-config" ,pkg-config)
+       ("python-wrapper" ,python-wrapper)
+       ("swig" ,swig)
+       ("tcl" ,tcl)))
+    (inputs
+     `(("gd" ,gd)
+       ("libusb" ,libusb)
+       ("libxml2" ,libxml2)
+       ("readline" ,readline)))
+    (arguments
+     `(#:configure-flags '("--disable-static"
+                           "--with-lua-binding"
+                           "--with-python-binding"
+                           "--with-tcl-binding"
+                           "--with-xml-support")))
+    (synopsis "Tools and API to control radios")
+    (description
+     "The Ham Radio Control Library (Hamlib) is a project to provide programs
+with a consistent Application Programming Interface (API) for controlling the
+myriad of radios and rotators available to amateur radio and communications
+users.")
+    (home-page "https://hamlib.github.io/")
+    (license (list license:gpl2+ license:lgpl2.1+))))
+
+(define wsjtx-hamlib
+  ;; Fork of hamlib with custom patches used by wsjtx.
+  (package
+    (inherit hamlib)
+    (name "wsjtx-hamlib")
+    (version "2.1.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://git.code.sf.net/u/bsomervi/hamlib.git")
+             (commit (string-append "wsjtx-" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1ksv3cmr1dl45p0pp1panyc9dngd158gvv9ysv25lq4nqv1wn87i"))))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)
+       ("texinfo" ,texinfo)
+       ,@(package-native-inputs hamlib)))))
+
+(define-public wsjtx
+  (package
+    (name "wsjtx")
+    (version "2.1.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://git.code.sf.net/p/wsjt/wsjtx.git")
+             (commit (string-append "wsjtx-" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1fnqzjd3dmxp3yjwjvwz2djk9gzb1y2cqfa188f3x8lynxhdhnfs"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Delete bundled boost to use the shared one.
+           (delete-file-recursively "boost")
+           #t))))
+    (build-system qt-build-system)
+    (native-inputs
+     `(("asciidoc" ,asciidoc)
+       ("gfortran" ,gfortran)
+       ("pkg-config" ,pkg-config)
+       ("qttools" ,qttools)
+       ("ruby-asciidoctor" ,ruby-asciidoctor)))
+    (inputs
+     `(("boost" ,boost)
+       ("fftw" ,fftw)
+       ("fftwf" ,fftwf)
+       ("hamlib" ,wsjtx-hamlib)
+       ("libusb" ,libusb)
+       ("qtbase" ,qtbase)
+       ("qtmultimedia" ,qtmultimedia)
+       ("qtserialport" ,qtserialport)))
+    (arguments
+     `(#:tests? #f ; No test suite
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'work-around-runtime-bug
+           (lambda _
+             ;; Some of the programs in this package fail to find symbols
+             ;; in libm at runtime. Adding libm manually at the end of the
+             ;; library lists when linking the programs seems to help.
+             ;; TODO: find exactly what is wrong in the way the programs
+             ;; are built.
+             (substitute* "CMakeLists.txt"
+               (("target_link_libraries \\((.*)\\)" all libs)
+                (string-append "target_link_libraries (" libs " m)")))
+             #t)))))
+    (synopsis "Weak-signal ham radio communication program")
+    (description
+     "WSJT-X implements communication protocols or modes called FT4, FT8,
+JT4, JT9, JT65, QRA64, ISCAT, MSK144, and WSPR, as well as one called Echo for
+detecting and measuring your own radio signals reflected from the Moon.  These
+modes were all designed for making reliable, confirmed QSOs under extreme
+weak-signal conditions.")
+    (home-page "https://www.physics.princeton.edu/pulsar/k1jt/wsjtx.html")
+    (license license:gpl3)))
+
+(define-public js8call
+  (package
+    (inherit wsjtx)
+    (name "js8call")
+    (version "2.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://files.js8call.com/" version
+                           "/js8call-" version ".tgz"))
+       (sha256
+        (base32 "034jnv6h172znn9ijl6wpmzx0rqibb69ppg52ndvkxhqlgrbsvyc"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Delete bundled boost to use the shared one.
+           (delete-file-recursively "boost")
+           #t))))
+    (build-system qt-build-system)
+    (native-inputs
+     `(("asciidoc" ,asciidoc)
+       ("gfortran" ,gfortran)
+       ("pkg-config" ,pkg-config)
+       ("qttools" ,qttools)
+       ("ruby-asciidoctor" ,ruby-asciidoctor)))
+    (inputs
+     `(("boost" ,boost)
+       ("fftw" ,fftw)
+       ("fftwf" ,fftwf)
+       ("hamlib" ,wsjtx-hamlib)
+       ("libusb" ,libusb)
+       ("qtbase" ,qtbase)
+       ("qtmultimedia" ,qtmultimedia)
+       ("qtserialport" ,qtserialport)))
+    (arguments
+     `(#:tests? #f ; No test suite
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "CMakeLists.txt"
+               (("DESTINATION /usr/share")
+                (string-append "DESTINATION "
+                               (assoc-ref outputs "out")
+                               "/share")))
+             #t))
+         (add-after 'fix-paths 'work-around-runtime-bug
+           (lambda _
+             ;; Some of the programs in this package fail to find symbols
+             ;; in libm at runtime. Adding libm manually at the end of the
+             ;; library lists when linking the programs seems to help.
+             ;; TODO: find exactly what is wrong in the way the programs
+             ;; are built.
+             (substitute* "CMakeLists.txt"
+               (("target_link_libraries \\((.*)\\)" all libs)
+                (string-append "target_link_libraries (" libs " m)")))
+             #t))
+         (add-after 'unpack 'fix-hamlib
+           (lambda _
+             (substitute* "CMake/Modules/Findhamlib.cmake"
+               (("set \\(ENV\\{PKG_CONFIG_PATH\\}.*\\)")
+                "set (__pc_path $ENV{PKG_CONFIG_PATH})
+  list (APPEND __pc_path \"${__hamlib_pc_path}\")
+  set (ENV{PKG_CONFIG_PATH} \"${__pc_path}\")"))
+             (substitute* "HamlibTransceiver.hpp"
+               (("#ifdef JS8_USE_LEGACY_HAMLIB")
+                "#if 1"))
+             #t)))))
+    (synopsis "Weak-signal ham radio communication program")
+    (description
+     "JS8Call is a software using the JS8 digital mode (a derivative of the FT8
+mode) providing weak signal keyboard to keyboard messaging to amateur radio
+operators.")
+    (home-page "http://js8call.com/")
+    (license license:gpl3)))
+
+(define-public xnec2c
+  (package
+    (name "xnec2c")
+    (version "4.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://www.5b4az.org/pkg/nec2/xnec2c/xnec2c-"
+                           version ".tar.bz2"))
+       (sha256
+        (base32 "1myvlkfybb2ha8l0h96ca3iz206zzy9z5iizm0sbab2zzp78n1r9"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("gtk+" ,gtk+)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-makefile
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* '("Makefile.am" "Makefile.in")
+               ;; The DESTDIR variable does not get replaced the prefix
+               ;; in the final Makefile, so let's do here.
+               (("\\$\\(DESTDIR\\)/usr")
+                (assoc-ref outputs "out")))
+             #t))
+         (add-after 'fix-makefile 'fix-paths
+           (lambda* (#:key outputs #:allow-other-keys)
+             ;; Increase the max length of the path to the glade file,
+             ;; so that the '/gnu/store/...' path can fit in.
+             (substitute* '("src/shared.c" "src/shared.h")
+               (("char xnec2c_glade\\[64\\];")
+                "char xnec2c_glade[256];"))
+             ;; Fix hard coded references to '/usr/...'.
+             (substitute* '("src/geom_edit.c" "src/main.c")
+               (("\"/usr")
+                (string-append "\"" (assoc-ref outputs "out"))))
+             #t)))))
+    (synopsis "Antenna modeling software")
+    (description
+     "Xnec2c is a GTK3-based graphical version of nec2c, a translation to the
+C language of NEC2, the FORTRAN Numerical Electromagnetics Code commonly used
+for antenna simulation and analysis.  It can be used to define the geometry of
+an antenna, and then plot the radiation pattern or frequency-related data like
+gain and standing wave ratio.")
+    (home-page "http://www.5b4az.org/")
+    (license license:gpl3+)))
+
+(define-public dump1090
+  (package
+    (name "dump1090")
+    (version "3.8.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/flightaware/dump1090.git")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0xg8rzrxqklx1m9ncxsd96dlkbjcsxfi2mrb859v50f07xysdyd8"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libusb" ,libusb)
+       ("ncurses" ,ncurses)
+       ("rtl-sdr" ,rtl-sdr)))
+    (arguments
+     `(#:test-target "test"
+       #:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             "BLADERF=no")
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((bin (string-append (assoc-ref outputs "out") "/bin/")))
+               (install-file "dump1090" bin)
+               (install-file "view1090" bin)
+               #t))))))
+    (synopsis "Mode S decoder for rtl-sdr devices")
+    (description
+     "Dump1090 is a Mode S decoder specifically designed for rtl-sdr devices.
+It can be used to decode the ADS-B signals that planes emit to indicate
+their position, altitude, speed, etc.")
+    (home-page "https://github.com/flightaware/dump1090")
+    (license license:bsd-3)))
+
+(define-public rtl-433
+  (package
+    (name "rtl-433")
+    (version "20.02")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/merbanan/rtl_433.git")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "11991xky9gawkragdyg27qsf7kw5bhlg7ygvf3fn7ng00x4xbh1z"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libusb" ,libusb)
+       ("rtl-sdr" ,rtl-sdr)))
+    (synopsis "Decoder for radio transmissions in ISM bands")
+    (description
+     "This is a generic data receiver, mainly for decoding radio transmissions
+from devices on the 433 MHz, 868 MHz, 315 MHz, 345 MHz and 915 MHz ISM bands.")
+    (home-page "https://github.com/merbanan/rtl_433")
+    (license license:gpl2+)))

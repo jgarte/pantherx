@@ -3,12 +3,14 @@
 ;;; Copyright © 2016 Carlo Zancanaro <carlo@zancanaro.id.au>
 ;;; Copyright © 2017, 2018, 2020 Eric Bavier <bavier@posteo.net>
 ;;; Copyright © 2017 Feng Shu <tumashu@163.com>
-;;; Copyright © 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2014 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.org>
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2019 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2019 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2019, 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
+;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2020 Tom Zander <tomz@freedommail.ch>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -30,15 +32,18 @@
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix utils)
+  #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system python)
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (gnu packages)
+  #:use-module (gnu packages aspell)
   #:use-module (gnu packages assembly)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages boost)
+  #:use-module (gnu packages code)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages gcc)
@@ -49,6 +54,7 @@
   #:use-module (gnu packages haskell-xyz)
   #:use-module (gnu packages libbsd)
   #:use-module (gnu packages libreoffice)
+  #:use-module (gnu packages llvm)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages pcre)
@@ -61,6 +67,7 @@
   #:use-module (gnu packages ruby)
   #:use-module (gnu packages terminals)
   #:use-module (gnu packages texinfo)
+  #:use-module (gnu packages version-control)
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg))
 
@@ -95,10 +102,6 @@
                  `("LUA_PATH" ":" prefix (,LUA_PATH))
                  `("LUA_CPATH" ":" prefix (,LUA_CPATH)))
                #t))))))
-    (native-search-paths
-     (list (search-path-specification
-            (variable "VIS_PATH")
-            (files '("share/vis")))))
     (inputs `(("lua" ,lua)
               ("ncurses" ,ncurses)
               ("libtermkey" ,libtermkey)
@@ -118,7 +121,7 @@ based command language.")
 (define-public kakoune
   (package
     (name "kakoune")
-    (version "2019.12.10")
+    (version "2020.01.16")
     (source
      (origin
        (method url-fetch)
@@ -126,7 +129,7 @@ based command language.")
                            "releases/download/v" version "/"
                            "kakoune-" version ".tar.bz2"))
        (sha256
-        (base32 "1y1gzax2dl7flh676k0rl1vacv10j7p5krkmb67b0afbrql8vbb6"))))
+        (base32 "1bhd990gywdwdhxc5dn83wwj418c5cw1ndqycf7k0a02kxlg3550"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -186,6 +189,85 @@ competitive (as in keystroke count) with Vim.")
 interface similar to many user-friendly editors.  JOE has some of the key
 bindings and many of the powerful features of GNU Emacs.")
     (license license:gpl3+)))
+
+(define-public jucipp
+  (package
+    (name "jucipp")
+    (version "1.6.0")
+    (home-page "https://gitlab.com/cppit/jucipp")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference (url home-page)
+                                  (commit (string-append "v" version))
+                                  ;; Two submodules are required which are
+                                  ;; developed alongside JuCi++ and difficult
+                                  ;; to package separately.
+                                  (recursive? #t)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32 "177myy6qvjlb6j3f3i3xmfml5r3p9in8xzpvm0n59dn56s81gpnr"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:configure-flags '("-DBUILD_TESTING=ON"
+
+                           ;; These arguments are here to facilitate an "in-source"
+                           ;; build using "./build" instead of the default "../build".
+                           ;; The test suite expects that to be the case.
+                           "..")
+       #:out-of-source? #f
+       #:phases (modify-phases %standard-phases
+                  (add-before 'configure 'enter-build-directory
+                    (lambda _
+                      (mkdir "build")
+                      (chdir "build")
+                      #t))
+
+                  (add-after 'unpack 'patch-tiny-process-library
+                    (lambda _
+                      (with-directory-excursion "lib/tiny-process-library"
+                        (substitute* '("process_unix.cpp"
+                                       "tests/io_test.cpp")
+                          (("/bin/sh") (which "sh"))))
+                      #t))
+                  (add-after 'unpack 'disable-git-test
+                    (lambda _
+                      (substitute* "tests/CMakeLists.txt"
+                        ;; Disable the git test, as it requires the full checkout.
+                        (("add_test\\(git_test.*\\)") ""))
+                      #t))
+                  (add-before 'check 'pre-check
+                    (lambda* (#:key inputs #:allow-other-keys)
+                      ;; Tests do not expect HOME to be empty.
+                      (setenv "HOME" "/etc")
+
+                      ;; Most tests require an X server.
+                      (let ((xorg-server (assoc-ref inputs "xorg-server"))
+                            (display ":1"))
+                        (setenv "DISPLAY" display)
+                        (system (string-append xorg-server "/bin/Xvfb "
+                                               display " &")))
+                      #t)))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("xorg-server" ,xorg-server-for-tests)))
+    (inputs
+     `(("aspell" ,aspell)
+       ("boost" ,boost)
+       ("ctags" ,universal-ctags)
+       ("gtkmm" ,gtkmm)
+       ("gtksourceviewmm" ,gtksourceviewmm)
+       ("libclang" ,clang)
+       ("libgit2" ,libgit2)))
+    (synopsis "Lightweight C++ IDE")
+    (description
+     "juCi++ is a small @dfn{IDE} (Integrated Development Environment)
+designed especially towards libclang with speed, stability, and ease of use
+in mind.
+
+It supports autocompletion, on-the-fly warnings and errors, syntax
+highlighting, and integrates with Git as well as the CMake and Meson build
+systems.")
+    (license license:expat)))
 
 (define-public leafpad
   (package
@@ -416,7 +498,7 @@ scripts/input/X11/C/Shell/HTML/Dired): 49KB.
 (define-public ghostwriter
   (package
     (name "ghostwriter")
-    (version "1.8.0")
+    (version "1.8.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -425,7 +507,7 @@ scripts/input/X11/C/Shell/HTML/Dired): 49KB.
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "13yn82m1l2pq93wbl569a2lzpc3sn8a8g30hsgdch1l9xlmhwran"))))
+                "0jc6szfh5sdnafhwsr1xv7cn1fznniq58bix41hb9wlbkvq7wzi6"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -661,14 +743,14 @@ and Octave.  TeXmacs is completely extensible via Guile.")
 (define-public scintilla
   (package
     (name "scintilla")
-    (version "4.3.2")
+    (version "4.4.3")
     (source
      (origin
        (method url-fetch)
        (uri (let ((v (apply string-append (string-split version #\.))))
               (string-append "https://www.scintilla.org/scintilla" v ".tgz")))
        (sha256
-        (base32 "0d8ssl0d8r6bslbzd507l9c5g8mwn1zriak3fnf85936pdmkhq9h"))))
+        (base32 "080v9l7dn3qgkdg0nc0kwpj6warwpi904zjgz9kzg1l6pknxf21s"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags (list "GTK3=1" "CC=gcc" "-Cgtk")
@@ -676,20 +758,14 @@ and Octave.  TeXmacs is completely extensible via Guile.")
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)            ;no configure script
-         (add-after 'unpack 'build-shared-library
-           (lambda _
-             (substitute* "gtk/makefile"
-               (("scintilla\\.a") "libscintilla.so")
-               (("\\$\\(AR\\) \\$\\(ARFLAGS\\) \\$@ \\$\\^")
-                "$(CC) -shared $^ -o $@")
-               (("\\$\\(RANLIB\\) \\$@") ""))
-             #t))
          (replace 'install
+           ;; Upstream provides no install script.
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (lib (string-append out "/lib"))
                     (include (string-append out "/include")))
-               (install-file "bin/libscintilla.so" lib)
+               (for-each (lambda (f) (install-file f lib))
+                         (find-files "bin/" "\\.so$"))
                (for-each (lambda (f) (install-file f include))
                          (find-files "include/" "."))
                #t))))))
@@ -714,17 +790,13 @@ and multiple fonts.")
   (package
     (name "geany")
     (version "1.36")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://download.geany.org/"
-                                  "geany-" version ".tar.bz2"))
-              (sha256
-               (base32
-                "0gnm17cr4rf3pmkf0axz4a0fxwnvp55ji0q0lzy88yqbshyxv14i"))
-              (modules '((guix build utils)))
-              (snippet '(begin
-                          (delete-file-recursively "scintilla")
-                          #t))))
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://download.geany.org/"
+                           "geany-" version ".tar.bz2"))
+       (sha256
+        (base32 "0gnm17cr4rf3pmkf0axz4a0fxwnvp55ji0q0lzy88yqbshyxv14i"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -737,26 +809,20 @@ and multiple fonts.")
        ("python-docutils" ,python-docutils))) ;for rst2html
     (inputs
      `(("gtk+" ,gtk+)
-       ("scintilla" ,scintilla)))
+       ;; FIXME: Geany bundles a 3.X release of Scintilla.  It is not
+       ;; currently possible to replace it with our Scintilla package.
+       ;; ("scintilla" ,scintilla)
+       ))
     (arguments
-     `(#:phases
+     `(#:imported-modules ((guix build glib-or-gtk-build-system)
+                           ,@%gnu-build-system-modules)
+       #:modules (((guix build glib-or-gtk-build-system) #:prefix glib-or-gtk:)
+                  (guix build gnu-build-system)
+                  (guix build utils))
+       #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'use-scintilla-shared-library
-           (lambda* (#:key inputs #:allow-other-keys)
-             (substitute* "configure.ac"
-               (("scintilla/Makefile") "")
-               (("scintilla/include/Makefile") ""))
-             (substitute* "Makefile.am"
-               (("scintilla ") ""))
-             (substitute* "src/Makefile.am"
-               (("\\$\\(top_builddir\\)/scintilla/libscintilla.la") "")
-               (("geany_LDFLAGS =" all) (string-append all " -lscintilla")))
-             (substitute* "doc/Makefile.am"
-               (("\\$\\(INSTALL_DATA\\) \\$\\(top_srcdir\\)/scintilla/License.txt \\$\\(DOCDIR\\)/ScintillaLicense.txt") ""))
-             (substitute* "tests/Makefile.am"
-               (("AM_LDFLAGS =" all) (string-append all " -lscintilla")))
-             (for-each delete-file (list "autogen.sh" "configure" "Makefile.in"))
-             #t)))))
+         (add-after 'install 'glib-or-gtk-wrap
+           (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-wrap)))))
     (home-page "https://www.geany.org")
     (synopsis "Fast and lightweight IDE")
     (description "Geany is a small and fast Integrated Development
@@ -812,7 +878,7 @@ The basic features of Geany are:
      `(("ncurses" ,ncurses)))
     (home-page "http://www.moria.de/~michael/fe/")
     (synopsis "Small folding editor")
-    (description "Fe is a small folding editor.  It allows to fold
+    (description "Fe is a small folding editor.  It folds
 arbitrary text regions; it is not bound to syntactic units.
 
 Fe has no configuration or extension language and requires no setup.
@@ -871,3 +937,35 @@ keybindings, autocomplete and unlimited undo.  It can pipe a marked block
 of text through any command line filter.  It can also open very large binary
 files.  It was originally developed on the Amiga 3000T.")
     (license license:gpl3+)))
+
+(define-public hexer
+  (package
+    (name "hexer")
+    (version "1.0.6")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (string-append "https://devel.ringlet.net/files/editors/hexer/"
+                            "hexer-" version ".tar.xz"))
+        (sha256
+          (base32 "157z17z8qivdin2km2wp86x1bv1nx15frrwcz11mk0l3ab74mf76"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ;no upstream tests
+       #:make-flags
+       (list "CC=gcc"
+             (string-append "PREFIX=" (assoc-ref %outputs "out"))
+             (string-append "LTERMCAP=-lncurses")
+             (string-append "LDFLAGS=-L" (assoc-ref %build-inputs "ncurses")
+                            "/lib"))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))         ;no configure script
+    (inputs
+     `(("ncurses" ,ncurses)))
+    (home-page "https://devel.ringlet.net/editors/hexer/")
+    (synopsis "Multi buffer editor for binary files with vi-like interface")
+    (description "Hexer is a multi-buffer editor for binary files for Unix-like
+systems that displays its buffer(s) as a hex dump.  The user interface is kept
+similar to vi/ex.")
+    (license license:bsd-3)))

@@ -5,11 +5,11 @@
 ;;; Copyright © 2015 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Andy Patterson <ajpatter@uwaterloo.ca>
 ;;; Copyright © 2016, 2017, 2018, 2019 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2017 Mekeor Melire <mekeor.melire@gmail.com>
-;;; Copyright © 2017, 2018 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2017, 2018, 2020 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Theodoros Foradis <theodoros@foradis.org>
 ;;; Copyright © 2017, 2018, 2019 Rutger Helling <rhelling@mykolab.com>
@@ -20,6 +20,7 @@
 ;;; Copyright © 2019, 2020 Timotej Lazar <timotej.lazar@araneo.si>
 ;;; Copyright © 2020 Nicolò Balzarotti <nicolo@nixo.xyz>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
+;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -266,6 +267,51 @@ access to servers running the Discord protocol.")
     (home-page "https://github.com/sm00th/bitlbee-discord/")
     (license license:gpl2+)))
 
+(define-public purple-mattermost
+  (package
+    (name "purple-mattermost")
+    (version "1.2")
+    (home-page "https://github.com/EionRobb/purple-mattermost")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference (url home-page)
+                                  (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0fm49iv58l09qpy8vkca3am642fxiwcrrh6ykimyc2mas210b5g2"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'configure
+                    (lambda* (#:key inputs outputs #:allow-other-keys)
+                      ;; Adjust the makefile to install files in the right
+                      ;; place.
+                      (let ((out (assoc-ref outputs "out")))
+                        (substitute* "Makefile"
+                          (("MATTERMOST_DEST = .*")
+                           (string-append "MATTERMOST_DEST = " out
+                                          "/lib/purple-2\n")) ;XXX: hardcoded
+                          (("MATTERMOST_ICONS_DEST = .*")
+                           (string-append "MATTERMOST_ICONS_DEST = "
+                                          out
+                                          "/share/pixmaps/pidgin/protocols\n")))
+                        #t))))
+       #:make-flags (list "CC=gcc"
+                          ,(string-append "PLUGIN_VERSION=" version))
+       #:tests? #f))
+    (inputs `(("glib" ,glib)
+              ("json-glib" ,json-glib)
+              ("discount" ,discount)
+              ("pidgin" ,pidgin)))
+    (native-inputs `(("pkg-config" ,pkg-config)))
+    (synopsis "Purple plug-in to access Mattermost instant messaging")
+    (description
+     "Purple-Mattermost is a plug-in for Purple, the instant messaging library
+used by Pidgin and Bitlbee, among others, to access
+@uref{https://mattermost.com/, Mattermost} servers.")
+    (license license:gpl3+)))
+
 (define-public hexchat
   (package
     (name "hexchat")
@@ -394,7 +440,16 @@ authentication.")
                            version "/pidgin-" version ".tar.bz2"))
        (sha256
         (base32 "13vdqj70315p9rzgnbxjp9c51mdzf1l4jg1kvnylc4bidw61air7"))
-       (patches (search-patches "pidgin-add-search-path.patch"))))
+       (patches (search-patches "pidgin-add-search-path.patch"
+                                ;; Remove the snippet and bootstrapping
+                                ;; native-inputs together with this patch.
+                                "pidgin-libnm.patch"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Remove stale generated file after applying pidgin-libnm.patch.
+           (delete-file "configure")
+           #t))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -402,7 +457,12 @@ authentication.")
        ("intltool" ,intltool)
        ("gconf" ,gconf)
        ("python" ,python-2)
-       ("doxygen" ,doxygen)))
+       ("doxygen" ,doxygen)
+
+       ;; For bootstrapping after applying pidgin-libnm.patch.
+       ("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)))
     (inputs
      `(("gtk+" ,gtk+-2)
        ("libgcrypt" ,libgcrypt)
@@ -505,14 +565,14 @@ compromised.")
 (define-public znc
   (package
     (name "znc")
-    (version "1.7.5")
+    (version "1.8.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://znc.in/releases/archive/znc-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "08a7yb2xs85hyyz8dpzfbsfjwj2r6kcii022lj3l4rf8hl9ix558"))))
+                "0hb1v167aa6gv5bcwz352l6b8gnd74ymjw92y4x882l099hzg59i"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
@@ -658,7 +718,7 @@ else [])"))
                           ;; FIXME: Cannot use this expression as it would
                           ;; introduce a circular dependency at the top level.
                           ;; (version-major+minor (package-version python))
-                          "3.7"
+                          "3.8"
 
                           "/site-packages"))))))
     (native-inputs
@@ -695,7 +755,7 @@ end-to-end encryption support; XML console.")
 (define-public gajim-omemo
   (package
     (name "gajim-omemo")
-    (version "2.6.29")
+    (version "2.7.4")
     (source (origin
               (method url-fetch/zipbomb)
               (uri (string-append
@@ -703,7 +763,7 @@ end-to-end encryption support; XML console.")
                     version ".zip"))
               (sha256
                (base32
-                "1mif5qkrvxclqbqmq6njini4laznbs5nn82w2f1hkl8c1284dvgi"))))
+                "00zrj57n86c2m99n0swmmaws4f8zccbgbi8fknv6f9b1vif9jc8p"))))
     (build-system trivial-build-system)
     (arguments
      `(#:modules ((guix build utils))
@@ -719,7 +779,7 @@ end-to-end encryption support; XML console.")
     (propagated-inputs
      `(("python-axolotl" ,python-axolotl)))
     (home-page
-     "https://dev.gajim.org/gajim/gajim-plugins/wikis/OmemoGajimPlugin")
+     "https://dev.gajim.org/gajim/gajim-plugins/-/wikis/OmemoGajimPlugin")
     (synopsis "Gajim OMEMO plugin")
     (description
      "This package provides the Gajim OMEMO plugin.  OMEMO is an XMPP
@@ -728,68 +788,52 @@ on Axolotl and PEP.")
     (license license:gpl3+)))
 
 (define-public dino
-  ;; The only release tarball is for version 0.0, but it is very old and fails
-  ;; to build.
-  (let ((commit "8e14ac6d714b7f88e16de31a6c795e811dc27417")
-        (revision "4"))
-    (package
-      (name "dino")
-      (version (git-version "0.0" revision commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://github.com/dino/dino.git")
-                      (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "0xfmwnc2f8lsvmp7m8ggikzqjaw5z6wmxrv6j5ljha5ckffrdd9m"))))
-      (build-system cmake-build-system)
-      (arguments
-       `(#:tests? #f ; there are no tests
-         #:parallel-build? #f ; not supported
-         ; Use our libsignal-protocol-c instead of the git submodule.
-         #:configure-flags '("-DSHARED_SIGNAL_PROTOCOL=yes")
-         #:modules ((guix build cmake-build-system)
-                    ((guix build glib-or-gtk-build-system) #:prefix glib-or-gtk:)
-                    (guix build utils))
-         #:imported-modules (,@%gnu-build-system-modules
-                             (guix build cmake-build-system)
-                             (guix build glib-or-gtk-build-system))
-         #:phases
-         (modify-phases %standard-phases
-           ;; The signal-protocol plugin accesses internal headers of
-           ;; libsignal-protocol-c, so we need to put the sources there.
-           (add-after 'unpack 'unpack-sources
-             (lambda* (#:key inputs #:allow-other-keys)
-               (with-directory-excursion "plugins/signal-protocol/libsignal-protocol-c"
-                 (invoke "tar" "xvf"
-                         (assoc-ref inputs "libsignal-protocol-c-source")
-                         "--strip-components=1"))))
-           (add-after 'install 'glib-or-gtk-wrap
-             (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-wrap)))))
-      (inputs
-       `(("libgee" ,libgee)
-         ("libsignal-protocol-c" ,libsignal-protocol-c)
-         ("libgcrypt" ,libgcrypt)
-         ("libsoup" ,libsoup)
-         ("qrencode" ,qrencode)
-         ("sqlite" ,sqlite-with-column-metadata)
-         ("gpgme" ,gpgme)
-         ("gtk+" ,gtk+)
-         ("glib-networking" ,glib-networking)
-         ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)))
-      (native-inputs
-       `(("pkg-config" ,pkg-config)
-         ("libsignal-protocol-c-source" ,(package-source libsignal-protocol-c))
-         ("glib" ,glib "bin")
-         ("vala" ,vala)
-         ("gettext" ,gettext-minimal)))
-      (home-page "https://dino.im")
-      (synopsis "Graphical Jabber (XMPP) client")
-      (description "Dino is a Jabber (XMPP) client which aims to fit well into
+  (package
+    (name "dino")
+    (version "0.1.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/dino/dino/releases/download/v"
+                           version "/dino-" version ".tar.gz"))
+       (sha256
+        (base32
+         "0dcq2jhpywgxrp9x1qqmrl2z50hazspqj547b9zz70apy3y4418h"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f
+       #:parallel-build? #f ; not supported
+       #:modules ((guix build cmake-build-system)
+                  ((guix build glib-or-gtk-build-system) #:prefix glib-or-gtk:)
+                  (guix build utils))
+       #:imported-modules (,@%gnu-build-system-modules
+                           (guix build cmake-build-system)
+                           (guix build glib-or-gtk-build-system))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'glib-or-gtk-wrap
+           (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-wrap)))))
+    (inputs
+     `(("libgee" ,libgee)
+       ("libsignal-protocol-c" ,libsignal-protocol-c)
+       ("libgcrypt" ,libgcrypt)
+       ("libsoup" ,libsoup)
+       ("qrencode" ,qrencode)
+       ("sqlite" ,sqlite)
+       ("gpgme" ,gpgme)
+       ("gtk+" ,gtk+)
+       ("glib-networking" ,glib-networking)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("glib" ,glib "bin")
+       ("vala" ,vala)
+       ("gettext" ,gettext-minimal)))
+    (home-page "https://dino.im")
+    (synopsis "Graphical Jabber (XMPP) client")
+    (description "Dino is a Jabber (XMPP) client which aims to fit well into
 a graphical desktop environment like GNOME.")
-      (license license:gpl3+))))
+    (license license:gpl3+)))
 
 (define-public prosody
   (package
@@ -1739,6 +1783,12 @@ building the IRC clients and bots.")
          (delete 'configure)
          (add-before 'build 'enable-python-scripting
            (lambda _
+             ;; XXX: For compatibility with Python 3.8, adjust python3-config
+             ;; invokation to include --embed; see
+             ;; <https://github.com/JFreegman/toxic/issues/533>.
+             (substitute* "cfg/checks/python.mk"
+               (("python3-config --ldflags")
+                "python3-config --ldflags --embed"))
              (setenv "ENABLE_PYTHON" "1")
              #t)))))
     (inputs
@@ -1767,16 +1817,16 @@ notifications, and Python scripting support.")
 (define-public libqmatrixclient
   (package
     (name "libqmatrixclient")
-    (version "0.5.2")
+    (version "0.5.3.2")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-              (url "https://github.com/QMatrixClient/libqmatrixclient")
+              (url "https://github.com/quotient-im/libQuotient")
               (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1bhlqfs7251fss4icx794ka614npr6zyrpp4qwc4q5408ykfm7lr"))))
+        (base32 "0gkwr3yw6k2m0j8cc085b5p2q788rf5nhp1p5hc5d55pc7mci2qs"))))
     (build-system cmake-build-system)
     (inputs
      `(("qtbase" ,qtbase)
@@ -1919,16 +1969,16 @@ There is support for:
 (define-public quaternion
   (package
     (name "quaternion")
-    (version "0.0.9.4c")
+    (version "0.0.9.4e")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-              (url "https://github.com/QMatrixClient/Quaternion")
+              (url "https://github.com/quotient-im/Quaternion")
               (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0gpv6b3nn3lsyym8809kiqkpdszfasldqjpk5s542zyn41gdlql4"))))
+        (base32 "0hqhg7l6wpkdbzrdjvrbqymmahziri07ba0hvbii7dd2p0h248fv"))))
     (build-system qt-build-system)
     (inputs
      `(("libqmatrixclient" ,libqmatrixclient)

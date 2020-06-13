@@ -2,8 +2,9 @@
 ;;; Copyright © 2015 Mathieu Lirzin <mthl@openmailbox.org>
 ;;; Copyright © 2015 David Thompson <davet@gnu.org>
 ;;; Copyright © 2016, 2019 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017, 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -205,7 +206,16 @@ implementation.
              (file-name (git-file-name name version))
              (sha256
               (base32
-               "0r7jpqhgnssq444i8pwji2g36058vfzwkl70wbiwj13h4w5rfc8f"))))
+               "0r7jpqhgnssq444i8pwji2g36058vfzwkl70wbiwj13h4w5rfc8f"))
+             (modules '((guix build utils)))
+             (snippet
+              '(begin
+                 ;; Mimic upstream commit 68c3a91166347 to fix a test failure
+                 ;; when using Python 3.8.  Remove for versions > 0.29.
+                 ;; See <https://github.com/commonmark/cmark/issues/313>.
+                 (substitute* "test/normalize.py"
+                   (("cgi") "html"))
+                 #t))))
     (build-system cmake-build-system)
     (arguments
      '(#:test-target "test"))
@@ -218,7 +228,7 @@ CommonMark to an abstract syntax tree (@dfn{AST}) and rendering the document
 as HTML, groff man, LaTeX, CommonMark, or an XML representation of the
 AST.  The package also provides the command-line program @command{cmark}
 for parsing and rendering CommonMark.")
-    (home-page "http://commonmark.org")
+    (home-page "https://commonmark.org")
     ;; cmark is distributed with a BSD-2 license, but some components are Expat
     ;; licensed. The CommonMark specification is Creative Commons CC-BY-SA 4.0
     ;; licensed. See 'COPYING' in the source distribution for more information.

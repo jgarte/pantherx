@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2016 John Darrington <jmd@gnu.org>
 ;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
-;;; Copyright © 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2019 by Amar Singh <nly@disroot.org>
 ;;; Copyright © 2020 R Veera Kumar <vkor@vkten.in>
 ;;; Copyright © 2020 Guillaume Le Vaillant <glv@posteo.net>
@@ -128,7 +128,7 @@ header.")
 (define-public gnuastro
   (package
     (name "gnuastro")
-    (version "0.11")
+    (version "0.12")
     (source
      (origin
        (method url-fetch)
@@ -136,18 +136,20 @@ header.")
                            version ".tar.lz"))
        (sha256
         (base32
-         "0c1yc2qb7vrqad96savfn06rn01izlfz0va738signv93qqj5k3v"))))
+         "0ypk1c72q778cixfa52vjxzbd5m4qc6hfjgnipy16sfa7mnspmyf"))))
+    (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (inputs
      `(("cfitsio" ,cfitsio)
        ("gsl" ,gsl)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libtiff" ,libtiff)
        ("wcslib" ,wcslib)
        ("zlib" ,zlib)))
     (native-inputs
      `(("libtool" ,libtool)
        ("lzip" ,lzip)))
-    (build-system gnu-build-system)
     (home-page "https://www.gnu.org/software/gnuastro/")
     (synopsis "Astronomy utilities")
     (description "The GNU Astronomy Utilities (Gnuastro) is a suite of
@@ -157,7 +159,7 @@ programs for the manipulation and analysis of astronomical data.")
 (define-public stellarium
   (package
     (name "stellarium")
-    (version "0.19.3")
+    (version "0.20.1")
     (source
      (origin
        (method url-fetch)
@@ -165,7 +167,7 @@ programs for the manipulation and analysis of astronomical data.")
                            "/releases/download/v" version
                            "/stellarium-" version ".tar.gz"))
        (sha256
-        (base32 "0p92rgclag0nkic9gk3p9vclb8xx9hv4zlgyij6cyh43s7c1avhp"))))
+        (base32 "034jkrdaaamvbrkfwi3qcl6h8hwfnw2nvf7a82faj55rskcpnkhm"))))
     (build-system cmake-build-system)
     (inputs
      `(("qtbase" ,qtbase)
@@ -226,7 +228,7 @@ objects.")
        `(("glu" ,glu)
          ("glew" ,glew)
          ("libtheora" ,libtheora)
-         ("libjpeg" ,libjpeg)
+         ("libjpeg" ,libjpeg-turbo)
          ("libpng" ,libpng)
          ;; maybe required?
          ("mesa" ,mesa)
@@ -326,7 +328,7 @@ Mechanics, Astrometry and Astrodynamics library.")
        ("freetype" ,freetype)
        ("pango" ,pango)
        ("giflib" ,giflib)
-       ("libjpeg", libjpeg)
+       ("libjpeg", libjpeg-turbo)
        ("libpng" ,libpng)
        ("libtiff" ,libtiff)
        ("netpbm" ,netpbm)

@@ -3,11 +3,11 @@
 ;;; Copyright © 2015 Sou Bunnbu <iyzsong@gmail.com>
 ;;; Copyright © 2015, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Thomas Danckaert <post@thomasdanckaert.be>
 ;;; Copyright © 2017, 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Quiliro <quiliro@fsfla.org>
-;;; Copyright © 2017, 2018 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2017, 2018, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2018 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2018 Eric Bavier <bavier@member.fsf.org>
@@ -15,6 +15,7 @@
 ;;; Copyright © 2018 John Soo <jsoo1@asu.edu>
 ;;; Copyright © 2020 Mike Rosset <mike.rosset@gmail.com>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
+;;; Copyright © 2020 Kei Kebreau <kkebreau@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -141,7 +142,7 @@
     (description "Grantlee Templates can be used for theming and generation of
 other text such as code.  The syntax uses the syntax of the Django template
 system, and the core design of Django is reused in Grantlee.")
-    (license license:lgpl2.0+)))
+    (license license:lgpl2.1+)))
 
 (define-public qt-4
   (package
@@ -149,7 +150,7 @@ system, and the core design of Django is reused in Grantlee.")
     (version "4.8.7")
     (source (origin
              (method url-fetch)
-             (uri (string-append "http://download.qt-project.org/official_releases/qt/"
+             (uri (string-append "http://download.qt-project.org/archive/qt/"
                                  (string-copy version 0 (string-rindex version #\.))
                                  "/" version
                                  "/qt-everywhere-opensource-src-"
@@ -206,7 +207,7 @@ system, and the core design of Django is reused in Grantlee.")
        ("postgresql" ,postgresql)
        ("pulseaudio" ,pulseaudio)
        ("pcre2" ,pcre2)
-       ("sqlite" ,sqlite-with-column-metadata)
+       ("sqlite" ,sqlite)
        ("udev" ,eudev)
        ("unixodbc" ,unixodbc)
        ("wayland" ,wayland)
@@ -223,7 +224,7 @@ system, and the core design of Django is reused in Grantlee.")
      `(;; XXX: The JavaScriptCore engine does not build with the C++11 standard.
        ;; We could build it with -std=gnu++98, but then we'll get in trouble with
        ;; ICU later.  Just keep using GCC 5 for now.
-       ("gcc" ,gcc-5)
+       ("gcc@5" ,gcc-5)
        ("bison" ,bison)
        ("flex" ,flex)
        ("gperf" ,gperf)
@@ -240,6 +241,17 @@ system, and the core design of Django is reused in Grantlee.")
     (arguments
      `(#:phases
        (modify-phases %standard-phases
+         (add-after 'set-paths 'hide-default-gcc
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((gcc (assoc-ref inputs "gcc")))
+               ;; Remove the default GCC from CPLUS_INCLUDE_PATH to prevent
+               ;; conflicts with the GCC 5 input.
+               (setenv "CPLUS_INCLUDE_PATH"
+                       (string-join
+                        (delete (string-append gcc "/include/c++")
+                                (string-split (getenv "CPLUS_INCLUDE_PATH") #\:))
+                        ":"))
+               #t)))
          (replace
           'configure
           (lambda* (#:key outputs #:allow-other-keys)
@@ -352,6 +364,7 @@ developers using C++ or QML, a CSS & JavaScript like language.")
                "0pb68d30clksdhgy8n6rrs838bb3qcsfq4pv463yy2nr4p5kk2di"))
              ;; Use TZDIR to avoid depending on package "tzdata".
              (patches (search-patches "qtbase-use-TZDIR.patch"
+                                      "qtbase-moc-ignore-gcc-macro.patch"
                                       "qtbase-QTBUG-81715.patch"))
              (modules '((guix build utils)))
              (snippet
@@ -381,7 +394,7 @@ developers using C++ or QML, a CSS & JavaScript like language.")
        ("harfbuzz" ,harfbuzz)
        ("icu4c" ,icu4c)
        ("libinput" ,libinput-minimal)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libmng" ,libmng)
        ("libpng" ,libpng)
        ("libx11" ,libx11)
@@ -404,7 +417,7 @@ developers using C++ or QML, a CSS & JavaScript like language.")
        ("pcre2" ,pcre2)
        ("postgresql" ,postgresql)
        ("pulseaudio" ,pulseaudio)
-       ("sqlite" ,sqlite-with-column-metadata)
+       ("sqlite" ,sqlite)
        ("unixodbc" ,unixodbc)
        ("xcb-util" ,xcb-util)
        ("xcb-util-image" ,xcb-util-image)
@@ -1798,6 +1811,23 @@ message.")))
      (substitute-keyword-arguments (package-arguments qtsvg)
        ((#:phases phases)
         `(modify-phases ,phases
+           (add-after 'unpack 'fix-build-with-newer-re2
+             (lambda _
+               ;; Adjust for API change in re2, taken from
+               ;; https://chromium-review.googlesource.com/c/chromium/src/+/2145261
+               (substitute* "src/3rdparty/chromium/components/autofill/core\
+/browser/address_rewriter.cc"
+               (("options\\.set_utf8\\(true\\)")
+                "options.set_encoding(RE2::Options::EncodingUTF8)"))
+               #t))
+           (add-after 'unpack 'patch-ninja-version-check
+             (lambda _
+               ;; The build system assumes the system Ninja is too old because
+               ;; it only checks for versions 1.7 through 1.9.  We have 1.10.
+               (substitute* "configure.pri"
+                 (("1\\.\\[7-9\\]\\.\\*")
+                  "1.([7-9]|1[0-9]).*"))
+               #t))
            (add-before 'configure 'substitute-source
              (lambda* (#:key inputs outputs #:allow-other-keys)
                (let ((out (assoc-ref outputs "out"))
@@ -2040,7 +2070,10 @@ contain over 620 classes.")
        ("qtwebengine" ,qtwebengine)))
     (arguments
      `(#:modules ((srfi srfi-1)
+                  ((guix build python-build-system) #:select (python-version))
                   ,@%gnu-build-system-modules)
+       #:imported-modules ((guix build python-build-system)
+                           ,@%gnu-build-system-modules)
        #:phases
        (modify-phases %standard-phases
          (replace 'configure
@@ -2050,13 +2083,8 @@ contain over 620 classes.")
                     (pyqt-sipdir (string-append
                                   (assoc-ref inputs "python-pyqt") "/share/sip"))
                     (python (assoc-ref inputs "python"))
-                    (python-version
-                     (last (string-split python #\-)))
-                    (python-major+minor
-                     (string-join
-                      (take (string-split python-version #\.) 2) "."))
                     (lib (string-append out "/lib/python"
-                                        python-major+minor
+                                        (python-version python)
                                         "/site-packages/PyQt5"))
                     (stubs (string-append lib "/PyQt5")))
 
@@ -2075,7 +2103,9 @@ contain over 620 classes.")
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (let* ((__init__.py (string-append
                                   (assoc-ref outputs "out")
-                                  "/lib/python3.7/site-packages/PyQt5/__init__.py")))
+                                  "/lib/python"
+                                  (python-version (assoc-ref inputs "python"))
+                                  "/site-packages/PyQt5/__init__.py")))
                (with-output-to-file __init__.py
                  (lambda _ (display "
 from pkgutil import extend_path
@@ -2308,7 +2338,7 @@ securely.  It will not store any data unencrypted unless explicitly requested.")
 (define-public qwt
   (package
     (name "qwt")
-    (version "6.1.4")
+    (version "6.1.5")
     (source
       (origin
         (method url-fetch)
@@ -2316,7 +2346,7 @@ securely.  It will not store any data unencrypted unless explicitly requested.")
          (string-append "mirror://sourceforge/qwt/qwt/"
                         version "/qwt-" version ".tar.bz2"))
         (sha256
-         (base32 "1navkcnmn0qz8kzsyqmk32d929zl72l0b580w1ica7z5559j2a8m"))))
+         (base32 "0hf0mpca248xlqn7xnzkfj8drf19gdyg5syzklvq8pibxiixwxj0"))))
   (build-system gnu-build-system)
   (inputs
    `(("qtbase" ,qtbase)
@@ -2396,10 +2426,10 @@ different kinds of sliders, and much more.")
      `(("icu" ,icu4c)
        ("glib" ,glib)
        ("gst-plugins-base" ,gst-plugins-base)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libwebp" ,libwebp)
-       ("sqlite" ,sqlite-with-column-metadata)
+       ("sqlite" ,sqlite)
        ("fontconfig" ,fontconfig)
        ("libxrender" ,libxrender)
        ("qtbase" ,qtbase)
@@ -2669,3 +2699,47 @@ generate Python bindings for your C or C++ code.")
     (description
      "Contains lupdate, rcc and uic tools for PySide2")
     (license license:gpl2)))
+
+(define-public libqglviewer
+  (package
+    (name "libqglviewer")
+    (version "2.7.2")
+    (source (origin
+              (method url-fetch)
+              (uri
+               (string-append "http://libqglviewer.com/src/libQGLViewer-"
+                              version ".tar.gz"))
+              (sha256
+               (base32
+                "023w7da1fyn2z69nbkp2rndiv886zahmc5cmira79zswxjfpklp2"))))
+    (build-system gnu-build-system)
+    (arguments
+     '(#:tests? #f                      ; no check target
+       #:make-flags
+       (list (string-append "PREFIX="
+                            (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'configure
+           (lambda* (#:key make-flags #:allow-other-keys)
+             (apply invoke (cons "qmake" make-flags)))))))
+    (native-inputs
+     `(("qtbase" ,qtbase)
+       ("qttools" ,qttools)))
+    (inputs
+     `(("glu" ,glu)))
+    (home-page "http://libqglviewer.com")
+    (synopsis "Qt-based C++ library for the creation of OpenGL 3D viewers")
+    (description
+     "@code{libQGLViewer} is a C++ library based on Qt that eases the creation
+of OpenGL 3D viewers.
+
+It provides some of the typical 3D viewer functionalities, such as the
+possibility to move the camera using the mouse, which lacks in most of the
+other APIs.  Other features include mouse manipulated frames, interpolated
+keyFrames, object selection, stereo display, screenshot saving and much more.
+It can be used by OpenGL beginners as well as to create complex applications,
+being fully customizable and easy to extend.")
+    ;; According to LICENSE, either version 2 or version 3 of the GNU GPL may
+    ;; be used.
+    (license (list license:gpl2 license:gpl3))))

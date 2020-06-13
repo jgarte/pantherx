@@ -5,13 +5,13 @@
 ;;; Copyright © 2015 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2015 Andy Patterson <ajpatter@uwaterloo.ca>
-;;; Copyright © 2015, 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019 Alex Vong <alexvong1995@gmail.com>
 ;;; Copyright © 2016, 2017 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2016 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2016 Dmitry Nikolaev <cameltheman@gmail.com>
 ;;; Copyright © 2016 Andy Patterson <ajpatter@uwaterloo.ca>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016, 2018, 2019, 2020 Eric Bavier <bavier@posteo.net>
 ;;; Copyright © 2016 Jan Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2017 Feng Shu <tumashu@163.com>
@@ -39,6 +39,9 @@
 ;;; Copyright © 2020 Josh Holland <josh@inv.alid.pw>
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
+;;; Copyright © 2020 Guillaume Le Vaillant <glv@posteo.net>
+;;; Copyright © 2020 Alex McGrath <amk@amk.ie>
+;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -65,6 +68,7 @@
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix svn-download)
+  #:use-module (guix build-system cargo)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system copy)
   #:use-module (guix build-system gnu)
@@ -89,6 +93,7 @@
   #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages cpp)
+  #:use-module (gnu packages crates-io)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages dejagnu)
   #:use-module (gnu packages dns)
@@ -139,6 +144,7 @@
   #:use-module (gnu packages qt)
   #:use-module (gnu packages rdesktop)
   #:use-module (gnu packages ruby)
+  #:use-module (gnu packages rust-apps)
   #:use-module (gnu packages samba)
   #:use-module (gnu packages sdl)
   #:use-module (gnu packages serialization)
@@ -278,7 +284,7 @@ television and DVD.  It is also known as AC-3.")
 (define-public libaom
   (package
     (name "libaom")
-    (version "1.0.0-errata1-avif")
+    (version "2.0.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -287,7 +293,7 @@ television and DVD.  It is also known as AC-3.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "169yfgh7zigc21h71qclfyr7s4wwp2i9vbr4z6pkabypvass4v7m"))))
+                "1616xjhj6770ykn82ml741h8hx44v507iky3s9h7a5lnk9d4cxzy"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("perl" ,perl)
@@ -602,7 +608,7 @@ available.")
 (define-public x265
   (package
     (name "x265")
-    (version "3.2.1")
+    (version "3.3")
     (outputs '("out" "static"))
     (source
       (origin
@@ -612,13 +618,18 @@ available.")
                    (string-append "https://download.videolan.org/videolan/x265/"
                                   "x265_" version ".tar.gz")))
         (sha256
-         (base32 "1k5vijsy6cgcghw69f5275xfmbjjx7js0nlbgxbd6krnjb7sv6zv"))
+         (base32 "170b61cgpcs5n35qps0p40dqs1q81vkgagzbs4zv7pzls6718vpj"))
         (patches (search-patches "x265-arm-flags.patch"))
         (modules '((guix build utils)))
         (snippet '(begin
                     (delete-file-recursively "source/compat/getopt")
                     #t))))
     (build-system cmake-build-system)
+    (native-inputs
+     ;; XXX: ASM optimization fails on i686-linux, see <https://bugs.gnu.org/41768>.
+     (if (string-prefix? "i686" (%current-system))
+         '()
+         `(("nasm" ,nasm))))
     (arguments
      `(#:tests? #f ; tests are skipped if cpu-optimized code isn't built
        #:configure-flags
@@ -924,7 +935,7 @@ operate properly.")
 (define-public ffmpeg
   (package
     (name "ffmpeg")
-    (version "4.2.2")
+    (version "4.2.3")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://ffmpeg.org/releases/ffmpeg-"
@@ -933,7 +944,7 @@ operate properly.")
              (patches (search-patches "ffmpeg-prefer-dav1d.patch"))
              (sha256
               (base32
-               "176jn1lcdf0gk7sa5l2mv0faqp5dsqdhx1gqcrgymqhfmdal4xfb"))))
+               "0cddkb5sma9dzy8i59sfls19rhjlq40zn9mh3x666dqkxl5ckxlx"))))
     (build-system gnu-build-system)
     (inputs
      `(("dav1d" ,dav1d)
@@ -1186,7 +1197,7 @@ videoformats depend on the configuration flags of ffmpeg.")
 (define-public vlc
   (package
     (name "vlc")
-    (version "3.0.8")
+    (version "3.0.10")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1195,13 +1206,7 @@ videoformats depend on the configuration flags of ffmpeg.")
                     "/vlc-" version ".tar.xz"))
               (sha256
                (base32
-                "1xmxjpyzdhabchwncz6lvx3kzvl7fz9c42bkv3nbj68albs9w570"))
-              (patches
-               (search-patches
-                ;; TODO: The test "libvlc_slaves" fails.  Applied upstream as
-                ;; <https://git.videolan.org/?p=vlc.git;a=commit;h=4186c94104ee528abd6860611b49515f3e6ec644>.
-                ;; Try removing it in 3.0.9.
-                "vlc-fix-test_libvlc_slaves.patch"))))
+                "0cackl1084hcmg4myf3kvjvd6sjxmzn0c0qkmanz6brvgzyanrm9"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("flex" ,flex)
@@ -1306,20 +1311,6 @@ videoformats depend on the configuration flags of ffmpeg.")
                ;; which fails in our sandboxed build system
                (substitute* "test/run_vlc.sh"
                  (("./vlc --ignore-config") "echo"))
-
-               ;; modules/text_renderer/freetype/text_layout.c uses a
-               ;; now-deprecated interface 'fribidi_get_par_embedding_levels'
-               ;; from fribidi.h, so for now we enable the use of deprecated
-               ;; fribidi interfaces from this file.
-               ;; FIXME: Try removing this for vlc >= 3.0.3.
-               (substitute* "modules/text_renderer/freetype/text_layout.c"
-                 (("# define FRIBIDI_NO_DEPRECATED 1") ""))
-
-               ;; Fix build with libssh2 > 1.8.0:
-               ;; <https://trac.videolan.org/vlc/ticket/22060>
-               ;; <https://git.videolan.org/?p=vlc.git;a=commit;h=11449b5cd8b415768e010d9b7c1d6ba3cea21f82>
-               (substitute* "modules/access/sftp.c"
-                 (("010801") "010900"))
                #t)))
          (add-after 'strip 'regenerate-plugin-cache
            (lambda* (#:key outputs #:allow-other-keys)
@@ -1384,7 +1375,7 @@ streaming protocols.")
        ("libdvdcss" ,libdvdcss)
        ("libdvdnav" ,libdvdnav)         ; ignored without libdvdread
        ("libdvdread" ,libdvdread)       ; ignored without libdvdnav
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libmpeg2" ,libmpeg2)
        ("libmpg123" ,mpg123)            ; audio codec for MP3
        ("libpng" ,libpng)
@@ -1482,7 +1473,7 @@ SVCD, DVD, 3ivx, DivX 3/4/5, WMV and H.264 movies.")
        ("libcdio-paranoia" ,libcdio-paranoia)
        ("libdvdread" ,libdvdread)
        ("libdvdnav" ,libdvdnav)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libva" ,libva)
        ("libvdpau" ,libvdpau)
        ("libx11" ,libx11)
@@ -1544,7 +1535,7 @@ projects while introducing many more.")
 (define-public mpv-mpris
   (package
     (name "mpv-mpris")
-    (version "0.4")
+    (version "0.5")
     (source
       (origin
         (method git-fetch)
@@ -1554,7 +1545,7 @@ projects while introducing many more.")
         (file-name (git-file-name name version))
         (sha256
          (base32
-          "1fr3jvja8s2gdpx8qyk9r17977flms3qpm8zci62nd9r5wjdvr5i"))))
+          "07p6li5z38pkfd40029ag2jqx917vyl3ng5p2i4v5a0af14slcnk"))))
     (build-system copy-build-system)
     (arguments
      '(#:install-plan
@@ -1622,29 +1613,10 @@ To load this plugin, specify the following option when starting mpv:
     (license license:bsd-3)
     (home-page "https://www.webmproject.org/")))
 
-;; GNU IceCat fails to build against 1.8.0, so keep this version for now.
-(define-public libvpx-1.7
-  (package
-    (inherit libvpx)
-    (version "1.7.0")
-    (source (origin
-              (inherit (package-source libvpx))
-              (uri (git-reference
-                    (url "https://chromium.googlesource.com/webm/libvpx")
-                    (commit (string-append "v" version))))
-              (file-name (git-file-name "libvpx" version))
-              (sha256
-               (base32
-                "0vvh89hvp8qg9an9vcmwb7d9k3nixhxaz6zi65qdjnd0i56kkcz6"))
-              (patches
-               (append
-                (origin-patches (package-source libvpx))
-                (search-patches "libvpx-use-after-free-in-postproc.patch")))))))
-
 (define-public youtube-dl
   (package
     (name "youtube-dl")
-    (version "2020.03.24")
+    (version "2020.06.06")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/ytdl-org/youtube-dl/"
@@ -1652,7 +1624,7 @@ To load this plugin, specify the following option when starting mpv:
                                   version ".tar.gz"))
               (sha256
                (base32
-                "05l4asakakxn53wrvxn6c03fd80zdizdbj6r2cj8c1ja3sj9i8s5"))))
+                "1qrrr14glv0jv377n61paq55b6k58jpnwbz2sp5xfl4wnxy5hqny"))))
     (build-system python-build-system)
     (arguments
      ;; The problem here is that the directory for the man page and completion
@@ -1831,7 +1803,7 @@ audio, images) from the Web.  It can use either mpv or vlc for playback.")
 (define-public youtube-viewer
   (package
     (name "youtube-viewer")
-    (version "3.7.5")
+    (version "3.7.6")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1840,7 +1812,7 @@ audio, images) from the Web.  It can use either mpv or vlc for playback.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1caz56sxy554avz2vdv9gm7gyqcq0gyixzrh5v9ixmg6vxif5d4f"))))
+                "1c7wynx0fzs8awb1s4rdrl8xavqlj64z95yckhl1m1gnhahhq291"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-build" ,perl-module-build)))
@@ -2286,14 +2258,14 @@ and custom quantization matrices.")
 (define-public streamlink
   (package
     (name "streamlink")
-    (version "1.3.1")
+    (version "1.4.1")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "streamlink" version))
         (sha256
          (base32
-          "0cnlg3ra3g6dml4xfy9ysy9b4qwyn458fadd8ac44cfwi3v4gq6y"))))
+          "1s458k8z1lv0w8i82sxs8dys66fwm4yr9j1m7fzp7r0piz8phcpd"))))
     (build-system python-build-system)
     (home-page "https://github.com/streamlink/streamlink")
     (native-inputs
@@ -2442,7 +2414,7 @@ tools, XML authoring components, and an extensible plug-in based API.")
     (inputs
      `(("alsa-lib" ,alsa-lib)
        ("glu" ,glu)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libx11" ,libx11)
        ("qtbase" ,qtbase)
        ("eudev" ,eudev)))
@@ -2456,7 +2428,7 @@ be used for realtime video capture via Linux-specific APIs.")
 (define-public obs
   (package
     (name "obs")
-    (version "24.0.4")
+    (version "25.0.8")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2465,10 +2437,12 @@ be used for realtime video capture via Linux-specific APIs.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0m15ch2ix9qrdf1a9mj7wcpl72z3h13zx60c9q72sb1435id2g1q"))))
+                "0j2k65q3wfyfxhvkl6icz4qy0s3kfqhksizy2i3ah7yml266axbj"))))
     (build-system cmake-build-system)
     (arguments
-     `(#:tests? #f))                    ; no tests
+     `(#:tests? #f ; no test suite
+       #:configure-flags
+       (list (string-append "-DOBS_VERSION_OVERRIDE=" ,version))))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
@@ -2482,6 +2456,7 @@ be used for realtime video capture via Linux-specific APIs.")
        ("jansson" ,jansson)
        ("libx264" ,libx264)
        ("libxcomposite" ,libxcomposite)
+       ("mbedtls" ,mbedtls-apache)
        ("mesa" ,mesa)
        ("pulseaudio" ,pulseaudio)
        ("qtbase" ,qtbase)
@@ -2796,14 +2771,15 @@ supported players in addition to this package.")
 (define-public handbrake
   (package
     (name "handbrake")
-    (version "1.3.1")
+    (version "1.3.2")
     (source (origin
               (method url-fetch)
-              (uri (string-append "https://download.handbrake.fr/releases/"
-                                  version "/HandBrake-" version "-source.tar.bz2"))
+              (uri (string-append "https://github.com/HandBrake/HandBrake/"
+                                  "releases/download/" version "/"
+                                  "HandBrake-" version "-source.tar.bz2"))
               (sha256
                (base32
-                "09rcrq0kjs1lc1as7w3glbpbfvzldwpx3xv0pfmkn4pl7acxw1f0"))
+                "0w7jxjrccvxp7g15dv0spildg5apmqp4gwbcqmg58va2gylynvzc"))
               (modules '((guix build utils)))
               (snippet
                ;; Remove "contrib" and source not necessary for
@@ -2917,18 +2893,22 @@ of modern, widely supported codecs.")
 (define-public intel-vaapi-driver
   (package
     (name "intel-vaapi-driver")
-    (version "2.4.0")
+    (version "2.4.1")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "https://github.com/intel/intel-vaapi-driver/"
-                           "releases/download/" version "/intel-vaapi-driver-"
-                           version ".tar.bz2"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/intel/intel-vaapi-driver")
+             (commit version)))
        (sha256
-        (base32 "12fhydgwpvyh97gxqlgv77wsf9yax321h46vi49j4sxghpcxvqki"))))
+        (base32 "1cidki3av9wnkgwi7fklxbg3bh6kysf8w3fk2qadjr05a92mx3zp"))
+       (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
     (inputs
      `(("libdrm" ,libdrm)
        ("libva" ,libva)
@@ -2962,16 +2942,16 @@ post-processing of video formats like MPEG2, H.264/AVC, and VC-1.")
 (define-public openh264
   (package
     (name "openh264")
-    (version "2.0.0")
+    (version "2.1.1")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/cisco/"
-                                  name "/releases/download/v"
-                                  version "/Source.Code.tar.gz"))
-              (file-name (string-append name "-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/cisco/openh264")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "0iq802xfsfkskg6q1j0kg90xh04vv1sxf61mrmahgynz5d7hx2ii"))))
+                "0ffav46pz3sbj92nipd62z03fibyqgclfq9w8lgr80s6za6zdk5s"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("nasm" ,nasm)
@@ -3052,15 +3032,15 @@ practically any type of media.")
 (define-public libmediainfo
   (package
     (name "libmediainfo")
-    (version "0.7.95")
+    (version "20.03")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://mediaarea.net/download/source/"
-                                  name "/" version"/"
-                                  name "_" version ".tar.bz2"))
+                                  name "/" version "/"
+                                  name "_" version ".tar.xz"))
               (sha256
                (base32
-                "1kchh6285b07z5nixv619hc9gml2ysdayicdiv30frrlqiyxqw4b"))))
+                "0wkzj5s34m8dvy7hif4h8f90q8ncrzd930gij1zzw3h5nw732j38"))))
     ;; TODO add a Big Buck Bunny webm for tests.
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -3110,7 +3090,7 @@ MPEG-2, MPEG-4, DVD (VOB)...
 (define-public mediainfo
   (package
     (name "mediainfo")
-    (version "18.12")
+    (version "20.03")
     (source (origin
               (method url-fetch)
               ;; Warning: This source has proved unreliable 1 time at least.
@@ -3118,10 +3098,10 @@ MPEG-2, MPEG-4, DVD (VOB)...
               ;; happens again.
               (uri (string-append "https://mediaarea.net/download/source/"
                                   name "/" version "/"
-                                  name "_" version ".tar.bz2"))
+                                  name "_" version ".tar.xz"))
               (sha256
                (base32
-                "1ix95ilcjlawcq6phh25cgplm3riqa2ii7ql82g8yagqs4ldqp6a"))))
+                "1f1shnycf0f1fwka9k9s250l228xjkg0k4k73h8bpld8msighgnw"))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
@@ -3253,6 +3233,7 @@ programmers to access a standard API to open and decompress media files.")
                (base32
                 "11b83qazc8h0iidyj1rprnnjdivj1lpphvpa08y53n42bfa36pn5"))
               (patches (search-patches "aegisub-icu59-include-unistr.patch"
+                                       "aegisub-make43.patch"
                                        "aegisub-boost68.patch"))))
     (build-system gnu-build-system)
     (arguments
@@ -3444,7 +3425,7 @@ It counts more than 100 plugins.")
        ("gettext" ,gettext-minimal)
        ("pkg-config" ,pkg-config)))
     (inputs
-     `(("libjpeg" ,libjpeg)
+     `(("libjpeg" ,libjpeg-turbo)
        ("ffmpeg" ,ffmpeg-3.4)
        ("libmicrohttpd" ,libmicrohttpd)
        ("sqlite" ,sqlite)))
@@ -3725,7 +3706,7 @@ transitions, and effects and then export your film to many common formats.")
 (define-public dav1d
   (package
     (name "dav1d")
-    (version "0.6.0")
+    (version "0.7.0")
     (source
       (origin
         (method url-fetch)
@@ -3733,7 +3714,7 @@ transitions, and effects and then export your film to many common formats.")
                             "/dav1d/" version "/dav1d-" version ".tar.xz"))
         (sha256
          (base32
-          "0w5k572jzxp7zwdbsa0jgjzri6hsrkydawzzilrw46nxpcak37q9"))))
+          "0xcykraf42gkymzqx1k1lcdclgk9y5yf7rr56vslrgmr0r849qnk"))))
     (build-system meson-build-system)
     (native-inputs `(("nasm" ,nasm)))
     (home-page "https://code.videolan.org/videolan/dav1d")
@@ -3906,7 +3887,7 @@ transcode or reformat the videos in any way, producing perfect backups.")
 (define-public svt-av1
   (package
     (name "svt-av1")
-    (version "0.8.1")
+    (version "0.8.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3915,7 +3896,7 @@ transcode or reformat the videos in any way, producing perfect backups.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "08sx9zhhks8wzq05f67jqmc1zqmmi7hqkgg2gyjpcsan5qc5476w"))))
+                "1rh4sz1bmrsxyxfxajsffw5jd17djcrymhwsi877v02fgln027qr"))))
     (build-system cmake-build-system)
     ;; SVT-AV1 only supports Intel-compatible CPUs.
     (supported-systems '("x86_64-linux" "i686-linux"))
@@ -3939,3 +3920,180 @@ work-in-progress, aiming to support video-on-demand and live streaming
 applications.  It only supports Intel-compatible CPUs (x86).")
     (home-page "https://github.com/OpenVisualCloud/SVT-AV1")
     (license license:bsd-2)))
+
+(define-public w-scan
+  (package
+    (name "w-scan")
+    (version "20170107")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://www.gen2vdr.de/wirbel/w_scan/w_scan-"
+                           version ".tar.bz2"))
+       (sha256
+        (base32 "1zkgnj2sfvckix360wwk1v5s43g69snm45m0drnzyv7hgf5g7q1q"))))
+    (build-system gnu-build-system)
+    (synopsis "Scan ATSC/DVB-C/DVB-S/DVB-T channels")
+    (description
+     "This is a small command line utility used to perform frequency scans for
+DVB and ATSC transmissions without initial tuning data.  It can print the
+result in several formats:
+@itemize
+@item VDR channels.conf,
+@item czap/tzap/xine/mplayer channels.conf,
+@item Gstreamer dvbsrc plugin,
+@item VLC xspf playlist,
+@item XML,
+@item initial tuning data for scan or dvbv5-scan.
+@end itemize\n")
+    (home-page "https://www.gen2vdr.de/wirbel/w_scan/index2.html")
+    (license license:gpl2+)))
+
+(define-public rav1e
+  (package
+    (name "rav1e")
+    (version "0.3.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "rav1e" version))
+        (file-name
+         (string-append name "-" version ".tar.gz"))
+        (sha256
+         (base32
+          "1bsmj8kqzs5pf8dl98rsl6a67cljj1gkj3b5hmd8hn8wdy4ya173"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:cargo-inputs
+       (("rust-simd-helpers" ,rust-simd-helpers-0.1)
+        ("rust-ivf" ,rust-ivf-0.1)
+        ("rust-cfg-if" ,rust-cfg-if-0.1)
+        ("rust-paste" ,rust-paste-0.1)
+        ("rust-signal-hook" ,rust-signal-hook-0.1)
+        ("rust-aom-sys" ,rust-aom-sys-0.1)
+        ("rust-nasm-rs" ,rust-nasm-rs-0.1)
+        ("rust-arbitrary" ,rust-arbitrary-0.2)
+        ("rust-better-panic" ,rust-better-panic-0.2)
+        ("rust-noop-proc-macro"
+         ,rust-noop-proc-macro-0.2)
+        ("rust-num-traits" ,rust-num-traits-0.2)
+        ("rust-rand-chacha" ,rust-rand-chacha-0.2)
+        ("rust-err-derive" ,rust-err-derive-0.2)
+        ("rust-interpolate-name"
+         ,rust-interpolate-name-0.2)
+        ("rust-rustc-version" ,rust-rustc-version-0.2)
+        ("rust-scan-fmt" ,rust-scan-fmt-0.2)
+        ("rust-libc" ,rust-libc-0.2)
+        ("rust-image" ,rust-image-0.22)
+        ("rust-arg-enum-proc-macro"
+         ,rust-arg-enum-proc-macro-0.3)
+        ("rust-num-derive" ,rust-num-derive-0.3)
+        ("rust-dav1d-sys" ,rust-dav1d-sys-0.3)
+        ("rust-backtrace" ,rust-backtrace-0.3)
+        ("rust-log" ,rust-log-0.4)
+        ("rust-y4m" ,rust-y4m-0.5)
+        ("rust-arrayvec" ,rust-arrayvec-0.5)
+        ("rust-toml" ,rust-toml-0.5)
+        ("rust-fern" ,rust-fern-0.5)
+        ("rust-rust-hawktracer"
+         ,rust-rust-hawktracer-0.7)
+        ("rust-rand" ,rust-rand-0.7)
+        ("rust-itertools" ,rust-itertools-0.8)
+        ("rust-bitstream-io" ,rust-bitstream-io-0.8)
+        ("rust-console" ,rust-console-0.9)
+        ("rust-serde" ,rust-serde-1.0)
+        ("rust-cc" ,rust-cc-1.0)
+        ("rust-rayon" ,rust-rayon-1.3)
+        ("rust-byteorder" ,rust-byteorder-1.3)
+        ("rust-clap" ,rust-clap-2)
+        ("rust-vergen" ,rust-vergen-3.1))
+       #:cargo-development-inputs
+       (("rust-rand-chacha" ,rust-rand-chacha-0.2)
+        ("rust-interpolate-name"
+         ,rust-interpolate-name-0.2)
+        ("rust-criterion" ,rust-criterion-0.3)
+        ("rust-pretty-assertions"
+         ,rust-pretty-assertions-0.6)
+        ("rust-rand" ,rust-rand-0.7)
+        ("rust-semver" ,rust-semver-0.9))
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'build
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (invoke "cargo" "cinstall" "--release"
+                       (string-append "--prefix=" out))))))))
+    (native-inputs
+     `(("cargo-c" ,rust-cargo-c)))
+    (inputs
+     `(("nasm" ,nasm)))
+    (home-page "https://github.com/xiph/rav1e/")
+    (synopsis "The fastest and safest AV1 encoder")
+    (description
+     "The fastest and safest AV1 encoder.")
+    (license license:bsd-2)))
+
+(define-public peek
+  (package
+    (name "peek")
+    (version "1.5.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/phw/peek.git")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1xwlfizga6hvjqq127py8vabaphsny928ar7mwqj9cyqfl6fx41x"))))
+    (build-system meson-build-system)
+    (arguments '(#:glib-or-gtk? #t))
+    (inputs
+     `(("gtk+" ,gtk+)))
+    (native-inputs
+     `(("desktop-file-utils" ,desktop-file-utils) ; for update-desktop-database
+       ("gettext" ,gettext-minimal)
+       ("glib:bin" ,glib "bin")         ; for glib-compile-resources
+       ("gtk+-bin" ,gtk+ "bin")         ; For gtk-update-icon-cache
+       ("pkg-config" ,pkg-config)
+       ("vala" ,vala)))
+    (home-page "https://github.com/phw/peek")
+    (synopsis "Simple animated GIF screen recorder")
+    (description
+     "Peek makes it easy to create short screencasts of a screen area.  It was
+built for the specific use case of recording screen areas, e.g. for easily
+showing UI features of your own apps or for showing a bug in bug reports.
+With Peek, you simply place the Peek window over the area you want to record
+and press \"Record\".  Peek is optimized for generating animated GIFs, but you
+can also directly record to WebM or MP4 if you prefer.")
+    (license license:gpl3+)))
+
+(define-public wf-recorder
+  (package
+    (name "wf-recorder")
+    (version "0.2.1")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/ammen99/wf-recorder.git")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1cw6kpcbl33wh95pvy32xrsrm6kkk1awccr3phyh885xjs3b3iim"))))
+    (build-system meson-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("ffmpeg" ,ffmpeg)
+       ("pulseaudio" ,pulseaudio)
+       ("wayland" ,wayland)
+       ("wayland-protocols" ,wayland-protocols)
+       ("libx264" ,libx264)))
+    (home-page "https://github.com/ammen99/wf-recorder")
+    (synopsis "Screen recorder for wlroots-based compositors")
+    (description
+     "@code{wf-recorder} is a utility program for screen recording of
+wlroots-based compositors.  More specifically, those that support
+@code{wlr-screencopy-v1} and @code{xdg-output}.")
+    (license license:expat)))

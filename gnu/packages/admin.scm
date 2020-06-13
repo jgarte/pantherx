@@ -12,7 +12,7 @@
 ;;; Copyright © 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Peter Feigl <peter.feigl@nexoid.at>
 ;;; Copyright © 2016 John J. Foerch <jjfoerch@earthlink.net>
-;;; Copyright © 2016, 2017 ng0 <ng0@n0.is>
+;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2016 John Darrington <jmd@gnu.org>
 ;;; Copyright © 2017 Ben Sturmfels <ben@sturm.com.au>
@@ -29,10 +29,12 @@
 ;;; Copyright © 2019 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2019 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2019 Guillaume Le Vaillant <glv@posteo.net>
-;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
+;;; Copyright © 2019, 2020 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
+;;; Copyright © 2020 Morgan Smith <Morgan.J.Smith@outlook.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -52,10 +54,12 @@
 (define-module (gnu packages admin)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system emacs)
+  #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system meson)
   #:use-module (guix build-system perl)
   #:use-module (guix build-system python)
+  #:use-module (guix build-system ruby)
   #:use-module (guix build-system trivial)
   #:use-module (guix download)
   #:use-module (guix git-download)
@@ -64,6 +68,7 @@
   #:use-module (guix utils)
   #:use-module (gnu packages)
   #:use-module (gnu packages algebra)
+  #:use-module (gnu packages autogen)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
@@ -89,6 +94,7 @@
   #:use-module (gnu packages groff)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages guile)
+  #:use-module (gnu packages hurd)
   #:use-module (gnu packages image)
   #:use-module (gnu packages imagemagick)
   #:use-module (gnu packages inkscape)
@@ -117,6 +123,7 @@
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages readline)
+  #:use-module (gnu packages ruby)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages tcl)
   #:use-module (gnu packages terminals)
@@ -127,6 +134,47 @@
   #:use-module (gnu packages xdisorg)
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg))
+
+;; This package uses su instead of sudo (because of SpaceFM).
+(define-public ktsuss
+  (package
+    (name "ktsuss")
+    (version "2.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url "https://github.com/nomius/ktsuss.git")
+         (commit version)))
+       (sha256
+        (base32 "0q9931f9hp47v1n8scli4bdg2rkjpf5jf8v7jj2gdn83aia1r2hz"))
+       (file-name (git-file-name name version))))
+    (build-system glib-or-gtk-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-file-names
+           (lambda _
+             (substitute* "configure.ac"
+               (("supath=`which su 2>/dev/null`")
+                "supath=/run/setuid-programs/su"))
+             #t)))))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("glib" ,glib)
+       ("gtk+" ,gtk+-2)))
+    (synopsis "Graphical front end for @command{su}")
+    (description
+     "Ktsuss stands for ``Keep the @command{su} simple, stupid''.
+It is a graphical version of @command{su} written in C and GTK+ 2, with
+simplicity in mind.")
+    (home-page "https://github.com/nomius/ktsuss")
+    (license license:bsd-3)))
 
 (define-public aide
   (package
@@ -165,7 +213,7 @@ usual file attributes can be checked for inconsistencies.")
 (define-public progress
   (package
     (name "progress")
-    (version "0.14")
+    (version "0.15")
     (source
      (origin
        (method git-fetch)
@@ -173,7 +221,7 @@ usual file attributes can be checked for inconsistencies.")
              (url "https://github.com/Xfennec/progress.git")
              (commit (string-append "v" version))))
        (sha256
-        (base32 "1lk2v4b767klib93an4g3f7z5qrv9kdk9jf7545vw1immc4kamrl"))
+        (base32 "1cnb4ixlhshn139mj5sr42k5m6gjjbyqvkn1324c47niwrgp7dqm"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (native-inputs
@@ -199,14 +247,14 @@ and provides a \"top-like\" mode (monitoring).")
 (define-public shepherd
   (package
     (name "shepherd")
-    (version "0.7.0")
+    (version "0.8.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/shepherd/shepherd-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "07j3vd0y8zab2nwbrwj0ahrfif1ldm5sjssn7m3dw4s307fsrfzx"))))
+                "0x9zr0x3xvk4qkb6jnda451d5iyrl06cz1bjzjsm0lxvjj3fabyk"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--localstatedir=/var")))
@@ -214,10 +262,10 @@ and provides a \"top-like\" mode (monitoring).")
      `(("pkg-config" ,pkg-config)
 
        ;; This is the Guile we use as a cross-compiler...
-       ("guile" ,guile-2.2.7)))
+       ("guile" ,guile-3.0)))
     (inputs
      ;; ... and this is the one that appears in shebangs when cross-compiling.
-     `(("guile" ,guile-2.2.7)                ;for <https://bugs.gnu.org/37757>
+     `(("guile" ,guile-3.0)
 
        ;; The 'shepherd' command uses Readline when used interactively.  It's
        ;; an unusual use case though, so we don't propagate it.
@@ -231,15 +279,28 @@ interface and is based on GNU Guile.")
     (license license:gpl3+)
     (home-page "https://www.gnu.org/software/shepherd/")))
 
-(define-public guile3.0-shepherd
+(define-public guile2.2-shepherd
   (package
     (inherit shepherd)
-    (name "guile3.0-shepherd")
+    (name "guile2.2-shepherd")
     (native-inputs
      `(("pkg-config" ,pkg-config)
-       ("guile" ,guile-next)))
+       ("guile" ,guile-2.2)))
     (inputs
-     `(("guile" ,guile-next)))))
+     `(("guile" ,guile-2.2)))))
+
+(define-public guile3.0-shepherd
+  (deprecated-package "guile3.0-shepherd" shepherd))
+
+(define-public guile2.0-shepherd
+  (package
+    (inherit shepherd)
+    (name "guile2.0-shepherd")
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("guile" ,guile-2.0)))
+    (inputs
+     `(("guile" ,guile-2.0)))))
 
 (define-public cloud-utils
   (package
@@ -371,6 +432,71 @@ services.")
 graphs and can export its output to different formats.")
    (license license:bsd-3)))
 
+(define-public facter
+  (package
+    (name "facter")
+    (version "4.0.25")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/puppetlabs/facter-ng")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "04nbk9rn5lfhbivsx68dggsp05czm7mzfr1i7yv6168bl92d233y"))))
+    (build-system ruby-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'delete-facter-ng-gemspec
+                    (lambda _
+                      ;; XXX: ruby-build-system incorrectly finds
+                      ;; facter-ng.gemspec from this directory and tries to
+                      ;; build that instead of the proper facter.gemspec.
+                      ;; Just delete it as a workaround, as it appears to
+                      ;; only exist for backwards-compatibility after the
+                      ;; facter-ng->facter rename.
+                      (delete-file "agent/facter-ng.gemspec")
+                      #t))
+                  (add-after 'unpack 'embed-iproute-reference
+                    (lambda* (#:key inputs #:allow-other-keys)
+                      (let ((iproute (assoc-ref inputs "iproute")))
+                        ;; Provide an absolute reference to the 'ip' executable
+                        ;; to avoid propagating it.
+                        (substitute* "lib/resolvers/networking_linux_resolver.rb"
+                          (("execute\\('ip")
+                           (string-append "execute('" iproute "/sbin/ip")))
+                        #t)))
+                  (delete 'check)
+                  (add-after 'wrap 'check
+                    (lambda* (#:key tests? outputs #:allow-other-keys)
+                      ;; XXX: The test suite wants to run Bundler and
+                      ;; complains that the gemspec is invalid.  For now
+                      ;; just make sure that we can run the wrapped
+                      ;; executable directly.
+                      (if tests?
+                          (invoke (string-append (assoc-ref outputs "out")
+                                                 "/bin/facter")
+                                  ;; Many facts depend on /sys, /etc/os-release,
+                                  ;; etc, so we only run a small sample.
+                                  "facterversion" "architecture"
+                                  "kernel" "kernelversion")
+                          (format #t "tests disabled~%"))
+                      #t)))))
+    (inputs
+     `(("iproute" ,iproute)
+       ("ruby-hocon" ,ruby-hocon)
+       ("ruby-sys-filesystem" ,ruby-sys-filesystem)
+       ("ruby-thor" ,ruby-thor)))
+    (synopsis "Collect and display system facts")
+    (description
+     "Facter is a tool that gathers basic facts about nodes (systems) such
+as hardware details, network settings, OS type and version, and more.  These
+facts can be collected on the command line with the @command{facter} command
+or via the @code{facter} Ruby library.")
+    (home-page "https://github.com/puppetlabs/facter-ng")
+    (license license:expat)))
+
 (define-public htop
   (package
     (name "htop")
@@ -435,6 +561,7 @@ re-executing them as necessary.")
              (method url-fetch)
              (uri (string-append "mirror://gnu/inetutils/inetutils-"
                                  version ".tar.gz"))
+             (patches (search-patches "inetutils-hurd.patch"))
              (sha256
               (base32
                "05n65k4ixl85dc6rxc51b1b732gnmm8xnqi424dy9f1nz7ppb3xy"))))
@@ -446,13 +573,27 @@ re-executing them as necessary.")
                            ;; cross-compiling (by default it does not.)
                            ,@(if (%current-target-system)
                                  '("--with-path-procnet-dev=/proc/net/dev")
+                                 '())
+                           ,@(if (hurd-target?)
+                                 '("--disable-rcp"
+                                   "--disable-rexec"
+                                   "--disable-rexecd"
+                                   "--disable-rlogin"
+                                   "--disable-rlogind"
+                                   "--disable-rsh"
+                                   "--disable-rshd"
+                                   "--disable-uucpd"
+                                   "--disable-whois")
                                  '()))
        ;; On some systems, 'libls.sh' may fail with an error such as:
        ;; "Failed to tell switch -a apart from -A".
        #:parallel-tests? #f))
     (inputs `(("ncurses" ,ncurses)
               ("readline" ,readline)))        ;for 'ftp'
-    (native-inputs `(("netstat" ,net-tools))) ;for tests
+    (native-inputs (if (member (%current-system)
+                               (package-supported-systems net-tools))
+                       `(("netstat" ,net-tools))  ;for tests
+                       '()))
     (home-page "https://www.gnu.org/software/inetutils/")
     (synopsis "Basic networking utilities")
     (description
@@ -470,6 +611,7 @@ hostname.")
               (uri (string-append
                     "https://github.com/shadow-maint/shadow/releases/"
                     "download/" version "/shadow-" version ".tar.xz"))
+              (patches (search-patches "shadow-hurd-pctrl.patch"))
               (sha256
                (base32
                 "0qmfq50sdhz6xilgxvinblll8j2iqfl7hwk45bq744y4plq4dbd3"))))
@@ -503,11 +645,7 @@ hostname.")
                (for-each delete-file (find-files man "^groups\\."))
                #t))))))
 
-    (inputs  (if (string-contains (or (%current-target-system)
-                                      (%current-system))
-                                  "-linux")
-                 `(("linux-pam" ,linux-pam))
-                 '()))
+    (inputs `(("linux-pam" ,linux-pam)))
     (home-page "https://github.com/shadow-maint/shadow")
     (synopsis "Authentication-related tools such as passwd, su, and login")
     (description
@@ -534,13 +672,17 @@ login, passwd, su, groupadd, and useradd.")
      `(#:phases
        (modify-phases %standard-phases
          (replace 'configure
-           (lambda* (#:key inputs outputs #:allow-other-keys)
+           (lambda* (#:key inputs outputs target #:allow-other-keys)
              (let* ((out    (assoc-ref outputs "out"))
                     (man8   (string-append out "/share/man/man8"))
                     (sbin   (string-append out "/sbin"))
                     (shadow (assoc-ref inputs "shadow"))
                     (login  (string-append shadow "/bin/login")))
                (substitute* "Makefile"
+                 ,@(if (%current-target-system)
+                       '((("CC=.*$")
+                          (string-append "CC=" target "-gcc\n")))
+                       '())
                  (("^SBINDIR.*")
                   (string-append "SBINDIR = " out
                                  "/sbin\n"))
@@ -644,7 +786,7 @@ would need and has several interesting built-in capabilities.")
 (define-public netcat-openbsd
   (package
     (name "netcat-openbsd")
-    (version "1.206-1")
+    (version "1.217-1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -653,14 +795,12 @@ would need and has several interesting built-in capabilities.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "08r3mmck3s5pbvwyq19wp5g8jqcxza3cm8nkc6jm7rqn4jdydc4z"))))
+                "0kcvi3pav2fdx5c22psjv5dggk4cmrqiaq2cklhqngsk4a7vrjan"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:tests? #f ; no test suite
+     `(#:tests? #f                      ; no test suite
        #:make-flags
-       (list "CC=gcc"
-             (string-append "CFLAGS=-I" (assoc-ref %build-inputs "libbsd") "/include")
-             "LDFLAGS=-lbsd")
+       (list "CC=gcc")
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)
@@ -768,7 +908,7 @@ connection alive.")
 (define-public isc-dhcp
   (let* ((bind-major-version "9")
          (bind-minor-version "11")
-         (bind-patch-version "14")
+         (bind-patch-version "18")
          (bind-release-type "")         ; for patch release, use "-P"
          (bind-release-version "")      ; for patch release, e.g. "6"
          (bind-version (string-append bind-major-version
@@ -891,8 +1031,9 @@ connection alive.")
          ("file" ,file)))
 
       (inputs `(("inetutils" ,inetutils)
-                ("net-tools" ,net-tools)
-                ("iproute" ,iproute)
+                ,@(if (hurd-target?) '()
+                      `(("net-tools" ,net-tools)
+                        ("iproute" ,iproute)))
 
                 ;; isc-dhcp bundles a copy of BIND, which has proved vulnerable
                 ;; in the past.  Use a BIND-VERSION of our choosing instead.
@@ -904,7 +1045,7 @@ connection alive.")
                                         "/bind-" bind-version ".tar.gz"))
                     (sha256
                      (base32
-                      "1pv3bvm9dzyz2kqjkw15sgh0hd5fzsv274v5z6jp9c4nb5130fyr"))))
+                      "0vws0zzb39mkphj4hhjrgfj9dzw951lc4pfa6pqg5ll5ma51mbsr"))))
 
                 ;; When cross-compiling, we need the cross Coreutils and sed.
                 ;; Otherwise just use those from %FINAL-INPUTS.
@@ -1154,7 +1295,7 @@ at once based on a Perl regular expression.")
                   #t))))
     (build-system gnu-build-system)
     (arguments
-     '(#:configure-flags (list "ROTT_ETCDIR=/etc/rottlog" ;rc file location
+     `(#:configure-flags (list "ROTT_ETCDIR=/etc/rottlog" ;rc file location
                                "--localstatedir=/var")
 
        ;; Install example config files in OUT/etc.
@@ -1167,6 +1308,20 @@ at once based on a Perl regular expression.")
                     (lambda _
                       (substitute* "rc/rc"
                         (("/usr/sbin/sendmail") "sendmail"))
+                      #t))
+                  (add-after 'unpack 'fix-configure
+                    (lambda* (#:key inputs native-inputs #:allow-other-keys)
+                      ;; Replace outdated config.sub and config.guess:
+                      (for-each (lambda (file)
+                                  (install-file
+                                   (string-append
+                                    (assoc-ref
+                                     (or native-inputs inputs) "automake")
+                                    "/share/automake-"
+                                    ,(version-major+minor
+                                      (package-version automake))
+                                    "/" file) "."))
+                                '("config.sub" "config.guess"))
                       #t))
                   (add-after 'build 'set-packdir
                     (lambda _
@@ -1188,6 +1343,7 @@ at once based on a Perl regular expression.")
                     (lambda _
                       (invoke "make" "install-info"))))))
     (native-inputs `(("texinfo" ,texinfo)
+                     ("automake" ,automake)
                      ("util-linux" ,util-linux))) ; for 'cal'
     (home-page "https://www.gnu.org/software/rottlog/")
     (synopsis "Log rotation and management")
@@ -1202,7 +1358,7 @@ system administrator.")
 (define-public sudo
   (package
     (name "sudo")
-    (version "1.8.31p1")
+    (version "1.9.0")
     (source (origin
               (method url-fetch)
               (uri
@@ -1212,16 +1368,26 @@ system administrator.")
                                     version ".tar.gz")))
               (sha256
                (base32
-                "1n0mdmgcs92af34xxsnsh1arrngymhdmwd9srjgjbk65q7xzsg67"))
+                "0p7r3cl16pjwbc48ff1gbhjw51lngrghvwblxz5lxpyzqlwi88xb"))
               (modules '((guix build utils)))
               (snippet
                '(begin
                   (delete-file-recursively "lib/zlib")
                   #t))))
     (build-system gnu-build-system)
+    (outputs (list "out" "python"))
     (arguments
      `(#:configure-flags
-       (list "--with-logpath=/var/log/sudo.log"
+       (list (string-append "--docdir=" (assoc-ref %outputs "out")
+                            "/share/doc/" ,name "-" ,version)
+
+             ;; XXX: Disable Python support when cross-compiling because
+             ;; 'configure' tries to run 'python', which fails.
+             ,(if (%current-target-system)
+                  "--disable-python"
+                  "--enable-python")              ; for plug-ins written in ~
+
+             "--with-logpath=/var/log/sudo.log"
              "--with-rundir=/var/run/sudo" ; must be cleaned up at boot time
              "--with-vardir=/var/db/sudo"
              "--with-iologdir=/var/log/sudo-io"
@@ -1246,17 +1412,20 @@ system administrator.")
                ;; prematurely.
                (("@CONFIGURE_ARGS@") "\"\""))
              (substitute* (find-files "." "Makefile\\.in")
+               ;; Allow installation as non-root.
                (("-o [[:graph:]]+ -g [[:graph:]]+")
-                ;; Allow installation as non-root.
                 "")
+               ;; Don't try to create /etc/sudoers.
                (("^install: (.*)install-sudoers(.*)" _ before after)
-                ;; Don't try to create /etc/sudoers.
                 (string-append "install: " before after "\n"))
+               ;; Don't try to create /run/sudo.
                (("\\$\\(DESTDIR\\)\\$\\(rundir\\)")
-                ;; Don't try to create /run/sudo.
                 "$(TMPDIR)/dummy")
+               ;; Install example sudo{,_logsrvd}.conf to the right place.
+               (("\\$\\(DESTDIR\\)\\$\\(sysconfdir\\)")
+                "$(DESTDIR)/$(docdir)/examples")
+               ;; Don't try to create /var/db/sudo.
                (("\\$\\(DESTDIR\\)\\$\\(vardir\\)")
-                ;; Don't try to create /var/db/sudo.
                 "$(TMPDIR)/dummy"))
 
              ;; ‘Checking existing [/etc/]sudoers file for syntax errors’ is
@@ -1264,7 +1433,22 @@ system administrator.")
              (substitute* "plugins/sudoers/Makefile.in"
                (("^pre-install:" match)
                 (string-append match "\ndisabled-" match)))
-             #t)))
+             #t))
+         (add-after 'install 'separate-python-output
+           (lambda* (#:key target outputs #:allow-other-keys)
+             (let ((out        (assoc-ref outputs "out"))
+                   (out:python (assoc-ref outputs "python")))
+               (if target
+                   (mkdir-p (string-append out:python "/empty"))
+                   (for-each
+                    (lambda (file)
+                      (let ((old (string-append out "/" file))
+                            (new (string-append out:python "/" file)))
+                        (mkdir-p (dirname new))
+                        (rename-file old new)))
+                    (list "libexec/sudo/python_plugin.so"
+                          "libexec/sudo/python_plugin.la")))
+               #t))))
 
        ;; XXX: The 'testsudoers' test series expects user 'root' to exist, but
        ;; the chroot's /etc/passwd doesn't have it.  Turn off the tests.
@@ -1272,9 +1456,12 @@ system administrator.")
     (native-inputs
      `(("groff" ,groff)))
     (inputs
-     `(("linux-pam" ,linux-pam)
-       ("zlib" ,zlib)
-       ("coreutils" ,coreutils)))
+     `(("coreutils" ,coreutils)
+       ("linux-pam" ,linux-pam)
+       ,@(if (%current-target-system)
+             '()
+             `(("python" ,python)))
+       ("zlib" ,zlib)))
     (home-page "https://www.sudo.ws/")
     (synopsis "Run commands as root")
     (description
@@ -1285,6 +1472,54 @@ commands and their arguments.")
 
     ;; See <http://www.sudo.ws/sudo/license.html>.
     (license license:x11)))
+
+(define-public opendoas
+  (package
+    (name "opendoas")
+    (version "6.6.1")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/Duncaen/OpenDoas.git")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "07kkc5729p654jrgfsc8zyhiwicgmq38yacmwfvay2b3gmy728zn"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'configure
+           ;; The configure script doesn't accept most of the default flags.
+           (lambda* (#:key configure-flags #:allow-other-keys)
+             ;; The configure script can only be told which compiler to use
+             ;; through environment variables.
+             (setenv "CC" ,(cc-for-target))
+             (apply invoke "./configure" configure-flags)))
+         (add-before 'install 'fix-makefile
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "bsd.prog.mk"
+               (("^\tchown.*$") ""))
+             #t)))
+       #:configure-flags
+       (list (string-append "--prefix=" (assoc-ref %outputs "out"))
+             ;; Nothing is done with this value (yet?) but it's supported.
+             ;; (string-append "--target=" (or ,(%current-target-system) ""))
+             "--with-timestamp")
+       ;; Compiler choice is not carried over from the configure script.
+       #:make-flags
+       (list (string-append "CC=" ,(cc-for-target)))
+       #:tests? #f))                 ; no test suite
+    (native-inputs
+     `(("bison" ,bison)))
+    (home-page "https://github.com/Duncaen/OpenDoas")
+    (synopsis "Portable version of OpenBSD's doas command")
+    (description "Doas is a minimal replacement for the venerable sudo.  It was
+initially written by Ted Unangst of the OpenBSD project to provide 95% of the
+features of sudo with a fraction of the codebase.")
+    (license (list license:bsd-3        ; libbsd/*
+                   license:isc))))      ; everything else
 
 (define-public wpa-supplicant-minimal
   (package
@@ -1586,7 +1821,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
 (define-public acpica
   (package
     (name "acpica")
-    (version "20200326")
+    (version "20200528")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1594,7 +1829,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
                     version ".tar.gz"))
               (sha256
                (base32
-                "0y08l6djjn87jmsp5kj0myjdb48000g20xlfs0a22jzzi383h3by"))))
+                "01ajxnz9dpnvdbib7yv20dw21a1yyfgwiw3whg0xi57cf4app2md"))))
     (build-system gnu-build-system)
     (native-inputs `(("flex" ,flex)
                      ("bison" ,bison)))
@@ -1606,14 +1841,16 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
        #:tests? #f                      ; no 'check' target
        #:phases (modify-phases %standard-phases (delete 'configure))))
     (home-page "https://acpica.org/")
-    (synopsis "Tools for the development and debug of ACPI tables")
+    (synopsis "Tools for the development and debugging of ACPI tables")
     (description
-     "The ACPI Component Architecture (@dfn{ACPICA}) project provides an
-OS-independent reference implementation of the Advanced Configuration and
-Power Interface Specification (@dfn{ACPI}).  ACPICA code contains those portions
-of ACPI meant to be directly integrated into the host OS as a kernel-resident
-subsystem, and a small set of tools to assist in developing and debugging ACPI
-tables.  This package contains only the user-space tools needed for ACPI table
+     "The @acronym{ACPICA, ACPI Component Architecture} project provides an
+OS-independent reference implementation of the @acronym{ACPI, Advanced
+Configuration and Power Interface} specification.  ACPICA code contains those
+portions of ACPI meant to be directly integrated into the host OS as a
+kernel-resident subsystem, and a small set of tools to assist in developing and
+debugging ACPI tables.
+
+This package contains only the user-space tools needed for ACPI table
 development, not the kernel implementation of ACPI.")
     (license license:gpl2)))            ; dual GPLv2/ACPICA Licence
 
@@ -1714,12 +1951,12 @@ characters can be replaced as well, as can UTF-8 characters.")
     (build-system gnu-build-system)
     (inputs
      `(("ntfs-3g" ,ntfs-3g)
-       ("util-linux" ,util-linux)
+       ("util-linux" ,util-linux "lib")
        ("openssl" ,openssl)
        ;; FIXME: add reiserfs.
        ("zlib" ,zlib)
        ("e2fsprogs" ,e2fsprogs)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("ncurses" ,ncurses)))
     (home-page "https://www.cgsecurity.org/wiki/TestDisk")
     (synopsis "Data recovery tool")
@@ -1920,13 +2157,13 @@ of supported upstream metrics systems simultaneously.")
 (define-public ansible
   (package
     (name "ansible")
-    (version "2.9.6")
+    (version "2.9.9")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ansible" version))
        (sha256
-        (base32 "1jfbp1i3nl4yvqwd5ssy43dz3pq2x03mn875vb8r56gqh43kmksr"))))
+        (base32 "1l99vwkl48iwr8ffd1ihqia995mz8h8hwk4akm4w0cgiifp88gg8"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-bcrypt" ,python-bcrypt)
@@ -2522,13 +2759,13 @@ a new command using the matched rule, and runs it.")
 (define-public di
   (package
     (name "di")
-    (version "4.47.3")
+    (version "4.48")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://gentoo.com/di/di-" version ".tar.gz"))
        (sha256
-        (base32 "0m4npba50sf5s61g5z3xd2r7937zwja941f2h3f081xi24c2hfck"))))
+        (base32 "0crvvfsxh8ryc0j19a2x52i9zacvggm8zi6j3kzygkcwnpz4km8r"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; obscure test failures
@@ -2537,7 +2774,7 @@ a new command using the matched rule, and runs it.")
          (delete 'configure)            ; no configure script
          (add-before 'build 'setup-environment
            (lambda* (#:key outputs #:allow-other-keys)
-             (setenv "CC" "gcc")
+             (setenv "CC" ,(cc-for-target))
              (setenv "prefix" (assoc-ref outputs "out"))
              #t)))
        #:make-flags (list "--environment-overrides")))
@@ -2844,14 +3081,7 @@ buffers.")
         (base32 "1gpdjs5aj6vsnzwcjvw5bb120lgffvvshi4202phr0bzw3b92ky8"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:tests? #f              ; many of the tests try to load kernel modules
-       #:phases
-       (modify-phases %standard-phases
-         (replace 'bootstrap
-           (lambda _
-             ;; Don't run configure in this phase.
-             (setenv "NOCONFIGURE" "1")
-             (invoke "sh" "autogen.sh"))))))
+     `(#:tests? #f))            ; many of the tests try to load kernel modules
     (inputs
      `(("cairo" ,cairo)
        ("elfutils" ,elfutils)           ; libdw
@@ -3018,14 +3248,14 @@ everyone's screenshots nowadays.")
 (define-public nnn
   (package
     (name "nnn")
-    (version "2.8.1")
+    (version "3.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/jarun/nnn/releases/download/v"
                            version "/nnn-v" version ".tar.gz"))
        (sha256
-        (base32 "1g47bndxld875d0xb3pgmlw223mz47p1xcvwym861y6l4zkgiyp0"))))
+        (base32 "1zflz7yj5wzdnl0728g8qrld2z6dqn7sblbmkjvyqlv1fwjd1fsf"))))
     (build-system gnu-build-system)
     (inputs
      `(("ncurses" ,ncurses)
@@ -3236,7 +3466,7 @@ Python loading in HPC environments.")
   (let ((real-name "inxi"))
     (package
       (name "inxi-minimal")
-      (version "3.0.38-1")
+      (version "3.1.01-1")
       (source
        (origin
          (method git-fetch)
@@ -3245,7 +3475,7 @@ Python loading in HPC environments.")
                (commit version)))
          (file-name (git-file-name real-name version))
          (sha256
-          (base32 "1qw3sxgd3ly916bzzl3873s3flngwd3vh57slw0shsj7ivz8bfnm"))))
+          (base32 "0r204w0r06ibdr4dck7yw2nmvj7xq68bjr7xwwiy7liqdml0n0yc"))))
       (build-system trivial-build-system)
       (inputs
        `(("bash" ,bash-minimal)
@@ -3590,6 +3820,7 @@ tcpdump and snoop.")
        ("lvm2" ,lvm2)
        ("openssl" ,openssl)
        ("pcre" ,pcre)
+       ("libmount" ,util-linux "lib")
        ("util-linux" ,util-linux)))
     (arguments
      `(#:configure-flags

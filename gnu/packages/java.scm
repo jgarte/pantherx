@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2015, 2016, 2017, 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2017 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2017, 2019 Carlo Zancanaro <carlo@zancanaro.id.au>
@@ -11,9 +11,9 @@
 ;;; Copyright © 2018 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2019, 2020 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
+;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
 ;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
-
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -276,7 +276,7 @@ JNI.")
     (version "1.8.4")
     (source (origin
               (method url-fetch)
-              (uri (string-append "http://archive.apache.org/dist/"
+              (uri (string-append "mirror://apache/"
                                   "ant/source/apache-ant-"
                                   version "-src.tar.bz2"))
               (sha256
@@ -990,7 +990,7 @@ machine.")))
        ("grep" ,grep)
        ("jamvm" ,jamvm)
        ("lcms" ,lcms)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libnsl" ,libnsl)
        ("libpng" ,libpng)
        ("libtool" ,libtool)
@@ -1610,7 +1610,7 @@ bootstrapping purposes.")
          ("libxi" ,libxi)
          ("libxinerama" ,libxinerama)
          ("libxrender" ,libxrender)
-         ("libjpeg" ,libjpeg)
+         ("libjpeg" ,libjpeg-turbo)
          ("libpng" ,libpng)
          ("mit-krb5" ,mit-krb5)
          ("nss" ,nss)
@@ -1808,14 +1808,14 @@ new Date();"))
               (modules '((guix build utils)))
               (snippet
                 `(begin
-                   (for-each delete-file (find-files "." ".*.bin$"))
-                   (for-each delete-file (find-files "." ".*.exe$"))
-                   (for-each delete-file (find-files "." ".*.jar$"))
+                   (for-each delete-file
+                             (find-files "." ".*.(bin|exe|jar)$"))
                    #t))))
     (build-system gnu-build-system)
     (outputs '("out" "jdk" "doc"))
     (arguments
      `(#:tests? #f; require jtreg
+       #:make-flags '("all")
        #:imported-modules
        ((guix build syscalls)
         ,@%gnu-build-system-modules)
@@ -1840,14 +1840,20 @@ new Date();"))
                      "--with-libjpeg=system"
                      (string-append "--prefix=" (assoc-ref outputs "out")))
              #t))
-         (replace 'build
+         (add-before 'build 'write-source-revision-file
            (lambda _
              (with-output-to-file ".src-rev"
                (lambda _
                  (display ,version)))
-             (setenv "GUIX_LD_WRAPPER_ALLOW_IMPURITIES" "yes")
-             (invoke "make" "all")
              #t))
+         (replace 'build
+           (lambda* (#:key make-flags parallel-build? #:allow-other-keys)
+             (apply invoke "make"
+                    `(,@(if parallel-build?
+                            (list (string-append "JOBS="
+                                                 (number->string (parallel-job-count))))
+                            '())
+                      ,@make-flags))))
          ;; Some of the libraries in the lib/ folder link to libjvm.so.
          ;; But that shared object is located in the server/ folder, so it
          ;; cannot be found.  This phase creates a symbolic link in the
@@ -1907,7 +1913,7 @@ new Date();"))
        ("giflib" ,giflib)
        ("lcms" ,lcms)
        ("libelf" ,libelf)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libice" ,libice)
        ("libpng" ,libpng)
        ("libx11" ,libx11)
@@ -1920,6 +1926,8 @@ new Date();"))
     (native-inputs
      `(("icedtea-8" ,icedtea-8)
        ("icedtea-8:jdk" ,icedtea-8 "jdk")
+       ;; XXX: The build system fails with newer versions of GNU Make.
+       ("make@4.2" ,gnu-make-4.2)
        ("unzip" ,unzip)
        ("which" ,which)
        ("zip" ,zip)))
@@ -1946,9 +1954,7 @@ new Date();"))
               (modules '((guix build utils)))
               (snippet
                 `(begin
-                   (for-each delete-file (find-files "." ".*.bin$"))
-                   (for-each delete-file (find-files "." ".*.exe$"))
-                   (for-each delete-file (find-files "." ".*.jar$"))
+                   (for-each delete-file (find-files "." ".*.(bin|exe|jar)$"))
                    #t))))
     (arguments
       (substitute-keyword-arguments (package-arguments openjdk9)
@@ -1976,6 +1982,7 @@ new Date();"))
     (native-inputs
      `(("openjdk9" ,openjdk9)
        ("openjdk9:jdk" ,openjdk9 "jdk")
+       ("make@4.2" ,gnu-make-4.2)
        ("unzip" ,unzip)
        ("which" ,which)
        ("zip" ,zip)))))
@@ -1994,9 +2001,7 @@ new Date();"))
               (modules '((guix build utils)))
               (snippet
                 `(begin
-                   (for-each delete-file (find-files "." ".*.bin$"))
-                   (for-each delete-file (find-files "." ".*.exe$"))
-                   (for-each delete-file (find-files "." ".*.jar$"))
+                   (for-each delete-file (find-files "." ".*.(bin|exe|jar)$"))
                    #t))))
     (build-system gnu-build-system)
     (outputs '("out" "jdk" "doc"))
@@ -2008,11 +2013,6 @@ new Date();"))
         ,@%gnu-build-system-modules)
        #:tests? #f; requires jtreg
        ;; TODO package jtreg
-       ;; disable parallel builds, as the openjdk build system does not like -j
-       #:parallel-build? #f
-       #:parallel-tests? #f
-       ;; reenable parallel builds and tests by adding the flags manually
-       #:make-flags (list (string-append "JOBS=" (number->string (parallel-job-count))))
        #:configure-flags
        `("--disable-option-checking" ; --enable-fast-install default flag errors otherwise
          "--disable-warnings-as-errors"
@@ -2029,7 +2029,6 @@ new Date();"))
                          (assoc-ref %build-inputs "freetype") "/include")
          ,(string-append "--with-freetype-lib="
                          (assoc-ref %build-inputs "freetype") "/lib"))
-       ;; TODO
        #:phases
        (modify-phases %standard-phases
          (add-after 'patch-source-shebangs 'fix-java-shebangs
@@ -2039,22 +2038,32 @@ new Date();"))
              (substitute* "make/data/blacklistedcertsconverter/blacklisted.certs.pem"
                (("^#!.*") "#! java BlacklistedCertsConverter SHA-256\n"))
              #t))
-         (replace 'build
+         (add-before 'build 'write-source-revision-file
            (lambda _
              (with-output-to-file ".src-rev"
                (lambda _
                  (display ,version)))
-             (setenv "GUIX_LD_WRAPPER_ALLOW_IMPURITIES" "yes")
-             (invoke "make" "all")
              #t))
+         (replace 'build
+           (lambda* (#:key parallel-build? make-flags #:allow-other-keys)
+             (apply invoke "make" "all"
+                    `(,@(if parallel-build?
+                            (list (string-append "JOBS="
+                                                 (number->string (parallel-job-count))))
+                            '())
+                      ,@make-flags))))
          ;; jdk 11 does not build jre by default any more
          ;; building it anyways
          ;; for further information see:
          ;; https://github.com/AdoptOpenJDK/openjdk-build/issues/356
          (add-after 'build 'build-jre
-           (lambda _
-             (invoke "make" "legacy-jre-image")
-             #t))
+           (lambda* (#:key parallel-build? make-flags #:allow-other-keys)
+             (apply invoke "make" "legacy-jre-image"
+                    `(,@(if parallel-build?
+                            (list (string-append "JOBS="
+                                                 (number->string (parallel-job-count))))
+                            '())
+                      ,@make-flags))))
          (replace 'install
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((out (assoc-ref outputs "out"))
@@ -2185,7 +2194,7 @@ new Date();"))
        ("freetype" ,freetype)
        ("giflib" ,giflib)
        ("lcms" ,lcms)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libx11" ,libx11)
        ("libxext" ,libxext)
@@ -2196,6 +2205,7 @@ new Date();"))
      `(("autoconf" ,autoconf)
        ("openjdk10" ,openjdk10)
        ("openjdk10:jdk" ,openjdk10 "jdk")
+       ("make" ,gnu-make-4.2)
        ("pkg-config" ,pkg-config)
        ("unzip" ,unzip)
        ("which" ,which)
@@ -2221,9 +2231,7 @@ new Date();"))
               (modules '((guix build utils)))
               (snippet
                `(begin
-                  (for-each delete-file (find-files "." ".*.bin$"))
-                  (for-each delete-file (find-files "." ".*.exe$"))
-                  (for-each delete-file (find-files "." ".*.jar$"))
+                  (for-each delete-file (find-files "." ".*.(bin|exe|jar)$"))
                   #t))))
     (inputs
      `(("alsa-lib" ,alsa-lib)
@@ -2232,7 +2240,7 @@ new Date();"))
        ("freetype" ,freetype)
        ("giflib" ,giflib)
        ("lcms" ,lcms)
-       ("libjpeg" ,libjpeg)
+       ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libx11" ,libx11)
        ("libxext" ,libxext)
@@ -2244,11 +2252,100 @@ new Date();"))
      `(("autoconf" ,autoconf)
        ("openjdk11" ,openjdk11)
        ("openjdk11:jdk" ,openjdk11 "jdk")
+       ("make@4.2" ,gnu-make-4.2)
        ("pkg-config" ,pkg-config)
        ("unzip" ,unzip)
        ("which" ,which)
        ("zip" ,zip)))
     (home-page "https://openjdk.java.net/projects/jdk/12")))
+
+(define-public openjdk13
+  (package
+    (inherit openjdk12)
+    (name "openjdk")
+    (version "13.0")
+    (source (origin
+	     (method url-fetch)
+	     (uri "http://hg.openjdk.java.net/jdk/jdk13/archive/9c250a7600e1.tar.bz2")
+	     (file-name (string-append name "-" version ".tar.bz2"))
+	     (sha256
+	      (base32
+	       "0v0ljvx5dyzp96dw4z4ksw3pvasil7783mgnmd1wk9gads5ab8iq"))
+	     (modules '((guix build utils)))
+	     (snippet
+	      `(begin
+		 (for-each delete-file (find-files "." ".*.(bin|exe|jar)$"))
+		 #t))))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("cups" ,cups)
+       ("fontconfig" ,fontconfig)
+       ("freetype" ,freetype)
+       ("giflib" ,giflib)
+       ("lcms" ,lcms)
+       ("libjpeg" ,libjpeg-turbo)
+       ("libpng" ,libpng)
+       ("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("libxrandr" ,libxrandr)
+       ("libxrender" ,libxrender)
+       ("libxt" ,libxt)
+       ("libxtst" ,libxtst)))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("openjdk12:jdk" ,openjdk12 "jdk")
+       ("make@4.2" ,gnu-make-4.2)
+       ("pkg-config" ,pkg-config)
+       ("unzip" ,unzip)
+       ("which" ,which)
+       ("zip" ,zip)))
+    (home-page "https://openjdk.java.net/projects/jdk/13")))
+
+(define-public openjdk14
+  (package
+    (inherit openjdk13)
+    (name "openjdk")
+    (version "14.0")
+    (source (origin
+	      (method url-fetch)
+	      (uri "http://hg.openjdk.java.net/jdk/jdk14/archive/bc54620a3848.tar.bz2")
+	      (file-name (string-append name "-" version ".tar.bz2"))
+	      (sha256
+	       (base32
+	        "0z485pk7r1xpw8004g4nrwrzj17sabgx8yfdbxwfvzkjp8qyajch"))
+	      (modules '((guix build utils)))
+	      (snippet
+	       `(begin
+                  ;; The m4 macro uses 'help' to search for builtins, which is
+                  ;; not available in bash-minimal
+                  (substitute* "make/autoconf/basics.m4"
+                    (("if help") "if command -v"))
+		  (for-each delete-file (find-files "." ".*.(bin|exe|jar)$"))
+		  #t))))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("cups" ,cups)
+       ("fontconfig" ,fontconfig)
+       ("freetype" ,freetype)
+       ("giflib" ,giflib)
+       ("lcms" ,lcms)
+       ("libjpeg" ,libjpeg-turbo)
+       ("libpng" ,libpng)
+       ("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("libxrandr" ,libxrandr)
+       ("libxrender" ,libxrender)
+       ("libxt" ,libxt)
+       ("libxtst" ,libxtst)))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("make@4.2" ,gnu-make-4.2)
+       ("openjdk13:jdk" ,openjdk13 "jdk")
+       ("pkg-config" ,pkg-config)
+       ("unzip" ,unzip)
+       ("which" ,which)
+       ("zip" ,zip)))
+    (home-page "https://openjdk.java.net/projects/jdk/14")))
 
 (define-public icedtea icedtea-8)
 
@@ -2389,10 +2486,10 @@ new Date();"))
     (source (origin
               (method hg-fetch)
               (uri (hg-reference
-                     (url "http://hg.openjdk.java.net/openjfx/8u-dev/rt")
-                     (changeset (string-append
-                                  (string-join (string-split version #\.) "u")
-                                  "-ga"))))
+                    (url "http://hg.openjdk.java.net/openjfx/8u-dev/rt")
+                    (changeset (string-append
+                                (string-join (string-split version #\.) "u")
+                                "-ga"))))
               (file-name (string-append name "-" version "-checkout"))
               (modules '((guix build utils)))
               (snippet
@@ -2402,7 +2499,8 @@ new Date();"))
                   #t))
               (sha256
                (base32
-                "0yg38mwpivswccv9n96k06x3iv82i4px1a9xg9l8dswzwmfj259f"))))
+                "0yg38mwpivswccv9n96k06x3iv82i4px1a9xg9l8dswzwmfj259f"))
+              (patches (search-patches "java-openjfx-build-jdk_version.patch"))))
     (build-system ant-build-system)
     (arguments
      `(#:jar-name "java-openjfx.jar"
@@ -3306,34 +3404,6 @@ is implemented.")
               license:mpl2.0
               license:lgpl2.1+))))
 
-(define-public java-xz
-  (package
-   (name "java-xz")
-   (version "1.6")
-   (source (origin
-     (method url-fetch)
-     (uri (string-append "http://tukaani.org/xz/xz-java-" version ".zip"))
-     (sha256
-      (base32
-       "1z3p1ri1gvl07inxn0agx44ck8n7wrzfmvkz8nbq3njn8r9wba8x"))))
-   (build-system ant-build-system)
-   (arguments
-    `(#:tests? #f ; There are no tests to run.
-      #:jar-name ,(string-append "xz-" version  ".jar")
-      #:phases
-      (modify-phases %standard-phases
-        ;; The unpack phase enters the "maven" directory by accident.
-        (add-after 'unpack 'chdir
-          (lambda _ (chdir "..") #t)))))
-   (native-inputs
-    `(("unzip" ,unzip)))
-   (home-page "https://tukaani.org/xz/java.html")
-   (synopsis "Implementation of XZ data compression in pure Java")
-   (description "This library aims to be a complete implementation of XZ data
-compression in pure Java.  Single-threaded streamed compression and
-decompression and random access decompression have been fully implemented.")
-   (license license:public-domain)))
-
 ;; java-hamcrest-core uses qdox version 1.12.  We package this version instead
 ;; of the latest release.
 (define-public java-qdox-1.12
@@ -3860,7 +3930,7 @@ reusing it in maven.")
        ("junit" ,java-junit)
        ("classworld" ,java-plexus-classworlds)
        ("xbean" ,java-geronimo-xbean-reflect)
-       ("xz" ,java-tukaani-xz)
+       ("xz" ,java-xz)
        ("guava" ,java-guava)))
     (home-page "https://github.com/codehaus-plexus/plexus-archiver")
     (synopsis "Archiver component of the Plexus project")
@@ -4416,7 +4486,7 @@ on the XPP3 API (XML Pull Parser).")))
     (description "ASM is an all purpose Java bytecode manipulation and
 analysis framework.  It can be used to modify existing classes or dynamically
 generate classes, directly in binary form.  The provided common
-transformations and analysis algorithms allow to easily assemble custom
+transformations and analysis algorithms allow easily assembling custom
 complex transformations and code analysis tools.")
     (license license:bsd-3)))
 
@@ -7420,7 +7490,7 @@ import org.antlr.grammar.v2.ANTLRTreePrinter;"))
     (home-page "https://github.com/barteo/microemu")
     (synopsis "J2ME CLDC emulator")
     (description "Microemulator is a Java 2 Micro Edition (J2ME) CLDC/MIDP
-Emulator.  It allows to demonstrate MIDlet based applications in web browser
+Emulator.  It demonstrates MIDlet based applications in web browser
 applet and can be run as a standalone java application.")
     (license (list license:asl2.0
                    ;; or altenatively:
@@ -8815,7 +8885,7 @@ make data-binding work.")
        ("hamcrest" ,java-hamcrest-core)))
     (home-page "https://hdrhistogram.github.io/HdrHistogram")
     (synopsis "High dynamic range histogram")
-    (description "Hdrhistogram allows to create histograms that support
+    (description "Hdrhistogram creates histograms that support
 recording and analyzing sampled data value counts across a configurable integer
 value range with configurable value precision within the range.  Value precision
 is expressed as the number of significant digits in the value recording, and
@@ -9117,12 +9187,14 @@ those in Perl and JavaScript.")
     (name "java-fest-util")
     (version "1.2.5")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/alexruiz/fest-util/"
-                                  "archive/fest-util-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/alexruiz/fest-util/")
+                     (commit (string-append "fest-util-" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "05g6hljz5mdaakk8d7g32klbhz9bdwp3qlj6rdaggdidxs3x1sb8"))))
+                "02kgal7v85snyyvcsxvn4qphid455f4smh2wri1il8d9asw0djbz"))))
     (build-system ant-build-system)
     (arguments
      `(#:jar-name "java-fest-util.jar"
@@ -9140,12 +9212,14 @@ those in Perl and JavaScript.")
     (name "java-fest-test")
     (version "2.1.0")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/alexruiz/fest-test/"
-                                  "archive/fest-test-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/alexruiz/fest-test/")
+                     (commit (string-append "fest-test-" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1rxfbw6l9vc65iy1x3fb617qc6y4w2k430pgf1mfbxfdlxbm0f7g"))))
+                "0mg1d2jfh7kbx2c40dchbjr6d8pv59snsyb13mfxsr7xk5n69qbn"))))
     (build-system ant-build-system)
     (arguments
      `(#:jar-name "java-fest-test.jar"
@@ -9163,12 +9237,14 @@ those in Perl and JavaScript.")
     (name "java-fest-assert")
     (version "2.0M10")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/alexruiz/fest-assert-2.x/"
-                                  "archive/fest-assert-core-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/alexruiz/fest-assert-2.x/")
+                     (commit (string-append "fest-assert-core-" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1bi0iqavikzww6rxvz5jyg7y6bflv95s6ibryxx0xfcxrrw6i5lw"))))
+                "1cp8zzyag3s85fz2w68sda9zzaal1y5f9wl8g72wkm12an40w6by"))))
     (build-system ant-build-system)
     (arguments
      `(#:jar-name "java-fest-assert.jar"
@@ -9439,13 +9515,14 @@ by technical operatives or consultants working with enterprise platforms.")
     (name "java-lz4")
     (version "1.4.0")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/lz4/lz4-java/archive/"
-                                  version ".tar.gz"))
-              (file-name (string-append name "-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/lz4/lz4-java")
+                     (commit version)))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "096dm57p2lzqk28n0j2p52x2j3cvnsd2dfqn43n7vbwrkjsy7y54"))))
+                "0ydjakhv3cz34mfvv14qrh2ksdxifgjwwagjy7r46qr3f68hnf6y"))))
     (build-system ant-build-system)
     (arguments
      `(#:jar-name "lz4.jar"
@@ -9454,6 +9531,10 @@ by technical operatives or consultants working with enterprise platforms.")
        #:tests? #f; FIXME: requires more dependencies
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'make-files-writable
+           (lambda _
+             (for-each make-file-writable (find-files "."))
+             #t))
          (add-before 'configure 'generate-source
            (lambda _
              (with-directory-excursion "src/build/source_templates"
@@ -9472,13 +9553,15 @@ algorithms and xxHash hashing algorithm.")
     (name "java-bouncycastle")
     (version "1.60")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/bcgit/bc-java/archive/r"
-                                  (substring version 0 1) "v"
-                                  (substring version 2 4) ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "http://git.bouncycastle.org/repositories/bc-java")
+                     ;(url "https://github.com/bcgit/bc-java")
+                     (commit (string-append "r1rv" (substring version 2 4)))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "0v434513y708qc87k4xz13p2kzydc736lk3ks67df9mg11s7hchv"))
+                "1m921a1ac2dl797ffzg3d4j97ch308f25spb4jgsj3npfmmys5gb"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -10205,7 +10288,8 @@ that is part of the SWT Tools project.")
                                            "linux32")
                                           ((or "x86_64-linux" "aarch64-linux"
                                                "mips64el-linux")
-                                           "linux64")))))
+                                           "linux64")
+                                          (_ "unknown-kernel")))))
                (install-file "src/main/native-package/src/libjansi.so" dir))
              #t))
          (add-after 'install 'install-native
@@ -10440,14 +10524,14 @@ classes prior to Java SE 8.")
 (define-public java-xerces
   (package
     (name "java-xerces")
-    (version "2.11.0")
+    (version "2.12.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://apache/xerces/j/source/"
                            "Xerces-J-src." version ".tar.gz"))
        (sha256
-        (base32 "1006igwy2lqrmjvdk64v8dg6qbk9c29pm8xxx7r87n0vnpvmx6pm"))
+        (base32 "0494kq36gw3nah19ifb720vwxbpg4ww0k6m3zq6wyanw6a083p6s"))
        (patches (search-patches
                  "java-xerces-xjavac_taskdef.patch"
                  "java-xerces-build_dont_unzip.patch"
@@ -10748,7 +10832,7 @@ graphs, and pie charts.")
     (version "3.1")
     (source (origin
               (method url-fetch)
-              (uri (string-append "https://archive.apache.org/dist/httpcomponents/"
+              (uri (string-append "mirror://apache/httpcomponents/"
                                   "commons-httpclient/source/commons-httpclient-"
                                   version "-src.tar.gz"))
               (sha256
@@ -10844,7 +10928,7 @@ inside a Zip archive.")
     (version "2.0.8")
     (source (origin
               (method url-fetch)
-              (uri (string-append "https://archive.apache.org/dist/jakarta/oro/"
+              (uri (string-append "mirror://apache/jakarta/oro/"
                                   "jakarta-oro-" version ".tar.gz"))
               (sha256
                (base32
@@ -11644,7 +11728,7 @@ the application using Java to Lisp integration APIs.")
     (description "JSON Processing (JSON-P) is a Java API to process (e.g.
 parse, generate, transform and query) JSON messages.  It produces and
 consumes JSON text in a streaming fashion (similar to StAX API for XML)
-and allows to build a Java object model for JSON text using API classes
+and allows building a Java object model for JSON text using API classes
 (similar to DOM API for XML).")
     ;; either gpl2 only with classpath exception, or epl2.0.
     (license (list license:gpl2
@@ -11832,3 +11916,28 @@ involving one or more shared resources having ACID (Atomicity, Consistency,
 Isolation and Durability) properties.")
     ;; either gpl2 only with classpath exception or cddl.
     (license (list license:gpl2 license:cddl1.0))))
+
+(define-public java-picocli
+  (package
+    (name "java-picocli")
+    (version "4.3.2")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/remkop/picocli")
+                     (commit (string-append "v" version))))
+              (sha256
+               (base32
+                "1sxp6rxjfgjd98ly14b3d15dvxkm5wg4g46w12jyhmr0kmkaca3c"))))
+    (build-system ant-build-system)
+    (arguments
+     `(#:jar-name "picocli.jar"
+       #:source-dir "src/main/java"
+       ;; Tests require missing dependencies (junitparams, system-rules)
+       #:tests? #f))
+    (home-page "https://picocli.info")
+    (synopsis "REPL for the JVM")
+    (description "Picocli is a framework for building command line applications
+for the JVM.  It supports colors, autocompletion, subcommands, and more.  Written
+in Java, usable from Groovy, Kotlin, Scala, etc.")
+    (license license:asl2.0)))
