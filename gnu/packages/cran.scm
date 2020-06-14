@@ -136,7 +136,7 @@ degree elevation and curve fitting.")
                       (assoc-ref inputs "node") "/lib"))
              #t)))))
     (inputs
-     `(("node" ,node)))
+     `(("node" ,libnode)))
     (propagated-inputs
      `(("r-curl" ,r-curl)
        ("r-jsonlite" ,r-jsonlite)
@@ -2071,13 +2071,13 @@ is provided.")
 (define-public r-calibrate
   (package
     (name "r-calibrate")
-    (version "1.7.5")
+    (version "1.7.6")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "calibrate" version))
        (sha256
-        (base32 "1s423nr176l2sc66wp7hzgqkv7c2bq8d2bjrrvrrm5qa9y3zdx1k"))))
+        (base32 "0h91mxf4fy3xk4mavf6cdllglyq5fra8zpz7yvc63n5jigpy2lhd"))))
     (build-system r-build-system)
     (propagated-inputs
      `(("r-mass" ,r-mass)))
@@ -13446,14 +13446,14 @@ utilities for sequence data management under the ACNUC system.")
 (define-public r-units
   (package
     (name "r-units")
-    (version "0.6-6")
+    (version "0.6-7")
     (source
       (origin
         (method url-fetch)
         (uri (cran-uri "units" version))
         (sha256
           (base32
-            "11x6xz1fbml28xmrhgn4sii9vfyj3gyfc1dfxahdg9cszdmcgdnh"))))
+            "1rdpbkiqcabz00fqzzs98v89v4cgvcd4pb00pwxzkq6vmwmscwrz"))))
     (build-system r-build-system)
     (inputs
      `(("udunits" ,udunits)))
@@ -13578,14 +13578,14 @@ tessellation.")
 (define-public r-sf
   (package
     (name "r-sf")
-    (version "0.9-3")
+    (version "0.9-4")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "sf" version))
        (sha256
         (base32
-         "0qh9jxj88rhkwcd95g0l57cdrz5qqjw1b9yysz1hp9cp99485hcx"))))
+         "1xgmnz01pxvpg2ins1h65mlcrafqihlljcjlag8spq9ii7d5i7mx"))))
     (build-system r-build-system)
     (inputs
      `(("gdal" ,gdal)

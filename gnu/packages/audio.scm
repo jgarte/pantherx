@@ -175,7 +175,9 @@ implementation of Adaptive Multi Rate Narrowband and Wideband
                                   "/" version "/ams-" version ".tar.bz2"))
               (sha256
                (base32
-                "1azbrhpfk4nnybr7kgmc7w6al6xnzppg853vas8gmkh185kk11l0"))))
+                "1azbrhpfk4nnybr7kgmc7w6al6xnzppg853vas8gmkh185kk11l0"))
+              (patches
+               (search-patches "alsa-modular-synth-fix-vocoder.patch"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -183,6 +185,17 @@ implementation of Adaptive Multi Rate Narrowband and Wideband
          "CXXFLAGS=-std=gnu++11")
        #:phases
        (modify-phases %standard-phases
+         (add-after 'set-paths 'hide-default-gcc
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((gcc (assoc-ref inputs "gcc")))
+               ;; Remove the default GCC from CPLUS_INCLUDE_PATH to prevent
+               ;; conflicts with the GCC 5 input.
+               (setenv "CPLUS_INCLUDE_PATH"
+                       (string-join
+                        (delete (string-append gcc "/include/c++")
+                                (string-split (getenv "CPLUS_INCLUDE_PATH") #\:))
+                        ":"))
+               #t)))
          ;; Insert an extra space between linker flags.
          (add-before 'configure 'add-missing-space
            (lambda _
@@ -203,7 +216,7 @@ implementation of Adaptive Multi Rate Narrowband and Wideband
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("qttools" ,qttools)
-       ("gcc" ,gcc-5)))
+       ("gcc@5" ,gcc-5)))
     (home-page "http://alsamodular.sourceforge.net/")
     (synopsis "Realtime modular synthesizer and effect processor")
     (description
@@ -3573,14 +3586,14 @@ on the ALSA software PCM plugin.")
 (define-public snd
   (package
     (name "snd")
-    (version "19.9")
+    (version "20.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "ftp://ccrma-ftp.stanford.edu/pub/Lisp/"
                                   "snd-" version ".tar.gz"))
               (sha256
                (base32
-                "13s8fahpsjygjdrcwmprcrz23ny3klaj2rh2xzdv3bfs69gxvhys"))))
+                "0irdizlng2s3akmxdbfxcbd93bbjz9543nh7fisszim6v0ks59d9"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:tests? #f                      ; no tests

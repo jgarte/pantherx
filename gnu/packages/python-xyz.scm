@@ -3021,14 +3021,14 @@ for Python.")
 (define-public python-jinja2
   (package
     (name "python-jinja2")
-    (version "2.11.1")
+    (version "2.11.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "Jinja2" version))
        (sha256
         (base32
-         "0l72c11n959yzb8d3ankckb6yhjhm6x729zm7rkpk040qzxpy64k"))))
+         "1c1v3djnr0ymp5xpy1h3h60abcaqxdlm4wsqmls9rxby88av5al9"))))
     (build-system python-build-system)
     (arguments
      '(#:phases (modify-phases %standard-phases
@@ -3997,14 +3997,14 @@ provides additional functionality on the produced Mallard documents.")
 (define-public python-cython
   (package
     (name "python-cython")
-    (version "0.29.16")
+    (version "0.29.17")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "Cython" version))
        (sha256
         (base32
-         "01gs10myw0rw4jsikvqs0859fg7gficxhv508cxvnb4l9wl5a9r3"))))
+         "1wnaz40hdw4mg5acz5gqb6bhjhn4cvfxg0xdzfy7aa6qn665hqb3"))))
     (build-system python-build-system)
     ;; we need the full python package and not just the python-wrapper
     ;; because we need libpython3.3m.so
@@ -4991,33 +4991,30 @@ as the original project seems to have been abandoned circa 2007.")
   (package-with-python2 python-socksipy-branch))
 
 (define-public python-socksipychain
-  (let ((commit "eb5ee8741ce006ac0c5c3e2e83204062c348c155")
-        (revision "1")
-        (version "2.1.1"))
-    (package
-      (name "python-socksipychain")
-      (version (git-version version revision commit))
-      (source
-       (origin
-         (method git-fetch)
-         (uri (git-reference
-               (url "https://github.com/pagekite/PySocksipyChain.git")
-               (commit commit)))
-         (file-name (git-file-name name version))
-         (sha256
-          (base32
-           "0fpphn6xnpm7qk8a914s4abycsbq9w6qkci07my632v0fylnm5n7"))))
-      (build-system python-build-system)
-      (arguments
-       `(#:tests? #f))                  ; Tests try to access the network.
-      (home-page "http://pagekite.net/wiki/Floss/PySocksipyChain/")
-      (synopsis "Python SOCKS module with chained proxies support")
-      (description
-       "SocksiPyChain is a modified version of the SocksiPy SOCKS module, which
+  (package
+    (name "python-socksipychain")
+    (version "2.1.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/pagekite/PySocksipyChain.git")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "02pp994qmiivkdx4y6az5q80l6rzy8g6d2ipvp7kns7lsxvmc2y7"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f))                  ; Tests try to access the network.
+    (home-page "http://pagekite.net/wiki/Floss/PySocksipyChain/")
+    (synopsis "Python SOCKS module with chained proxies support")
+    (description
+     "SocksiPyChain is a modified version of the SocksiPy SOCKS module, which
 adds support for arbitrary chaining of proxy servers and various modes of
 TLS/SSL encryption.  It was developed for use in PageKite, and also includes
 a simple netcat replacement with chaining support.")
-      (license license:bsd-3))))
+    (license license:bsd-3)))
 
 (define-public python-pycodestyle
   (package
@@ -5318,14 +5315,14 @@ a general image processing tool.")
 (define-public python-pycparser
   (package
     (name "python-pycparser")
-    (version "2.19")
+    (version "2.20")
     (source
      (origin
       (method url-fetch)
       (uri (pypi-uri "pycparser" version))
       (sha256
        (base32
-        "1cr5dcj9628lkz1qlwq3fv97c25363qppkmcayqvd05dpy573259"))))
+        "1w0m3xvlrzq4lkbvd1ngfm8mdw64r1yxy6n7djlw6qj5d0km6ird"))))
     (outputs '("out" "doc"))
     (build-system python-build-system)
     (native-inputs
@@ -8465,14 +8462,14 @@ versions of Python.")
 (define-public python-idna
   (package
     (name "python-idna")
-    (version "2.8")
+    (version "2.9")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "idna" version))
        (sha256
         (base32
-         "01rlkigdxg17sf9yar1jl8n18ls59367wqh59hnawlyg53vb6my3"))))
+         "1jxp2pdi8y4asi7ka1zhx3yx09kv8kzj533f0ds7viz49b0x323m"))))
     (build-system python-build-system)
     (home-page "https://github.com/kjd/idna")
     (synopsis "Internationalized domain names in applications")
@@ -10132,14 +10129,14 @@ python-xdo for newer bindings.)")
 (define-public python-mako
   (package
     (name "python-mako")
-    (version "1.1.1")
+    (version "1.1.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "Mako" version))
        (sha256
         (base32
-         "193mds7lv91pphnvn6c1n55rhjkgq94asdzgrsb2fiqx7rrsd119"))))
+         "17bd6r9ynp4hyfckkia0bb8gpd98f42jfl5rmzdpbld59bbcaf9i"))))
     (build-system python-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -11749,17 +11746,26 @@ implementation has been adapted, improved, and fixed from Molten.")
 (define-public python-shellingham
   (package
     (name "python-shellingham")
-    (version "1.3.1")
+    (version "1.3.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "shellingham" version))
        (sha256
-        (base32
-         "1q7kws7w4x2hji3g7y0ni9ddk4sd676ylrb3db54gbpys6xj6nwq"))))
+        (base32 "07kmia2hvd2q7wik89m82hig9mqr2faynvy38vxq5fm0ps11jv2p"))))
     (build-system python-build-system)
-    (home-page
-     "https://github.com/sarugaku/shellingham")
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'restore-setup.py
+           ;; setup.py will return in the next release.
+           ;; <https://github.com/sarugaku/shellingham/issues/33>
+           (lambda _
+             (with-output-to-file "setup.py"
+               (lambda _
+                 (display "from setuptools import setup\nsetup()\n")))
+             #t)))))
+    (home-page "https://github.com/sarugaku/shellingham")
     (synopsis "Tool to detect surrounding shell")
     (description
      "Shellingham detects what shell the current Python executable is

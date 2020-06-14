@@ -1682,7 +1682,7 @@ forgotten when the session ends.")
 (define-public evince
   (package
     (name "evince")
-    (version "3.36.1")
+    (version "3.36.5")
     (source (origin
              (method url-fetch)
              (uri (string-append "mirror://gnome/sources/evince/"
@@ -1690,7 +1690,7 @@ forgotten when the session ends.")
                                  "evince-" version ".tar.xz"))
              (sha256
               (base32
-               "1msbb66lasikpfjpkwsvi7h22hqmk275850ilpdqwbd0b39vzf4c"))))
+               "0z79jl0j9xq9wgwkfr0d1w1qrdy4447y8shs407n5srr0vixc3bg"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:configure-flags '("--disable-nautilus" "--enable-introspection")
@@ -4560,7 +4560,7 @@ throughout GNOME for API documentation).")
 (define-public cogl
   (package
     (name "cogl")
-    (version "1.22.6")
+    (version "1.22.8")
     (source
      (origin
        (method url-fetch)
@@ -4568,7 +4568,7 @@ throughout GNOME for API documentation).")
                            (version-major+minor version) "/"
                            "cogl-" version ".tar.xz"))
        (sha256
-        (base32 "0x8v4n61q89qy27v824bqswpz6bmn801403w2q3pa1lcwk9ln4vd"))))
+        (base32 "0nfph4ai60ncdx7hy6hl1i1cmp761jgnyjfhagzi0iqq36qb41d8"))))
     ;; NOTE: mutter exports a bundled fork of cogl, so when making changes to
     ;; cogl, corresponding changes may be appropriate in mutter as well.
     (build-system gnu-build-system)
@@ -4606,6 +4606,17 @@ throughout GNOME for API documentation).")
                                               "/lib/libGL.so"))
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'fix-build-with-mesa-20
+           (lambda _
+             ;; Work around a problem with Mesa 20 where some macros used by
+             ;; Cogl went missing from eglext.h.  This can likely be removed
+             ;; for newer versions of Cogl or Mesa.
+             ;; https://gitlab.gnome.org/GNOME/cogl/-/merge_requests/19
+             (substitute* '("configure"
+                            "cogl/winsys/cogl-winsys-egl-kms.c")
+               (("#include <EGL/eglext.h>" all)
+                (string-append all "\n#include <EGL/eglmesaext.h>\n")))
+             #t))
          (add-before 'check 'start-xorg-server
                      (lambda* (#:key tests? inputs #:allow-other-keys)
                        (if tests?
@@ -6192,7 +6203,21 @@ to display dialog boxes from the commandline and shell scripts.")
              ;; the remaining flags are needed for the bundled cogl
              (string-append "-Dopengl_libname="
                             (assoc-ref %build-inputs "mesa")
-                            "/lib/libGL.so"))))
+                            "/lib/libGL.so"))
+       #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'fix-build-with-mesa-20
+                    (lambda _
+                      ;; Mimic upstream commit a444a4c5f58ea516ad for
+                      ;; compatibility with Mesa 20.  Remove for 3.36.
+                      (substitute* '("src/backends/meta-egl-ext.h"
+                                     "src/backends/meta-egl.c"
+                                     "src/backends/meta-egl.h")
+                        (("#include <EGL/eglext\\.h>" all)
+                         (string-append all "\n#include <EGL/eglmesaext.h>")))
+                      (substitute* "cogl/cogl/meson.build"
+                        (("#include <EGL/eglext\\.h>" all)
+                         (string-append all "\\n#include <EGL/eglmesaext.h>")))
+                      #t)))))
     (native-inputs
      `(("desktop-file-utils" ,desktop-file-utils) ; for update-desktop-database
        ("glib:bin" ,glib "bin") ; for glib-compile-schemas, etc.
@@ -10011,7 +10036,7 @@ integrate seamlessly with the GNOME desktop.")
 (define-public gnome-boxes
   (package
     (name "gnome-boxes")
-    (version "3.36.4")
+    (version "3.36.5")
     (source
      (origin
        (method url-fetch)
@@ -10019,7 +10044,7 @@ integrate seamlessly with the GNOME desktop.")
                            (version-major+minor version) "/"
                            "gnome-boxes-" version ".tar.xz"))
        (sha256
-        (base32 "16l0mq2ydmywcdya1795mcy8syg4zkmz9ws3pzjcqv5y4m7cjj03"))))
+        (base32 "1khvyhgd3p41fvvknga1hdl0p1ks4kj4cwsiaw28v1sy6nzclm2c"))))
     (build-system meson-build-system)
     (arguments
      '(#:glib-or-gtk? #t

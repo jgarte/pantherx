@@ -1343,13 +1343,13 @@ definitions and structure manipulators for Perl.")
 (define-public perl-net-dns-resolver-programmable
  (package
   (name "perl-net-dns-resolver-programmable")
-  (version "v0.003")
+  (version "0.003")
   (source
     (origin
       (method url-fetch)
       (uri (string-append
              "mirror://cpan/authors/id/J/JM/JMEHNLE/net-dns-resolver-programmable/"
-             "Net-DNS-Resolver-Programmable-" version ".tar.gz"))
+             "Net-DNS-Resolver-Programmable-v" version ".tar.gz"))
       (sha256
         (base32
           "1v3nl2kaj4fs55n1617n53q8sa3mir06898vpy1rq98zjih24h4d"))
@@ -2121,33 +2121,28 @@ interface and a programmable text output for scripting.")
 (define-public libnet
   (package
     (name "libnet")
-    (version "1.2-rc3")
+    (version "1.2")
     (source
      (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/sam-github/libnet")
-             (commit (string-append "libnet-" version))))
-       (file-name (git-file-name name version))
+       (method url-fetch)
+       (uri (string-append "https://github.com/libnet/libnet/releases/download"
+                           "/v" version "/libnet-" version ".tar.gz"))
        (sha256
         (base32
-         "0cy8w4g5rv963v4p6iq3333kxgdddx2lywp70xf62553a25xhhs4"))))
+         "19ys9vxk6fg70yzzdxsphfr0rwzgxxhr9b3ykhpg7rfray0qd96a"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'chdir
-           (lambda _ (chdir "libnet") #t))
          (add-before 'build 'build-doc
            (lambda* (#:key make-flags #:allow-other-keys)
              (apply invoke "make" "-C" "doc" "doc"
                     make-flags))))))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("libtool" ,libtool)
-       ("doxygen" ,doxygen)))
-    (home-page "https://sourceforge.net/projects/libnet-dev/")
+     `(;; To build the documentation, Doxygen and Perl is required.
+       ("doxygen" ,doxygen)
+       ("perl" ,perl)))
+    (home-page "https://github.com/libnet/libnet")
     (synopsis "Framework for low-level network packet construction")
     (description
      "Libnet provides a fairly portable framework for network packet
@@ -2937,7 +2932,7 @@ module @code{batman-adv}, for Layer 2.")
 (define-public pagekite
   (package
     (name "pagekite")
-    (version "1.5.0.200327")
+    (version "1.5.2.200603")
     (source
      (origin
        (method git-fetch)
@@ -2946,7 +2941,7 @@ module @code{batman-adv}, for Layer 2.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1vw7kjwxqd3qvm7kpxgjzl6797y0i1f16yfkfad84qpx2ij0gvdm"))))
+        (base32 "08rcyr54dssnpand6y26f8x9cjmd91hr44my08kxw70s5iqiwizv"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
