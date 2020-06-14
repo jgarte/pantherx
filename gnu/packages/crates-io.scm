@@ -20380,7 +20380,7 @@ proven statistical guarantees.")
 (define-public rust-serde-bytes-0.11
   (package
     (name "rust-serde-bytes")
-    (version "0.11.3")
+    (version "0.11.5")
     (source
      (origin
        (method url-fetch)
@@ -20388,8 +20388,7 @@ proven statistical guarantees.")
        (file-name
         (string-append name "-" version ".tar.gz"))
        (sha256
-        (base32
-         "1bl45kf3c71xclv7wzk5525nswm4bgsnjd3s1s15f4k2a8whfnij"))))
+        (base32 "1fcb6sw8wkrj4ylm118wkb31hw124nkjnqyhbgqnd8w85zfhgbhn"))))
     (build-system cargo-build-system)
     (arguments
      `(#:skip-build? #t
@@ -20400,8 +20399,7 @@ proven statistical guarantees.")
         ("rust-serde-derive" ,rust-serde-derive-1.0)
         ("rust-serde-test" ,rust-serde-test-1.0))))
     (home-page "https://github.com/serde-rs/bytes")
-    (synopsis
-     "Handle of integer arrays and vectors for Serde")
+    (synopsis "Handle integer arrays and vectors for Serde")
     (description
      "Optimized handling of @code{&[u8]} and @code{Vec<u8>} for Serde.")
     (license (list license:expat license:asl2.0))))
@@ -23747,14 +23745,14 @@ in Rust.")
 (define-public rust-tokio-0.2
   (package
     (name "rust-tokio")
-    (version "0.2.18")
+    (version "0.2.21")
     (source
      (origin
        (method url-fetch)
        (uri (crate-uri "tokio" version))
        (file-name (string-append name "-" version ".tar.gz"))
        (sha256
-        (base32 "04v7rfkrlr8cx30ygy0n45skf6pdbif0zisn9a5xrdnjfb81dvrl"))))
+        (base32 "0n1dxsjv9fxv3kmr3nh4n8v8pqckwgdlls942msysavhp4kzm6fh"))))
     (build-system cargo-build-system)
     (arguments
      `(#:skip-build? #t
@@ -27443,7 +27441,14 @@ to XDG Base Directory specification")
         (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
-         "12ndxyhzxw2zdr76ql8nfdwb2vwhvdkrxwk4pbjafqfglmjv0zdh"))))
+         "12ndxyhzxw2zdr76ql8nfdwb2vwhvdkrxwk4pbjafqfglmjv0zdh"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; 'doctest' isn't stable until rust-1.40
+           (substitute* "src/lib.rs"
+             (("\\(doctest") "(test"))
+           #t))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-development-inputs

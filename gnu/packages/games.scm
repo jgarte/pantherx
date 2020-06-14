@@ -979,7 +979,7 @@ automata.  The following features are available:
 (define-public julius
   (package
     (name "julius")
-    (version "1.4.0")
+    (version "1.4.1")
     (source
      (origin
        (method git-fetch)
@@ -988,7 +988,7 @@ automata.  The following features are available:
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "01rygr592ar530qv1flmaiq8icl0qdxgc8lhkcdyn1g09941z47v"))
+        (base32 "12hhnhdwgz7hd3hlndbnk15pxggm1375qs0764ija4nl1gbpb110"))
        ;; Remove unused bundled libraries.
        (modules '((guix build utils)))
        (snippet
@@ -1158,15 +1158,15 @@ destroying an ancient book using a special wand.")
 (define-public gnome-chess
   (package
     (name "gnome-chess")
-    (version "3.36.0")
+    (version "3.36.1")
     (source (origin
               (method url-fetch)
-              (uri (string-append "mirror://gnome/sources/" name "/"
+              (uri (string-append "mirror://gnome/sources/gnome-chess/"
                                   (version-major+minor version)  "/"
-                                  name "-" version ".tar.xz"))
+                                  "gnome-chess-" version ".tar.xz"))
               (sha256
                (base32
-                "1a9fgi749gy1f60vbcyrqqkab9vqs42hji70q73k1xx8rv0agmg0"))))
+                "165bk8s3nngyqbikggspj4rff5nxxfkfcmgzjb4grmsrgbqwk5di"))))
     (build-system meson-build-system)
     (arguments
      '(#:glib-or-gtk? #t
@@ -1315,15 +1315,14 @@ Chess).  It is similar to standard chess but this variant is far more complicate
 (define-public ltris
   (package
     (name "ltris")
-    (version "1.0.19")
+    (version "1.0.20")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://prdownloads.sourceforge.net/lgames/"
                            "ltris-" version ".tar.gz"))
        (sha256
-        (base32
-         "1895wv1fqklrj4apkz47rnkcfhfav7zjknskw6p0886j35vrwslg"))))
+        (base32 "16zbqsc4amx9g3yjv6054nh4ia09dgfp8k6q4qxpjicl3dw3z0in"))))
     (build-system gnu-build-system)
     (arguments
      '(;; The code in LTris uses traditional GNU semantics for inline functions
@@ -1892,16 +1891,15 @@ that beneath its ruins lay buried an ancient evil.")
 (define-public angband
   (package
     (name "angband")
-    (version "4.2.0")
+    (version "4.2.1")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "http://rephial.org/downloads/"
+       (uri (string-append "https://rephial.org/downloads/"
                            (version-major+minor version)
                            "/angband-" version ".tar.gz"))
        (sha256
-        (base32
-         "0vdm1ymm28wawp94nl1p5q3lhc0k7cnn2kkvvrkfx962gif4kqfk"))
+        (base32 "03qdavkj2ik02mqjxmlm5bn17ba3yxb1rirp8ghnxy3bsk4kbmxc"))
        (modules '((guix build utils)))
        (snippet
         ;; So, some of the sounds/graphics/tilesets are under different
@@ -1934,7 +1932,7 @@ that beneath its ruins lay buried an ancient evil.")
      `(("autoconf" ,autoconf)
        ("automake" ,automake)))
     (inputs `(("ncurses" ,ncurses)))
-    (home-page "http://rephial.org/")
+    (home-page "https://rephial.org/")
     (synopsis "Dungeon exploration roguelike")
     (description "Angband is a Classic dungeon exploration roguelike.  Explore
 the depths below Angband, seeking riches, fighting monsters, and preparing to
@@ -2972,7 +2970,7 @@ falling, themeable graphics and sounds, and replays.")
 (define-public wesnoth
   (package
     (name "wesnoth")
-    (version "1.14.11")
+    (version "1.14.12")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/wesnoth/wesnoth-"
@@ -2981,7 +2979,7 @@ falling, themeable graphics and sounds, and replays.")
                                   "wesnoth-" version ".tar.bz2"))
               (sha256
                (base32
-                "1i8mz6gw3qar09bscczhki0g4scj8pl58v85rp0g55r4bcq41l5v"))))
+                "027bc1363hdgahw7dvd22fvvqd132byxnljfbq6lvlr5ci01q8mk"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ;no check target
@@ -3982,7 +3980,7 @@ tactics.")
 (define-public starfighter
   (package
     (name "starfighter")
-    (version "2.0.0.3")
+    (version "2.2")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -3991,7 +3989,7 @@ tactics.")
                     (version-major+minor version) "-src.tar.gz"))
               (sha256
                (base32
-                "13vi5kh9ahws4f52421cbyw0jn7pmbnld358lqfmr6flql7ilj3b"))))
+                "1ldd9cbvl694ps4sapr8213m3zjrci7gii5x3kjjfalkikmndpd2"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -5811,6 +5809,14 @@ some graphical niceities, and numerous bug-fixes and other improvements.")
                (string-append "LDFLAGS=-Wl,-rpath=" vulkanlib)
                "-CQuake"))
        #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'patch-for-new-vulkan
+                    (lambda _
+                      ;; Mimic upstream commit a869a22d9b51c68e for
+                      ;; compatibility with newer vulkan-headers.
+                      (substitute* "Quake/gl_rmisc.c"
+                        (("VK_DYNAMIC_STATE_RANGE_SIZE")
+                         "3"))
+                      #t))
                   (delete 'configure)
                   (add-after 'unpack 'fix-makefile-paths
                     (lambda* (#:key outputs #:allow-other-keys)
