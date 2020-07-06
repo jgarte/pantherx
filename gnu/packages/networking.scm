@@ -38,6 +38,7 @@
 ;;; Copyright © 2019 Diego N. Barbato <dnbarbato@posteo.de>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
+;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -63,6 +64,7 @@
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
+  #:use-module (guix build-system meson)
   #:use-module (guix build-system perl)
   #:use-module (guix build-system python)
   #:use-module (guix build-system trivial)
@@ -85,6 +87,7 @@
   #:use-module (gnu packages curl)
   #:use-module (gnu packages cyrus-sasl)
   #:use-module (gnu packages dejagnu)
+  #:use-module (gnu packages docbook)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages flex)
   #:use-module (gnu packages freedesktop)
@@ -296,6 +299,82 @@ or, more generally, MAC addresses of the same category of hardware.")
 specification, which provides IPv6 Internet connectivity to IPv6 enabled hosts
 residing in IPv4-only networks, even when they are behind a NAT device.")
     (license license:gpl2+)))
+
+(define-public ndisc6
+  (package
+    (name "ndisc6")
+    (version "1.0.4")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://www.remlab.net/files/ndisc6/ndisc6-"
+                                  version ".tar.bz2"))
+              (sha256
+               (base32
+                "07swyar1hl83zxmd7fqwb2q0c0slvrswkcfp3nz5lknrk15dmcdb"))))
+    (build-system gnu-build-system)
+    (home-page "https://www.remlab.net/ndisc6/")
+    (synopsis "IPv6 diagnostic tools")
+    (description
+     "NDisc6 is a collection of tools for IPv6 networking diagnostics.
+It includes the following programs:
+
+@itemize
+@item @command{ndisc6}: ICMPv6 Neighbor Discovery tool.
+@item @command{rdisc6}: ICMPv6 Router Discovery tool.
+@item @command{tcptraceroute6}: IPv6 traceroute over TCP.
+@item @command{traceroute6}: IPv6 traceroute over UDP.
+@item @command{rdnssd}: Recursive DNS Servers discovery daemon.
+@end itemize")
+    ;; The user can choose version 2 or 3 of the GPL, not later versions.
+    (license (list license:gpl2 license:gpl3))))
+
+(define-public parprouted
+  (package
+    (name "parprouted")
+    (version "0.7")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://www.hazard.maks.net/parprouted/"
+                                  "parprouted-" version ".tar.gz"))
+              (sha256
+               (base32
+                "1z6yg28i0pv20jivyy82pxb38hsryj95inhj27bs6ja1bp4l6dnn"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ;no tests
+       #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'insert-absolute-iproute-reference
+                    (lambda* (#:key inputs #:allow-other-keys)
+                      (let* ((iproute (assoc-ref inputs "iproute"))
+                             (ip (string-append iproute "/sbin/ip")))
+                        (substitute* "parprouted.c"
+                          (("/sbin/ip") ip))
+                        #t)))
+                  (replace 'configure
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let* ((out (assoc-ref outputs "out"))
+                             (sbin (string-append out "/sbin"))
+                             (man8 (string-append out "/share/man/man8")))
+                        ;; No configure script; hijack the phase to make
+                        ;; the necessary arrangements.
+                        (setenv "CC" ,(cc-for-target))
+                        (for-each mkdir-p (list sbin man8))
+                        (substitute* "Makefile"
+                          (("/usr/local/sbin") sbin)
+                          (("/usr/local/man/man8") man8))
+                        #t))))))
+    (inputs
+     `(("iproute" ,iproute)))
+    (home-page "https://www.hazard.maks.net/parprouted/")
+    (synopsis "Proxy ARP requests to other interfaces")
+    (description
+     "@command{parprouted} is a daemon for transparent IP (Layer@tie{}3)
+proxy ARP bridging.  Unlike standard bridging, proxy ARP bridging can bridge
+Ethernet networks behind wireless nodes.  Normal layer@tie{}2 bridging does
+not work between wireless nodes because wireless does not know about MAC
+addresses used in the wired Ethernet networks.  This daemon can also be
+useful for making transparent firewalls.")
+    (license license:gpl2)))
 
 (define-public socat
   (package
@@ -572,13 +651,13 @@ containing both Producer and Consumer support.")
     (version "1.7")
     (source (origin
               (method url-fetch)
-              (uri (string-append "http://libndp.org/files/"
-                                  name "-" version ".tar.gz"))
+              (uri (string-append "https://libndp.org/files/"
+                                  "libndp-" version ".tar.gz"))
               (sha256
                (base32
                 "1dlinhl39va00v55qygjc9ap77yqf7xvn4rwmvdr49xhzzxhlj1c"))))
     (build-system gnu-build-system)
-    (home-page "http://libndp.org/")
+    (home-page "https://libndp.org/")
     (synopsis "Library for Neighbor Discovery Protocol")
     (description
      "libndp contains a library which provides a wrapper for IPv6 Neighbor
@@ -652,6 +731,76 @@ needed/wanted real-time traffic statistics of multiple network
 interfaces, with a simple and efficient view on the command line.  It is
 intended as a substitute for the PPPStatus and EthStatus projects.")
     (license license:gpl2+)))
+
+(define-public iputils
+  (package
+    (name "iputils")
+    (version "20190709")
+    (home-page "https://github.com/iputils/iputils")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference (url home-page)
+                                  (commit (string-append "s" version))))
+              (file-name (git-file-name name version))
+              (patches (search-patches "iputils-libcap-compat.patch"))
+              (sha256
+               (base32
+                "04bp4af15adp79ipxmiakfp0ij6hx5qam266flzbr94pr8z8l693"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:configure-flags '("-DBUILD_RARPD=true")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-docbook-url
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let* ((docbook-xsl (assoc-ref inputs "docbook-xsl"))
+                    (uri (string-append docbook-xsl "/xml/xsl/docbook-xsl-"
+                                        ,(package-version docbook-xsl))))
+               (for-each
+                (lambda (file)
+                  (substitute* file
+                    (("http://docbook\\.sourceforge\\.net/release/xsl-ns/current")
+                     uri)))
+                (cons "doc/meson.build"
+                      (find-files "doc" "\\.xsl$")))
+               #t))))))
+    (native-inputs
+     `(("gettext" ,gettext-minimal)
+       ("pkg-config" ,pkg-config)
+       ("docbook-xsl" ,docbook-xsl)
+       ("docbook-xml" ,docbook-xml-5)
+       ("libxml2" ,libxml2)          ;for XML_CATALOG_FILES
+       ("xsltproc" ,libxslt)))
+    (inputs
+     `(("libcap" ,libcap)
+       ("libidn2" ,libidn2)
+       ("openssl" ,openssl)))
+    (synopsis "Collection of network utilities")
+    (description
+     "This package contains a variety of tools for dealing with network
+configuration, troubleshooting, or servers.  Utilities included are:
+
+@itemize @bullet
+@item @command{arping}: Ping hosts using the @dfn{Adress Resolution Protocol}.
+@item @command{clockdiff}: Compute time difference between network hosts
+using ICMP TSTAMP messages.
+@item @command{ninfod}: Daemon that responds to IPv6 Node Information Queries.
+@item @command{ping}: Use ICMP ECHO messages to measure round-trip delays
+and packet loss across network paths.
+@item @command{rarpd}: Answer RARP requests from clients.
+@item @command{rdisc}: Populate network routing tables with information from
+the ICMP router discovery protocol.
+@item @command{tftpd}: Trivial file transfer protocol server.
+@item @command{tracepath}: Trace network path to an IPv4 or IPv6 address and
+discover MTU along the way.
+@end itemize")
+    ;; The various utilities are covered by different licenses, see LICENSE
+    ;; for details.
+    (license (list license:gpl2+  ;arping, rarpd, tracepath
+                   license:bsd-3  ;clockdiff, ninfod, ping, tftpd
+                   (license:non-copyleft
+                    "https://spdx.org/licenses/Rdisc.html"
+                    "Sun Microsystems license, see rdisc.c for details")))))
 
 (define-public nload
   (package
@@ -767,14 +916,14 @@ of the same name.")
 (define-public wireshark
   (package
     (name "wireshark")
-    (version "3.2.4")
+    (version "3.2.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.wireshark.org/download/src/wireshark-"
                            version ".tar.xz"))
        (sha256
-        (base32 "1amqgn94g6h6cfnsccm2zb4c73pfv1qmzi1i6h1hnbcyhhg4czfi"))))
+        (base32 "0h69m9maq6w5gik4gamv4kfqrr37hmi4kpwh225y1k36awm0b2dx"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -1026,15 +1175,14 @@ TCP connection, TLS handshake and so on) in the terminal.")
 (define-public squid
   (package
     (name "squid")
-    (version "4.11")
+    (version "4.12")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://www.squid-cache.org/Versions/v4/squid-"
                            version ".tar.xz"))
        (sha256
-        (base32
-          "0z986kykx539wjqd7mr8y0abf3z6hz8byf8fmmbky9hh4ihlgnaf"))))
+        (base32 "05z34ysy2zn7as11vd365xxhh36bm1ysiwcbr0i0f0nwng406apl"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -1765,12 +1913,12 @@ gone wild and are suddenly taking up your bandwidth.")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "https://github.com/nzbget/nzbget/archive/v"
-                           version ".tar.gz"))
-       (file-name (string-append name "-" version ".tar.gz"))
+       (uri (string-append "https://github.com/nzbget/nzbget/releases"
+                           "/download/v" version
+                           "/nzbget-" version "-src.tar.gz"))
        (sha256
         (base32
-         "0l3dzxz7d7jf6cyach41zirvsx1x0vs4nh053c0miycv7zjyrly7"))
+         "0lwd0pfrs4a5ms193hgz2qiyf7grrc925dw6y0nfc0gkp27db9b5"))
        (modules '((guix build utils)))
        (snippet
         ;; Reported upstream as <https://github.com/nzbget/nzbget/pull/414>.
@@ -1807,7 +1955,7 @@ procedure calls (RPCs).")
 (define-public openvswitch
   (package
     (name "openvswitch")
-    (version "2.12.0")
+    (version "2.13.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1815,7 +1963,7 @@ procedure calls (RPCs).")
                     version ".tar.gz"))
               (sha256
                (base32
-                "1y78ix5inhhcvicbvyy2ij38am1215nr55vydhab3d4065q45z8k"))))
+                "0cd5vmfr6zwgcnkwys6rag6cmz68v0librpaplianv734xs74pyx"))))
     (build-system gnu-build-system)
     (arguments
      '(;; FIXME: many tests fail with:
@@ -1842,11 +1990,9 @@ procedure calls (RPCs).")
     (native-inputs
      `(("perl" ,perl)
        ("pkg-config" ,pkg-config)
-       ("python" ,python-2)
+       ("python" ,python-wrapper)
        ;; for testing
        ("util-linux" ,util-linux)))
-    (propagated-inputs
-     `(("python-six" ,python2-six)))
     (inputs
      `(("libcap-ng" ,libcap-ng)
        ("openssl" ,openssl)))
@@ -1936,13 +2082,14 @@ enabled due to license conflicts between the BSD advertising clause and the GPL.
     (version "3.0.19")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "https://github.com/ptrrkssn/pidentd/archive/"
-                           "v" version ".tar.gz"))
-       (file-name (string-append name "-" version ".tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+              (url "https://github.com/ptrrkssn/pidentd")
+              (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
         (base32
-         "0y3kd1bkydqkpc1qdff24yswysamsqivvadjy0468qri5730izgc"))))
+         "1k4rr0b4ygxssbnsykzjvz4hjhazzz4j5arlilyc1iq7b1wzsk7i"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f)) ; No tests are included
@@ -1951,7 +2098,7 @@ enabled due to license conflicts between the BSD advertising clause and the GPL.
     (home-page "https://www.lysator.liu.se/~pen/pidentd/")
     (synopsis "Small Ident Daemon")
     (description
-     "@dfn{Pidentd} (Peter's Ident Daemon) is a identd, which implements a
+     "@dfn{Pidentd} (Peter's Ident Daemon) is an identd, which implements a
 identification server.  Pidentd looks up specific TCP/IP connections and
 returns the user name and other information about the connection.")
     (license license:public-domain)))
@@ -3101,7 +3248,7 @@ cables.")
 (define-public haproxy
   (package
     (name "haproxy")
-    (version "2.1.6")
+    (version "2.1.7")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://www.haproxy.org/download/"
@@ -3109,7 +3256,7 @@ cables.")
                                   "/src/haproxy-" version ".tar.gz"))
               (sha256
                (base32
-                "1pyz4gckdn8982vpb1iiw9agwp2s5p8wc0nn1qh1ic0wq3lrnpg6"))))
+                "0fd3c1znid5a9w3gcf77b85hm2a2558w9s02c4b7xzkmivqnqbir"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -3187,3 +3334,49 @@ CDP.  The goal of LLDP is to provide an inter-vendor compatible mechanism to
 deliver Link-Layer notifications to adjacent network devices.  @code{lldpd} is
 an implementation of LLDP.  It also supports some proprietary protocols.")
     (license license:isc)))
+
+(define-public hashcash
+  (package
+    (name "hashcash")
+    (version "1.22")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://www.hashcash.org/source/hashcash-"
+                           version ".tgz"))
+       (sha256
+        (base32
+         "15kqaimwb2y8wvzpn73021bvay9mz1gqqfc40gk4hj6f84nz34h1"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags (list (string-append "CC=" ,(cc-for-target)))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         ;; No tests available.
+         (delete 'check)
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((outdir (assoc-ref outputs "out"))
+                    (bindir (string-append outdir "/bin"))
+                    (mandir (string-append outdir "/share/man/man1"))
+                    (docdir (string-append outdir "/share/doc/hashcash-" ,version)))
+               ;; Install manually, as we don't need the `sha1' binary
+               (install-file "hashcash" bindir)
+               (install-file "hashcash.1" mandir)
+               (install-file "README" docdir)
+               (install-file "LICENSE" docdir)
+               (install-file "CHANGELOG" docdir)
+               #t))))))
+    (home-page "https://www.hashcash.org/")
+    (synopsis "Denial-of-service countermeasure")
+    (description "Hashcash is a proof-of-work algorithm, which has been used
+as a denial-of-service countermeasure technique in a number of systems.
+
+A hashcash stamp constitutes a proof-of-work which takes a parametrizable
+amount of work to compute for the sender.  The recipient can verify received
+hashcash stamps efficiently.
+
+This package contains a command-line tool for computing and verifying hashcash
+stamps.")
+    (license license:public-domain)))

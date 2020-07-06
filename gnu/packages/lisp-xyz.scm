@@ -74,30 +74,29 @@
   #:use-module (srfi srfi-19))
 
 (define-public sbcl-alexandria
-  (let ((commit "5e5c7d83090cc0fbf32c4628362ac3ce2c50dc59"))
-    (package
-      (name "sbcl-alexandria")
-      (version "1.0.1")
-      (source
-       (origin
-         (method git-fetch)
-         (uri (git-reference
-               (url "https://gitlab.common-lisp.net/alexandria/alexandria.git")
-               (commit commit)))
-         (sha256
-          (base32
-           "010w8829dq28jf8ajfzas9nfvpxa5bal04mg299xq6y9spihc2iz"))
-         (file-name (git-file-name name version))))
-      (build-system asdf-build-system/sbcl)
-      (native-inputs
-       `(("rt" ,sbcl-rt)))
-      (synopsis "Collection of portable utilities for Common Lisp")
-      (description
-       "Alexandria is a collection of portable utilities.  It does not contain
+  (package
+   (name "sbcl-alexandria")
+   (version "1.1")
+   (source
+    (origin
+     (method git-fetch)
+     (uri (git-reference
+           (url "https://gitlab.common-lisp.net/alexandria/alexandria.git")
+           (commit (string-append "v" version))))
+     (sha256
+      (base32
+       "1zanb3xa98js0i66iqcmx3gp123p1m2d1fxn8d7bfzyfad5f6xn2"))
+     (file-name (git-file-name name version))))
+   (build-system asdf-build-system/sbcl)
+   (native-inputs
+    `(("rt" ,sbcl-rt)))
+   (synopsis "Collection of portable utilities for Common Lisp")
+   (description
+    "Alexandria is a collection of portable utilities.  It does not contain
 conceptual extensions to Common Lisp.  It is conservative in scope, and
 portable between implementations.")
-      (home-page "https://common-lisp.net/project/alexandria/")
-      (license license:public-domain))))
+   (home-page "https://common-lisp.net/project/alexandria/")
+   (license license:public-domain)))
 
 (define-public cl-alexandria
   (sbcl-package->cl-source-package sbcl-alexandria))
@@ -173,14 +172,14 @@ interactive development model in mind.")
 (define-public sbcl-bordeaux-threads
   (package
     (name "sbcl-bordeaux-threads")
-    (version "0.8.7")
+    (version "0.8.8")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/sionescu/bordeaux-threads.git")
                     (commit (string-append "v" version))))
               (sha256
-               (base32 "1whpfmyxp2fsw6viqj45fqgsifgr534c575bfh5vaqw5m84b6alp"))
+               (base32 "19i443fz3488v1pbbr9x24y8h8vlyhny9vj6c9jk5prm702awrp6"))
               (file-name
                (git-file-name "bordeaux-threads" version))))
     (inputs `(("alexandria" ,sbcl-alexandria)))
@@ -675,8 +674,9 @@ antialiased TrueType font rendering using CLX and XRender extension.")
 ;; we expose the union of these as `sbcl-slynk'.  The following variable
 ;; describes the base module.
 (define sbcl-slynk-boot0
-  (let ((revision "2")
-        (commit "cbf84c36c4eca8b032e3fd16177a7bc02df3ec4c"))
+  (let ((revision "3")
+        ;; Update together with emacs-sly.
+        (commit "6a2f543cb21f14104c2253af5a1427b884a987ae"))
     (package
       (name "sbcl-slynk-boot0")
       (version (string-append "1.0.0-beta-" revision "." (string-take commit 7)))
@@ -688,7 +688,7 @@ antialiased TrueType font rendering using CLX and XRender extension.")
            (url "https://github.com/joaotavora/sly.git")
            (commit commit)))
          (sha256
-          (base32 "13dyhsravn591p7g6is01mp2ynzjnnj7pwgi57r6xqmd4611y9vh"))
+          (base32 "0wbpg9p9yg2hd62l15pvy50fk3hndq5zzyqlyyf04g368s895144"))
          (file-name (string-append "slynk-" version "-checkout"))
          (modules '((guix build utils)
                     (ice-9 ftw)))
@@ -700,9 +700,7 @@ antialiased TrueType font rendering using CLX and XRender extension.")
                (("\\.\\./contrib")
                 "contrib")
                (("\\(defsystem :slynk/util")
-                "(defsystem :slynk/util :depends-on (:slynk)")
-               ((":depends-on \\(:slynk :slynk/util\\)")
-                ":depends-on (:slynk :slynk-util)"))
+                "(defsystem :slynk/util :depends-on (:slynk)"))
              (substitute* "contrib/slynk-trace-dialog.lisp"
                (("\\(slynk::reset-inspector\\)") ; Causes problems on load
                 "nil"))
@@ -728,7 +726,7 @@ antialiased TrueType font rendering using CLX and XRender extension.")
       (synopsis "Common Lisp IDE for Emacs")
       (description "SLY is a fork of SLIME, an IDE backend for Common Lisp.
 It also features a completely redesigned REPL based on Emacs's own
-full-featured comint.el, live code annotations, and a consistent interactive
+full-featured @code{comint-mode}, live code annotations, and a consistent interactive
 button interface.  Everything can be copied to the REPL.  One can create
 multiple inspectors with independent history.")
       (home-page "https://github.com/joaotavora/sly")
@@ -1714,7 +1712,7 @@ also be supported.")
 (define-public sbcl-ironclad
   (package
     (name "sbcl-ironclad")
-    (version "0.49")
+    (version "0.50")
     (source
      (origin
        (method git-fetch)
@@ -1722,7 +1720,7 @@ also be supported.")
              (url "https://github.com/sharplispers/ironclad/")
              (commit (string-append "v" version))))
        (sha256
-        (base32 "0kbzqg2aasrhjwy3nrzy2ddy809n1j045w4qkyc3r2syqd203d4q"))
+        (base32 "0k4bib9mbrzalbl9ivkw4a7g4c7bbad1l5jw4pzkifqszy2swkr5"))
        (file-name (git-file-name name version))))
     (build-system asdf-build-system/sbcl)
     (native-inputs
@@ -1730,8 +1728,7 @@ also be supported.")
      `(("rt" ,sbcl-rt)))
     (inputs
      `(("bordeaux-threads" ,sbcl-bordeaux-threads)
-       ("flexi-streams" ,sbcl-flexi-streams)
-       ("trivial-garbage" ,sbcl-trivial-garbage)))
+       ("flexi-streams" ,sbcl-flexi-streams)))
     (synopsis "Cryptographic toolkit written in Common Lisp")
     (description
      "Ironclad is a cryptography library written entirely in Common Lisp.
@@ -3592,11 +3589,13 @@ process form data posted with HTTP POST method using enctype
     (version "2.0.4")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append
-             "https://github.com/pmai/md5/archive/release-" version ".tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+              (url "https://github.com/pmai/md5")
+              (commit (string-append "release-" version))))
+       (file-name (git-file-name "md5" version))
        (sha256
-        (base32 "19yl9n0pjdz5gw4qi711lka97xcd9f81ylg434hk7jwn9f2s6w11"))))
+        (base32 "1waqxzm7vlc22n92hv8r27anlvvjkkh9slhrky1ww7mdx4mmxwb8"))))
     (build-system asdf-build-system/sbcl)
     (home-page "https://github.com/pmai/md5")
     (synopsis
@@ -5719,22 +5718,7 @@ offered, one SAX-like, the other similar to StAX.")
              (install-file "catalog.dtd"
                            (string-append
                             (assoc-ref outputs "out")
-                            "/lib/" (%lisp-type)))))
-         (add-after 'create-asd 'remove-component
-           ;; XXX: The original .asd has no components, but our build system
-           ;; creates an entry nonetheless.  We need to remove it for the
-           ;; generated .asd to load properly.  See trivia.trivial for a
-           ;; similar problem.
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (asd (string-append out "/lib/sbcl/cxml.asd")))
-               (substitute* asd
-                 (("  :components
-")
-                  ""))
-               (substitute* asd
-                 ((" *\\(\\(:compiled-file \"cxml--system\"\\)\\)")
-                  ""))))))))))
+                            "/lib/" (%lisp-type))))))))))
 
 (define-public cl-cxml
   (sbcl-package->cl-source-package sbcl-cxml))
@@ -6136,7 +6120,6 @@ This package uses fare-quasiquote with named-readtable.")))
 (define-public cl-fare-quasiquote-readtable
   (sbcl-package->cl-source-package sbcl-fare-quasiquote-readtable))
 
-;; TODO: Add support for component-less system in asdf-build-system/sbcl.
 (define-public sbcl-fare-quasiquote-extras
   (package
     (inherit sbcl-fare-quasiquote)
@@ -6156,22 +6139,7 @@ This package uses fare-quasiquote with named-readtable.")))
                (install-file "fare-quasiquote-extras.asd" lib)
                (make-file-writable
                 (string-append lib "/fare-quasiquote-extras.asd"))
-               #t)))
-         (add-after 'create-asd-file 'fix-asd-file
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (lib (string-append out "/lib/" (%lisp-type)))
-                    (asd (string-append lib "/fare-quasiquote-extras.asd")))
-               (substitute* asd
-                 ((":class")
-                  "")
-                 (("asdf/bundle:prebuilt-system")
-                  "")
-                 ((":components")
-                  "")
-                 (("\\(\\(:compiled-file \"fare-quasiquote-extras--system\"\\)\\)")
-                  "")))
-             #t)))))
+               #t))))))
     (description "This library combines @code{fare-quasiquote-readtable} and
 @code{fare-quasiquote-optima}.")))
 
@@ -6247,32 +6215,6 @@ with extensible optimizer interface.")))
     (name "sbcl-trivia.trivial")
     (inputs
      `(("trivia.level2" ,sbcl-trivia.level2)))
-    (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (replace 'create-asd-file
-           (lambda* (#:key outputs inputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (lib (string-append out "/lib/" (%lisp-type)))
-                    (level2 (assoc-ref inputs "trivia.level2")))
-               (mkdir-p lib)
-               (install-file "trivia.trivial.asd" lib)
-               ;; XXX: This .asd does not have any component and the build
-               ;; system fails to work in this case.  We should update the
-               ;; build system to handle component-less .asd.
-               ;; TODO: How do we append to file in Guile?  It seems that
-               ;; (open-file ... "a") gets a "Permission denied".
-               (substitute* (string-append lib "/trivia.trivial.asd")
-                 (("\"\\)")
-                  (string-append "\")
-
-(progn (asdf/source-registry:ensure-source-registry)
-       (setf (gethash
-               \"trivia.level2\"
-               asdf/source-registry:*source-registry*)
-             #p\""
-                                 level2
-                                 "/share/common-lisp/sbcl-bundle-systems/trivia.level2.asd\"))")))))))))
     (description "Trivia is a pattern matching compiler that is compatible
 with Optima, another pattern matching library for Common Lisp.  It is meant to
 be faster and more extensible than Optima.
@@ -6350,24 +6292,7 @@ This system contains the CFFI foreign slot access extension.")))
        ("trivia.cffi" ,sbcl-trivia.cffi)
        ("optima" ,sbcl-optima)))
     (arguments
-     `(#:test-asd-file "trivia.test.asd"
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'create-asd 'remove-component
-           ;; XXX: The original .asd has no components, but our build system
-           ;; creates an entry nonetheless.  We need to remove it for the
-           ;; generated .asd to load properly.  See trivia.trivial for a
-           ;; similar problem.
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (asd (string-append out "/lib/" (%lisp-type) "/trivia.asd")))
-               (substitute* asd
-                 (("  :components
-")
-                  ""))
-               (substitute* asd
-                 ((" *\\(\\(:compiled-file \"trivia--system\"\\)\\)")
-                  ""))))))))
+     `(#:test-asd-file "trivia.test.asd"))
     (description "Trivia is a pattern matching compiler that is compatible
 with Optima, another pattern matching library for Common Lisp.  It is meant to
 be faster and more extensible than Optima.")))
@@ -12018,3 +11943,353 @@ tables.")
 
 (define-public cl-rdkafka
   (sbcl-package->cl-source-package sbcl-cl-rdkafka))
+
+(define-public sbcl-acclimation
+  (let ((commit "4d51150902568fcd59335f4cc4cfa022df6116a5"))
+    (package
+      (name "sbcl-acclimation")
+      (version (git-version "0.0.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/robert-strandh/Acclimation")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1aw7rarjl8ai57h0jxnp9hr3dka7qrs55mmbl1p6rhd6xj8mp9wq"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/robert-strandh/Acclimation")
+      (synopsis "Internationalization library for Common Lisp")
+      (description "This project is meant to provide tools for
+internationalizing Common Lisp programs.
+
+One important aspect of internationalization is of course the language used in
+error messages, documentation strings, etc.  But with this project we provide
+tools for all other aspects of internationalization as well, including dates,
+weight, temperature, names of physical quantitites, etc.")
+      (license license:bsd-2))))
+
+(define-public cl-acclimation
+  (sbcl-package->cl-source-package sbcl-acclimation))
+
+(define-public sbcl-clump-2-3-tree
+  (let ((commit "1ea4dbac1cb86713acff9ae58727dd187d21048a"))
+    (package
+      (name "sbcl-clump-2-3-tree")
+      (version (git-version "0.0.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/robert-strandh/Clump")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1639msyagsswj85gc0wd90jgh8588j3qg5q70by9s2brf2q6w4lh"))))
+      (arguments
+       '(#:asd-file "2-3-tree/clump-2-3-tree.asd"
+         #:asd-system-name "clump-2-3-tree"))
+      (inputs
+       `(("acclimation" ,sbcl-acclimation)))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/robert-strandh/Clump")
+      (synopsis "Implementation of 2-3 trees for Common Lisp")
+      (description "The purpose of this library is to provide a collection of
+implementations of trees.
+
+In contrast to existing libraries such as cl-containers, it does not impose a
+particular use for the trees.  Instead, it aims for a stratified design,
+allowing client code to choose between different levels of abstraction.
+
+As a consequence of this policy, low-level interfaces are provided where
+the concrete representation is exposed, but also high level interfaces
+where the trees can be used as search trees or as trees that represent
+sequences of objects.")
+      (license license:bsd-2))))
+
+(define-public sbcl-clump-binary-tree
+  (package
+    (inherit sbcl-clump-2-3-tree)
+    (name "sbcl-clump-binary-tree")
+    (arguments
+     '(#:asd-file "Binary-tree/clump-binary-tree.asd"
+       #:asd-system-name "clump-binary-tree"))
+    (synopsis "Implementation of binary trees for Common Lisp")))
+
+(define-public sbcl-clump
+  (package
+    (inherit sbcl-clump-2-3-tree)
+    (name "sbcl-clump")
+    (arguments
+     '(#:asd-file "clump.asd"
+       #:asd-system-name "clump"))
+    (inputs
+     `(("clump-2-3-tree" ,sbcl-clump-2-3-tree)
+       ("clump-binary-tree" ,sbcl-clump-binary-tree)))
+    (synopsis "Collection of tree implementations for Common Lisp")))
+
+(define-public cl-clump
+  (sbcl-package->cl-source-package sbcl-clump))
+
+(define-public sbcl-cluffer-base
+  (let ((commit "4aad29c276a58a593064e79972ee4d77cae0af4a"))
+    (package
+      (name "sbcl-cluffer-base")
+      (version (git-version "0.0.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/robert-strandh/cluffer")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1bcg13g7qb3dr8z50aihdjqa6miz5ivlc9wsj2csgv1km1mak2kj"))))
+      (arguments
+       '(#:asd-file "Base/cluffer-base.asd"
+         #:asd-system-name "cluffer-base"))
+      (inputs
+       `(("acclimation" ,sbcl-acclimation)))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/robert-strandh/cluffer")
+      (synopsis "Common Lisp library providing a protocol for text-editor buffers")
+      (description "Cluffer is a library for representing the buffer of a text
+editor.  As such, it defines a set of CLOS protocols for client code to
+interact with the buffer contents in various ways, and it supplies different
+implementations of those protocols for different purposes.")
+      (license license:bsd-2))))
+
+(define-public sbcl-cluffer-standard-line
+  (package
+    (inherit sbcl-cluffer-base)
+    (name "sbcl-cluffer-standard-line")
+    (arguments
+     '(#:asd-file "Standard-line/cluffer-standard-line.asd"
+       #:asd-system-name "cluffer-standard-line"))
+    (inputs
+     `(("cluffer-base" ,sbcl-cluffer-base)))))
+
+(define-public sbcl-cluffer-standard-buffer
+  (package
+    (inherit sbcl-cluffer-base)
+    (name "sbcl-cluffer-standard-buffer")
+    (arguments
+     '(#:asd-file "Standard-buffer/cluffer-standard-buffer.asd"
+       #:asd-system-name "cluffer-standard-buffer"))
+    (inputs
+     `(("cluffer-base" ,sbcl-cluffer-base)
+       ("clump" ,sbcl-clump)))))
+
+(define-public sbcl-cluffer-simple-line
+  (package
+    (inherit sbcl-cluffer-base)
+    (name "sbcl-cluffer-simple-line")
+    (arguments
+     '(#:asd-file "Simple-line/cluffer-simple-line.asd"
+       #:asd-system-name "cluffer-simple-line"))
+    (inputs
+     `(("cluffer-base" ,sbcl-cluffer-base)))))
+
+(define-public sbcl-cluffer-simple-buffer
+  (package
+    (inherit sbcl-cluffer-base)
+    (name "sbcl-cluffer-simple-buffer")
+    (arguments
+     '(#:asd-file "Simple-buffer/cluffer-simple-buffer.asd"
+       #:asd-system-name "cluffer-simple-buffer"))
+    (inputs
+     `(("cluffer-base" ,sbcl-cluffer-base)))))
+
+(define-public sbcl-cluffer
+  (package
+    (inherit sbcl-cluffer-base)
+    (name "sbcl-cluffer")
+    (arguments
+     '(#:asd-file "cluffer.asd"
+       #:asd-system-name "cluffer"))
+    (inputs
+     `(("cluffer-base" ,sbcl-cluffer-base)
+       ("cluffer-standard-line" ,sbcl-cluffer-standard-line)
+       ("cluffer-standard-buffer" ,sbcl-cluffer-standard-buffer)
+       ("cluffer-simple-line" ,sbcl-cluffer-simple-line)
+       ("cluffer-simple-buffer" ,sbcl-cluffer-simple-buffer)))))
+
+(define-public cl-cluffer
+  (sbcl-package->cl-source-package sbcl-cluffer))
+
+(define-public sbcl-cl-libsvm-format
+  (let ((commit "3300f84fd8d9f5beafc114f543f9d83417c742fb")
+        (revision "0"))
+    (package
+      (name "sbcl-cl-libsvm-format")
+      (version (git-version "0.1.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/masatoi/cl-libsvm-format.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "0284aj84xszhkhlivaigf9qj855fxad3mzmv3zfr0qzb5k0nzwrg"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("prove" ,sbcl-prove)
+         ("prove-asdf" ,sbcl-prove-asdf)))
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)))
+      (synopsis "LibSVM data format reader for Common Lisp")
+      (description
+       "This Common Lisp library provides a fast reader for data in LibSVM
+format.")
+      (home-page "https://github.com/masatoi/cl-libsvm-format")
+      (license license:expat))))
+
+(define-public cl-libsvm-format
+  (sbcl-package->cl-source-package sbcl-cl-libsvm-format))
+
+(define-public ecl-cl-libsvm-format
+  (sbcl-package->ecl-package sbcl-cl-libsvm-format))
+
+(define-public sbcl-cl-online-learning
+  (let ((commit "fc7a34f4f161cd1c7dd747d2ed8f698947781423")
+        (revision "0"))
+    (package
+      (name "sbcl-cl-online-learning")
+      (version (git-version "0.5" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/masatoi/cl-online-learning.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "14x95rlg80ay5hv645ki57pqvy12v28hz4k1w0f6bsfi2rmpxchq"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("prove" ,sbcl-prove)
+         ("prove-asdf" ,sbcl-prove-asdf)))
+      (inputs
+       `(("cl-libsvm-format" ,sbcl-cl-libsvm-format)
+         ("cl-store" ,sbcl-cl-store)))
+      (arguments
+       `(;; FIXME: Tests pass but then the check phase crashes
+         #:tests? #f))
+      (synopsis "Online Machine Learning for Common Lisp")
+      (description
+       "This library contains a collection of machine learning algorithms for
+online linear classification written in Common Lisp.")
+      (home-page "https://github.com/masatoi/cl-online-learning")
+      (license license:expat))))
+
+(define-public cl-online-learning
+  (sbcl-package->cl-source-package sbcl-cl-online-learning))
+
+(define-public ecl-cl-online-learning
+  (sbcl-package->ecl-package sbcl-cl-online-learning))
+
+(define-public sbcl-cl-random-forest
+  (let ((commit "fedb36ce99bb6f4d7e3a7dd6d8b058f331308f91")
+        (revision "1"))
+    (package
+      (name "sbcl-cl-random-forest")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/masatoi/cl-random-forest.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "0wqh4dxy5hrvm14jgyfypwhdw35f24rsksid4blz5a6l2z16rlmq"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("prove" ,sbcl-prove)
+         ("prove-asdf" ,sbcl-prove-asdf)
+         ("trivial-garbage" ,sbcl-trivial-garbage)))
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("cl-libsvm-format" ,sbcl-cl-libsvm-format)
+         ("cl-online-learning" ,sbcl-cl-online-learning)
+         ("lparallel" ,sbcl-lparallel)))
+      (arguments
+       `(#:tests? #f)) ; The tests download data from the Internet
+      (synopsis "Random Forest and Global Refinement for Common Lisp")
+      (description
+       "CL-random-forest is an implementation of Random Forest for multiclass
+classification and univariate regression written in Common Lisp.  It also
+includes an implementation of Global Refinement of Random Forest.")
+      (home-page "https://github.com/masatoi/cl-random-forest")
+      (license license:expat))))
+
+(define-public cl-random-forest
+  (sbcl-package->cl-source-package sbcl-cl-random-forest))
+
+(define-public ecl-cl-random-forest
+  (sbcl-package->ecl-package sbcl-cl-random-forest))
+
+(define-public sbcl-bordeaux-fft
+  (let ((commit "4a1f5600cae59bdabcb32de4ee2d7d73a9450d6e")
+        (revision "0"))
+    (package
+      (name "sbcl-bordeaux-fft")
+      (version (git-version "1.0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ahefner/bordeaux-fft.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0j584w6kq2k6r8lp2i14f9605rxhp3r15s33xs08iz1pndn6iwqf"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "http://vintage-digital.com/hefner/software/bordeaux-fft/")
+      (synopsis "Fast Fourier Transform for Common Lisp")
+      (description
+       "The Bordeaux-FFT library provides a reasonably efficient implementation
+of the Fast Fourier Transform and its inverse for complex-valued inputs, in
+portable Common Lisp.")
+      (license license:gpl2+))))
+
+(define-public cl-bordeaux-fft
+  (sbcl-package->cl-source-package sbcl-bordeaux-fft))
+
+(define-public ecl-bordeaux-fft
+  (sbcl-package->ecl-package sbcl-bordeaux-fft))
+
+(define-public sbcl-napa-fft3
+  (let ((commit "f2d9614c7167da327c9ceebefb04ff6eae2d2236")
+        (revision "0"))
+    (package
+      (name "sbcl-napa-fft3")
+      (version (git-version "0.0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/pkhuong/Napa-FFT3.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1hxjf599xgwm28gbryy7q96j9ys6hfszmv0qxpr5698hxnhknscp"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/pkhuong/Napa-FFT3")
+      (synopsis "Fast Fourier Transform routines in Common Lisp")
+      (description
+       "Napa-FFT3 provides Discrete Fourier Transform (DFT) routines, but also
+buildings blocks to express common operations that involve DFTs: filtering,
+convolutions, etc.")
+      (license license:bsd-3))))
+
+(define-public cl-napa-fft3
+  (sbcl-package->cl-source-package sbcl-napa-fft3))

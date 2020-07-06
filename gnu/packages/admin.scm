@@ -2,7 +2,7 @@
 ;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
 ;;; Copyright © 2014, 2015, 2016, 2018, 2019 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2014, 2015, 2016, 2017, 2018 Eric Bavier <bavier@member.fsf.org>
+;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2020 Eric Bavier <bavier@posteo.net>
 ;;; Copyright © 2015, 2016 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015 Alex Sassmannshausen <alex.sassmannshausen@gmail.com>
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
@@ -85,6 +85,7 @@
   #:use-module (gnu packages elf)
   #:use-module (gnu packages file)
   #:use-module (gnu packages flex)
+  #:use-module (gnu packages gawk)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
@@ -124,6 +125,7 @@
   #:use-module (gnu packages qt)
   #:use-module (gnu packages readline)
   #:use-module (gnu packages ruby)
+  #:use-module (gnu packages serialization)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages tcl)
   #:use-module (gnu packages terminals)
@@ -1364,7 +1366,7 @@ system administrator.")
 (define-public sudo
   (package
     (name "sudo")
-    (version "1.9.0")
+    (version "1.9.1")
     (source (origin
               (method url-fetch)
               (uri
@@ -1374,7 +1376,7 @@ system administrator.")
                                     version ".tar.gz")))
               (sha256
                (base32
-                "0p7r3cl16pjwbc48ff1gbhjw51lngrghvwblxz5lxpyzqlwi88xb"))
+                "1zxd6hxwhxqrm876wsn9bfajbfc4hc6l9ivzj5rjg80hzv71ch99"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -1863,13 +1865,13 @@ development, not the kernel implementation of ACPI.")
 (define-public s-tui
   (package
     (name "s-tui")
-    (version "1.0.0")
+    (version "1.0.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "s-tui" version))
        (sha256
-        (base32 "0r5yhlsi5xiy7ii1w4kqkaxz9069v5bbfwi3x3xnxhk51yjfgr8n"))))
+        (base32 "1gqrb2xxii43j7kszy7kvv4f6hr8ac4p0m9q8i1xs5fhsqcx186i"))))
     (build-system python-build-system)
     (inputs
      `(("python-psutil" ,python-psutil)
@@ -2163,13 +2165,13 @@ of supported upstream metrics systems simultaneously.")
 (define-public ansible
   (package
     (name "ansible")
-    (version "2.9.9")
+    (version "2.9.10")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ansible" version))
        (sha256
-        (base32 "1l99vwkl48iwr8ffd1ihqia995mz8h8hwk4akm4w0cgiifp88gg8"))))
+        (base32 "1kfaxd7w8qiis2vv96kgrhiqh158qb0z4lspr9c8fsdi5m1z2rh8"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-bcrypt" ,python-bcrypt)
@@ -3251,6 +3253,94 @@ generate those nifty terminal theme information and ASCII distribution logos in
 everyone's screenshots nowadays.")
     (license license:gpl3)))
 
+(define-public ufetch
+  (let ((commit "98b622023e03fe24dbc137e9a68104dfe1fbd04a")
+        (revision "1"))
+    (package
+      (name "ufetch")
+      (version (git-version "0.2" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://gitlab.com/jschx/ufetch.git")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "09c4zmikza16xpydinnqbi3hmcibfrrn10wij7j0j1wv1pj2sl2l"))))
+      (build-system trivial-build-system)
+      (inputs
+       `(("bash" ,bash)
+         ("tput" ,ncurses)))
+      (arguments
+       `(#:modules ((guix build utils))
+         #:builder
+         (begin
+           (use-modules (guix build utils))
+           (let* ((source (assoc-ref %build-inputs "source"))
+                  (output (assoc-ref %outputs "out"))
+                  (bindir (string-append output "/bin"))
+                  (docdir (string-append output "/share/doc/ufetch-" ,version))
+                  (tput (string-append (assoc-ref %build-inputs "tput") "/bin/tput")))
+             (install-file (string-append source "/LICENSE") docdir)
+             (setenv "PATH" (string-append (assoc-ref %build-inputs "bash") "/bin"))
+             (mkdir-p bindir)
+             (for-each (lambda (src)
+                         (let ((dst (string-append bindir "/" (basename src))))
+                           (copy-file src dst)
+                           (patch-shebang dst)
+                           (substitute* dst (("tput") tput))))
+                       (find-files source "ufetch-[[:alpha:]]*$"))
+             ;; Note: the `ufetch` we create below will only work if run under
+             ;; the Guix System.  I.e. a user trying to run `ufetch` on a
+             ;; foreign distro will not get great results.  The `screenfetch`
+             ;; program does actual runtime detection of the operating system,
+             ;; and would be a better choice in such a situation.
+             (symlink "ufetch-guix" (string-append bindir "/ufetch"))))))
+      (home-page "https://gitlab.com/jschx/ufetch")
+      (synopsis "Tiny system info")
+      (description "This package provides a tiny system info utility.")
+      (license license:isc))))
+
+(define-public pfetch
+  (let ((commit "e18a0959ab98b963744755ec4687e59dc11db3c5")
+        (revision "0"))
+    (package
+      (name "pfetch")
+      (version (git-version "0.7.0" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/dylanaraps/pfetch")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "1md40av6i3xvvwig5jzhy4kf3s5sgxxk35r0vcyrjd8qyndk927l"))))
+      (build-system trivial-build-system)
+      (inputs `(("bash" ,bash)))
+      (arguments
+       `(#:modules ((guix build utils))
+         #:builder
+         (begin
+           (use-modules (guix build utils))
+           (let* ((source (lambda (f)
+                            (string-append (assoc-ref %build-inputs "source") "/" f)))
+                  (output (assoc-ref %outputs "out"))
+                  (docdir (string-append output "/share/doc/pfetch-" ,version)))
+             (install-file (source "LICENSE.md") docdir)
+             (install-file (source "README.md") docdir)
+             (install-file (source "pfetch") (string-append output "/bin"))
+             (patch-shebang
+              (string-append output "/bin/pfetch")
+              (list (string-append (assoc-ref %build-inputs "bash") "/bin")))
+             #t))))
+      (home-page "https://github.com/dylanaraps/pfetch")
+      (synopsis "System information tool")
+      (description "This package provides a simple, configurable system
+information tool.")
+      (license license:expat))))
+
 (define-public nnn
   (package
     (name "nnn")
@@ -3472,7 +3562,7 @@ Python loading in HPC environments.")
   (let ((real-name "inxi"))
     (package
       (name "inxi-minimal")
-      (version "3.1.01-1")
+      (version "3.1.04-1")
       (source
        (origin
          (method git-fetch)
@@ -3481,7 +3571,7 @@ Python loading in HPC environments.")
                (commit version)))
          (file-name (git-file-name real-name version))
          (sha256
-          (base32 "0r204w0r06ibdr4dck7yw2nmvj7xq68bjr7xwwiy7liqdml0n0yc"))))
+          (base32 "1mirnrrqfjyl2r7fwnpjlk37i5hf8f7lxv2yxcbdfjf2b3dfbpvl"))))
       (build-system trivial-build-system)
       (inputs
        `(("bash" ,bash-minimal)
@@ -3671,10 +3761,7 @@ support forum.  It runs with the @code{/exec} command in most IRC clients.")
               (("'--prefix' in sys\\.argv")
                "len([x.startswith('--prefix=') for x in sys.argv]) > 0"))
              #t))
-         (replace 'build
-           (lambda _
-             (invoke "python" "setup.py" "build")))
-         (add-before 'check 'setenv-PATH
+         (add-before 'build 'setenv-PATH
            (lambda _
              (setenv "PYTHONPATH" (string-append "lib:" (getenv "PYTHONPATH")))
              #t)))))
@@ -3863,3 +3950,124 @@ It supports mounting local filesystems of any kind the normal mount utility
 supports.  It can also mount encrypted LUKS volumes using the password
 supplied by the user when logging in.")
     (license (list license:gpl2+ license:lgpl2.1+))))
+
+(define-public jc
+  (package
+    (name "jc")
+    (version "1.11.8")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/kellyjonbrazil/jc.git")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0rkckbgm04ql4r48wjgljfiqvsz36n99yqcpcyna8lvlm8h4nmwa"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-ruamel.yaml" ,python-ruamel.yaml)
+       ("python-xmltodict" ,python-xmltodict)
+       ("python-pygments" ,python-pygments)))
+    (home-page "https://github.com/kellyjonbrazil/jc")
+    (synopsis "Convert the output of command-line tools to JSON")
+    (description "@code{jc} JSONifies the output of many CLI tools and
+file-types for easier parsing in scripts.")
+    (license license:expat)))
+
+(define-public jtbl
+  (package
+    (name "jtbl")
+    (version "1.1.6")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/kellyjonbrazil/jtbl.git")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1zzd7rd63xva50f22d1rfja4r302aizrafarhwm67vv181swvdya"))))
+    (build-system python-build-system)
+    (inputs
+     `(("python-tabulate" ,python-tabulate)))
+    (home-page "https://github.com/kellyjonbrazil/jtbl")
+    (synopsis "Command-line tool to print JSON data as a table in the terminal")
+    (description "@code{jtbl} accepts piped JSON data from stdin and outputs a
+text table representation to stdout.")
+    (license license:expat)))
+
+(define-public hosts
+  (package
+    (name "hosts")
+    (version "3.6.3")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/xwmx/hosts.git")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1ni4z89kxzgwm26hhx908g04f2h0fypy7lgfa0rvsz8d0wslgcsn"))))
+    (build-system trivial-build-system)
+    (inputs
+     `(("bats" ,bats) ;for test
+       ("awk" ,gawk)
+       ("bash" ,bash)
+       ("coreutils" ,coreutils)
+       ("diffutils" ,diffutils)
+       ("grep" ,grep)
+       ("ncurses" ,ncurses) ;tput
+       ("sed" ,sed)))
+    (arguments
+     `(#:modules ((guix build utils))
+       #:builder
+       (begin
+         (use-modules (guix build utils))
+         ;; copy source
+         (copy-recursively (assoc-ref %build-inputs "source") ".")
+         ;; patch-shebang phase
+         (setenv "PATH"
+                 (string-append (assoc-ref %build-inputs "bash") "/bin"
+                                ":" (assoc-ref %build-inputs "awk") "/bin"
+                                ":" (assoc-ref %build-inputs "coreutils") "/bin"
+                                ":" (assoc-ref %build-inputs "diffutils") "/bin"
+                                ":" (assoc-ref %build-inputs "grep") "/bin"
+                                ":" (assoc-ref %build-inputs "ncurses") "/bin"
+                                ":" (assoc-ref %build-inputs "sed") "/bin"
+                                ":" "/run/setuid-programs"
+                                ":" (getenv "PATH")))
+         (substitute* "hosts"
+           (("#!/usr/bin/env bash")
+            (string-append "#!" (which "bash")
+                           "\nPATH=" (getenv "PATH"))))
+         ;; check phase
+         (setenv "TERM" "linux") ;set to tty for test
+         (invoke (string-append (assoc-ref %build-inputs "bats") "/bin/bats")
+                 "test")
+         ;; install phase
+         (install-file "hosts" (string-append %output "/bin"))
+         (let ((bash-completion
+                (string-append %output "/etc/bash_completion.d")))
+           (mkdir-p bash-completion)
+           (copy-file "etc/hosts-completion.bash"
+                      (string-append bash-completion "/hosts")))
+         (let ((zsh-completion
+                (string-append %output "/share/zsh/site-functions")))
+           (mkdir-p zsh-completion)
+           (copy-file "etc/hosts-completion.zsh"
+                      (string-append zsh-completion "/_hosts")))
+         (let ((doc (string-append %output "/share/doc/" ,name "-" ,version)))
+           (mkdir-p doc)
+           (install-file "LICENSE" doc)
+           (install-file "README.md" doc))
+         #t)))
+    (home-page "https://github.com/xwmx/hosts/")
+    (synopsis "Script for editing a foreign distro's @file{/etc/hosts} file")
+    (description "Hosts is a command line program for managing
+@file{/etc/hosts} entries.  On Guix System, @file{/etc/hosts} is managed from
+the system configuration; hosts only works when using the Guix package manager
+on a foreign distro.  @command{hosts} works with existing hosts files and
+entries, providing commands to add, remove, comment, and search.")
+    (license license:expat)))

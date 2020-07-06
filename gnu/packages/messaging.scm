@@ -22,6 +22,7 @@
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2020 Reza Alizadeh Majd <r.majd@pantherx.org>
+;;; Copyright © 2020 Jonathan Brielmaier <jonathan.brielmaier@web.de>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -60,6 +61,7 @@
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages enchant)
   #:use-module (gnu packages fontutils)
+  #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
@@ -153,14 +155,14 @@ keys, no previous conversation is compromised.")
   (name "libsignal-protocol-c")
   (version "2.3.2")
   (source (origin
-           (method url-fetch)
-           (uri (string-append "https://github.com/WhisperSystems/"
-                               "libsignal-protocol-c/archive/v" version
-                               ".tar.gz"))
-           (file-name (string-append name "-" version ".tar.gz"))
+           (method git-fetch)
+           (uri (git-reference
+                  (url "https://github.com/WhisperSystems/libsignal-protocol-c")
+                  (commit (string-append "v" version))))
+           (file-name (git-file-name name version))
            (sha256
             (base32
-             "0380hl6fw3ppf265fg897pyrpqygpx4m9j8ifq118bim8lq6z0pk"))))
+             "1qj2w4csy6j9jg1jy66n1qwysx7hgjywk4n35hlqcnh1kpa14k3p"))))
   (arguments
    `(;; Required for proper linking and for tests to run.
      #:configure-flags '("-DBUILD_SHARED_LIBS=on" "-DBUILD_TESTING=1")))
@@ -368,20 +370,21 @@ dictionaries.  HexChat can be extended with multiple addons.")
 (define-public ngircd
   (package
     (name "ngircd")
-    (version "25")
+    (version "26")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://arthur.barton.de/pub/ngircd/ngircd-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "0kpf5qi98m9f833r4rx9n6h9p31biwk798jwc1mgzmix7sp7r6f4"))
+                "1ijmv18fa648y7apxb9vp4j9iq6fxq850kz5v36rysaq614cdp2n"))
               (patches (search-patches "ngircd-handle-zombies.patch"))))
     (build-system gnu-build-system)
     ;; Needed for the test suite.
     (native-inputs `(("procps" ,procps)
                      ("expect" ,expect)
-                     ("inetutils" ,inetutils)))
+                     ("inetutils" ,inetutils)
+                     ("openssl" ,openssl)))
     ;; XXX Add libident.
     (inputs `(("zlib" ,zlib)
               ("libwrap" ,tcp-wrappers)
@@ -569,7 +572,7 @@ compromised.")
     (version "1.8.1")
     (source (origin
               (method url-fetch)
-              (uri (string-append "http://znc.in/releases/archive/znc-"
+              (uri (string-append "https://znc.in/releases/archive/znc-"
                                   version ".tar.gz"))
               (sha256
                (base32
@@ -603,7 +606,7 @@ compromised.")
        ("perl" ,perl)
        ("python" ,python)
        ("zlib" ,zlib)))
-    (home-page "https://znc.in")
+    (home-page "https://wiki.znc.in/ZNC")
     (synopsis "IRC network bouncer")
     (description "ZNC is an @dfn{IRC network bouncer} or @dfn{BNC}.  It can
 detach the client from the actual IRC server, and also from selected channels.
@@ -1854,7 +1857,7 @@ QMatrixClient project.")
 (define-public mtxclient
   (package
     (name "mtxclient")
-    (version "0.3.0")
+    (version "0.3.1")
     (source
      (origin
        (method git-fetch)
@@ -1863,7 +1866,7 @@ QMatrixClient project.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0vf5xmn6yfi5lvskfgrdmnalvclzrapcrml92bj9qaa8vq8mfsf2"))))
+        (base32 "1dg4dq20g0ah62j5s3gpsxqq4ny7lxkxdxa9q6g54hdwkrb9ms7x"))))
     (arguments
      `(#:configure-flags
        (list
@@ -1904,7 +1907,7 @@ for the Matrix protocol.  It is built on to of @code{Boost.Asio}.")
 (define-public nheko
   (package
     (name "nheko")
-    (version "0.7.1")
+    (version "0.7.2")
     (source
      (origin
        (method git-fetch)
@@ -1913,7 +1916,7 @@ for the Matrix protocol.  It is built on to of @code{Boost.Asio}.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "12sxibbrn79sxkf9jrm7jrlj7l5vz15claxrrll7pkv9mv44wady"))))
+        (base32 "1cbhgaf9klgxdirrxj571fqwspm0byl75c1xc40l727a6qswvp7s"))))
     (arguments
      `(#:tests? #f                      ;no test target
        #:configure-flags
@@ -2185,5 +2188,85 @@ from almost any programming language with a C-FFI and features first-class
 support for high performance Telegram Bot creation.")
       (home-page "https://core.telegram.org/tdlib")
       (license license:boost1.0))))
+
+(define-public purple-mm-sms
+  (package
+    (name "purple-mm-sms")
+    (version "0.1.4")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://source.puri.sm/Librem5/purple-mm-sms.git")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1daf7zl8bhhm1szkgxflpqql69f2w9i9nlgf1n4p1nynxifz1bim"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags
+       (let ((out (assoc-ref %outputs "out")))
+         ;; Fix hardcoded paths
+         (list (string-append "PREFIX=" out)
+               (string-append "PLUGIN_DIR_PURPLE=" out "/lib/purple-2")
+               (string-append "DATA_ROOT_DIR_PURPLE=" out "/share")))
+       #:tests? #f      ; no tests
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
+    (native-inputs
+     `(("glib:bin" ,glib "bin")
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("modem-manager" ,modem-manager)
+       ("pidgin" ,pidgin)))
+    (synopsis "Libpurple plugin for SMS via ModemManager")
+    (description "Plugin for libpurple to allow sending SMS using ModemManager.")
+    (home-page "https://source.puri.sm/Librem5/purple-mm-sms")
+    (license license:gpl2+)))
+
+(define-public chatty
+ (package
+   (name "chatty")
+   (version "0.1.10")
+   (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://source.puri.sm/Librem5/chatty.git")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0czvqwjzsb0rvmgrmbh97m1b35rnwl41j7q32z4fcqb7bschibql"))))
+   (build-system meson-build-system)
+   (arguments
+    '(#:phases
+      (modify-phases %standard-phases
+        (add-after 'unpack 'skip-updating-desktop-database
+          (lambda _
+            (substitute* "meson.build"
+              (("meson.add_install_script.*") ""))
+            #t)))))
+   (native-inputs
+    `(("gettext" ,gettext-minimal)
+      ("glib:bin" ,glib "bin")
+      ("pkg-config" ,pkg-config)))
+   (inputs
+    `(("feedbackd" ,feedbackd)
+      ("folks" ,folks)
+      ("libgcrypt" ,libgcrypt)
+      ("libgee" ,libgee)
+      ("libhandy" ,libhandy)
+      ("pidgin" ,pidgin)
+      ("purple-mm-sms" ,purple-mm-sms)
+      ("sqlite" ,sqlite)))
+   (propagated-inputs
+    `(("adwaita-icon-theme" ,adwaita-icon-theme)
+      ("evolution-data-server" ,evolution-data-server)))
+   (synopsis "Mobile client for XMPP and SMS messaging")
+   (description "Chatty is a chat program for XMPP and SMS.  It works on mobile
+as well as on desktop platforms.  It's based on libpurple and ModemManager.")
+   (home-page "https://source.puri.sm/Librem5/chatty")
+   (license license:gpl3+)))
 
 ;;; messaging.scm ends here

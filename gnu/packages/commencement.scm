@@ -140,7 +140,7 @@ pure Scheme to Tar and decompression in one easy step.")
     (name "gash-boot")
     (source (origin
               (inherit (package-source gash))
-              (modules '())))
+              (snippet #f)))            ;discard snippet for Guile 3.0 support
     (arguments
      `(#:implicit-inputs? #f
        #:tests? #f
@@ -170,6 +170,10 @@ pure Scheme to Tar and decompression in one easy step.")
   (package
     (inherit gash-utils)
     (name "gash-utils-boot")
+    (source (origin
+              (inherit (package-source gash-utils))
+              (patches '())
+              (snippet #f)))            ;discard snippet for Guile 3.0 support
     (arguments
      `(#:implicit-inputs? #f
        #:tests? #f
@@ -3828,14 +3832,17 @@ COREUTILS-FINAL vs. COREUTILS, etc."
        '(#:modules ((guix build union))
          #:builder (begin
                      (use-modules (ice-9 match)
+                                  (srfi srfi-1)
                                   (srfi srfi-26)
                                   (guix build union))
 
                      (let ((out (assoc-ref %outputs "out")))
-
-                       (match %build-inputs
-                         (((names . directories) ...)
-                          (union-build out directories)))
+                       (union-build out
+                                    (filter-map (match-lambda
+                                                  (("libc-debug" . _) #f)
+                                                  (("libc-static" . _) #f)
+                                                  ((_ . directory) directory))
+                                                %build-inputs))
 
                        (union-build (assoc-ref %outputs "debug")
                                     (list (assoc-ref %build-inputs

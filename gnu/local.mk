@@ -35,6 +35,7 @@
 # Copyright © 2020 Ryan Prior <rprior@protonmail.com>
 # Copyright © 2020 Jan Wielkiewicz <tona_kosmicznego_smiecia@interia.pl>
 # Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
+# Copyright © 2020 Tanguy Le Carrour <tanguy@bioneland.org>
 #
 # This file is part of GNU Guix.
 #
@@ -133,6 +134,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/compton.scm 			\
   %D%/packages/conky.scm			\
   %D%/packages/connman.scm			\
+  %D%/packages/convmv.scm			\
   %D%/packages/cook.scm				\
   %D%/packages/coq.scm				\
   %D%/packages/cpio.scm				\
@@ -433,6 +435,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/pth.scm				\
   %D%/packages/pulseaudio.scm			\
   %D%/packages/pumpio.scm			\
+  %D%/packages/presentation.scm		\
   %D%/packages/pretty-print.scm			\
   %D%/packages/protobuf.scm			\
   %D%/packages/pure.scm				\
@@ -536,6 +539,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/vim.scm				\
   %D%/packages/virtualization.scm		\
   %D%/packages/visidata.scm			\
+  %D%/packages/vlang.scm			\
   %D%/packages/vnc.scm				\
   %D%/packages/vpn.scm				\
   %D%/packages/vulkan.scm			\
@@ -596,6 +600,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/services/nix.scm				\
   %D%/services/nfs.scm			\
   %D%/services/pam-mount.scm			\
+  %D%/services/science.scm			\
   %D%/services/security-token.scm		\
   %D%/services/shepherd.scm			\
   %D%/services/sound.scm			\
@@ -629,9 +634,9 @@ GNU_SYSTEM_MODULES =				\
   %D%/system/uuid.scm				\
   %D%/system/vm.scm				\
 						\
+  %D%/system/images/hurd.scm			\
+						\
   %D%/machine.scm				\
-  %D%/machine/digital-ocean.scm			\
-  %D%/machine/ssh.scm				\
 						\
   %D%/build/accounts.scm			\
   %D%/build/activation.scm			\
@@ -708,6 +713,14 @@ INSTALLER_MODULES =                             \
   %D%/installer/newt/utils.scm			\
   %D%/installer/newt/welcome.scm		\
   %D%/installer/newt/wifi.scm
+
+if HAVE_GUILE_SSH
+
+GNU_SYSTEM_MODULES +=         			\
+  %D%/machine/digital-ocean.scm			\
+  %D%/machine/ssh.scm
+
+endif HAVE_GUILE_SSH
 
 # Always ship the installer modules but compile them only when
 # ENABLE_INSTALLER is true.
@@ -890,6 +903,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/emacs-fix-scheme-indent-function.patch	\
   %D%/packages/patches/emacs-json-reformat-fix-tests.patch	\
   %D%/packages/patches/emacs-highlight-stages-add-gexp.patch	\
+  %D%/packages/patches/emacs-hyperbole-toggle-messaging.patch	\
   %D%/packages/patches/emacs-libgit-use-system-libgit2.patch    \
   %D%/packages/patches/emacs-scheme-complete-scheme-r5rs-info.patch	\
   %D%/packages/patches/emacs-source-date-epoch.patch		\
@@ -916,7 +930,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/fasthenry-spSolve.patch			\
   %D%/packages/patches/fasthenry-spFactor.patch			\
   %D%/packages/patches/fbreader-curl-7.62.patch		\
-  %D%/packages/patches/ffmpeg-prefer-dav1d.patch		\
   %D%/packages/patches/fifengine-swig-compat.patch		\
   %D%/packages/patches/fifo-map-fix-flags-for-gcc.patch		\
   %D%/packages/patches/fifo-map-remove-catch.hpp.patch		\
@@ -930,6 +943,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/fontconfig-hurd-path-max.patch		\
   %D%/packages/patches/freeimage-unbundle.patch		\
   %D%/packages/patches/fuse-overlapping-headers.patch				\
+  %D%/packages/patches/gash-utils-ls-test.patch			\
   %D%/packages/patches/gawk-shell.patch				\
   %D%/packages/patches/gcc-arm-bug-71399.patch			\
   %D%/packages/patches/gcc-arm-link-spec-fix.patch		\
@@ -967,6 +981,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/gcc-9-strmov-store-file-names.patch	\
   %D%/packages/patches/gd-fix-tests-on-i686.patch		\
   %D%/packages/patches/gd-brect-bounds.patch			\
+  %D%/packages/patches/gdb-hurd.patch				\
   %D%/packages/patches/gdm-default-session.patch		\
   %D%/packages/patches/geoclue-config.patch			\
   %D%/packages/patches/ghc-8.0-fall-back-to-madv_dontneed.patch	\
@@ -1043,6 +1058,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/grocsvs-dont-use-admiral.patch		\
   %D%/packages/patches/gromacs-tinyxml2.patch			\
   %D%/packages/patches/groovy-add-exceptionutilsgenerator.patch	\
+  %D%/packages/patches/grub-cross-system-i686.patch		\
   %D%/packages/patches/grub-efi-fat-serial-number.patch		\
   %D%/packages/patches/grub-setup-root.patch			\
   %D%/packages/patches/grub-verifiers-Blocklist-fallout-cleanup.patch \
@@ -1099,13 +1115,14 @@ dist_patch_DATA =						\
   %D%/packages/patches/id3lib-CVE-2007-4460.patch			\
   %D%/packages/patches/id3lib-UTF16-writing-bug.patch			\
   %D%/packages/patches/ilmbase-fix-tests.patch			\
-  %D%/packages/patches/ilmbase-fix-test-arm.patch		\
   %D%/packages/patches/inetutils-hurd.patch			\
   %D%/packages/patches/inkscape-poppler-0.76.patch		\
   %D%/packages/patches/intltool-perl-compatibility.patch	\
+  %D%/packages/patches/iputils-libcap-compat.patch		\
   %D%/packages/patches/irrlicht-use-system-libs.patch		\
   %D%/packages/patches/isl-0.11.1-aarch64-support.patch	\
   %D%/packages/patches/jacal-fix-texinfo.patch			\
+  %D%/packages/patches/jamvm-2.0.0-disable-branch-patching.patch	\
   %D%/packages/patches/jamvm-arm.patch				\
   %D%/packages/patches/java-apache-ivy-port-to-latest-bouncycastle.patch	\
   %D%/packages/patches/java-commons-collections-fix-java8.patch \
@@ -1160,8 +1177,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/leela-zero-gtest.patch			\
   %D%/packages/patches/less-hurd-path-max.patch			\
   %D%/packages/patches/lib2geom-enable-assertions.patch		\
-  %D%/packages/patches/lib2geom-link-tests-against-glib.patch	\
-  %D%/packages/patches/lib2geom-use-system-googletest.patch	\
+  %D%/packages/patches/lib2geom-fix-tests.patch			\
   %D%/packages/patches/liba52-enable-pic.patch			\
   %D%/packages/patches/liba52-link-with-libm.patch		\
   %D%/packages/patches/liba52-set-soname.patch			\
@@ -1226,6 +1242,9 @@ dist_patch_DATA =						\
   %D%/packages/patches/lirc-localstatedir.patch			\
   %D%/packages/patches/lirc-reproducible-build.patch		\
   %D%/packages/patches/llvm-3.5-fix-clang-build-with-gcc5.patch	\
+  %D%/packages/patches/llvm-9-fix-bitcast-miscompilation.patch	\
+  %D%/packages/patches/llvm-9-fix-lpad-miscompilation.patch	\
+  %D%/packages/patches/llvm-9-fix-scev-miscompilation.patch	\
   %D%/packages/patches/lm-sensors-hwmon-attrs.patch		\
   %D%/packages/patches/lrcalc-includes.patch    		\
   %D%/packages/patches/lrzip-CVE-2017-8842.patch		\
@@ -1342,6 +1361,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/pam-mount-luks2-support.patch		\
   %D%/packages/patches/pango-skip-libthai-test.patch		\
   %D%/packages/patches/pciutils-hurd-configure.patch		\
+  %D%/packages/patches/ppsspp-disable-upgrade-and-gold.patch		\
   %D%/packages/patches/sdl-pango-api_additions.patch		\
   %D%/packages/patches/sdl-pango-blit_overflow.patch		\
   %D%/packages/patches/sdl-pango-fillrect_crash.patch		\
@@ -1425,6 +1445,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-flint-includes.patch		\
   %D%/packages/patches/python-jedi-sort-project-test.patch	\
   %D%/packages/patches/python-libxml2-utf8.patch		\
+  %D%/packages/patches/python-memcached-syntax-warnings.patch	\
   %D%/packages/patches/python-mox3-python3.6-compat.patch	\
   %D%/packages/patches/python-testtools.patch			\
   %D%/packages/patches/python-packaging-test-arch.patch		\
@@ -1449,6 +1470,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/qtbase-use-TZDIR.patch			\
   %D%/packages/patches/qtscript-disable-tests.patch		\
   %D%/packages/patches/quagga-reproducible-build.patch          \
+  %D%/packages/patches/quassel-qt-514-compat.patch		\
   %D%/packages/patches/quickswitch-fix-dmenu-check.patch	\
   %D%/packages/patches/qtwebkit-pbutils-include.patch		\
   %D%/packages/patches/randomjungle-disable-static-build.patch	\
@@ -1501,6 +1523,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/slim-display.patch			\
   %D%/packages/patches/snappy-add-O2-flag-in-CmakeLists.txt.patch	\
   %D%/packages/patches/sooperlooper-build-with-wx-30.patch 	\
+  %D%/packages/patches/sssd-fix-samba.patch			\
   %D%/packages/patches/steghide-fixes.patch			\
   %D%/packages/patches/suitesparse-mongoose-cmake.patch		\
   %D%/packages/patches/superlu-dist-awpm-grid.patch		\
@@ -1540,6 +1563,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/ttf2eot-cstddef.patch			\
   %D%/packages/patches/ttfautohint-source-date-epoch.patch	\
   %D%/packages/patches/tomb-fix-errors-on-open.patch		\
+  %D%/packages/patches/tup-unbundle-dependencies.patch		\
   %D%/packages/patches/tuxpaint-stamps-path.patch		\
   %D%/packages/patches/twinkle-bcg729.patch			\
   %D%/packages/patches/u-boot-riscv64-fix-extlinux.patch	\
@@ -1551,6 +1575,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/u-boot-video-rockchip-fix-build.patch	\
   %D%/packages/patches/ucx-tcp-iface-ioctl.patch		\
   %D%/packages/patches/udiskie-no-appindicator.patch		\
+  %D%/packages/patches/ungoogled-chromium-system-jsoncpp.patch	\
+  %D%/packages/patches/ungoogled-chromium-system-zlib.patch	\
   %D%/packages/patches/unzip-CVE-2014-8139.patch		\
   %D%/packages/patches/unzip-CVE-2014-8140.patch		\
   %D%/packages/patches/unzip-CVE-2014-8141.patch		\
@@ -1589,6 +1615,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/wicd-get-selected-profile-fix.patch	\
   %D%/packages/patches/wicd-urwid-1.3.patch			\
   %D%/packages/patches/wicd-wpa2-ttls.patch			\
+  %D%/packages/patches/widelands-system-wide_minizip.patch	\
   %D%/packages/patches/wmctrl-64-fix.patch			\
   %D%/packages/patches/wmfire-update-for-new-gdk-versions.patch	\
   %D%/packages/patches/wordnet-CVE-2008-2149.patch			\
@@ -1605,9 +1632,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/xf86-video-voodoo-pcitag.patch		\
   %D%/packages/patches/xfce4-panel-plugins.patch		\
   %D%/packages/patches/xfce4-settings-defaults.patch		\
-  %D%/packages/patches/xmoto-utf8.patch				\
-  %D%/packages/patches/xmoto-remove-glext.patch			\
-  %D%/packages/patches/xmoto-reproducible.patch			\
   %D%/packages/patches/xplanet-1.3.1-cxx11-eof.patch		\
   %D%/packages/patches/xplanet-1.3.1-libdisplay_DisplayOutput.cpp.patch	\
   %D%/packages/patches/xplanet-1.3.1-libimage_gif.c.patch	\

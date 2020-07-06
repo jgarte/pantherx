@@ -371,50 +371,50 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
     (sha256 hash)))
 
 
-(define-public linux-libre-5.7-version "5.7.2")
+(define-public linux-libre-5.7-version "5.7.7")
 (define-public linux-libre-5.7-pristine-source
   (let ((version linux-libre-5.7-version)
-        (hash (base32 "02brxm78n0kg4mh48acvjsr7mpvaqd279ycyaixaflid1s1awrb0")))
+        (hash (base32 "0zzff78fjn0a87lr1j11hx97gcpbf0q5qn0nalb3qd43j9kvjh7q")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.7)))
 
-(define-public linux-libre-5.4-version "5.4.46")
+(define-public linux-libre-5.4-version "5.4.50")
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "13hvnfdcbcb9a21zizq8d90mc8maxz03zmzsj6iqsjd2y7r4y1rh")))
+        (hash (base32 "1qm6m3ww7cxr0mqzma9swq6jax6anjy5vdh397my7x00x70z845d")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.128")
+(define-public linux-libre-4.19-version "4.19.131")
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "0g31ad3wziy4xqna0yvwjcnza3jhd93syjpfvmwh0b4pkj2adar9")))
+        (hash (base32 "1fk4i7lkbblfbxyp8rmkihcax920hbbygk2xnq2038sbrkvbkpqr")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.184")
+(define-public linux-libre-4.14-version "4.14.187")
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "0h6r06c1d7amkfglsr66ic89p0zxpmk7jkq1ylcbknmkiwkixx9g")))
+        (hash (base32 "1gal2kfyrq8c4dswlwnwmzc3ap6a7cjkyz8jgsm9d8gfx9sk88jv")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.227")
+(define-public linux-libre-4.9-version "4.9.229")
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "0pqc0wld4s4zjas95xm54mrkk00l9zkc59b6i9gq4km126s8bi1q")))
+        (hash (base32 "1p0g6zya8bdk2fds37x3fg7c5sk3sc18prq3jrrilnnrby1w4mij")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.227")
+(define-public linux-libre-4.4-version "4.4.229")
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "196x57w740firg8zchypq4vq6a83ymmwn9amqrscym9zr0pcgm40")))
+        (hash (base32 "0crrawivri5i0ks7pg3snfjlxily4aimw5xzbzr5nlnsz0rjwhbq")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -1486,12 +1486,13 @@ block devices, UUIDs, TTYs, and many other tools.")
     (name "ddate")
     (version "0.2.2")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/bo0ts/ddate/archive/v"
-                                  version ".tar.gz"))
-              (file-name (string-append name "-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/bo0ts/ddate")
+                     (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
               (sha256
-               (base32 "1bbqqq8mswj4bp9083gxjaky5ysfznax4cynsqwmy125z053yg6m"))))
+               (base32 "1qchxnxvghbma6gp1g78wnjxsri0b72ha9axyk31cplssl7yn73f"))))
     (build-system cmake-build-system)
     (arguments '(#:tests? #f))
     (home-page "https://github.com/bo0ts/ddate")
@@ -2505,14 +2506,14 @@ devices.  It replaces @code{iwconfig}, which is deprecated.")
 (define-public powertop
   (package
     (name "powertop")
-    (version "2.12")
+    (version "2.13")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://01.org/sites/default/files/downloads/"
                            "powertop-" version ".tar.gz"))
        (sha256
-        (base32 "1kiiwa5p2r7h1lzcf53xq61ckaa4wk565s9fs6vw4bfk84y3mfsw"))))
+        (base32 "0y1ixw8v17fdb1ima0zshrd0rh4zxdh10r93nrrvq6d4lhn9jpx6"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -2979,7 +2980,7 @@ for systems using the Linux kernel.  This includes commands such as
 (define-public inotify-tools
   (package
     (name "inotify-tools")
-    (version "3.20.1")
+    (version "3.20.2.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2988,7 +2989,7 @@ for systems using the Linux kernel.  This includes commands such as
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "14dci1i4mhsd5sa33k8h3ayphk19kizynh5ql9ryibdpmcanfiyq"))))
+                "1r12bglkb0bkqff6kgxjm81hk6z20nrxq3m7iv15d4nrqf9pm7s0"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -3787,13 +3788,14 @@ particular the @code{perf} command.")
     (name "pflask")
     (version "0.2")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://github.com/ghedo/pflask/archive/v"
-                                  version ".tar.gz"))
-              (file-name (string-append name "-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/ghedo/pflask")
+                     (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1g8fjj67dfkc2s0852l9vqi1pm61gp4rxbpzbzg780f5s5hd1fys"))))
+                "1jikjbhlxlqracnai3v9krzcgd2xwp0p4adw5n07yxc7b857damz"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f)) ; no tests
@@ -3924,7 +3926,7 @@ Translation (@dfn{SAT}) are also supported.")
 (define-public nvme-cli
   (package
     (name "nvme-cli")
-    (version "1.11.2")
+    (version "1.12")
     (home-page "https://github.com/linux-nvme/nvme-cli")
     (source (origin
               (method git-fetch)
@@ -3932,7 +3934,7 @@ Translation (@dfn{SAT}) are also supported.")
                     (url home-page)
                     (commit (string-append "v" version))))
               (sha256
-               (base32 "0ngh7zffjf6ac8b22hdi4ry7hjlafih172hrbpw8j17r7c0wjy9i"))
+               (base32 "0ldky34sn0m5c4hgiip0fkzm465nca69bhxicpd5dg8wxhzxqrp3"))
               (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -5364,7 +5366,7 @@ cpufreq sub-system is enabled or not.")
 (define-public haveged
   (package
     (name "haveged")
-    (version "1.9.8")
+    (version "1.9.13")
     (source
      (origin
        (method git-fetch)
@@ -5373,7 +5375,7 @@ cpufreq sub-system is enabled or not.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1znr58fb3faq4nmrvc3c5whkc1f3chivm4vhicdwr9pdsyqqsd51"))))
+        (base32 "0g3hcvpky76cabgcfqh65fay7nnjkms32sgmlf33q969833hijqz"))))
     (build-system gnu-build-system)
     (home-page "https://www.issihosts.com/haveged")
     (synopsis "Entropy source for the Linux random number generator")
@@ -6082,7 +6084,7 @@ used by nftables.")
 (define-public nftables
   (package
     (name "nftables")
-    (version "0.9.5")
+    (version "0.9.6")
     (source
      (origin
        (method url-fetch)
@@ -6091,7 +6093,7 @@ used by nftables.")
                   (string-append "https://www.nftables.org/projects/nftables"
                                  "/files/nftables-" version ".tar.bz2")))
        (sha256
-        (base32 "05kyri19q776mymkbcxq3786l6nrf4xg7f3n8my0aw63mdz9bhgj"))))
+        (base32 "0vmn6xwqa1nq6crfxshh049b199d0aj6hfgin7k068xhibzgvmk8"))))
     (build-system gnu-build-system)
     (arguments `(#:configure-flags
                  '("--disable-man-doc"))) ; FIXME: Needs docbook2x.
@@ -6289,13 +6291,14 @@ NexGen, Rise, and SiS CPUs.")
     (version "0.5")
     (source
       (origin
-        (method url-fetch)
-        (uri (string-append "https://github.com/JasonFerrara/jmtpfs/archive/v"
-                            version ".tar.gz"))
-        (file-name (string-append name "-" version ".tar.gz"))
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/JasonFerrara/jmtpfs")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
         (sha256
          (base32
-          "10v8d7mmx8b8123x5f9y9zaaa428ms6wkngwn2ra71n5a53wrjn0"))))
+          "1pm68agkhrwgrplrfrnbwdcvx5lrivdmqw8pb5gdmm3xppnryji1"))))
     (build-system gnu-build-system)
     (inputs
      `(("file" ,file)
@@ -6316,12 +6319,13 @@ the MTP device as a file system.")
    (version "0.51")
    (source
     (origin
-     (method url-fetch)
-     (uri (string-append "https://github.com/jamesodhunt/procenv/archive/"
-                         version ".tar.gz"))
-     (file-name (string-append name "-" version ".tar.gz"))
+     (method git-fetch)
+     (uri (git-reference
+            (url "https://github.com/jamesodhunt/procenv")
+            (commit version)))
+     (file-name (git-file-name name version))
      (sha256
-      (base32 "1javw97yw0qvjmj14js8vw6nsfyf2xc0kfiyq5f2hsp0553w2cdq"))))
+      (base32 "1ilrsw1rc85w29mkbkmm5n5w427gapv43yrjzvkb4kc9xhscgdjn"))))
    (build-system gnu-build-system)
    (arguments `(#:configure-flags '("--disable-silent-rules")))
    (native-inputs `(("groff" ,groff) ; for tests
@@ -6840,12 +6844,18 @@ the superuser to make device nodes.")
             (substitute* "Makefile"
              (("/bin/sh") (which "sh")))
             #t))
-        (add-after 'unpack 'patch-getopt
+        (add-after 'unpack 'patch-script
           (lambda*  (#:key inputs #:allow-other-keys)
             (substitute* "scripts/fakeroot.in"
              (("getopt")
               (string-append (assoc-ref inputs "util-linux")
-                             "/bin/getopt")))
+                             "/bin/getopt"))
+             (("sed")
+              (string-append (assoc-ref inputs "sed")
+                             "/bin/sed"))
+             (("cut")
+              (string-append (assoc-ref inputs "coreutils")
+                             "/bin/cut")) )
             #t))
         (add-before 'configure 'setenv
           (lambda _
@@ -6882,7 +6892,9 @@ the superuser to make device nodes.")
        ("xz" ,xz))) ; for the tests
     (inputs
      `(("libcap" ,libcap/next)
-       ("util-linux" ,util-linux)))
+       ("util-linux" ,util-linux)
+       ("sed" ,sed)
+       ("coreutils" ,coreutils)))
     (synopsis "Provides a fake root environment")
     (description "@command{fakeroot} runs a command in an environment where
 it appears to have root privileges for file manipulation. This is useful

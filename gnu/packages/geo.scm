@@ -6,7 +6,7 @@
 ;;; Copyright © 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2018, 2019 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2018 Joshua Sierles, Nextjournal <joshua@nextjournal.com>
-;;; Copyright © 2018, 2019 Julien Lepiller <julien@lepiller.eu>
+;;; Copyright © 2018, 2019, 2020 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2019, 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2019 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2019 Wiktor Żelazny <wzelazny@vurv.cz>
@@ -1160,10 +1160,55 @@ integrates an OSM map view into your Java application.  It is maintained as
 an independent project by the JOSM team.")
     (license license:gpl2)))
 
+(define-public java-opening-hours-parser
+  (package
+    (name "java-opening-hours-parser")
+    (version "0.21.4")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/simonpoole/OpeningHoursParser")
+                     (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1m8sp0jbjyv1nq3ddj8rk6rf3sva3mkacc6vw7rsj0c2n57k3i50"))))
+    (build-system ant-build-system)
+    (arguments
+     `(#:jar-name "java-opening-hours-parser.jar"
+       #:source-dir "src/main/java"
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'build 'copy-resources
+           (lambda _
+             (copy-recursively "src/main/resources" "build/classes")
+             #t))
+         (add-before 'build 'generate-parser
+           (lambda* _
+             (let* ((dir "src/main/java/ch/poole/openinghoursparser")
+                    (file (string-append dir "/OpeningHoursParser.jj")))
+               (invoke "javacc" "-DEBUG_PARSER=false"
+                       "-DEBUG_TOKEN_MANAGER=false" "-JDK_VERSION=1.8"
+                       "-GRAMMAR_ENCODING=UTF-8"
+                       (string-append "-OUTPUT_DIRECTORY=" dir)
+                       file))
+             #t)))))
+    (inputs
+     `(("java-jetbrains-annotations" ,java-jetbrains-annotations)))
+    (native-inputs
+     `(("javacc" ,javacc)
+       ("java-junit" ,java-junit)
+       ("java-hamcrest-core" ,java-hamcrest-core)))
+    (home-page "https://github.com/simonpoole/OpeningHoursParser")
+    (synopsis "Java parser for the OpenStreetMap opening hour format")
+    (description "This is a very simplistic parser for string values according
+to the OSM opening hours specification.")
+    (license license:expat)))
+
 (define-public josm
   (package
     (name "josm")
-    (version "15937")
+    (version "16731")
     (source (origin
               (method svn-fetch)
               (uri (svn-reference
@@ -1172,7 +1217,7 @@ an independent project by the JOSM team.")
                      (recursive? #f)))
               (sha256
                (base32
-                "00b8sw0wgkcf7xknmdpn5s521ax8x2660figidcrry37sgq3x946"))
+                "036kdb1ckhym5f7lj5ydzblli7f1i1pl8z00hxvagf2rczdf5fi3"))
               (file-name (string-append name "-" version "-checkout"))
               (modules '((guix build utils)))
             (snippet
@@ -1189,6 +1234,7 @@ an independent project by the JOSM team.")
        ("java-jsonp-api" ,java-jsonp-api)
        ("java-jsonp-impl" ,java-jsonp-impl); runtime dependency
        ("java-metadata-extractor" ,java-metadata-extractor)
+       ("java-opening-hours-parser" ,java-opening-hours-parser)
        ("java-openjfx-media" ,java-openjfx-media)
        ("java-signpost-core" ,java-signpost-core)
        ("java-svg-salamander" ,java-svg-salamander)))
@@ -1209,6 +1255,14 @@ an independent project by the JOSM team.")
                    (string-append "<info><entry><commit revision=\"" ,version "\">"
                                   "<date>1970-01-01 00:00:00 +0000</date>"
                                   "</commit></entry></info>"))))
+             #t))
+         (add-before 'build 'fix-jcs
+           (lambda _
+             ;; This version of JOSM uses an unreleased version of commons-jcs,
+             ;; which has renamed its classes to another namespace.  Rename them
+             ;; back so they can be used with our version of jcs.
+             (substitute* (find-files "." ".*.java$")
+               (("jcs3") "jcs"))
              #t))
          (add-before 'build 'fix-classpath
            (lambda* (#:key inputs #:allow-other-keys)
@@ -1243,10 +1297,9 @@ an independent project by the JOSM team.")
              (invoke "java" "-cp" "build/classes:scripts:."
                      "BuildProjectionDefinitions" ".")
              #t))
-         (add-after 'generate-epsg 'copy-data
+         (add-after 'generate-epsg 'copy-resources
            (lambda _
-             (mkdir-p "build/classes")
-             (rename-file "data" "build/classes/data")
+             (copy-recursively "resources" "build/classes")
              #t))
          (add-before 'install 'regenerate-jar
            (lambda _
@@ -1254,16 +1307,6 @@ an independent project by the JOSM team.")
              (delete-file "build/jar/josm.jar")
              (invoke "jar" "-cf" "build/jar/josm.jar" "-C"
                      "build/classes" ".")
-             #t))
-         (add-before 'build 'copy-styles
-           (lambda _
-             (mkdir-p "build/classes")
-             (rename-file "styles" "build/classes/styles")
-             #t))
-         (add-before 'build 'copy-images
-           (lambda _
-             (mkdir-p "build/classes")
-             (rename-file "images" "build/classes/images")
              #t))
          (add-before 'build 'copy-revision
            (lambda _
@@ -1858,6 +1901,7 @@ growing set of geoscientific methods.")
                              "qgis_filedownloader"
                              ;; TODO: Find why the following tests fail
                              "ProcessingQgisAlgorithmsTestPt1"
+                             "ProcessingQgisAlgorithmsTestPt2"
                              "ProcessingQgisAlgorithmsTestPt3"
                              "ProcessingQgisAlgorithmsTestPt4"
                              "ProcessingGdalAlgorithmsRasterTest"
@@ -1872,6 +1916,7 @@ growing set of geoscientific methods.")
                              "qgis_geometrytest"
                              "qgis_layouthtmltest"
                              "qgis_layoutmaptest"
+                             "qgis_layoutmapgridtest"
                              "qgis_painteffecttest"
                              "qgis_pallabelingtest"
                              "qgis_svgmarkertest"
@@ -1890,6 +1935,11 @@ growing set of geoscientific methods.")
                              "PyQgsFileUtils"
                              "PyQgsGeometryTest"
                              "PyQgsImageCache"
+                             "PyQgsLayerMetadata"
+                             "PyQgsLayout"
+                             "PyQgsLayoutHtml"
+                             "PyQgsLayoutMapGrid"
+                             "PyQgsMetadataBase"
                              "PyQgsLayoutExporter"
                              "PyQgsLayoutLegend"
                              "PyQgsMapLayer"

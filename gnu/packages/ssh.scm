@@ -405,6 +405,12 @@ authentication scheme.")
     (arguments
      '(#:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'patch-FHS-file-names
+           (lambda _
+             (substitute* "scripts/mosh.pl"
+               (("/bin/sh")
+                (which "sh")))
+             #t))
          (add-after 'install 'wrap
            (lambda* (#:key outputs #:allow-other-keys)
              ;; Make sure 'mosh' can find 'mosh-client' and
@@ -465,7 +471,7 @@ TCP, not the SSH protocol.")
 (define-public dropbear
   (package
     (name "dropbear")
-    (version "2019.78")
+    (version "2020.80")
     (source
      (origin
        (method url-fetch)
@@ -473,7 +479,7 @@ TCP, not the SSH protocol.")
              "https://matt.ucc.asn.au/dropbear/releases/"
              "dropbear-" version ".tar.bz2"))
        (sha256
-        (base32 "19242qlr40pbqfqd0gg6h8qpj38q6lgv03ja6sahj9vj2abnanaj"))))
+        (base32 "0jbrbpdzyv11x5rkljdimzq9p6a7da5siw9k405ibnpjj4dr89yr"))))
     (build-system gnu-build-system)
     (arguments `(#:tests? #f))  ; there is no "make check" or anything similar
     ;; TODO: Investigate unbundling libtommath and libtomcrypt or at least

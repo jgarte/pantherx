@@ -92,7 +92,7 @@ interfacing MPD in the C, C++ & Objective C languages.")
 (define-public mpd
   (package
     (name "mpd")
-    (version "0.21.23")
+    (version "0.21.24")
     (source (origin
               (method url-fetch)
               (uri
@@ -101,7 +101,7 @@ interfacing MPD in the C, C++ & Objective C languages.")
                               "/mpd-" version ".tar.xz"))
               (sha256
                (base32
-                "18q72b9baj5cdpq0yn60qm7q4g8vwqqyqndl9xg3f3w0m4n557s3"))))
+                "1mjclv7nf42smzry6cswciicsypv0mfsfl8nsykb6wp6h9z2lqw4"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags '("-Ddocumentation=true"))) ;the default is 'false'...
@@ -299,14 +299,14 @@ interface for the Music Player Daemon.")
     (name "sonata")
     (version "1.7b1")
     (source (origin
-              (method url-fetch)
-              (uri
-               (string-append "https://github.com/multani/sonata/archive/v"
-                              version ".tar.gz"))
-              (file-name (string-append name "-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/multani/sonata")
+                     (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "07gq2nxqwxs0qyxjbay7k5j25zd386bn7wdr2dl1gk53diwnn7s0"))))
+                "1npbxlrg6k154qybfd250nq2p96kxdsdkj9wwnp93gljnii3g8wh"))))
     (build-system python-build-system)
     (arguments
      `(#:modules ((guix build gnu-build-system)

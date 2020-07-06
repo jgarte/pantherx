@@ -37,6 +37,7 @@
   #:use-module (guix store)
   #:use-module (guix utils)
   #:use-module (gcrypt pk-crypto)
+  #:use-module (ice-9 format)
   #:use-module (ice-9 match)
   #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-1)
@@ -210,10 +211,9 @@ exist on the machine."
             (use-modules (gnu build file-systems)
                          (gnu system uuid))
 
-            (define uuid
-              (string->uuid #$(uuid->string (file-system-device fs))))
-
-            (find-partition-by-uuid uuid))))
+            (let ((uuid (uuid #$(uuid->string (file-system-device fs))
+                              '#$(uuid-type (file-system-device fs)))))
+              (find-partition-by-uuid uuid)))))
 
     (remote-let ((result remote-exp))
       (unless result

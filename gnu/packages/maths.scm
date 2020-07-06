@@ -38,6 +38,7 @@
 ;;; Copyright © 2020 R Veera Kumar <vkor@vkten.in>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Nicolò Balzarotti <nicolo@nixo.xyz>
+;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -2409,6 +2410,42 @@ message-passing communication.  @code{slepc4py} provides Python
 bindings to almost all functions of SLEPc.")
     (license license:bsd-3)))
 
+(define-public metamath
+  ;; Upstream pushed a commit on top of v0.182 that fixes a bug in Makefile.am.
+  ;; Using this commit lets us avoid directly including the patch here.  In the
+  ;; next version bump, we should be able to replace this and directly use the
+  ;; version tag.
+  (let ((commit "5df616efe4119ff88daf77e7041d45b6fa39c578")
+        (revision "0"))
+    (package
+      (name "metamath")
+      (version (git-version "0.182" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/metamath/metamath-exe.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0amjdgy42c7jypf6sz98iczlxcyl9bqx67ws1q8w2zdqk2izsyjp"))))
+      (build-system gnu-build-system)
+      (native-inputs
+       `(("autoconf" ,autoconf)
+         ("automake" ,automake)))
+      (home-page "http://us.metamath.org/")
+      (synopsis "Proof verifier based on a minimalistic formalism")
+      (description
+       "Metamath is a tiny formal language and that can express theorems in
+abstract mathematics, with an accompyaning @command{metamath} executable that
+verifies databases of these proofs.  There is a public database,
+@url{https://github.com/metamath/set.mm, set.mm}, implementing first-order
+logic and Zermelo-Frenkel set theory with Choice, along with a large swath of
+associated, high-level theorems, e.g.@: the fundamental theorem of arithmetic,
+the Cauchy-Schwarz inequality, Stirling's formula, etc.  See the Metamath
+book.")
+      (license license:gpl2+))))
+
 (define-public mumps
   (package
     (name "mumps")
@@ -3078,7 +3115,7 @@ to BMP, JPEG or PNG image formats.")
 (define-public maxima
   (package
     (name "maxima")
-    (version "5.43.0")
+    (version "5.44.0")
     (source
      (origin
        (method url-fetch)
@@ -3086,7 +3123,7 @@ to BMP, JPEG or PNG image formats.")
                            version "-source/" name "-" version ".tar.gz"))
        (sha256
         (base32
-         "0xyahp4c6509haxh4n1swiqm3421gplkdisa0zypclh3252sbzfw"))
+         "1v6jr5s6hhj6r18gfk6hgxk2qd6z1dxkrjq9ss2z1y6sqi45wgyr"))
        (patches (search-patches "maxima-defsystem-mkdir.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -4052,6 +4089,7 @@ evaluates expressions using the standard order of operations.")
               (uri (git-reference
                     (url "https://github.com/xaos-project/XaoS")
                     (commit (string-append "release-" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
                 "00110p5xscjsmn7avfqgydn656zbmdj3l3y2fpv9b4ihzpid8n7a"))))
