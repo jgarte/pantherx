@@ -89,7 +89,7 @@ G-expression or other lowerable object denoting a file name."
   grub-theme?
   (image           grub-theme-image
                    (default (file-append %artwork-repository
-                                         "/grub/GuixSD-fully-black-4-3.svg")))
+                                         "/grub/PantherX-4-3.svg")))
   (resolution      grub-theme-resolution
                    (default '(1024 . 768)))
   (color-normal    grub-theme-color-normal
