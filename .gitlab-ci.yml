@@ -61,7 +61,7 @@ sync-nonlibre:
     default: false
   stage: sync
   script:
-    - guix pull --verbosity=2
+    - guix pull --disable-authentication --verbosity=2
     - guix describe
   only:
     - staging-nonlibre
