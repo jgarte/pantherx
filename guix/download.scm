@@ -140,7 +140,7 @@
       (apache             ; from http://www.apache.org/mirrors/dist.html
        "http://www.eu.apache.org/dist/"
        "http://www.us.apache.org/dist/"
-       "http://apache.belnet.be/"
+       "https://ftp.nluug.nl/internet/apache/"
        "http://apache.mirror.iweb.ca/"
        "http://mirrors.ircam.fr/pub/apache/"
        "http://apache.mirrors.ovh.net/ftp.apache.org/dist/"
@@ -250,7 +250,6 @@
        ;; mirrors keeping old versions at the top level
        "https://sunsite.icm.edu.pl/packages/ImageMagick/"
        ;; mirrors moving old versions to "legacy"
-       "http://mirrors-usa.go-parts.com/mirrors/ImageMagick/"
        "http://mirror.checkdomain.de/imagemagick/"
        "http://ftp.surfnet.nl/pub/ImageMagick/"
        "http://mirror.searchdaimon.com/ImageMagick"
@@ -308,7 +307,6 @@
        "http://mirror.its.dal.ca/kde/"
        "http://mirror.csclub.uwaterloo.ca/kde/"
        "http://mirror.cc.columbia.edu/pub/software/kde/"
-       "http://mirrors-usa.go-parts.com/kde"
        "http://kde.mirrors.hoobly.com/"
        "http://ftp.ussg.iu.edu/kde/"
        "http://mirrors.mit.edu/kde/"

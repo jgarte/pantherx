@@ -42,6 +42,7 @@
 ;;; Copyright © 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2020 Alex McGrath <amk@amk.ie>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
+;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -121,17 +122,20 @@
   #:use-module (gnu packages iso-codes)
   #:use-module (gnu packages libidn)
   #:use-module (gnu packages libreoffice)
+  #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages m4)
   #:use-module (gnu packages man)
   #:use-module (gnu packages markup)
+  #:use-module (gnu packages maths)
   #:use-module (gnu packages mp3)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages networking)
   #:use-module (gnu packages ocr)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages perl-check)
+  #:use-module (gnu packages perl-web)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages popt)
   #:use-module (gnu packages pretty-print)
@@ -608,7 +612,7 @@ available.")
 (define-public x265
   (package
     (name "x265")
-    (version "3.3")
+    (version "3.4")
     (outputs '("out" "static"))
     (source
       (origin
@@ -618,7 +622,7 @@ available.")
                    (string-append "https://download.videolan.org/videolan/x265/"
                                   "x265_" version ".tar.gz")))
         (sha256
-         (base32 "170b61cgpcs5n35qps0p40dqs1q81vkgagzbs4zv7pzls6718vpj"))
+         (base32 "0wl62hfsdqpf3r3z3s6l9bz7pdb1rcik5ll00b3yaadplqipy162"))
         (patches (search-patches "x265-arm-flags.patch"))
         (modules '((guix build utils)))
         (snippet '(begin
@@ -635,8 +639,7 @@ available.")
        #:configure-flags
          ;; Ensure position independent code for everyone.
          (list "-DENABLE_PIC=TRUE"
-               ,@(if (string-prefix? "armhf" (or (%current-system)
-                                                 (%current-target-system)))
+               ,@(if (target-arm?)
                      '("-DENABLE_ASSEMBLY=OFF")
                      '())
                (string-append "-DCMAKE_INSTALL_PREFIX="
@@ -647,9 +650,6 @@ available.")
            (lambda _
              (delete-file-recursively "build")
              (chdir "source")
-             ;; recognize armv8 in 32-bit mode as ARM
-             (substitute* "CMakeLists.txt"
-              (("armv6l") "armv8l"))
              #t))
          (add-before 'configure 'build-12-bit
            (lambda* (#:key (configure-flags '()) #:allow-other-keys)
@@ -935,16 +935,14 @@ operate properly.")
 (define-public ffmpeg
   (package
     (name "ffmpeg")
-    (version "4.2.3")
+    (version "4.3")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://ffmpeg.org/releases/ffmpeg-"
                                  version ".tar.xz"))
-             ;; See <https://issues.guix.gnu.org/issue/39719>
-             (patches (search-patches "ffmpeg-prefer-dav1d.patch"))
              (sha256
               (base32
-               "0cddkb5sma9dzy8i59sfls19rhjlq40zn9mh3x666dqkxl5ckxlx"))))
+               "0pbrsv5v96yd8qzb9bk4kw7qk4xqpi03rsd5xfbwnjzlhijd02hx"))))
     (build-system gnu-build-system)
     (inputs
      `(("dav1d" ,dav1d)
@@ -971,6 +969,12 @@ operate properly.")
        ("mesa" ,mesa)
        ("openal" ,openal)
        ("pulseaudio" ,pulseaudio)
+       ;; XXX: rav1e depends on rust, which currently only works on x86_64.
+       ;; See also the related configure flag when changing this.
+       ,@(if (string-prefix? "x86_64" (or (%current-target-system)
+                                          (%current-system)))
+             `(("rav1e" ,rav1e))
+             '())
        ("sdl" ,sdl2)
        ("soxr" ,soxr)
        ("speex" ,speex)
@@ -1052,6 +1056,10 @@ operate properly.")
          "--enable-libmp3lame"
          "--enable-libopus"
          "--enable-libpulse"
+         ,@(if (string-prefix? "x86_64" (or (%current-target-system)
+                                            (%current-system)))
+               '("--enable-librav1e")
+               '())
          "--enable-libsoxr"
          "--enable-libspeex"
          "--enable-libtheora"
@@ -1116,6 +1124,24 @@ convert and stream audio and video.  It includes the libavcodec
 audio/video codec library.")
     (license license:gpl2+)))
 
+;; ungoogled-chromium crashes with ffmpeg 4.3, so stick with this version for
+;; now.  See <https://issues.guix.gnu.org/41987>.
+(define-public ffmpeg-4.2
+  (package
+    (inherit ffmpeg)
+    (version "4.2.3")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://ffmpeg.org/releases/ffmpeg-"
+                                  version ".tar.xz"))
+              (sha256
+               (base32
+                "0cddkb5sma9dzy8i59sfls19rhjlq40zn9mh3x666dqkxl5ckxlx"))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments ffmpeg)
+       ((#:configure-flags flags)
+        `(delete "--enable-librav1e" ,flags))))))
+
 (define-public ffmpeg-3.4
   (package
     (inherit ffmpeg)
@@ -1130,10 +1156,10 @@ audio/video codec library.")
     (arguments
      (substitute-keyword-arguments (package-arguments ffmpeg)
        ((#:configure-flags flags)
-        `(delete "--enable-libdav1d" (delete "--enable-libaom"
-                 ,flags)))))
-    (inputs (alist-delete "dav1d" (alist-delete "libaom"
-                          (package-inputs ffmpeg))))))
+        `(delete "--enable-libdav1d" (delete "--enable-libaom" (delete "--enable-librav1e"
+                  ,flags))))))
+    (inputs (alist-delete "dav1d" (alist-delete "libaom" (alist-delete "rav1e"
+                           (package-inputs ffmpeg)))))))
 
 (define-public ffmpeg-for-stepmania
   (hidden-package
@@ -1197,7 +1223,7 @@ videoformats depend on the configuration flags of ffmpeg.")
 (define-public vlc
   (package
     (name "vlc")
-    (version "3.0.10")
+    (version "3.0.11")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1206,7 +1232,7 @@ videoformats depend on the configuration flags of ffmpeg.")
                     "/vlc-" version ".tar.xz"))
               (sha256
                (base32
-                "0cackl1084hcmg4myf3kvjvd6sjxmzn0c0qkmanz6brvgzyanrm9"))))
+                "06a9hfl60f6l0fs5c9ma5s8np8kscm4ala6m2pdfji9lyfna351y"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("flex" ,flex)
@@ -1218,10 +1244,6 @@ videoformats depend on the configuration flags of ffmpeg.")
     (inputs
      `(("alsa-lib" ,alsa-lib)
        ("avahi" ,avahi)
-       ;; XXX Try removing dav1d here and testing AV1 playback when FFmpeg 4.3
-       ;; is released.
-       ;; <https://issues.guix.gnu.org/issue/39719>
-       ("dav1d" ,dav1d)
        ("dbus" ,dbus)
        ("eudev" ,eudev)
        ("flac" ,flac)
@@ -1509,6 +1531,14 @@ SVCD, DVD, 3ivx, DivX 3/4/5, WMV and H.264 movies.")
                 (("\"youtube-dl\",")
                  (string-append "\"" ytdl "/bin/youtube-dl\",")))
               #t)))
+         (add-before 'configure 'build-reproducibly
+           (lambda _
+             ;; Somewhere in the build system library dependencies are enumerated
+             ;; and passed as linker flags, but the order in which they are added
+             ;; varies.  See <https://github.com/mpv-player/mpv/issues/7855>.
+             ;; Set PYTHONHASHSEED as a workaround for deterministic results.
+             (setenv "PYTHONHASHSEED" "1")
+             #t))
          (add-before
           'configure 'setup-waf
           (lambda* (#:key inputs #:allow-other-keys)
@@ -1616,7 +1646,7 @@ To load this plugin, specify the following option when starting mpv:
 (define-public youtube-dl
   (package
     (name "youtube-dl")
-    (version "2020.06.06")
+    (version "2020.06.16.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/ytdl-org/youtube-dl/"
@@ -1624,7 +1654,7 @@ To load this plugin, specify the following option when starting mpv:
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1qrrr14glv0jv377n61paq55b6k58jpnwbz2sp5xfl4wnxy5hqny"))))
+                "1q0080cvxpfakgbzigbnl9adnga3jz1sqig2rsiq52rarqbc01px"))))
     (build-system python-build-system)
     (arguments
      ;; The problem here is that the directory for the man page and completion
@@ -2335,7 +2365,7 @@ from sites like Twitch.tv and pipes them into a video player of choice.")
 (define-public mlt
   (package
     (name "mlt")
-    (version "6.18.0")
+    (version "6.20.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2344,7 +2374,7 @@ from sites like Twitch.tv and pipes them into a video player of choice.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0iiqym15n8kbnjzj0asmm86gs23yykz0va5b475cc4v2vv5admgx"))))
+                "14kayzas2wisyw0z27qkcm4qnxbdb7bqa0hg7gaj5kbm3nvsnafk"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no tests
@@ -2365,7 +2395,7 @@ from sites like Twitch.tv and pipes them into a video player of choice.")
              #t)))))
     (inputs
      `(("alsa-lib" ,alsa-lib)
-       ("ffmpeg" ,ffmpeg-3.4)
+       ("ffmpeg" ,ffmpeg)
        ("fftw" ,fftw)
        ("frei0r-plugins" ,frei0r-plugins)
        ("gdk-pixbuf" ,gdk-pixbuf)
@@ -2713,14 +2743,14 @@ specifications.")
 (define-public libaacs
   (package
     (name "libaacs")
-    (version "0.9.0")
+    (version "0.10.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://ftp.videolan.org/pub/videolan/libaacs/"
-                           version "/" name "-" version ".tar.bz2"))
+                           version "/libaacs-" version ".tar.bz2"))
        (sha256
-        (base32 "1kms92i0c7i1yl659kqjf19lm8172pnpik5lsxp19xphr74vvq27"))))
+        (base32 "1zhjdcph8sqx7ak35s22kc736icwq135jlypggkp6vqyyygb3xlk"))))
     (inputs
      `(("libgcrypt" ,libgcrypt)))
     (native-inputs
@@ -2771,7 +2801,7 @@ supported players in addition to this package.")
 (define-public handbrake
   (package
     (name "handbrake")
-    (version "1.3.2")
+    (version "1.3.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/HandBrake/HandBrake/"
@@ -2779,7 +2809,7 @@ supported players in addition to this package.")
                                   "HandBrake-" version "-source.tar.bz2"))
               (sha256
                (base32
-                "0w7jxjrccvxp7g15dv0spildg5apmqp4gwbcqmg58va2gylynvzc"))
+                "11bzhyp052bmng5119x74xvdj5632smx6qsk537ygda8bzckg2i1"))
               (modules '((guix build utils)))
               (snippet
                ;; Remove "contrib" and source not necessary for
@@ -3426,7 +3456,7 @@ It counts more than 100 plugins.")
        ("pkg-config" ,pkg-config)))
     (inputs
      `(("libjpeg" ,libjpeg-turbo)
-       ("ffmpeg" ,ffmpeg-3.4)
+       ("ffmpeg" ,ffmpeg)
        ("libmicrohttpd" ,libmicrohttpd)
        ("sqlite" ,sqlite)))
     (arguments
@@ -3706,7 +3736,7 @@ transitions, and effects and then export your film to many common formats.")
 (define-public dav1d
   (package
     (name "dav1d")
-    (version "0.7.0")
+    (version "0.7.1")
     (source
       (origin
         (method url-fetch)
@@ -3714,7 +3744,7 @@ transitions, and effects and then export your film to many common formats.")
                             "/dav1d/" version "/dav1d-" version ".tar.xz"))
         (sha256
          (base32
-          "0xcykraf42gkymzqx1k1lcdclgk9y5yf7rr56vslrgmr0r849qnk"))))
+          "1hnkfcg57bv5rib6cnj39dy1jx0q7zi5fb2fz52hf2y0bv8bad1k"))))
     (build-system meson-build-system)
     (native-inputs `(("nasm" ,nasm)))
     (home-page "https://code.videolan.org/videolan/dav1d")
@@ -4003,7 +4033,7 @@ result in several formats:
         ("rust-console" ,rust-console-0.9)
         ("rust-serde" ,rust-serde-1.0)
         ("rust-cc" ,rust-cc-1.0)
-        ("rust-rayon" ,rust-rayon-1.3)
+        ("rust-rayon" ,rust-rayon-1)
         ("rust-byteorder" ,rust-byteorder-1.3)
         ("rust-clap" ,rust-clap-2)
         ("rust-vergen" ,rust-vergen-3.1))
@@ -4097,3 +4127,99 @@ can also directly record to WebM or MP4 if you prefer.")
 wlroots-based compositors.  More specifically, those that support
 @code{wlr-screencopy-v1} and @code{xdg-output}.")
     (license license:expat)))
+
+(define-public guvcview
+  (package
+    (name "guvcview")
+    (version "2.0.6")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://sourceforge/guvcview/source/guvcview-"
+                                  "src-" version ".tar.gz"))
+              (sha256
+               (base32
+                "11byyfpkcik7wvf2qic77zjamfr2rhji97dpj1gy2fg1bvpiqf4m"))))
+    (build-system gnu-build-system)
+    (arguments
+     ;; There are no tests and "make check" would fail on an intltool error.
+     '(#:tests? #f))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("intltool" ,intltool)))
+    (inputs
+     `(("gtk+" ,gtk+)
+       ("eudev" ,eudev)
+       ("libusb" ,libusb)
+       ("v4l-utils" ,v4l-utils)                   ;libv4l2
+       ("ffmpeg" ,ffmpeg)                         ;libavcodec, libavutil
+       ("sdl2" ,sdl2)
+       ("gsl" ,gsl)
+       ("portaudio" ,portaudio)
+       ("alsa-lib" ,alsa-lib)))
+    (home-page "http://guvcview.sourceforge.net/")
+    (synopsis "Control your webcam and capture videos and images")
+    (description
+     "GTK+ UVC Viewer (guvcview) is a graphical application to control a
+webcam accessible with Video4Linux (V4L2) and to capture videos and images.
+It provides control over precise settings of the webcam such as exposure,
+brightness, contrast, and frame rate.")
+
+    ;; 'COPYING' is GPLv3 but source headers say GPLv2+.
+    (license license:gpl2+)))
+
+(define-public get-iplayer
+  (package
+    (name "get-iplayer")
+    (version "3.26")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/get-iplayer/get_iplayer")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32
+          "0lsz5hz1ia5j612540rb0f31y7j2k5gf7x5i43l8k06b90wi73d6"))))
+    (build-system perl-build-system)
+    (arguments
+     `(#:tests? #f  ; no tests
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (delete 'build)
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin"))
+                    (man (string-append out "/share/man/man1")))
+               (install-file "get_iplayer" bin)
+               (install-file "get_iplayer.cgi" bin)
+               (install-file "get_iplayer.1" man))
+             #t))
+         (add-after 'install 'wrap-program
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (perllib (string-append out "/lib/perl5/site_perl/"
+                                            ,(package-version perl))))
+               (wrap-program (string-append out "/bin/get_iplayer")
+                 `("PERL5LIB" ":"
+                   prefix (,(string-append perllib ":" (getenv "PERL5LIB")))))
+               (wrap-program (string-append out "/bin/get_iplayer.cgi")
+                 `("PERL5LIB" ":"
+                   prefix (,(string-append perllib ":" (getenv "PERL5LIB")))))
+               #t))))))
+    (inputs
+     `(("perl-mojolicious" ,perl-mojolicious)
+       ("perl-lwp-protocol-https" ,perl-lwp-protocol-https)
+       ("perl-xml-libxml" ,perl-xml-libxml)))
+    (home-page "https://github.com/get-iplayer/get_iplayer")
+    (synopsis "Download or stream available BBC iPlayer TV and radio programmes")
+    (description "@code{get_iplayer} lists, searches and records BBC iPlayer
+TV/Radio, BBC Podcast programmes.  Other third-party plugins may be available.
+@code{get_iplayer} has three modes: recording a complete programme for later
+playback, streaming a programme directly to a playback application, such as
+mplayer; and as a @dfn{Personal Video Recorder} (PVR), subscribing to search
+terms and recording programmes automatically.  It can also stream or record live
+BBC iPlayer output.")
+    (license license:gpl3+)))

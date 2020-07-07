@@ -35,6 +35,7 @@
 ;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
 ;;; Copyright © 2020 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2020 Zhu Zihao <all_but_last@163.com>
+;;; Copyright © 2020 Simen Endsjø <simendsjo@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -63,6 +64,7 @@
   #:use-module (guix build-system meson)
   #:use-module (guix build-system trivial)
   #:use-module (gnu packages base)
+  #:use-module (gnu packages bash)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages gettext)
@@ -1170,7 +1172,7 @@ typeface, by mimicking Comic Sans while fixing its most obvious shortcomings.")
   (package
     (name "font-iosevka")
     ;; When updating, also update the hash of the Iosevka variant(s) below.
-    (version "2.3.3")
+    (version "3.2.2")
     (source
      (origin
        (method url-fetch/zipbomb)
@@ -1178,7 +1180,7 @@ typeface, by mimicking Comic Sans while fixing its most obvious shortcomings.")
                            "/releases/download/v" version
                            "/ttc-iosevka-" version ".zip"))
        (sha256
-        (base32 "0jkv5rkg5hi0avhwyhcjiqzjslp6zjj77f09vxx2gj9l93byz731"))))
+        (base32 "16iqr4zjlshrgzcs3sjp3gz777gpi069r7p7scqi6vap9acqjvph"))))
     (build-system font-build-system)
     (home-page "https://be5invis.github.io/Iosevka/")
     (synopsis "Coders' typeface, built from code")
@@ -1201,7 +1203,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "/releases/download/v" version
                            "/ttc-iosevka-slab-" version ".zip"))
        (sha256
-        (base32 "1rkmgi08kknc1fg54zpa6w92m3b3v7pc8cpwygz22kgd2h0mdrr8"))))))
+        (base32 "0knsb1b0wqv50r7f9128xvq344x7hnvgm7kh1dxaahlck910z62x"))))))
 
 (define-public font-iosevka-term
   (package
@@ -1213,10 +1215,10 @@ programming.  Iosevka is completely generated from its source code.")
        (method url-fetch/zipbomb)
        (uri (string-append "https://github.com/be5invis/Iosevka"
                            "/releases/download/v" version
-                           "/02-iosevka-term-" version ".zip"))
+                           "/ttf-iosevka-term-" version ".zip"))
        (sha256
         (base32
-         "1mxlb3qf64nykjd0x4gjfvib3k5kyv9ssv9iyzxxgk2z80bydz00"))))
+         "0nyq6iq9xjn9nqwh1fh4v0pvblycmm8ssw7y3vcjv1ymbkdqfqhr"))))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -1235,10 +1237,10 @@ programming.  Iosevka is completely generated from its source code.")
        (method url-fetch/zipbomb)
        (uri (string-append "https://github.com/be5invis/Iosevka"
                            "/releases/download/v" version
-                           "/06-iosevka-term-slab-" version ".zip"))
+                           "/ttf-iosevka-term-slab-" version ".zip"))
        (sha256
         (base32
-         "1gc16hih157qy6vpa8f88psq0fnksiigi3msqazc75zsm3z4kzqj"))))
+         "1blhhbnk2hyaxjrz88icd2gwyniq5idxd0h6rqx6vjcack6094z0"))))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -1247,10 +1249,52 @@ programming.  Iosevka is completely generated from its source code.")
              (for-each make-file-writable (find-files "." ".*"))
              #t)))))))
 
+(define-public font-iosevka-aile
+  (package
+    (inherit font-iosevka)
+    (name "font-iosevka-aile")
+    (version (package-version font-iosevka))
+    (source
+     (origin
+       (method url-fetch/zipbomb)
+       (uri (string-append "https://github.com/be5invis/Iosevka"
+                           "/releases/download/v" version
+                           "/ttc-iosevka-aile-" version ".zip"))
+       (sha256
+        (base32 "1zg0gn4gcf3w8n8jzf93y9ninyn3bci31c5zss3mxzz1lzfm8zd5"))))))
+
+(define-public font-iosevka-etoile
+  (package
+    (inherit font-iosevka)
+    (name "font-iosevka-etoile")
+    (version (package-version font-iosevka))
+    (source
+     (origin
+       (method url-fetch/zipbomb)
+       (uri (string-append "https://github.com/be5invis/Iosevka"
+                           "/releases/download/v" version
+                           "/ttc-iosevka-etoile-" version ".zip"))
+       (sha256
+        (base32 "1061yaf35f19dcym4k552q1yzbsbc98r3glm9frslirra9f33sl2"))))))
+
+(define-public font-iosevka-sparkle
+  (package
+    (inherit font-iosevka)
+    (name "font-iosevka-sparkle")
+    (version (package-version font-iosevka))
+    (source
+     (origin
+       (method url-fetch/zipbomb)
+       (uri (string-append "https://github.com/be5invis/Iosevka"
+                           "/releases/download/v" version
+                           "/ttc-iosevka-sparkle-" version ".zip"))
+       (sha256
+        (base32 "1c1s9j6qgyhn4md0kql0x2201nbs5jx3612jf8q020gm484xqq03"))))))
+
 (define-public font-sarasa-gothic
   (package
     (name "font-sarasa-gothic")
-    (version "0.12.6")
+    (version "0.12.7")
     (source
      (origin
        (method url-fetch)
@@ -1258,7 +1302,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "/releases/download/v" version
                            "/sarasa-gothic-ttc-" version ".7z"))
        (sha256
-        (base32 "1g6k9d5lajchbhsh3g12fk5cgilyy6yw09fals9vc1f9wsqvac86"))))
+        (base32 "09v65k00g8m953s6riz9xjzb2jgr6v5pdhcllalzzl7c1cn2xl3k"))))
     (build-system font-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -1795,3 +1839,61 @@ characteristic so that they sit smoothly with the Tamil glyphs.")
 to write people's name, or for formal business situations where it is necessary
 to have a detailed and proper character style.")
     (license license:ipa)))
+
+(define-public font-fontna-yasashisa-antique
+  (package
+    (name "font-fontna-yasashisa-antique")
+    (version "0")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "http://flop.sakura.ne.jp/font/fontna-op/"
+                                  "YasashisaAntiqueFont.zip"))
+              (sha256
+               (base32
+                "1hl2qk3lzmh9h2vv5647vhlslkn3vqbq9rqgp4wzybajafx8c6nj"))))
+    (build-system font-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         ;; encoding issues cause many phases to fail
+         (add-after 'unpack 'fix-encoding
+           (lambda _
+             ;; This directory, TrueType（サポート外）, is not properly encoded,
+             ;; which makes rename-file fail. Instead, use shell globbing to
+             ;; select and rename the directory.
+             (invoke "sh" "-c" "mv TrueType* TrueType")
+             #t)))))
+    (native-inputs
+     `(("bash" ,bash-minimal)
+       ("coreutils" ,coreutils)))
+    (home-page "http://www.fontna.com/blog/1122/")
+    (synopsis "Mix font of gothic kanji and minchou kana")
+    (description "Antique is a font that is popular to write manga bubbles,
+dictionary headwords and picture books.  This font reduces the thickness
+differences in characters compared to other antique fonts.")
+    (license (list license:ipa
+                   (license:non-copyleft "mplus-TESTFLIGHT-057/LICENSE_E")))))
+
+(define-public font-mplus-testflight
+  (package
+    (name "font-mplus-testflight")
+    (version "063a")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://osdn.net/frs/redir.php?"
+                                  "m=gigenet&f=mplus-fonts%2F62344%2Fmplus-TESTFLIGHT-"
+                                  version ".tar.xz"))
+              (file-name (string-append name "-" version ".tar.xz"))
+              (sha256
+               (base32
+                "0yfx9i77638yrgclnwwl4af79ri3vifi1nslwi6mgzva9cxrgss4"))))
+    (build-system font-build-system)
+    (home-page "https://mplus-fonts.osdn.jp/index.html")
+    (synopsis "Japanese font collection")
+    (description "M+ is a collection of Japanese fonts with all Latin glyph
+sets, with Basic Latin, Latin-1 Supplement, Latin Extended-A, and IPA
+Extensions.  In addition to European letters used in many Western European
+languages, it contains Japanese characters, including Kana glyphs and more
+than 5,300 Kanji glyphs, as well major international phonetic symbols,
+operators and special symbols.")
+    (license (license:non-copyleft "file:///LICENSE_E"))))

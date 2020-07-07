@@ -74,6 +74,7 @@
   #:use-module (srfi srfi-34)
   #:use-module (srfi srfi-35)
   #:use-module (srfi srfi-37)
+  #:use-module (ice-9 format)
   #:use-module (ice-9 match)
   #:use-module (rnrs bytevectors)
   #:export (guix-system
@@ -452,7 +453,9 @@ list of services."
     (('channel ('name name)
                ('url url)
                ('branch branch)
-               ('commit commit))
+               ('commit commit)
+               rest ...)
+     ;; XXX: In the future REST may include a channel introduction.
      (channel (name name) (url url)
               (branch branch) (commit commit)))))
 
@@ -479,6 +482,7 @@ list of services."
                             (uuid->string root)
                             root))
            (kernel      (boot-parameters-kernel params))
+           (multiboot-modules (boot-parameters-multiboot-modules params))
            (provenance  (catch 'system-error
                           (lambda ()
                             (call-with-input-file
@@ -507,6 +511,12 @@ list of services."
               (file-system-device->string root-device))
 
       (format #t (G_ "  kernel: ~a~%") kernel)
+
+      (match multiboot-modules
+        (() #f)
+        (((modules . _) ...)
+         (format #t (G_ "  multiboot: ~a~%")
+                 (string-join modules "\n    "))))
 
       (match provenance
         (#f #t)
@@ -802,8 +812,8 @@ static checks."
       (check-initrd-modules os)))
 
   (mlet* %store-monad
-      ((target    (current-target-system))
-       (image ->  (find-image file-system-type target))
+      ((target*   (current-target-system))
+       (image ->  (find-image file-system-type target*))
        (sys       (system-derivation-for-action os image action
                                                 #:file-system-type file-system-type
                                                 #:image-size image-size

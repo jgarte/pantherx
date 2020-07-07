@@ -36,7 +36,7 @@
 ;;; Copyright © 2018 Madalin Ionel-Patrascu <madalinionel.patrascu@mdc-berlin.de>
 ;;; Copyright © 2018 Benjamin Slade <slade@jnanam.net>
 ;;; Copyright © 2018 Alex Vong <alexvong1995@gmail.com>
-;;; Copyright © 2019 Pierre Neidhardt <mail@ambrevar.xyz>
+;;; Copyright © 2019, 2020 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2019, 2020 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2019 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2019 Julien Lepiller <julien@lepiller.eu>
@@ -77,6 +77,7 @@
   #:use-module (guix svn-download)
   #:use-module (guix gexp)
   #:use-module (gnu packages)
+  #:use-module (gnu packages adns)
   #:use-module (gnu packages algebra)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages backup)
@@ -146,12 +147,14 @@
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages perl-check)
+  #:use-module (gnu packages perl-compression)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages readline)
+  #:use-module (gnu packages ruby)
   #:use-module (gnu packages shells)
   #:use-module (gnu packages sdl)
   #:use-module (gnu packages serialization)
@@ -176,17 +179,87 @@
   #:use-module (gnu packages messaging)
   #:use-module (gnu packages networking)
   #:use-module (guix build-system copy)
+  #:use-module (guix build-system cmake)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
   #:use-module (guix build-system meson)
-  #:use-module (guix build-system scons)
+  #:use-module (guix build-system perl)
   #:use-module (guix build-system python)
-  #:use-module (guix build-system cmake)
   #:use-module (guix build-system qt)
+  #:use-module (guix build-system scons)
   #:use-module (guix build-system trivial)
   #:use-module ((srfi srfi-1) #:hide (zip))
   #:use-module (srfi srfi-26))
+
+(define-public abe
+  (package
+    (name "abe")
+    (version "1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/abe/abe/abe-" version
+                           "/abe-" version ".tar.gz"))
+       (sha256
+        (base32 "1xvpnq1y6y48fn3pvn2lk0h1ilmalv7nb7awpid1g4jcq1sfmi6z"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list (string-append "--with-data-dir="
+                            (assoc-ref %outputs "out")
+                            "/share/abe"))
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'bootstrap
+           (lambda _ (invoke "sh" "autogen.sh")))
+         (add-before 'build 'set-SDL
+           ;; Set correct environment for SDL.
+           (lambda* (#:key inputs #:allow-other-keys)
+             (setenv "CPATH"
+                     (string-append
+                      (assoc-ref inputs "sdl") "/include/SDL:"
+                      (or (getenv "CPATH") "")))
+             #t))
+         (add-after 'install 'finalize-install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((share (string-append (assoc-ref outputs "out") "/share")))
+               ;; Installation script does not copy game data files.
+               (let ((data (string-append share "/abe")))
+                 (for-each (lambda (dir)
+                             (let ((target (string-append data "/" dir)))
+                               (mkdir-p target)
+                               (copy-recursively dir target)))
+                           '("images" "maps" "sounds")))
+               ;; Create desktop file.
+               (let ((apps (string-append share "/applications")))
+                 (mkdir-p apps)
+                 (make-desktop-entry-file
+                  (string-append apps "/abe.desktop")
+                  #:name "Abe's Amazing Adventure"
+                  #:exec ,name
+                  #:categories '("AdventureGame" "Game")
+                  #:keywords
+                  '("side-scrolling" "adventure" "pyramid" "singleplayer")
+                  #:comment
+                  '(("de" "Ein sich seitwärts bewegendes Abenteuerspiel")
+                    (#f "Side-scrolling game")))))
+             #t)))))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)))
+    (inputs
+     `(("libxi" ,libxi)
+       ("libxmu" ,libxmu)
+       ("libxt" ,libxt)
+       ("sdl" ,(sdl-union (list sdl sdl-mixer)))))
+    (home-page "http://abe.sourceforge.net")
+    (synopsis "Scrolling, platform-jumping, ancient pyramid exploring game")
+    (description
+     "Abe's Amazing Adventure is a scrolling,
+platform-jumping, key-collecting, ancient pyramid exploring game, vaguely in
+the style of similar games for the Commodore+4.")
+    (license license:gpl2+)))
 
 ;; Data package for adanaxisgpl.
 (define adanaxis-mush
@@ -333,6 +406,66 @@ the more advanced player there are new game modes and a wide variety of
 physics settings to tweak as well.")
     (license license:gpl2+)))
 
+(define-public astromenace
+  (package
+    (name "astromenace")
+    (version "1.4.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/viewizard/astromenace.git")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1ad6l887jxqv8xspwc2rvy8ym9sdlmkqdqhsh0pi076kjarxsyws"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f                      ;no test
+       #:configure-flags '("-DDATADIR=share/astromenace")
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'install
+           ;; Upstream provides no install phase.
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin"))
+                    (share (string-append out "/share"))
+                    (apps (string-append share "/applications"))
+                    (data (string-append share "/astromenace"))
+                    (icons (string-append share "/icons/hicolor/64x64/apps")))
+               (install-file "astromenace" bin)
+               (install-file "gamedata.vfs" data)
+               (let ((source (assoc-ref inputs "source")))
+                 (with-directory-excursion (string-append source "/share")
+                   (install-file "astromenace.desktop" apps)
+                   (mkdir-p icons)
+                   (copy-file "astromenace_64.png"
+                              (string-append icons "/astromenace.png")))))
+             #t)))))
+    (inputs
+     `(("freealut" ,freealut)
+       ("freetype" ,freetype)
+       ("glu" ,glu)
+       ("libogg" ,libogg)
+       ("libvorbis" ,libvorbis)
+       ("openal" ,openal)
+       ("sdl2" ,sdl2)))
+    (home-page "https://www.viewizard.com/")
+    (synopsis "3D space shooter with spaceship upgrade possibilities")
+    (description
+     "Space is a vast area, an unbounded territory where it seems there is
+a room for everybody, but reversal of fortune put things differently.  The
+hordes of hostile creatures crawled out from the dark corners of the universe,
+craving to conquer your homeland.  Their force is compelling, their legions
+are interminable.  However, humans didn't give up without a final showdown and
+put their best pilot to fight back.  These malicious invaders chose the wrong
+galaxy to conquer and you are to prove it!  Go ahead and make alien aggressors
+regret their insolence.")
+    ;; Game is released under GPL3+ terms.  Artwork is subject to CC
+    ;; BY-SA 4.0, and fonts to OFL1.1.
+    (license (list license:gpl3+ license:cc-by-sa4.0 license:silofl1.1))))
+
 (define-public bastet
   (package
     (name "bastet")
@@ -447,6 +580,71 @@ possible, while battling many vicious aliens.")
                    license:lgpl2.1+
                    license:bsd-2))))
 
+(define-public bzflag
+  (package
+    (name "bzflag")
+    (version "2.4.20")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://download.bzflag.org/bzflag/source/"
+                           version "/bzflag-" version ".tar.bz2"))
+       (sha256
+        (base32 "16brxqmfiyz4j4lb8ihzjcbwqmpsms6vm3ijbp34lnw0blbwdjb2"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'install-desktop-file-and-icons
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((share (string-append (assoc-ref outputs "out") "/share"))
+                    (data (string-append share "/bzflag"))
+                    (hicolor (string-append share "/icons/hicolor"))
+                    (applications (string-append share "/applications")))
+               ;; Move desktop file.
+               (install-file (string-append data "/bzflag.desktop")
+                             applications)
+               ;; Install icons.
+               (for-each (lambda (size)
+                           (let* ((dim (string-append size "x" size))
+                                  (dir (string-append hicolor "/" dim "/apps")))
+                             (mkdir-p dir)
+                             (copy-file
+                              (string-append data "/bzflag-" dim ".png")
+                              (string-append dir "/bzflag.png"))))
+                         '("48" "256")))
+             #t)))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("c-ares" ,c-ares)
+       ("curl" ,curl)
+       ("glew" ,glew)
+       ("glu" ,glu)
+       ("sdl2" ,sdl2)
+       ("zlib" ,zlib)))
+    (home-page "https://www.bzflag.org/")
+    (synopsis "3D first person tank battle game")
+    (description
+     "BZFlag is a 3D multi-player multiplatform tank battle game that
+allows users to play against each other in a network environment.
+There are five teams: red, green, blue, purple and rogue (rogue tanks
+are black).  Destroying a player on another team scores a win, while
+being destroyed or destroying a teammate scores a loss.  Rogues have
+no teammates (not even other rogues), so they cannot shoot teammates
+and they do not have a team score.
+
+There are two main styles of play: capture-the-flag and free-for-all.
+In capture-the-flag, each team (except rogues) has a team base and
+each team with at least one player has a team flag.  The object is to
+capture an enemy team's flag by bringing it to your team's base.  This
+destroys every player on the captured team, subtracts one from that
+team's score, and adds one to your team's score.  In free-for-all,
+there are no team flags or team bases.  The object is simply to get as
+high a score as possible.")
+    ;; The game is dual-licensed.
+    (license (list license:lgpl2.1 license:mpl2.0))))
+
 (define-public cataclysm-dda
   (package
     (name "cataclysm-dda")
@@ -515,7 +713,7 @@ want what you have.")
 (define-public corsix-th
   (package
     (name "corsix-th")
-    (version "0.63")
+    (version "0.64")
     (source
      (origin
        (method git-fetch)
@@ -524,7 +722,7 @@ want what you have.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1rkyk8g55xny276s0hr5k8mq6f4nzz56d3k2mp09dzfymrqb8hgi"))))
+        (base32 "0chh9cv2kdc39sr0x8hclcyzd8dz2y6grgagqzkvr7j570wa5cqh"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -1010,6 +1208,45 @@ bugs) of the original game, so that saved games are compatible.  This package
 does not include game data.")
     (license (list license:agpl3
                    license:zlib))))     ; ext/tinyfiledialogs
+
+(define-public augustus
+  (package
+    (inherit julius)
+    (name "augustus")
+    (version (package-version julius))
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/Keriew/augustus")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0ii0w0iwa9zv5bbqfcps5mxifd796m6fw4gvjf09pkm3yjgqc0ag"))
+       ;; Remove unused bundled libraries.
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           (with-directory-excursion "ext"
+             (for-each delete-file-recursively '("dirent" "png" "SDL2" "zlib")))
+           #t))))
+    (arguments
+     ;; No tests.  See https://github.com/Keriew/augustus/issues/82.
+     `(#:tests? #f))
+    (home-page "https://github.com/Keriew/augustus")
+    (synopsis "Re-implementation of Caesar III game engine with gameplay changes")
+    (description
+     "Fork of Julius, an engine for the a city-building real-time strategy
+game Caesar III.  Gameplay enhancements include:
+
+@itemize
+@item roadblocks;
+@item market special orders;
+@item global labour pool;
+@item partial warehouse storage;
+@item increased game limits;
+@item zoom controls.
+@end itemize\n")))
 
 (define-public meandmyshadow
   (package
@@ -1733,6 +1970,118 @@ can be explored and changed freely.")
                    license:gpl3+
                    license:silofl1.1))))
 
+(define-public seahorse-adventures
+  (package
+    (name "seahorse-adventures")
+    (version "1.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/dulsi/seahorse-adventures.git")
+             (commit (string-append "release-" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1rnvk06npaqcpjz5z6xcmssz61i32s422lydp49vrnf3j2g4yimd"))
+       (modules '((guix build utils)
+                  (ice-9 ftw)
+                  (srfi srfi-1)))
+       ;; Remove non-free (non-commercial) font.
+       (snippet
+        `(begin
+           (for-each delete-file (find-files "data/fonts" "."))
+           #t))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f                      ;no test
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'build)                ;pure Python
+         (replace 'install              ;no install script
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin"))
+                    (share (string-append out "/share"))
+                    (applications (string-append share "/applications"))
+                    (data (string-append share "/seahorse-adventures")))
+               ;; Install data.
+               (for-each (lambda (f)
+                           (chmod f #o555)
+                           (install-file f data))
+                         '("leveledit.py" "run_game.py" "tileedit.py"))
+               (for-each (lambda (dir)
+                           (let ((target (string-append data "/" dir)))
+                             (mkdir-p target)
+                             (copy-recursively dir target)))
+                         '("data" "lib"))
+               ;; Create executable.
+               (mkdir-p bin)
+               (let ((executable (string-append bin "/seahorse-adventures")))
+                 (call-with-output-file executable
+                   (lambda (p)
+                     (format p
+                             "#!~a~@
+                              export PYTHONPATH=~a:~a~@
+                              exec -a \"~a\" ~a \"$@\"~%"
+                             (which "bash") data (getenv "PYTHONPATH")
+                             (which "python3")
+                             (string-append data "/run_game.py"))))
+                 (chmod executable #o555))
+               ;; Add desktop file.
+               (mkdir-p applications)
+               (make-desktop-entry-file
+                (string-append applications "/seahorse-adventures.desktop")
+                #:name "Seahorse Adventures"
+                #:comment
+                '((#f "Help Barbie the seahorse float on bubbles to the moon"))
+                #:exec ,name
+                #:icon ,name
+                #:categories '("Game" "ActionGame")
+                #:keywords '("game" "retro" "platform"))
+               ;; Add icons.
+               (for-each
+                (lambda (size)
+                  (let ((dir (string-append share "/icons/hicolor/"
+                                            size "x" size "/apps")))
+                    (mkdir-p dir)
+                    (copy-file
+                     (string-append "icon" size ".png")
+                     (string-append dir "/searhorse-adventures.png"))))
+                '("32" "64" "128")))
+             #t))
+         (add-after 'install 'unbundle-fonts
+           ;; Unbundle Bitstream Vera font and replace deleted one.
+           (lambda* (#:key outputs inputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (data (string-append out "/share/seahorse-adventures"))
+                    (vera (string-append (assoc-ref inputs "font-bitstream-vera")
+                                         "/share/fonts/truetype/Vera.ttf")))
+               (let ((themes-dir (string-append data "/data/themes/")))
+                 (for-each
+                  (lambda (theme)
+                    (let ((target (string-append themes-dir theme "/Vera.ttf")))
+                      (delete-file target)
+                      (symlink vera target)))
+                  '("default" "gray")))
+               (symlink vera (string-append data "/data/fonts/04B_20__.TTF"))
+               (substitute* (string-append data "/lib/main.py")
+                 (("f_scale = 0.35") "f_scale = 0.47")))
+             #t)))))
+    (inputs
+     `(("font-bitstream-vera" ,font-bitstream-vera)
+       ("python-pygame" ,python-pygame)))
+    (home-page "http://www.imitationpickles.org/barbie/")
+    (synopsis "Help Barbie the seahorse float on bubbles to the moon")
+    (description
+     "Barbie Seahorse Adventures is a retro style platform arcade game.
+You are Barbie the seahorse who travels through the jungle, up to the
+volcano until you float on bubbles to the moon.  On the way to your
+final destination you will encounter various enemies, servants of the
+evil overlord who has stolen the galaxy crystal.  Avoid getting hit
+and defeat them with your bubbles!")
+    ;; GPL2+ is for code, CC0 is for art.
+    (license (list license:gpl2+ license:cc0))))
+
 (define-public superstarfighter
   (package
     (name "superstarfighter")
@@ -1809,6 +2158,251 @@ runnable=true
 available, as well as a single-player mode with AI-controlled ships.")
     (license (list license:expat         ; game
                    license:silofl1.1)))) ; fonts
+
+(define %ufoai-commit "a542a87a891f96b1ab2c44d35b2f6f16859a5019")
+(define %ufoai-revision "0")
+(define %ufoai-version (git-version "2.6.0_dev" %ufoai-revision %ufoai-commit))
+(define ufoai-source
+  (origin
+    (method git-fetch)
+    (uri (git-reference
+          (url "git://git.code.sf.net/p/ufoai/code") ;HTTPS fails mid-clone
+          (commit %ufoai-commit)))
+    (file-name (string-append "ufoai-" %ufoai-version "-checkout"))
+    (sha256
+     (base32
+      "024s7b9rcg7iw8i2p72gwnvabk23ljlq0nldws0y4b6hpwzyn1wz"))
+    (modules '((guix build utils)
+               (srfi srfi-1)
+               (ice-9 ftw)))
+    (snippet
+     '(begin
+        ;; Delete ~32MiB of bundled dependencies.
+        (with-directory-excursion "src/libs"
+          (for-each delete-file-recursively
+                    (lset-difference equal? (scandir ".")
+                                     '("." ".." "gtest" "mumble"))))
+
+        ;; Use relative path to Lua headers.
+        (substitute* "src/common/scripts_lua.h"
+          (("\\.\\./libs/lua/") ""))
+
+        ;; Adjust Makefile targets to not depend on 'ufo2map', since we build
+        ;; it as a separate package.  This way we don't need to make the same
+        ;; adjustments for 'ufoai-data' and 'ufoai' below.
+        (substitute* "build/maps.mk"
+          (("\\./ufo2map") "ufo2map")
+          (("maps: ufo2map") "maps:"))
+        (substitute* "build/modules/testall.mk"
+          (("testall: ufo2map") "testall:"))
+
+        ;; If no cURL headers are found, the build system will try to include
+        ;; the bundled version, even when not required.  Prevent that.
+        (substitute* "build/default.mk"
+          (("^include src/libs/curl/lib/Makefile\\.inc")
+           ""))
+
+        ;; While here, improve reproducibility by adding the '-X' flag to the
+        ;; zip command used to create the map files, in order to prevent time
+        ;; stamps from making it into the generated archives.
+        (substitute* "build/data.mk"
+          (("\\$\\(call ZIP\\)")
+           "$(call ZIP) -X"))
+        #t))))
+
+(define-public ufo2map
+  (package
+    (name "ufo2map")
+    (version %ufoai-version)
+    (home-page "https://ufoai.org/")
+    (source ufoai-source)
+    (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("CC=gcc" "CXX=g++"
+                           "--enable-release"
+                           "--enable-ufo2map"
+                           "--disable-uforadiant"
+                           "--disable-cgame-campaign"
+                           "--disable-cgame-multiplayer"
+                           "--disable-cgame-skirmish"
+                           "--disable-game"
+                           "--disable-memory"
+                           "--disable-testall"
+                           "--disable-ufoded"
+                           "--disable-ufo"
+                           "--disable-ufomodel"
+                           "--disable-ufoslicer")
+       #:tests? #f ;no tests
+       #:phases (modify-phases %standard-phases
+                  (replace 'configure
+                    (lambda* (#:key (configure-flags '()) #:allow-other-keys)
+                      ;; The home-made configure script does not understand
+                      ;; some of the default flags of gnu-build-system.
+                      (apply invoke "./configure" configure-flags)))
+                  (replace 'install
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let ((out (assoc-ref outputs "out")))
+                        (install-file "ufo2map" (string-append out "/bin"))
+                        (install-file "debian/ufo2map.6"
+                                      (string-append out "/share/man/man6"))
+                        #t))))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libjpeg" ,libjpeg-turbo)
+       ("libpng" ,libpng)
+       ("lua" ,lua-5.1)
+       ("sdl-union" ,(sdl-union (list sdl2 sdl2-mixer sdl2-ttf)))))
+    (synopsis "UFO: AI map generator")
+    (description
+     "This package provides @command{ufo2map}, a program used to generate
+maps for the UFO: Alien Invasion strategy game.")
+    (license license:gpl2+)))
+
+(define ufoai-data
+  (package
+    (name "ufoai-data")
+    (version %ufoai-version)
+    (home-page "https://ufoai.org/")
+    (source ufoai-source)
+    (build-system gnu-build-system)
+    (arguments
+     '(#:tests? #f
+       #:configure-flags '("CC=gcc" "CXX=g++")
+       #:phases (modify-phases %standard-phases
+                  (replace 'configure
+                    (lambda* (#:key outputs (configure-flags '()) #:allow-other-keys)
+                      (apply invoke "./configure" configure-flags)))
+                  (replace 'build
+                    (lambda* (#:key (parallel-build? #t) #:allow-other-keys)
+                      (invoke "make"
+                              "-j" (if parallel-build?
+                                       (number->string (parallel-job-count))
+                                       "1")
+                              "maps")))
+                  (add-after 'build 'pack
+                    (lambda _
+                      (invoke "make" "pk3")))
+                  (replace 'install
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let ((out (assoc-ref outputs "out")))
+                        (for-each (lambda (file)
+                                    (install-file file out))
+                                  (find-files "base" "\\.pk3$"))
+                        #t))))))
+    (native-inputs
+     `(("python" ,python-2)
+       ("ufo2map" ,ufo2map)
+       ("which" ,which)
+       ("zip" ,zip)))
+    (synopsis "UFO: AI data files")
+    (description
+     "This package contains maps and other assets for UFO: Alien Invasion.")
+    ;; Most assets are available under either GPL2 or GPL2+.  Some use other
+    ;; licenses, see LICENSES for details.
+    (license (list license:gpl2+ license:gpl2 license:cc-by3.0
+                   license:cc-by-sa3.0 license:public-domain))))
+
+(define-public ufoai
+  (package
+    (name "ufoai")
+    (version %ufoai-version)
+    (home-page "https://ufoai.org/")
+    (source ufoai-source)
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list (string-append "--prefix=" (assoc-ref %outputs "out"))
+             (string-append "--datadir=" (assoc-ref %outputs "out")
+                            "/share/games/ufo")
+             "CC=gcc" "CXX=g++"
+             "--enable-release"
+             "--enable-game"
+             "--disable-ufo2map"
+             "--disable-dependency-tracking"
+
+             ;; Disable hard links to prevent huge NARs.
+             "--disable-hardlinkedgame"
+             "--disable-hardlinkedcgame")
+       #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'symlink-data-files
+                    (lambda* (#:key inputs #:allow-other-keys)
+                      (let ((data (assoc-ref inputs "ufoai-data")))
+                        ;; Symlink the data files to where the build system
+                        ;; expects to find them.  Ultimately these files are
+                        ;; copied to $out/share/games/ufoai/base, losing the
+                        ;; symlinks; we could fix that after install, but it
+                        ;; does not make a big difference in practice due to
+                        ;; deduplication.
+                        (with-directory-excursion "base"
+                          (for-each (lambda (file)
+                                      (symlink file (basename file)))
+                                    (find-files data "\\.pk3$")))
+                        #t)))
+                  (add-before 'configure 'create-language-files
+                    (lambda _
+                      (invoke "make" "lang")))
+                  (replace 'configure
+                    (lambda* (#:key outputs (configure-flags '()) #:allow-other-keys)
+                      (apply invoke "./configure" configure-flags)))
+                  (replace 'check
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (if tests?
+                          (invoke "./testall")
+                          (format #t "test suite not run~%"))
+                      #t))
+                  (add-after 'install 'install-man-pages
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let* ((out (assoc-ref outputs "out"))
+                             (man6 (string-append out "/share/man/man6")))
+                        (install-file "debian/ufo.6" man6)
+                        (install-file "debian/ufoded.6" man6)
+                        #t))))
+
+       ;; TODO: Some map tests occasionally fail because of randomness issues,
+       ;; e.g. not enough generated aliens.  The test runner also fails early
+       ;; in the build container with 'failed to shutdown server'?
+       #:tests? #f))
+    (native-inputs
+     `(("gettext" ,gettext-minimal)
+       ("pkg-config" ,pkg-config)
+       ("python" ,python-2)
+       ("ufo2map" ,ufo2map)
+       ("ufoai-data" ,ufoai-data)))
+    (inputs
+     `(("curl" ,curl)
+       ("libjpeg" ,libjpeg-turbo)
+       ("libogg" ,libogg)
+       ("libpng" ,libpng)
+       ("libtheora" ,libtheora)
+       ("libvorbis" ,libvorbis)
+       ("libxml2" ,libxml2)
+       ("lua" ,lua-5.1)
+       ("mesa" ,mesa)
+       ("minixml" ,minixml)
+       ("sdl-union" ,(sdl-union (list sdl2 sdl2-mixer sdl2-ttf)))
+       ("zlib" ,zlib)))
+    (synopsis "Turn-based tactical strategy game")
+    (description
+     "UFO: Alien Invasion is a tactical strategy game set in the year 2084.
+You control a secret organisation charged with defending Earth from a brutal
+alien enemy.  Build up your bases, prepare your team, and dive head-first into
+the fast and flowing turn-based combat.
+
+Over the long term you will need to conduct research into the alien threat to
+figure out their mysterious goals and use their powerful weapons for your own
+ends.  You will produce unique items and use them in combat against your
+enemies.
+
+You can also use them against your friends with the multiplayer functionality.
+
+Warning: This is a pre-release version of UFO: AI!  Some things may not work
+properly.")
+
+    ;; The game code and most assets are GPL2+, but we use GPL2 only here
+    ;; because some assets do not use the "or later" clause.  Many individual
+    ;; assets use Creative Commons or Public Domain; see the LICENSE file.
+    (license (delete license:gpl2+ (package-license ufoai-data)))))
 
 (define-public xshogi
   (package
@@ -2010,6 +2604,59 @@ level's exit.  The game is presented in a 2D side view.")
 into stereotyped or otherwise humorous dialects.  The filters are provided as
 a C library, so they can easily be integrated into other programs.")
     (license license:gpl2+)))
+
+(define-public taisei
+  (package
+    (name "taisei")
+    (version "1.3.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/taisei-project/"
+                           "taisei/releases/download/v" version
+                           "/taisei-v" version ".tar.xz"))
+       (sha256
+        (base32 "11f9mlqmzy1lszwcc1nsbar9q1hs4ml6pbm52hqfd4q0f4x3ln46"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:build-type "release"      ;comment out for bug-reporting (and cheats)
+       #:configure-flags
+       (list "-Dr_default=gles30"
+             "-Dr_gles20=true"
+             "-Dr_gles30=true"
+             "-Dshader_transpiler=true")))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("python" ,python)
+       ("python-docutils" ,python-docutils)
+       ("python-pygments" ,python-pygments)))
+    (inputs
+     `(("freetype" ,freetype)
+       ("libpng" ,libpng)
+       ("libwebp" ,libwebp)
+       ("libzip" ,libzip)
+       ("mesa" ,mesa)
+       ("openssl" ,openssl)
+       ("opusfile" ,opusfile)
+       ("sdl2" ,sdl2)
+       ("sdl2-mixer" ,sdl2-mixer)
+       ("shaderc" ,shaderc)
+       ("spirv-cross" ,spirv-cross)
+       ("zlib" ,zlib)))
+    (home-page "https://taisei-project.org/")
+    (synopsis "Shoot'em up fangame and libre clone of Touhou Project")
+    (description
+     "The player controls a character (one of three: Good, Bad, and Dead),
+dodges the missiles (lots of it cover the screen, but the character's hitbox
+is very small), and shoot at the adversaries that keep appear on the screen.")
+    (license (list ;;game
+                   license:expat
+                   ;;resources/00-taisei.pkgdir/bgm/
+                   ;;atlas/portraits/
+                   license:cc-by4.0
+                   ;;miscellaneous
+                   license:cc0
+                   license:public-domain))))
 
 (define-public cmatrix
   (package
@@ -2970,7 +3617,7 @@ falling, themeable graphics and sounds, and replays.")
 (define-public wesnoth
   (package
     (name "wesnoth")
-    (version "1.14.12")
+    (version "1.14.13")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/wesnoth/wesnoth-"
@@ -2979,7 +3626,7 @@ falling, themeable graphics and sounds, and replays.")
                                   "wesnoth-" version ".tar.bz2"))
               (sha256
                (base32
-                "027bc1363hdgahw7dvd22fvvqd132byxnljfbq6lvlr5ci01q8mk"))))
+                "1pmqj4rah0256qi9w394ksb9apid723i5f5agkg6x1lahb1ac91q"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ;no check target
@@ -3916,24 +4563,40 @@ in-window at 640x480 resolution or fullscreen.")
 (define-public warzone2100
   (package
     (name "warzone2100")
-    (version "3.2.3")
+    (version "3.4.0")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "mirror://sourceforge/warzone2100/archives/"
-                           "unsupported/Warzone2100-"
-                           (version-major+minor version) "/" version
-                           "/warzone2100-" version ".tar.xz"))
+       (uri (string-append "mirror://sourceforge/warzone2100/releases/"
+                           version
+                           "/warzone2100_src.tar.xz"))
        (sha256
-        (base32 "10kmpr4cby95zwqsl1zwx95d9achli6khq7flv6xmrq30a39xazw"))))
-    (build-system gnu-build-system)
+        (base32 "0g4qwi9zw0s4pfgrz3fxhargsj3405rbrh9zy3b2j3arzss2h0gy"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           (with-directory-excursion "3rdparty"
+             (for-each
+              delete-file-recursively
+              '("discord-rpc"
+                "miniupnp"
+                "utfcpp")))
+             #t))))
+    (build-system cmake-build-system)
     (arguments
-     `(#:configure-flags '("--with-distributor=Guix")
+     `(#:configure-flags '("-DWZ_DISTRIBUTOR=Guix"
+                           "-DENABLE_DISCORD=off")
+       #:tests? #f ; TODO: Tests seem to be broken, configure.ac is missing.
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'fix-utfcpp-include
+           (lambda _
+             (substitute* "lib/framework/wzstring.cpp"
+               (("<utfcpp/source/utf8.h>") "<utf8.h>"))
+             #t))
          (add-after 'unpack 'link-tests-with-qt
            (lambda _
-             (substitute* "tests/Makefile.in"
+             (substitute* "tests/Makefile.am"
                (("(framework_linktest_LDADD|maptest_LDADD) = " prefix)
                 (string-append prefix "$(QT5_LIBS) ")))
              #t))
@@ -3944,32 +4607,38 @@ in-window at 640x480 resolution or fullscreen.")
                 (string-append "iV_DrawTextRotated(\"Press ESC to exit.\", "
                                "100, 100, 0.0f, font_regular);")))
              #t)))))
-    (native-inputs `(("gettext" ,gettext-minimal)
+    (native-inputs `(("asciidoc" ,asciidoc)
+                     ("asciidoctor" ,ruby-asciidoctor)
+                     ("gettext" ,gettext-minimal)
                      ("pkg-config" ,pkg-config)
                      ("unzip" ,unzip)
-                     ("zip" ,zip)))
-    (inputs `(("fontconfig" ,fontconfig)
+                     ;; 7z is used to create .zip archive, not `zip' as in version 3.2.*.
+                     ("p7zip" ,p7zip)))
+    (inputs `(("curl" ,curl)
+              ("fontconfig" ,fontconfig)
               ("freetype" ,freetype)
-              ("fribidi" ,fribidi)
               ("glew" ,glew)
               ("harfbuzz" ,harfbuzz)
               ("libtheora" ,libtheora)
               ("libvorbis" ,libvorbis)
               ("libxrandr" ,libxrandr)
+              ("libsodium" ,libsodium)
+              ("miniupnpc" ,miniupnpc)
               ("openal" ,openal)
               ("physfs" ,physfs)
               ("qtbase" ,qtbase)
               ("qtscript" ,qtscript)
               ("openssl" ,openssl)
-              ("sdl2" ,sdl2)))
+              ("sdl2" ,sdl2)
+              ("utfcpp" ,utfcpp)))
     (home-page "https://wz2100.net")
     (synopsis "3D Real-time strategy and real-time tactics game")
     (description
      "Warzone 2100 offers campaign, multi-player, and single-player skirmish
-modes. An extensive tech tree with over 400 different technologies, combined
+modes.  An extensive tech tree with over 400 different technologies, combined
 with the unit design system, allows for a wide variety of possible units and
 tactics.")
-                                        ; Everything is GPLv2+ unless otherwise specified in COPYING.NONGPL
+    ;; Everything is GPLv2+ unless otherwise specified in COPYING.NONGPL
     (license (list license:bsd-3
                    license:cc0
                    license:cc-by-sa3.0
@@ -3977,19 +4646,127 @@ tactics.")
                    license:gpl2+
                    license:lgpl2.1+))))
 
+(define-public widelands
+  (package
+    (name "widelands")
+    (version "20")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://launchpad.net/widelands/"
+                           "build" version "/build" version "/+download/"
+                           "widelands-build" version ".tar.bz2"))
+       (sha256
+        (base32 "1cmwfwk7j6yi2pwmm4rm57s23sdzasqf53nx6567sdagqyc4sn9q"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           (delete-file-recursively "src/third_party/minizip")
+           #t))
+       (patches
+        ;; Use system Minizip.  Patch is provided by Debian, and discussed
+        ;; upstream at <https://github.com/widelands/widelands/issues/399>.
+        (search-patches "widelands-system-wide_minizip.patch"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:configure-flags
+       (let* ((out (assoc-ref %outputs "out"))
+              (share (string-append out "/share")))
+         (list (string-append "-DCMAKE_INSTALL_PREFIX=" out "/bin")
+               (string-append "-DWL_INSTALL_BASEDIR=" share "/widelands")
+               (string-append "-DWL_INSTALL_DATADIR=" share "/widelands")
+               "-DOPTION_BUILD_WEBSITE_TOOLS=OFF"
+               ;; CMakeLists.txt does not handle properly RelWithDebInfo build
+               ;; type.  When used, no game data is installed!
+               "-DCMAKE_BUILD_TYPE=Release"))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'install-desktop-file-and-icons
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((share (string-append (assoc-ref outputs "out") "/share"))
+                    (applications (string-append share "/applications"))
+                    (icons (string-append share "/icons/hicolor")))
+               ;; Move desktop entry.
+               (mkdir-p applications)
+               (copy-file "debian/org.widelands.widelands.desktop"
+                          (string-append applications "/widelands.desktop"))
+               ;; Install icons.
+               (for-each (lambda (size)
+                           (let* ((dim (string-append size "x" size))
+                                  (apps (string-append icons "/" dim "/apps")))
+                             (mkdir-p apps)
+                             (copy-file (string-append "data/images/logos"
+                                                       "/wl-ico-" size ".png")
+                                        (string-append apps "/widelands.png"))))
+                         '("16" "32" "48" "64" "128"))
+               #t)))
+         (add-after 'unpack 'unbundle-fonts
+           ;; Unbundle fonts already packaged in Guix.  XXX: missing fonts are
+           ;; amiri, Culmus, mmrCensus, Nakula, and Sinhala.
+           (lambda* (#:key inputs #:allow-other-keys)
+             (with-directory-excursion "data/i18n/fonts"
+               (for-each (lambda (font)
+                           (delete-file-recursively font)
+                           (symlink (string-append (assoc-ref inputs font)
+                                                   "/share/fonts/truetype")
+                                    font))
+                         '("DejaVu" "MicroHei")))
+             #t)))))
+    (native-inputs
+     `(("gettext" ,gettext-minimal)
+       ("python" ,python-wrapper)))
+    (inputs
+     `(("boost" ,boost)
+       ("glew" ,glew)
+       ("icu4c" ,icu4c)
+       ("libpng" ,libpng)
+       ("minizip" ,minizip)
+       ("sdl" ,(sdl-union (list sdl2 sdl2-image sdl2-mixer sdl2-ttf)))
+       ("zlib" ,zlib)
+       ;; Fonts for the ‘unbundle-fonts’ phase.  Case matters in name!
+       ("DejaVu" ,font-dejavu)
+       ("MicroHei" ,font-wqy-microhei)))
+    (home-page "https://www.widelands.org/")
+    (synopsis "Fantasy real-time strategy game")
+    (description
+     "In Widelands, you are the regent of a small clan.  You start out with
+nothing but your headquarters, where all your resources are stored.
+
+In the course of the game, you will build an ever growing settlement.  Every
+member of your clan will do his or her part to produce more resources---wood,
+food, iron, gold and more---to further this growth.  The economic network is
+complex and different in the four tribes (Barbarians, Empire, Atlanteans, and
+Frisians).
+
+As you are not alone in the world, you will meet other clans sooner or later.
+Some of them may be friendly and you may eventually trade with them.  However,
+if you want to rule the world, you will have to train soldiers and fight.
+
+Widelands offers single-player mode with different campaigns; the campaigns
+all tell stories of tribes and their struggle in the Widelands universe!
+However, settling really starts when you unite with friends over the Internet
+or LAN to build up new empires together---or to crush each other in the dusts
+of war.  Widelands also offers an Artificial Intelligence to challenge you.")
+    ;; Game is released as GPL2+.  Some parts, e.g., art, are released under
+    ;; different licenses.
+    (license (list license:gpl2+
+                   license:expat           ;src/third_party/eris
+                   license:silofl1.1       ;Widelands.ttf
+                   license:cc-by-sa3.0)))) ;some music files
+
 (define-public starfighter
   (package
     (name "starfighter")
-    (version "2.2")
+    (version "2.2.1")
     (source (origin
               (method url-fetch)
               (uri (string-append
                     "https://github.com/pr-starfighter/starfighter/releases"
                     "/download/v" version "/starfighter-"
-                    (version-major+minor version) "-src.tar.gz"))
+                    version "-src.tar.gz"))
               (sha256
                (base32
-                "1ldd9cbvl694ps4sapr8213m3zjrci7gii5x3kjjfalkikmndpd2"))))
+                "0bmrid26z7il42lczfs3j3cv671az9fxi2wkf0s22smmzkhcnnrz"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -5225,7 +6002,7 @@ fish.  The whole game is accompanied by quiet, comforting music.")
 (define-public crawl
   (package
     (name "crawl")
-    (version "0.24.0")
+    (version "0.25.0")
     (source
      (origin
        (method url-fetch)
@@ -5238,8 +6015,18 @@ fish.  The whole game is accompanied by quiet, comforting music.")
              (string-append "http://crawl.develz.org/release/stone_soup-"
                             version "-nodeps.tar.xz")))
        (sha256
-        (base32 "0kdq6s12myxfdg75ma9x3ys2nd0xwb3xm2ynlmhg4628va0pnixr"))
-       (patches (search-patches "crawl-upgrade-saves.patch"))))
+        (base32 "0rn1wjxdqw33caiwisfypm1j8cid3c9pz01ahicl17144zs29z3d"))
+       (patches (search-patches "crawl-upgrade-saves.patch"))
+       ;; The 0.25.0 -nodeps.tar.xz was built from an OSX machine; normally
+       ;; apparently it's built from a Debian machine before the Debian
+       ;; packages are made.  These ._* files are binary and have the string
+       ;; "Mac OS X" in them... removing these seems to result in compilation
+       ;; again.
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           (for-each delete-file (find-files "." "^\\._"))
+           #t))))
     (build-system gnu-build-system)
     (inputs
      `(("lua51" ,lua-5.1)
@@ -6841,6 +7628,104 @@ libraries.  AIFF sound effects and music in MOD and OGG formats are supported
 when packaged in Blorb container files or optionally from individual files.")
       (home-page "http://frotz.sourceforge.net")
       (license license:gpl2+))))
+
+(define-public frozen-bubble
+  ;; Last official release is very outdated (2010).  Use latest commit (2017).
+  (let ((commit "d6a029110ad6ab9e4960052e175addc98807fb7e")
+        (revision "1"))
+    (package
+      (name "frozen-bubble")
+      (version (git-version "2.2.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/kthakore/frozen-bubble.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1rfrcym5lf4qac2qdklikb1ywijyxypq298azzxahy461dadl6cx"))))
+      (build-system perl-build-system)
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           ;; Build process needs to create files in the "server"
+           ;; directory.
+           (add-after 'unpack 'fix-permissions
+             (lambda _
+               (for-each make-file-writable
+                         (find-files "server" "." #:directories? #t))))
+           ;; By default, build stops at warnings.
+           (add-after 'unpack 'prevent-build-error
+             (lambda _
+               (substitute* "inc/My/Builder.pm"
+                 (("-Werror") ""))
+               #t))
+           (add-after 'install 'install-desktop-file-and-icons
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let* ((share (string-append (assoc-ref outputs "out") "/share"))
+                      (hicolor (string-append share "/icons/hicolor")))
+                 ;; Create desktop entry.
+                 (make-desktop-entry-file
+                  (string-append share "/applications/" ,name ".desktop")
+                  #:name "Frozen Bubble"
+                  #:comment "Frozen Bubble arcade game"
+                  #:exec ,name
+                  #:icon ,name
+                  #:categories '("Game" "ArcadeGame"))
+                 ;; Add icons.
+                 (with-directory-excursion "share/icons"
+                   (for-each
+                    (lambda (size)
+                      (let* ((dim (string-append size "x" size))
+                             (dir (string-append hicolor "/" dim "/apps")))
+                        (mkdir-p dir)
+                        (copy-file
+                         (string-append "frozen-bubble-icon-" dim ".png")
+                         (string-append dir "/frozen-bubble.png"))))
+                    '("16" "32" "48" "64"))))
+               #t))
+           (add-after 'install 'wrap-perl-libs
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let ((out (assoc-ref outputs "out"))
+                     (perl5lib (getenv "PERL5LIB")))
+                 (for-each (lambda (prog)
+                             (wrap-program (string-append out "/" prog)
+                               `("PERL5LIB" ":" prefix
+                                 (,(string-append perl5lib ":" out
+                                                  "/lib/perl5/site_perl")))))
+                           (find-files "bin" ".")))
+               #t)))))
+      (native-inputs
+       `(("perl-alien-sdl" ,perl-alien-sdl)
+         ("perl-capture-tiny" ,perl-capture-tiny)
+         ("perl-locale-maketext-lexicon" ,perl-locale-maketext-lexicon)
+         ("perl-module-build" ,perl-module-build)
+         ("pkg-config" ,pkg-config)))
+      (inputs
+       `(("glib" ,glib)
+         ("perl-compress-bzip2" ,perl-compress-bzip2)
+         ("perl-file-sharedir" ,perl-file-sharedir)
+         ("perl-file-slurp" ,perl-file-slurp)
+         ("perl-file-which" ,perl-file-which)
+         ("perl-ipc-system-simple" ,perl-ipc-system-simple)
+         ("perl-sdl" ,perl-sdl)
+         ("sdl" ,(sdl-union (list sdl sdl-image sdl-mixer sdl-pango sdl-ttf)))))
+      (home-page "http://frozen-bubble.org/")
+      (synopsis "Puzzle with bubbles")
+      (description
+       "Frozen-Bubble is a clone of the popular Puzzle Bobble game, in which
+you attempt to shoot bubbles into groups of the same color to cause them to
+pop.
+
+Players compete as penguins and must use the arrow keys to aim a colored
+bubble at groups of bubbles.  The objective is to clear all the bubbles off
+the screen before a bubble passes below a line at the bottom.
+
+It features 100 single-player levels, a two-player mode, music and striking
+graphics.  A level editor is also included to allow players to create and play
+their own levels.")
+      (license license:gpl2))))
 
 (define-public libmanette
   (package
@@ -10273,43 +11158,54 @@ This package is part of the KDE games module.")
 (define-public xmoto
   (package
     (name "xmoto")
-    (version "0.5.11")
+    (version "0.6.1")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append
-             "http://download.tuxfamily.org/xmoto/xmoto/" version "/"
-             "xmoto-" version "-src.tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/xmoto/xmoto.git")
+             (commit version)))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "1ci6r8zd0l7z28cy92ddf9dmqbdqwinz2y1cny34c61b57wsd155"))
-       (patches
-        (search-patches
-         "xmoto-remove-glext.patch"     ;fixes licensing issue
-         "xmoto-reproducible.patch"
-         "xmoto-utf8.patch"))
-       ;; Unbundle ODE.
-       (modules '((guix build utils)))
+        (base32 "00f5ha79lfa2iiaz66wl0hl5dapa1l15qdr7m7knzi0ll7j6z66n"))
+       (modules '((guix build utils)
+                  (ice-9 ftw)
+                  (srfi srfi-1)))
+       ;; XXX: Remove some bundled libraries.  Guix provides Chipmunk, but
+       ;; it appears to be incompatible with the (older) one bundled.
        (snippet
         `(begin
-           (delete-file-recursively "src/ode")
+           (let ((keep '("chipmunk" "glad" "md5sum")))
+             (with-directory-excursion "vendor"
+               (for-each delete-file-recursively
+                         (lset-difference string=?
+                                          (scandir ".")
+                                          (cons* "." ".." keep))))
+             (substitute* "src/CMakeLists.txt"
+               (("add_subdirectory\\(.*?/vendor/(.+?)\".*" line library)
+                (if (member library keep) line ""))))
            #t))))
-    (build-system gnu-build-system)
+    (build-system cmake-build-system)
     (arguments
-     ;; XXX: First flag prevents a build error with GCC7+.  The second
-     ;; flag works around missing text in game.  Both are fixed
-     ;; upstream.  Remove once xmoto 0.5.12+ is released.
-     `(#:make-flags '("CXXFLAGS=-fpermissive -D_GLIBCXX_USE_CXX11_ABI=0")
+     `(#:tests? #f                      ;no test
        #:phases
        (modify-phases %standard-phases
-         (add-after 'install 'install-desktop-file
+         (add-after 'unpack 'fix-hard-coded-directory
            (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (apps (string-append out "/share/applications"))
-                    (pixmaps (string-append out "/share/pixmaps")))
-               (install-file "extra/xmoto.desktop" apps)
-               (install-file "extra/xmoto.xpm" pixmaps)
-               #t)))
-         (add-after 'install-desktop-file 'install-fonts
+             (substitute* "src/common/VFileIO.cpp"
+               (("/usr/share")
+                (string-append (assoc-ref outputs "out") "/share")))
+             #t))
+         (add-before 'build 'set-SDL
+           ;; Set correct environment for SDL.
+           (lambda* (#:key inputs #:allow-other-keys)
+             (setenv "CPATH"
+                     (string-append
+                      (assoc-ref inputs "sdl") "/include/SDL:"
+                      (or (getenv "CPATH") "")))
+             #t))
+         (add-after 'install 'unbundle-fonts
+           ;; Unbundle DejaVuSans TTF files.
            (lambda* (#:key outputs inputs #:allow-other-keys)
              (let ((font-dir (string-append (assoc-ref inputs "font-dejavu")
                                             "/share/fonts/truetype/"))
@@ -10321,38 +11217,34 @@ This package is part of the KDE games module.")
                              (delete-file target)
                              (symlink font target)))
                          '("DejaVuSans.ttf" "DejaVuSansMono.ttf"))
-               #t)))
-         (add-after 'install-fonts 'install-man-page
-           (lambda* (#:key outputs #:allow-other-keys)
-             (install-file "xmoto.6"
-                           (string-append (assoc-ref outputs "out")
-                                          "/share/man/man6"))
-             #t)))))
+               #t))))))
     (native-inputs
-     `(("gettext" ,gettext-minimal)))
+     `(("gettext" ,gettext-minimal)
+       ("pkg-config" ,pkg-config)))
     (inputs
-     `(("curl" ,curl)
+     `(("bzip2" ,bzip2)
+       ("curl" ,curl)
        ("font-dejavu" ,font-dejavu)
        ("glu" ,glu)
        ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libxdg-basedir" ,libxdg-basedir)
        ("libxml2" ,libxml2)
-       ("lua" ,lua-5.2)
+       ("lua" ,lua-5.1)
        ("ode" ,ode)
        ("sdl" ,(sdl-union (list sdl sdl-mixer sdl-net sdl-ttf)))
        ("sqlite" ,sqlite)
        ("zlib" ,zlib)))
     (home-page "https://xmoto.tuxfamily.org/")
     (synopsis "2D motocross platform game")
-    (description "X-Moto is a challenging 2D motocross platform game, where
-physics play an all important role in the gameplay.  You need to control your
-bike to its limit, if you want to have a chance finishing the more difficult
-challenges.")
+    (description
+     "X-Moto is a challenging 2D motocross platform game, where
+physics play an all important role in the gameplay.  You need to
+control your bike to its limit, if you want to have a chance finishing
+the more difficult challenges.")
     (license (list license:gpl2+        ;whole project
-                   license:bsd-4        ;src/bzip
-                   license:bsd-3        ;src/md5sum
-                   license:lgpl2.1+     ;src/iqsort.h
+                   license:bsd-3        ;vendor/md5sum
+                   license:lgpl2.1+
                    license:expat))))
 
 (define-public eboard
@@ -10402,20 +11294,21 @@ and chess engines.")
 (define-public chessx
   (package
     (name "chessx")
-    (version "1.5.0")
+    (version "1.5.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/chessx/chessx/"
                            version "/chessx-" version ".tgz"))
        (sha256
-        (base32 "09rqyra28w3z9ldw8sx07k5ap3sjlli848p737maj7c240rasc6i"))))
+        (base32 "1a3541vl5hp6jllgx998w9kjh9kp3wrl80yfwkxmq1bc5bzsrnz2"))))
     (build-system qt-build-system)
     (native-inputs
      `(("qttools" ,qttools)))
     (inputs
      `(("qtbase" ,qtbase)
        ("qtmultimedia" ,qtmultimedia)
+       ("qtspeech" ,qtspeech)
        ("qtsvg" ,qtsvg)
        ("zlib" ,zlib)))
     (arguments
@@ -10426,7 +11319,12 @@ and chess engines.")
            (lambda* (#:key inputs #:allow-other-keys)
              (substitute* "chessx.pro"
                (("\\$\\$\\[QT_INSTALL_BINS\\]/lrelease")
-                (string-append (assoc-ref inputs "qttools") "/bin/lrelease")))
+                (string-append (assoc-ref inputs "qttools") "/bin/lrelease"))
+               ;; Fix missing translations.
+               (("TRANSLATIONS = i18n/chessx_de.ts")
+                "TRANSLATIONS = i18n/chessx_de.ts i18n/chessx_da.ts \\
+i18n/chessx_fr.ts i18n/chessx_it.ts i18n/chessx_cz.ts i18n/chessx_ru.ts \\
+i18n/chessx_es.ts"))
              #t))
          (add-after 'fix-paths 'make-qt-deterministic
            (lambda _
@@ -10519,6 +11417,33 @@ range with the objective to hit as many dummy targets as possible within
 3 minutes.  You control a gun that may either fire small or large grenades at
 soldiers, jeeps and tanks.  The gameplay is simple but it is not that easy to
 get high scores.")
+    (license license:gpl2+)))
+
+(define-public burgerspace
+  (package
+    (name "burgerspace")
+    (version "1.9.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://perso.b2b2c.ca/~sarrazip/dev/"
+                           "burgerspace-" version ".tar.gz"))
+       (sha256
+        (base32 "1005a04rbn4lzjrpfg0m394k2mfaji63fm2qhdqdsxila8a6kjbv"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("flatzebra" ,flatzebra)))
+    (home-page "http://perso.b2b2c.ca/~sarrazip/dev/burgerspace.html")
+    (synopsis "Avoid evil foodstuffs and make burgers")
+    (description
+     "This is a clone of the classic game BurgerTime.  In it, you play
+the part of a chef who must create burgers by stepping repeatedly on
+the ingredients until they fall into place.  And to make things more
+complicated, you also must avoid evil animate food items while
+performing this task, with nothing but your trusty pepper shaker to
+protect you.")
     (license license:gpl2+)))
 
 (define-public 7kaa

@@ -503,7 +503,7 @@ settings (aliasing, linear interpolation and cubic interpolation).")
 (define-public hydrogen
   (package
     (name "hydrogen")
-    (version "1.0.0-beta2")
+    (version "1.0.0-rc1")
     (source
      (origin
        (method git-fetch)
@@ -512,7 +512,7 @@ settings (aliasing, linear interpolation and cubic interpolation).")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1s3jrdyjpm92flw9mkkxchnj0wz8nn1y1kifii8ws252iiqjya4a"))))
+        (base32 "1ibbdzyk30nj83jrq7py78hwpjgy0lq7ji6gi2pdp1pqzz1mqp0v"))))
     (build-system cmake-build-system)
     (arguments
      `(#:test-target "tests"
@@ -1437,7 +1437,7 @@ users to select LV2 plugins and run them with jalv.")
 (define-public synthv1
   (package
     (name "synthv1")
-    (version "0.9.14")
+    (version "0.9.15")
     (source (origin
               (method url-fetch)
               (uri
@@ -1445,7 +1445,7 @@ users to select LV2 plugins and run them with jalv.")
                               "/synthv1-" version ".tar.gz"))
               (sha256
                (base32
-                "08n83krkak20924flb9azhm9hn40lyfvn29m63zs3lw3wajf0b40"))))
+                "047y2l7ipzv00ly54f074v6p043xjml7vz0svc7z81bhx74vs0ix"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -1469,7 +1469,7 @@ oscillators and stereo effects.")
 (define-public drumkv1
   (package
     (name "drumkv1")
-    (version "0.9.14")
+    (version "0.9.15")
     (source (origin
               (method url-fetch)
               (uri
@@ -1477,7 +1477,7 @@ oscillators and stereo effects.")
                               "/drumkv1-" version ".tar.gz"))
               (sha256
                (base32
-                "0fr7pkp55zvjxf7p22drs93fsjgvqhbd55vxi0srhp2s2wzz5qak"))))
+                "108jk8p1sbm99plipf98ssij6dxaip1lmznibg8y2c4x0v2la6ab"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -1502,7 +1502,7 @@ effects.")
 (define-public samplv1
   (package
     (name "samplv1")
-    (version "0.9.14")
+    (version "0.9.15")
     (source (origin
               (method url-fetch)
               (uri
@@ -1510,7 +1510,7 @@ effects.")
                               "/samplv1-" version ".tar.gz"))
               (sha256
                (base32
-                "0p3f9wsn1nz93szcl60yxhxdr554zm2z2jlbniwwify765lvasxc"))))
+                "0r3bz64jqv5j4rqaxkbiqkxdf8n3hlcwjx1p19qfzik1lbwv9nw5"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -1535,7 +1535,7 @@ effects.")
 (define-public padthv1
   (package
     (name "padthv1")
-    (version "0.9.14")
+    (version "0.9.15")
     (source (origin
               (method url-fetch)
               (uri
@@ -1543,7 +1543,7 @@ effects.")
                               "/padthv1-" version ".tar.gz"))
               (sha256
                (base32
-                "079iwwlkl1gscyv70v9ambad8shxbs0ixdfp0vsl6dbh87b09qzh"))))
+                "18ma429kamifcvjmsv0hysxk7qn2r9br4fia929bvfccapck98y1"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -2182,7 +2182,7 @@ backends, including ALSA, OSS, Network and FluidSynth.")
        ("docbook-xsl" ,docbook-xsl)
        ("qttools" ,qttools)
        ("pkg-config" ,pkg-config)))
-    (home-page "http://vmpk.sourceforge.net")
+    (home-page "https://vmpk.sourceforge.io/")
     (synopsis "Virtual MIDI piano keyboard")
     (description
      "Virtual MIDI Piano Keyboard is a MIDI events generator and receiver.  It
@@ -2507,14 +2507,14 @@ from the command line.")
 (define-public qtractor
   (package
     (name "qtractor")
-    (version "0.9.14")
+    (version "0.9.15")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://downloads.sourceforge.net/qtractor/"
                                   "qtractor-" version ".tar.gz"))
               (sha256
                (base32
-                "1gh268gdpj7nw19xfh7k2l3aban4yrs1lmx33qswrnngs2izj1fk"))))
+                "0k7a6llwrzs07flr9mvzvay9ygc2x64syg8npyabsw5a4d85fwsx"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; no "check" target

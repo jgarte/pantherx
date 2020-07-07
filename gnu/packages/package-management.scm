@@ -118,8 +118,8 @@
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
   (let ((version "1.1.0")
-        (commit "d8c85b1747364d3dde2df0ffcf6cce73c3c648e9")
-        (revision 10))
+        (commit "d3eee3c0643a20ba06941ba45d9d27146a8b634d")
+        (revision 16))
     (package
       (name "guix")
 
@@ -135,7 +135,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "05cnxw4rzg32nlq78wa5wc00ji1vfc31fpawbdql39yv9r8yn67z"))
+                  "1waw4pggijhxwwdi9v9nq8p2har5cvnbvlxvq8abn4g1qw6xdrz5"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -321,7 +321,7 @@ $(prefix)/etc/init.d\n")))
 
                        ;; Guile libraries are needed here for
                        ;; cross-compilation.
-                       ("guile" ,guile-3.0)
+                       ("guile" ,guile-3.0-latest) ;for faster builds
                        ("gnutls" ,gnutls)
                        ("guile-gcrypt" ,guile-gcrypt)
                        ("guile-json" ,guile-json-4)
@@ -348,7 +348,7 @@ $(prefix)/etc/init.d\n")))
          ("sqlite" ,sqlite)
          ("libgcrypt" ,libgcrypt)
 
-         ("guile" ,guile-3.0)
+         ("guile" ,guile-3.0-latest)
 
          ;; Some of the tests use "unshare" when it is available.
          ("util-linux" ,util-linux)
@@ -488,9 +488,10 @@ the Nix package manager.")
    (package
      (inherit guix)
      (name "guix-minimal")
-     (inputs
-      `(("guile" ,guile-2.2)
-        ,@(alist-delete "guile" (package-inputs guix))))
+     (native-inputs
+      (fold alist-delete
+            (package-native-inputs guix)
+            '("guile-ssh")))
      (propagated-inputs
       (fold alist-delete
             (package-propagated-inputs guix)
@@ -544,15 +545,30 @@ out) and returning a package that uses that as its 'source'."
 (define-public nix
   (package
     (name "nix")
-    (version "2.3.5")
+    (version "2.3.6")
     (source (origin
              (method url-fetch)
              (uri (string-append "http://nixos.org/releases/nix/nix-"
                                  version "/nix-" version ".tar.xz"))
              (sha256
               (base32
-               "1hbqsrp1ii2sfq8x2mahjrl2182qck76n8blrl1jfz3xq99m6i15"))))
+               "128xf2as0y7hr28x575pbf9lkjpxr9hsxknbavv4p7ywr4lhbs85"))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list "--sysconfdir=/etc")
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'install
+           ;; Don't try & fail to create subdirectories in /etc, but keep them
+           ;; in the output as examples.
+           (lambda* (#:key (make-flags '()) outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (etc (string-append out "/etc")))
+               (apply invoke "make" "install"
+                      (string-append "sysconfdir=" etc)
+                      (string-append "profiledir=" etc "/profile.d")
+                      make-flags)))))))
     (native-inputs `(("pkg-config" ,pkg-config)))
     (inputs `(("boost" ,boost)
               ("brotli" ,brotli)
@@ -884,7 +900,7 @@ written entirely in Python.")))
        ("texinfo" ,texinfo)
        ("graphviz" ,graphviz)))
     (inputs
-     `(("guile" ,guile-3.0)))
+     `(("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))))
     (propagated-inputs
      `(("guix" ,guix)
        ("guile-commonmark" ,guile-commonmark)
@@ -982,7 +998,7 @@ environments.")
        ("python-ipykernel" ,python-ipykernel)))
     (inputs
      `(("guix" ,guix)
-       ("guile" ,guile-3.0)))
+       ("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))))
     (propagated-inputs
      `(("guile-json" ,guile-json-4)
        ("guile-simple-zmq" ,guile-simple-zmq)
@@ -1116,7 +1132,7 @@ the boot loader configuration.")
 (define-public flatpak
   (package
    (name "flatpak")
-   (version "1.6.3")
+   (version "1.8.0")
    (source
     (origin
      (method url-fetch)
@@ -1124,7 +1140,7 @@ the boot loader configuration.")
                          version "/flatpak-" version ".tar.xz"))
      (sha256
       (base32
-       "17s8nqdxd4xdy7ag9bw06adxccha78jmlsa3zpqnl3qh92pg0hji"))))
+       "0d4x79z96r60rc2gnf415da7z9x1my5hdyjdlklfiwll57jbqr23"))))
 
    ;; Wrap 'flatpak' so that GIO_EXTRA_MODULES is set, thereby allowing GIO to
    ;; find the TLS backend in glib-networking.
@@ -1139,7 +1155,9 @@ the boot loader configuration.")
        (string-append "--with-system-bubblewrap="
                       (assoc-ref %build-inputs "bubblewrap")
                       "/bin/bwrap")
-       "--with-system-dbus-proxy")
+       (string-append "--with-system-dbus-proxy="
+                      (assoc-ref %build-inputs "xdg-dbus-proxy")
+                      "/bin/xdg-dbus-proxy"))
       #:phases
       (modify-phases %standard-phases
         (add-after 'unpack 'fix-tests
@@ -1174,6 +1192,7 @@ cp -r /tmp/locale/*/en_US.*")))
       ("libcap" ,libcap)
       ("pkg-config" ,pkg-config)
       ("python" ,python)
+      ("python-pyparsing" ,python-pyparsing)
       ("socat" ,socat)
       ("which" ,which)))
    (propagated-inputs `(("glib-networking" ,glib-networking)

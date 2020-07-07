@@ -61,7 +61,7 @@
 ;;; Copyright © 2019 Jack Hill <jackhill@jackhill.us>
 ;;; Copyright © 2019, 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2019, 2020 Alex Griffin <a@ajgrf.com>
-;;; Copyright © 2019 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2019, 2020 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2019 Jacob MacDonald <jaccarmac@gmail.com>
 ;;; Copyright © 2019, 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2019 Wiktor Żelazny <wzelazny@vurv.cz>
@@ -81,6 +81,7 @@
 ;;; Copyright © 2020 Josh Holland <josh@inv.alid.pw>
 ;;; Copyright © 2020 Yuval Kogman <nothingmuch@woobling.org>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
+;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -106,6 +107,7 @@
   #:use-module (gnu packages backup)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages check)
+  #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages crypto)
   #:use-module (gnu packages databases)
@@ -559,10 +561,10 @@ and function call return values in a human-readable way.")
     (build-system python-build-system)
     (native-inputs
      `(("python-mock" ,python-mock)))
-    (home-page "https://github.com/binstar/clyent")
+    (home-page "https://github.com/Anaconda-Platform/clyent")
     (synopsis "Command line client library")
-    (description "Clyent is a Python command line utiliy library.  It is used
-by @code{binstar}, @code{binstar-build} and @code{chalmers}.")
+    (description "Clyent is a Python command line utility library.  It is used
+by @code{binstar}, @code{binstar-build}, and @code{chalmers}.")
     (license license:bsd-3)))
 
 (define-public python2-clyent
@@ -2428,6 +2430,18 @@ with sensible defaults out of the box.")
 
 (define-public python2-click
   (package-with-python2 python-click))
+
+(define-public python-click-5
+  (package (inherit python-click)
+    (name "python-click")
+    (version "5.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "click" version))
+       (sha256
+        (base32 "0njsm0wn31l21bi118g5825ma5sa3rwn7v2x4wjd7yiiahkri337"))))
+    (arguments `())))
 
 (define-public python-wheel
   (package
@@ -5019,15 +5033,23 @@ a simple netcat replacement with chaining support.")
 (define-public python-pycodestyle
   (package
     (name "python-pycodestyle")
-    (version "2.5.0")
+    (version "2.6.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "pycodestyle" version))
        (sha256
         (base32
-         "0v4prb05n21bm8650v0a01k1nyqjdmkrsm3zycfxh2j5k9n962p4"))))
+         "0bhr6ia0hmgx3nhgibc9pmkzhlh1zcqk707i5fbxgs702ll7v2n5"))))
     (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (invoke "pytest" "-vv"))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
     (home-page "https://pycodestyle.readthedocs.io/")
     (synopsis "Python style guide checker")
     (description "@code{pycodestyle} (formerly pep8) is a tool to check
@@ -5118,17 +5140,18 @@ multivalue dictionary that retains the order of insertions and deletions.")
 (define-public python-autopep8
   (package
     (name "python-autopep8")
-    (version "1.3.5")
+    (version "1.5.3")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "autopep8" version))
        (sha256
         (base32
-         "192bvhzi4d0claqxgzymvv7k3qnj627742bc8sgxpzjj42pd9112"))))
+         "1w6vh627vrmgfbvrdcxrc3k4gxcldrb2lpgxv9irkdds851qrzb0"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("python-pycodestyle" ,python-pycodestyle)))
+     `(("python-pycodestyle" ,python-pycodestyle)
+       ("python-toml" ,python-toml)))
     (home-page "https://github.com/hhatto/autopep8")
     (synopsis "Format Python code according to the PEP 8 style guide")
     (description
@@ -5312,6 +5335,132 @@ a general image processing tool.")
 (define-public python2-pillow
   (package-with-python2 python-pillow))
 
+(define-public python-pillow-2.9
+  (package
+    (inherit python-pillow)
+    (version "2.9.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "Pillow" version))
+        (sha256
+         (base32
+           "0ada7lf3lmbdsqm3b7ja920p1pllyfhmqndr85ikpj77fmz9s5qg"))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments python-pillow)
+       ((#:tests? _ #f) #f)))
+    (properties '((hidden? #t)))))
+
+(define-public python-roifile
+  (package
+    (name "python-roifile")
+    (version "2020.5.28")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "roifile" version))
+        (sha256
+          (base32
+            "1vwbwfsw745gyqymff6dllc5zqjsgqmxaw245sw4an6yw9rcbzc0"))))
+    (build-system python-build-system)
+    (arguments `(#:tests? #f)) ; there are none
+    (propagated-inputs
+      `(("python-numpy" ,python-numpy)))
+    (home-page "https://www.lfd.uci.edu/~gohlke/")
+    (synopsis "Read and write ImageJ ROI format")
+    (description "Roifile is a Python library to read, write, create, and plot
+ImageJ ROIs, an undocumented and ImageJ application specific format to store
+regions of interest, geometric shapes, paths, text, etc for image overlays.")
+    (license license:bsd-3)))
+
+(define-public python-tifffile
+  (package
+    (name "python-tifffile")
+    (version "2020.6.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "tifffile" version))
+       (sha256
+        (base32
+         "0xv3ynkbrsibqvx7250075idb7wm3canjd6lx2nzf3cbp6l07577"))))
+    (build-system python-build-system)
+    ;; Tests require lfdfiles, which depends on tifffile
+    (arguments `(#:tests? #f))
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)
+       ;;("python-lfdfiles" ,python-lfdfiles)
+       ("python-roifile" ,python-roifile)))
+    (home-page "https://www.lfd.uci.edu/~gohlke/")
+    (synopsis "Read and write TIFF(r) files")
+    (description "This package lets you read image and metadata from many
+bio-scientific formats such as plain TIFF, BigTIFF, OME-TIFF, STK, LSM, SGI,
+NIH, ImageJ, MicroManager, MD GEL, and FluoView files.  It also lets you write
+numpy arrays to TIFF, BigTIFF, and ImageJ hyperstack compatible files.")
+    (license license:bsd-3)))
+
+(define-public python-lfdfiles
+  (package
+    (name "python-lfdfiles")
+    (version "2020.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "lfdfiles" version))
+       (sha256
+        (base32
+         "1n9bkfn4vxl0lbhzd0m35lq86ayx5fwcj3ghpfl2vbjbsnfp3h47"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-click" ,python-click)
+       ("python-numpy" ,python-numpy)
+       ("python-tifffile" ,python-tifffile)))
+    (home-page "https://www.lfd.uci.edu/~gohlke/")
+    (synopsis "Work with LFD data files")
+    (description
+     "Lfdfiles is a Python library and console script for reading, writing,
+converting, and viewing many of the proprietary file formats used to store
+experimental data and metadata at the Laboratory for Fluorescence Dynamics.")
+    (license license:bsd-3)))
+
+(define-public python-imageio
+  (package
+    (name "python-imageio")
+    (version "2.8.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "imageio" version))
+       (sha256
+        (base32
+         "1ksjl523fm0fikrd85llxfba35rc1qsgwadgr6mbn9kis79xcpzv"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f ; many tests require online data
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key outputs inputs tests? #:allow-other-keys)
+             (if tests?
+                 (begin
+                   ;; Make installed package available for running the tests.
+                   (add-installed-pythonpath inputs outputs)
+                   (invoke "pytest" "-vv"))
+                 #t))))))
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)
+       ("python-pillow" ,python-pillow)
+       ("python-psutil" ,python-psutil)))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://imageio.github.io/")
+    (synopsis "Library for reading and writing a wide range of image data")
+    (description
+     "Imageio is a Python library that provides an easy interface to read and
+write a wide range of image data, including animated images, video, volumetric
+data, and scientific formats.")
+    (license license:bsd-2)))
+
 (define-public python-pycparser
   (package
     (name "python-pycparser")
@@ -5361,14 +5510,14 @@ a front-end for C compilers or analysis tools.")
 (define-public python-pywavelets
   (package
     (name "python-pywavelets")
-    (version "1.0.1")
+    (version "1.1.1")
     (home-page "https://github.com/PyWavelets/pywt")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "PyWavelets" version))
               (sha256
                (base32
-                "1p3qv2v66ghnqrb1f98wyyhp9dz71jwcd6kfpsax65sfdpiyqp1w"))))
+                "1j88c0r4j1d4mb3f8qhz6nalyx21qrzmsm70rjngnkybd87v8r0s"))))
     (build-system python-build-system)
     (arguments
      '(#:modules ((ice-9 ftw)
@@ -5376,17 +5525,18 @@ a front-end for C compilers or analysis tools.")
                   (srfi srfi-26)
                   (guix build utils)
                   (guix build python-build-system))
-       #:phases (modify-phases %standard-phases
-                  (replace 'check
-                    (lambda _
-                      (let ((cwd (getcwd))
-                            (libdir (find (cut string-prefix? "lib." <>)
-                                          (scandir "build"))))
-                      (with-directory-excursion (string-append cwd "/build/" libdir)
-                        (invoke "nosetests" "-v" "."))))))))
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (let ((cwd (getcwd))
+                   (libdir (find (cut string-prefix? "lib." <>)
+                                 (scandir "build"))))
+               (with-directory-excursion (string-append cwd "/build/" libdir)
+                 (invoke "pytest" "-vv"))))))))
     (native-inputs
      `(("python-matplotlib" ,python-matplotlib)          ;for tests
-       ("python-nose" ,python-nose)))
+       ("python-pytest" ,python-pytest)))
     (propagated-inputs
      `(("python-numpy" ,python-numpy)))
     (synopsis "Wavelet transforms in Python")
@@ -5644,7 +5794,7 @@ memoizing PEG/Packrat parser in Python.")
 (define-public python-gridmap
   (package
     (name "python-gridmap")
-    (version "0.13.0")
+    (version "0.14.0")
     (source
      (origin
        (method git-fetch)
@@ -5653,7 +5803,7 @@ memoizing PEG/Packrat parser in Python.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1478lbwsr1w24cii2x01m2910fvh8r43ghnb78nc972a96hqiknm"))))
+        (base32 "0v0sgpg6pz8h61f9aqjf5xk0ipr512bbz8dxzjjylksj135qr19l"))))
     (build-system python-build-system)
     (arguments
      '(#:tests? #f)) ; FIXME: Requires python-cherrypy.
@@ -6450,7 +6600,7 @@ callback signature using a prototype function.")
     (propagated-inputs
      `(("python-backcall" ,python-backcall)
        ("python-pyzmq" ,python-pyzmq)
-       ("python-prompt-toolkit" ,python-prompt-toolkit)
+       ("python-prompt-toolkit" ,python-prompt-toolkit-2)
        ("python-terminado" ,python-terminado)
        ("python-matplotlib" ,python-matplotlib)
        ("python-numpy" ,python-numpy)
@@ -6831,14 +6981,14 @@ the GObject Introspection bindings to libnotify for non-GTK applications.")
 (define-public python-beautifulsoup4
   (package
     (name "python-beautifulsoup4")
-    (version "4.7.1")
+    (version "4.9.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "beautifulsoup4" version))
        (sha256
         (base32
-         "0j2kycz2dxgx68xzjm7rxg5xn6v61gq5ifvxyg99slmqkybnal4l"))))
+         "1mvzlw3pzbhsvl3z8784s5h7iiflm2hggiy1fxyrrxwnbc8lvk3k"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -6874,14 +7024,14 @@ converts incoming documents to Unicode and outgoing documents to UTF-8.")
 (define-public python-soupsieve
   (package
     (name "python-soupsieve")
-    (version "1.9.5")
+    (version "2.0.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "soupsieve" version))
        (sha256
         (base32
-         "1nhd0q0ifwva9wn645s6pn74p1rd97asn3qfg75nphx1wkgcbhg2"))))
+         "0ch2rhvsbwfpvzm4kzy81rclbzr533yv83hzg1gx55byfa0w37d5"))))
     (build-system python-build-system)
     (arguments `(#:tests? #f))
     ;;XXX: 2 tests fail currently despite claming they were to be
@@ -6898,10 +7048,19 @@ some are not yet implemented).")
     (properties `((python2-variant . ,(delay python2-soupsieve))))
     (license license:expat)))
 
+;; This is the last version that supports python-2
 (define-public python2-soupsieve
   (let ((base (package-with-python2 (strip-python2-variant python-soupsieve))))
     (package
       (inherit base)
+      (version "1.9.6")
+      (source
+       (origin
+         (method url-fetch)
+         (uri (pypi-uri "soupsieve" version))
+         (sha256
+          (base32
+           "1apgqxngi1216h1cyvrvj9gy3wf45mh1lz4n76j26jf3k36bm1br"))))
       (propagated-inputs
        `(("python2-backports-functools-lru-cache"
           ,python2-backports-functools-lru-cache)
@@ -7250,29 +7409,46 @@ falling into the Python interpreter.")
 (define-public python2-q
   (package-with-python2 python-q))
 
-(define-public python2-xlib
+(define-public python-xlib
   (package
-    (name "python2-xlib")
-    (version "0.14")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://sourceforge/python-xlib/python-xlib"
-                                  "/" version "/"
-                                  "python-xlib-" version ".tar.gz"))
-              (sha256
-               (base32
-                "1sv0447j0rx8cgs3jhjl695p5pv13ihglcjlrrz1kq05lsvb0wa7"))))
+    (name "python-xlib")
+    (version "0.27")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/python-xlib/python-xlib.git")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "09kimic8rhprx3q8nzalc4aggg42ahqm4v5qcj8dm68yvxfdk986"))))
     (build-system python-build-system)
     (arguments
-     `(#:python ,python-2                         ;Python 2 only
-       #:tests? #f))                              ;no tests
-    (home-page "http://python-xlib.sourceforge.net/")
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-before 'check 'start-xserver
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((xorg-server (assoc-ref inputs "xorg-server")))
+               ;; There must be a running X server and make check doesn't
+               ;; start one.  Therefore we must do it.
+               (system (format #f "~a/bin/Xvfb :1 &" xorg-server))
+               (setenv "DISPLAY" ":1")
+               #t))))))
+    (native-inputs
+     `(("python-mock" ,python-mock)
+       ("python-setuptools-scm" ,python-setuptools-scm)
+       ("python-six" ,python-six)
+       ("xorg-server" ,xorg-server)))
+    (home-page "https://github.com/python-xlib/python-xlib")
     (synopsis "Python X11 client library")
     (description
-     "The Python X Library is intended to be a fully functional X client
-library for Python programs.  It is useful to implement low-level X clients.
-It is written entirely in Python.")
+     "The Python X Library is intended to be a fully functional
+X client library for Python programs.  It is useful to implement
+low-level X clients.  It is written entirely in Python.")
     (license license:gpl2+)))
+
+(define-public python2-xlib
+  (package-with-python2 python-xlib))
 
 (define-public python-singledispatch
   (package
@@ -7481,14 +7657,14 @@ PEP 8.")
 (define-public python-pyflakes
   (package
     (name "python-pyflakes")
-    (version "2.1.1")
+    (version "2.2.0")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "pyflakes" version))
         (sha256
           (base32
-            "18pq95a1xj2dgdd0m85gyfsn40jajj4xc3lp8wfv7igqhrc86xnr"))))
+            "1j3zqbiwkyicvww499bblq33x0bjpzdrxajhaysr7sk7x5gdgcim"))))
     (build-system python-build-system)
     (home-page
       "https://github.com/pyflakes/pyflakes")
@@ -7582,13 +7758,13 @@ complexity of Python source code.")
 (define-public python-flake8
   (package
     (name "python-flake8")
-    (version "3.7.9")
+    (version "3.8.3")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "flake8" version))
               (sha256
                (base32
-                "1yscj6avirm6m12bjh4fn2lfgxaamqsjh9pirdqfi0fcgq8ils25"))))
+                "02527892hh0qjivxaiphzalj7q32qkna1cqaikjs7c03mk5ryjzh"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -9004,8 +9180,7 @@ interactive computing.")
          "1ismyaxbv9d56yqqqb8xl58hg0iq0bbyy014a53y1g3hfbc8g7q7"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("python-ipykernel"
-        ,(prompt-toolkit-2-instead-of-prompt-toolkit python-ipykernel))
+     `(("python-ipykernel" ,python-ipykernel)
        ("python-notebook" ,python-notebook)))
     (native-inputs
      `(("python-certifi" ,python-certifi)
@@ -9032,8 +9207,7 @@ notebooks.")
          "15sww2mvnkqlvx55gwa82v05062a8j1xpncnqna4k9sl53hgcig9"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("python-ipython" ,(prompt-toolkit-2-instead-of-prompt-toolkit
-                           python-ipython))
+     `(("python-ipython" ,python-ipython)
        ("python-traitlets" ,python-traitlets)
        ("python-widgetsnbextension" ,python-widgetsnbextension)))
     (native-inputs
@@ -9063,8 +9237,7 @@ in the data.")
          "06s3kr5vx0l1y1b7fxb04dmrppscl7q69sl9yyfr0d057d1ssvkg"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("python-ipykernel" ,(prompt-toolkit-2-instead-of-prompt-toolkit
-        python-ipykernel))
+     `(("python-ipykernel" ,python-ipykernel)
        ("python-jupyter-client" ,python-jupyter-client)
        ("python-prompt-toolkit" ,python-prompt-toolkit-2)
        ("python-pygments" ,python-pygments)))
@@ -9878,6 +10051,38 @@ concurrent.futures package from Python 3.2")
          ("python2-pytest" ,python2-pytest)
          ,@(package-native-inputs promise))))))
 
+(define-public python-progressbar2
+  (package
+    (name "python-progressbar2")
+    (version "3.51.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "progressbar2" version))
+       (sha256
+        (base32
+         "0b2v3mim90rmfvixkaniz2qrs650sk230rzgd5zhcjfldmlqgxpc"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-six" ,python-six)
+       ("python-utils" ,python-utils)))
+    (native-inputs
+     `(("python-flake8" ,python-flake8)
+       ("python-freezegun" ,python-freezegun)
+       ("python-pycodestyle" ,python-pycodestyle)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-cache" ,python-pytest-cache)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-pytest-flakes" ,python-pytest-flakes)
+       ("python-pytest-pep8" ,python-pytest-pep8)
+       ("python-sphinx" ,python-sphinx)))
+    (home-page "https://github.com/WoLpH/python-progressbar")
+    (synopsis "Text progress bar library for Python")
+    (description
+     "This package provides a Python progressbar library to provide
+visual (yet text based) progress to long running operations.")
+    (license license:bsd-3)))
+
 (define-public python-progressbar33
   (package
     (name "python-progressbar33")
@@ -10049,6 +10254,29 @@ document.")
 (define-public python2-jmespath
   (package-with-python2 python-jmespath))
 
+(define-public python-symengine
+  (package
+    (name "python-symengine")
+    (version "0.6.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "symengine" version))
+       (sha256
+        (base32 "1kn1w4dp9mrsq6kzmhf4pjmx3wicxc3dw1mwa924q8g48g77lr4c"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("cmake" ,cmake)
+       ("python-cython" ,python-cython)))
+    (inputs
+     `(("symengine" ,symengine)))
+    (home-page "https://github.com/symengine/symengine.py")
+    (synopsis "Python library providing wrappers to SymEngine")
+    (description
+     "This library provides a Python wrapper to SymEngine, a fast C++ symbolic
+manipulation library.")
+    (license license:expat)))
+
 (define-public python-botocore
   (package
     (name "python-botocore")
@@ -10083,6 +10311,24 @@ interface to the Amazon Web Services (AWS) API.")
 
 (define-public python2-botocore
   (package-with-python2 python-botocore))
+
+(define-public python-pyfiglet
+  (package
+    (name "python-pyfiglet")
+    (version "0.8.post1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pyfiglet" version))
+       (sha256
+        (base32
+         "0f9n2076ga2ccsg174k2d7n0z4d44ml96yzc72s6g4nhalbk5hn6"))))
+    (build-system python-build-system)
+    (home-page "https://github.com/pwaller/pyfiglet")
+    (synopsis "Draw ASCII art big letters in Python")
+    (description "This module lets you draw large letter from ordinary characters
+in pure Python.")
+    (license license:expat)))
 
 (define-public python-xdo
   (package
@@ -11152,6 +11398,29 @@ functionality in a modular way, allowing you to extend your panel with your
 own code, responding to click events and updating clock every second.")
     (license license:bsd-3)))
 
+(define-public python2-selectors2
+  (package
+    (name "python2-selectors2")
+    (version "2.0.1")
+    (source (origin
+              (method url-fetch)
+              (uri (pypi-uri "selectors2" version))
+              (sha256
+               (base32
+                "110qr00b9axz1f1jm12b495jkvrz80smknxvssqlhwk0dx67rdw1"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:python ,python-2))
+    (native-inputs
+     `(("python2-mock" ,python2-mock)
+       ("python2-psutil" ,python2-psutil)))
+    (home-page "https://www.github.com/SethMichaelLarson/selectors2")
+    (synopsis "Backport of the selectors module from Python 3.5+")
+    (description
+     "This package provides a drop-in replacement for the @code{selectors}
+module in Python 3.5 and later.")
+    (license license:expat)))
+
 (define-public python-tblib
   (package
     (name "python-tblib")
@@ -11198,13 +11467,13 @@ multiple processes (imagine multiprocessing, billiard, futures, celery etc).
 (define-public python-greenlet
   (package
     (name "python-greenlet")
-    (version "0.4.15")
+    (version "0.4.16")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "greenlet" version))
               (sha256
                (base32
-                "1g4g1wwc472ds89zmqlpyan3fbnzpa8qm48z3z1y6mlk44z485ll"))))
+                "0v2571d0av1hz3yx63gvmnrinyn57nnvibg4zkl9frv74b3yl1kf"))))
     (build-system python-build-system)
     (home-page "https://greenlet.readthedocs.io/")
     (synopsis "Lightweight in-process concurrent programming")
@@ -11248,13 +11517,13 @@ graphviz.")
 (define-public python-gevent
   (package
     (name "python-gevent")
-    (version "20.5.0")
+    (version "20.6.2")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "gevent" version))
               (sha256
                (base32
-                "1yppsrs0ccld9j9zfbsd0bxb987b2zkh2ar7whjxcrqzpkvg3iqx"))
+                "1ldmppgghfphdaazjw6wq2i17xcmsjb2jsizfa4cjlg812zjlg52"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -11373,15 +11642,15 @@ graphviz.")
                               "known_failures.py" "--ignore" "skipped_tests.txt"))))))
     (propagated-inputs
      `(("python-greenlet" ,python-greenlet)
-       ("python-objgraph" ,python-objgraph)))
+       ("python-objgraph" ,python-objgraph)
+       ("python-zope.event" ,python-zope-event)
+       ("python-zope.interface" ,python-zope-interface)))
     (native-inputs
      `(("python-six" ,python-six)
 
        ;; For tests.
        ("python-dnspython" ,python-dnspython)
-       ("python-psutil" ,python-psutil)
-       ("python-zope.event" ,python-zope-event)
-       ("python-zope.interface" ,python-zope-interface)))
+       ("python-psutil" ,python-psutil)))
     (inputs
      `(("c-ares" ,c-ares)
        ("libev" ,libev)))
@@ -11399,7 +11668,8 @@ to provide a high-level synchronous API on top of the libev event loop.")
     (package
       (inherit base)
       (native-inputs `(,@(package-native-inputs base)
-                       ("python-mock" ,python2-mock))))))
+                       ("python-mock" ,python2-mock)
+                       ("python2-selectors2" ,python2-selectors2))))))
 
 (define-public python-fastimport
   (package
@@ -11500,13 +11770,13 @@ It uses LR parsing and does extensive error checking.")
 (define-public python-tabulate
   (package
     (name "python-tabulate")
-    (version "0.7.7")
+    (version "0.8.7")
     (source (origin
              (method url-fetch)
              (uri (pypi-uri "tabulate" version))
              (sha256
               (base32
-               "1inqhspd4frxnp08c32yndr0lc4px1xfkqah184i5w09gkhvi843"))))
+               "01shi7bmj09f0bcm5s0c9skys063lzp76p0n4a2xmg041ni269yv"))))
     (build-system python-build-system)
     (arguments
      ;; FIXME: The pypi release tarball is missing a 'test/common.py'
@@ -11782,7 +12052,8 @@ running in.")
        (uri (pypi-uri "python-memcached" version))
        (sha256
         (base32
-         "0kvyapavbirk2x3n1jx4yb9nyigrj1s3x15nm3qhpvhkpqvqdqm2"))))
+         "0kvyapavbirk2x3n1jx4yb9nyigrj1s3x15nm3qhpvhkpqvqdqm2"))
+       (patches (search-patches "python-memcached-syntax-warnings.patch"))))
     (build-system python-build-system)
     (propagated-inputs `(("python-six" ,python-six)))
     (home-page
@@ -11886,7 +12157,7 @@ database, file, dict stores.  Cachy supports python versions 2.7+ and 3.2+.")
 (define-public poetry
   (package
     (name "poetry")
-    (version "1.0.5")
+    (version "1.0.9")
     ;; Poetry can only be built from source with Poetry.
     (source
      (origin
@@ -11894,7 +12165,7 @@ database, file, dict stores.  Cachy supports python versions 2.7+ and 3.2+.")
        (uri (pypi-uri "poetry" version))
        (sha256
         (base32
-         "02h387k0xssvv78yy82pcpknpq4w5ym2in1zl8cg9r5wljl5w6cf"))))
+         "1avp0db1a4hf6lz3wrzhpdvj4rpmzr4in3myrd3lp5j66nc5ck0a"))))
     (build-system python-build-system)
     (arguments
      `(#:tests? #f ;; Pypi does not have tests.
@@ -11905,8 +12176,7 @@ database, file, dict stores.  Cachy supports python versions 2.7+ and 3.2+.")
              (substitute* "setup.py"
                ;; poetry won't update version as 21.0.0 relies on python > 3.6
                (("keyring>=20.0.1,<21.0.0") "keyring>=21.0.0,<22.0.0")
-               (("pyrsistent>=0.14.2,<0.15.0") "pyrsistent>=0.14.2,<0.16.0")
-               (("importlib-metadata>=1.1.3,<1.2.0") "importlib-metadata>=1.1.3,<1.5.0"))
+               (("pyrsistent>=0.14.2,<0.15.0") "pyrsistent>=0.14.2,<0.17.0"))
              #t)))))
     (propagated-inputs
      `(("python-cachecontrol" ,python-cachecontrol)
@@ -11914,9 +12184,9 @@ database, file, dict stores.  Cachy supports python versions 2.7+ and 3.2+.")
        ("python-cleo" ,python-cleo)
        ("python-clikit" ,python-clikit)
        ("python-html5lib" ,python-html5lib)
-       ("python-importlib-metadata" ,python-importlib-metadata) ;; python < 3.8
        ("python-jsonschema" ,python-jsonschema)
        ("python-keyring" ,python-keyring)
+       ("python-msgpack-transitional" ,python-msgpack-transitional)
        ("python-pexpect" ,python-pexpect)
        ("python-pkginfo" ,python-pkginfo)
        ("python-pyparsing" ,python-pyparsing)
@@ -12191,10 +12461,6 @@ characters, mouse support, and auto suggestions.")
      `(("python-wcwidth" ,python-wcwidth)
        ("python-six" ,python-six)
        ("python-pygments" ,python-pygments)))))
-
-(define-public prompt-toolkit-2-instead-of-prompt-toolkit
-  (package-input-rewriting/spec
-   `(("python-prompt-toolkit" . ,(const python-prompt-toolkit-2)))))
 
 (define-public python2-prompt-toolkit
   (package-with-python2 python-prompt-toolkit-2))
@@ -12910,21 +13176,21 @@ English stemmer.")
   (package-with-python2 python-snowballstemmer))
 
 (define-public python-setproctitle
-(package
-  (name "python-setproctitle")
-  (version "1.1.10")
-  (source
-    (origin
-      (method url-fetch)
-      (uri (pypi-uri "setproctitle" version))
-      (sha256
+  (package
+    (name "python-setproctitle")
+    (version "1.1.10")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "setproctitle" version))
+       (sha256
         (base32
-          "163kplw9dcrw0lffq1bvli5yws3rngpnvrxrzdw89pbphjjvg0v2"))))
-  (build-system python-build-system)
-  (arguments
-   '(#:phases
-     (modify-phases %standard-phases
-        (add-before 'check 'patch-Makefile
+         "163kplw9dcrw0lffq1bvli5yws3rngpnvrxrzdw89pbphjjvg0v2"))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (add-before 'check 'patch-Makefile
            ;; Stricly this is only required for the python2 variant.
            ;; But adding a phase in an inherited package seems to be
            ;; cumbersum. So we patch even for python3.
@@ -12935,30 +13201,30 @@ English stemmer.")
                    (("\\$\\(PYTHON\\) [^ ]which nosetests[^ ] ")
                     (string-append nose "/bin/nosetests "))))
                #t)))
-        (replace 'check
+         (replace 'check
            (lambda _
              (setenv "PYTHON" (or (which "python3") (which "python")))
-             (setenv "PYCONFIG" (or (which "python3-config")
-                                    (which "python-config")))
+             (setenv "PYCONFIG" (string-append (or (which "python3-config")
+                                                   (which "python-config"))
+                                               " --embed"))
              (setenv "CC" "gcc")
              ;; No need to extend PYTHONPATH to find the built package, since
              ;; the Makefile will build anyway
              (invoke "make" "check"))))))
-  (native-inputs
-   `(("procps" ,procps))) ; required for tests
-  (home-page
-    "https://github.com/dvarrazzo/py-setproctitle")
-  (synopsis
-   "Setproctitle implementation for Python to customize the process title")
-  (description "The library allows a process to change its title (as displayed
+    (native-inputs
+     `(("procps" ,procps)))             ; required for tests
+    (home-page "https://github.com/dvarrazzo/py-setproctitle")
+    (synopsis
+     "Setproctitle implementation for Python to customize the process title")
+    (description "The library allows a process to change its title (as displayed
 by system tools such as ps and top).
 
 Changing the title is mostly useful in multi-process systems, for
 example when a master process is forked: changing the children's title
 allows identifying the task each process is busy with.  The technique
 is used by PostgreSQL and the OpenSSH Server for example.")
-  (license license:bsd-3)
-  (properties `((python2-variant . ,(delay python2-setproctitle))))))
+    (license license:bsd-3)
+    (properties `((python2-variant . ,(delay python2-setproctitle))))))
 
 (define-public python2-setproctitle
   (let ((base (package-with-python2
@@ -14016,7 +14282,7 @@ editors.")
 (define-public python2-backports-functools-lru-cache
   (package
     (name "python2-backports-functools-lru-cache")
-    (version "1.5")
+    (version "1.6.1")
     (source
      (origin
        (method url-fetch)
@@ -14024,7 +14290,7 @@ editors.")
        (uri (pypi-uri "backports.functools_lru_cache" version))
        (sha256
         (base32
-         "06jgv8gib4fhky0p5cmxdghvsgjyzcdgk48k8pxb1ccf11znk64x"))))
+         "0jidrkk2w6bhjm197plxiaxrav64mgcrign0bfyr7md2ilc5zplg"))))
     (build-system python-build-system)
     (native-inputs
      `(("python2-setuptools-scm" ,python2-setuptools-scm)))
@@ -14176,14 +14442,22 @@ exception message with a traceback that points to the culprit.")
 (define-public python-utils
   (package
     (name "python-utils")
-    (version "2.1.0")
+    (version "2.4.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "python-utils" version))
               (sha256
                (base32
-                "1mcsy6q5am4ya72rgkpb6kax6vv7c93cfkkas89xnpa4sj9zf28p"))))
+                "12c0glzkm81ljgf6pwh0d4rmdm1r7vvgg3ifzp8yp9cfyngw07zj"))))
     (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (add-installed-pythonpath inputs outputs)
+             (delete-file "pytest.ini")
+             (invoke "pytest" "-vv"))))))
     (native-inputs
      `(("pytest-runner" ,python-pytest-runner)
        ("pytest" ,python-pytest)
@@ -17708,6 +17982,39 @@ on regular expressions.")
               `(("python2-enum34" ,python2-enum34)
                 ,@(package-propagated-inputs reparser))))))
 
+(define-public python-retrying
+  (package
+    (name "python-retrying")
+    (version "1.3.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/rholder/retrying.git")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "1kqipkbdaw5s1xg0gi29awm03vp1x8dz24pjidgxagvkvrjpzhi7"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-six" ,python-six)))
+    (home-page "https://github.com/rholder/retrying")
+    (synopsis "Library for adding retry behavior")
+    (description "Retrying is a general-purpose retrying library to simplify
+the task of adding retry behavior to just about anything.
+
+Features:
+
+@itemize
+@item Generic Decorator API.
+@item Specify stop condition (i.e. limit by number of attempts).
+@item Specify wait condition (i.e. exponential backoff sleeping between attempts).
+@item Customize retrying on Exceptions.
+@item Customize retrying on expected returned result.
+@end itemize")
+    (license license:asl2.0)))
+
 (define-public python-precis-i18n
   (package
     (name "python-precis-i18n")
@@ -18144,14 +18451,13 @@ time-or-computationally-expensive properties quick and easy and works in Python
 (define-public python-folium
   (package
     (name "python-folium")
-    (version "0.10.1")
+    (version "0.11.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "folium" version))
        (sha256
-        (base32
-         "0gcc267wxwxr57ry86pqpbiyfvl0g48hfvgy0f2mz9s58g87kgzd"))))
+        (base32 "19sclsq3xcjfa7bavzjpyn6rl9b15jbc76n5aag4cwhqqamqj1sl"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-branca" ,python-branca)
@@ -19467,6 +19773,25 @@ replacement for dictionaries where immutability is desired.")
 using “=” characters.  However this conveys no benefit so many protocols
 choose to use Base64 without the “=” padding.")
     (license license:asl2.0)))
+
+(define-public python-py-cpuinfo
+  (package
+    (name "python-py-cpuinfo")
+    (version "5.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "py-cpuinfo" version))
+       (sha256
+        (base32
+         "0045y6832gqjg63jmw0qj2jwyypgjwr7sfdq3lfv49b6fxpl5xic"))))
+    (build-system python-build-system)
+    (home-page "https://github.com/workhorsy/py-cpuinfo")
+    (synopsis "Get CPU info with Python")
+    (description
+     "This Python module returns the CPU info by using the best sources of
+information for your operating system.")
+    (license license:expat)))
 
 (define-public python-canonicaljson
   (package

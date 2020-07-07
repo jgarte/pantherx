@@ -239,7 +239,7 @@ Programming Interface
 * Derivations::                 Low-level interface to package derivations.
 * The Store Monad::             Purely functional interface to the store.
 * G-Expressions::               Manipulating build expressions.
-* Invoking guix repl::          Fiddling with Guix interactively.
+* Invoking guix repl::          Programming Guix in Guile
 
 Defining Packages
 
@@ -1978,7 +1978,7 @@ its device name.  Assuming that the USB stick is known as @file{/dev/sdX},
 copy the image with:
 
 @example
-dd if=guix-system-install-@value{VERSION}.x86_64-linux.iso of=/dev/sdX
+dd if=guix-system-install-@value{VERSION}.x86_64-linux.iso of=/dev/sdX status=progress
 sync
 @end example
 
@@ -3721,13 +3721,17 @@ this option is primarily useful when the daemon was running with
 @cindex updating Guix
 @cindex @command{guix pull}
 @cindex pull
+@cindex security, @command{guix pull}
+@cindex authenticity, of code obtained with @command{guix pull}
 Packages are installed or upgraded to the latest version available in
 the distribution currently available on your local machine.  To update
 that distribution, along with the Guix tools, you must run @command{guix
 pull}: the command downloads the latest Guix source code and package
 descriptions, and deploys it.  Source code is downloaded from a
 @uref{https://git-scm.com, Git} repository, by default the official
-GNU@tie{}Guix repository, though this can be customized.
+GNU@tie{}Guix repository, though this can be customized.  @command{guix
+pull} ensures that the code it downloads is @emph{authentic} by
+verifying that commits are signed by Guix developers.
 
 Specifically, @command{guix pull} downloads code from the @dfn{channels}
 (@pxref{Channels}) specified by one of the followings, in this order:
@@ -3925,13 +3929,24 @@ Make sure you understand its security implications before using
 @option{--allow-downgrades}.
 @end quotation
 
+@item --disable-authentication
+Allow pulling channel code without authenticating it.
+
+@cindex authentication, of channel code
+By default, @command{guix pull} authenticates code downloaded from
+channels by verifying that its commits are signed by authorized
+developers, and raises an error if this is not the case.  This option
+instructs it to not perform any such verification.
+
+@quotation Note
+Make sure you understand its security implications before using
+@option{--disable-authentication}.
+@end quotation
+
 @item --system=@var{system}
 @itemx -s @var{system}
 Attempt to build for @var{system}---e.g., @code{i686-linux}---instead of
 the system type of the build host.
-
-@item --verbose
-Produce verbose output, writing build logs to the standard error output.
 
 @item --bootstrap
 Use the bootstrap Guile to build the latest Guix.  This option is only
@@ -3960,8 +3975,47 @@ deploys Guix itself from the official GNU@tie{}Guix repository.  This can be
 customized by defining @dfn{channels} in the
 @file{~/.config/guix/channels.scm} file.  A channel specifies a URL and branch
 of a Git repository to be deployed, and @command{guix pull} can be instructed
-to pull from one or more channels.  In other words, channels can be used to
-@emph{customize} and to @emph{extend} Guix, as we will see below.
+to pull from one or more channels.  In other words, channels can be used
+to @emph{customize} and to @emph{extend} Guix, as we will see below.
+Before that, some security considerations.
+
+@subsection Channel Authentication
+
+@cindex authentication, of channel code
+The @command{guix pull} and @command{guix time-machine} commands
+@dfn{authenticate} the code retrieved from channels: they make sure each
+commit that is fetched is signed by an authorized developer.  The goal
+is to protect from unauthorized modifications to the channel that would
+lead users to run malicious code.
+
+As a user, you must provide a @dfn{channel introduction} in your
+channels file so that Guix knows how to authenticate its first commit.
+A channel specification, including its introduction, looks something
+along these lines:
+
+@lisp
+(channel
+  (name 'my-channel)
+  (url "https://example.org/my-channel.git")
+  (introduction
+   (make-channel-introduction
+    "6f0d8cc0d88abb59c324b2990bfee2876016bb86"
+    (openpgp-fingerprint
+     "CABB A931 C0FF EEC6 900D  0CFB 090B 1199 3D9A EBB5"))))
+@end lisp
+
+The specification above shows the name and URL of the channel.  The call
+to @code{make-channel-introduction} above specifies that authentication
+of this channel starts at commit @code{6f0d8cc@dots{}}, which is signed
+by the OpenPGP key with fingerprint @code{CABB A931@dots{}}.
+
+For the main channel, called @code{guix}, you automatically get that
+information from your Guix installation.  For other channels, include
+the channel introduction provided by the channel authors in your
+@file{channels.scm} file.  Make sure you retrieve the channel
+introduction from a trusted source since that is the root of your trust.
+
+If you're curious about the authentication mechanics, read on!
 
 @subsection Using a Custom Guix Channel
 
@@ -4106,7 +4160,15 @@ The meta-data file should contain a simple S-expression like this:
  (dependencies
   (channel
    (name some-collection)
-   (url "https://example.org/first-collection.git"))
+   (url "https://example.org/first-collection.git")
+
+   ;; The 'introduction' bit below is optional: you would
+   ;; provide it for dependencies that can be authenticated.
+   (introduction
+    (channel-introduction
+      (version 0)
+      (commit "a8883b58dc82e167c96506cf05095f37c2c2c6cd")
+      (signer "CABB A931 C0FF EEC6 900D  0CFB 090B 1199 3D9A EBB5"))))
   (channel
    (name some-other-collection)
    (url "https://example.org/second-collection.git")
@@ -4134,6 +4196,97 @@ add a meta-data file @file{.guix-channel} that contains:
   (version 0)
   (directory "guix"))
 @end lisp
+
+@cindex channel authorizations
+@subsection Specifying Channel Authorizations
+
+As we saw above, Guix ensures the source code it pulls from channels
+comes from authorized developers.  As a channel author, you need to
+specify the list of authorized developers in the
+@file{.guix-authorizations} file in the channel's Git repository.  The
+authentication rule is simple: each commit must be signed by a key
+listed in the @file{.guix-authorizations} file of its parent
+commit(s)@footnote{Git commits form a @dfn{directed acyclic graph}
+(DAG).  Each commit can have zero or more parents; ``regular'' commits
+have one parent and merge commits have two parent commits.  Read
+@uref{https://eagain.net/articles/git-for-computer-scientists/, @i{Git
+for Computer Scientists}} for a great overview.}  The
+@file{.guix-authorizations} file looks like this:
+
+@lisp
+;; Example '.guix-authorizations' file.
+
+(authorizations
+ (version 0)               ;current file format version
+
+ (("AD17 A21E F8AE D8F1 CC02  DBD9 F8AE D8F1 765C 61E3"
+   (name "alice"))
+  ("2A39 3FFF 68F4 EF7A 3D29  12AF 68F4 EF7A 22FB B2D5"
+   (name "bob"))
+  ("CABB A931 C0FF EEC6 900D  0CFB 090B 1199 3D9A EBB5"
+   (name "charlie"))))
+@end lisp
+
+Each fingerprint is followed by optional key/value pairs, as in the
+example above.  Currently these key/value pairs are ignored.
+
+This authentication rule creates a chicken-and-egg issue: how do we
+authenticate the first commit?  Related to that: how do we deal with
+channels whose repository history contains unsigned commits and lack
+@file{.guix-authorizations}?  And how do we fork existing channels?
+
+@cindex channel introduction
+Channel introductions answer these questions by describing the first
+commit of a channel that should be authenticated.  The first time a
+channel is fetched with @command{guix pull} or @command{guix
+time-machine}, the command looks up the introductory commit and verifies
+that it is signed by the specified OpenPGP key.  From then on, it
+authenticates commits according to the rule above.
+
+To summarize, as the author of a channel, there are two things you have
+to do to allow users to authenticate your code:
+
+@enumerate
+@item
+Introduce an initial @file{.guix-authorizations} in the channel's
+repository.  Do that in a signed commit (@pxref{Commit Access}, for
+information on how to sign Git commits.)
+
+@item
+Advertise the channel introduction, for instance on your channel's web
+page.  The channel introduction, as we saw above, is the commit/key
+pair---i.e., the commit that introduced @file{.guix-authorizations}, and
+the fingerprint of the OpenPGP used to sign it.
+@end enumerate
+
+Publishing a signed channel requires discipline: any mistake, such as an
+unsigned commit or a commit signed by an unauthorized key, will prevent
+users from pulling from your channel---well, that's the whole point of
+authentication!  Pay attention to merges in particular: merge commits
+are considered authentic if and only if they are signed by a key present
+in the @file{.guix-authorizations} file of @emph{both} branches.
+
+@cindex primary URL, channels
+@subsection Primary URL
+
+Channel authors can indicate the primary URL of their channel's Git
+repository in the @file{.guix-channel} file, like so:
+
+@lisp
+(channel
+  (version 0)
+  (url "https://example.org/guix.git"))
+@end lisp
+
+This allows @command{guix pull} to determine whether it is pulling code
+from a mirror of the channel; when that is the case, it warns the user
+that the mirror might be stale and displays the primary URL.  That way,
+users cannot be tricked into fetching code from a stale mirror that does
+not receive security updates.
+
+This feature only makes sense for authenticated repositories, such as
+the official @code{guix} channel, for which @command{guix pull} ensures
+the code it fetches is authentic.
 
 @cindex news, for channels
 @subsection Writing Channel News
@@ -4463,7 +4616,12 @@ $ guix describe -f channels
         (name 'guix)
         (url "https://git.savannah.gnu.org/git/guix.git")
         (commit
-          "e0fa68c7718fffd33d81af415279d6ddb518f727")))
+          "e0fa68c7718fffd33d81af415279d6ddb518f727")
+        (introduction
+          (make-channel-introduction
+            "9edb3f66fd807b096b48283debdcddccfea34bad"
+            (openpgp-fingerprint
+              "BBB0 2DDF 2CEA F6A8 0D1D  E643 A2A0 6DF2 A33A 54FA")))))
 @end example
 
 @noindent
@@ -4489,6 +4647,12 @@ produce human-readable output;
 produce a list of channel specifications that can be passed to @command{guix
 pull -C} or installed as @file{~/.config/guix/channels.scm} (@pxref{Invoking
 guix pull});
+@item channels-sans-intro
+like @code{channels}, but omit the @code{introduction} field; use it to
+produce a channel specification suitable for Guix version 1.1.0 or
+earlier---the @code{introduction} field has to do with channel
+authentication (@pxref{Channels, Channel Authentication}) and is not
+supported by these older versions;
 @item json
 @cindex JSON
 produce a list of channel specifications in JSON format;
@@ -5345,7 +5509,8 @@ configuration triplets,, autoconf, Autoconf}).
 @item --compression=@var{tool}
 @itemx -C @var{tool}
 Compress the resulting tarball using @var{tool}---one of @code{gzip},
-@code{bzip2}, @code{xz}, @code{lzip}, or @code{none} for no compression.
+@code{zstd}, @code{bzip2}, @code{xz}, @code{lzip}, or @code{none} for no
+compression.
 
 @item --symlink=@var{spec}
 @itemx -S @var{spec}
@@ -5451,7 +5616,7 @@ turned into concrete build actions.
 Build actions are performed by the Guix daemon, on behalf of users.  In a
 standard setup, the daemon has write access to the store---the
 @file{/gnu/store} directory---whereas users do not.  The recommended
-setup also has the daemon perform builds in chroots, under a specific
+setup also has the daemon perform builds in chroots, under specific
 build users, to minimize interference with the rest of the system.
 
 @cindex derivation
@@ -5474,7 +5639,7 @@ package definitions.
 * Derivations::                 Low-level interface to package derivations.
 * The Store Monad::             Purely functional interface to the store.
 * G-Expressions::               Manipulating build expressions.
-* Invoking guix repl::          Fiddling with Guix interactively.
+* Invoking guix repl::          Programming Guix in Guile
 @end menu
 
 @node Package Modules
@@ -8248,12 +8413,47 @@ has an associated gexp compiler, such as a @code{<package>}.
 @node Invoking guix repl
 @section Invoking @command{guix repl}
 
-@cindex REPL, read-eval-print loop
-The @command{guix repl} command spawns a Guile @dfn{read-eval-print loop}
-(REPL) for interactive programming (@pxref{Using Guile Interactively,,, guile,
-GNU Guile Reference Manual}).  Compared to just launching the @command{guile}
+@cindex REPL, read-eval-print loop, script
+The @command{guix repl} command makes it easier to program Guix in Guile
+by launching a Guile @dfn{read-eval-print loop} (REPL) for interactive
+programming (@pxref{Using Guile Interactively,,, guile,
+GNU Guile Reference Manual}), or by running Guile scripts
+(@pxref{Running Guile Scripts,,, guile,
+GNU Guile Reference Manual}).
+Compared to just launching the @command{guile}
 command, @command{guix repl} guarantees that all the Guix modules and all its
-dependencies are available in the search path.  You can use it this way:
+dependencies are available in the search path.
+
+The general syntax is:
+
+@example
+guix repl @var{options} [@var{file} @var{args}]
+@end example
+
+When a @var{file} argument is provided, @var{file} is
+executed as a Guile scripts:
+
+@example
+guix repl my-script.scm
+@end example
+
+To pass arguments to the script, use @code{--} to prevent them from
+being interpreted as arguments to @command{guix repl} itself:
+
+@example
+guix repl -- my-script.scm --input=foo.txt
+@end example
+
+To make a script executable directly from the shell, using the guix
+executable that is on the user's search path, add the following two
+lines at the top of the script:
+
+@example
+@code{#!/usr/bin/env -S guix repl --}
+@code{!#}
+@end example
+
+Without a file name argument, a Guile REPL is started:
 
 @example
 $ guix repl
@@ -8302,7 +8502,7 @@ Add @var{directory} to the front of the package module search path
 (@pxref{Package Modules}).
 
 This allows users to define their own packages and make them visible to
-the command-line tool.
+the script or REPL.
 
 @item -q
 Inhibit loading of the @file{~/.guile} file.  By default, that
@@ -9098,7 +9298,7 @@ store.
 @section Invoking @command{guix hash}
 
 @cindex @command{guix hash}
-The @command{guix hash} command computes the SHA256 hash of a file.
+The @command{guix hash} command computes the hash of a file.
 It is primarily a convenience tool for anyone contributing to the
 distribution: it computes the cryptographic hash of a file, which can be
 used in the definition of a package (@pxref{Defining Packages}).
@@ -13972,6 +14172,9 @@ It takes the following parameters:
 @item @code{wpa-supplicant} (default: @code{wpa-supplicant})
 The WPA Supplicant package to use.
 
+@item @code{requirement} (default: @code{'(user-processes dbus-system loopback syslogd)}
+List of services that should be started before WPA Supplicant starts.
+
 @item @code{dbus?} (default: @code{#t})
 Whether to listen for requests on D-Bus.
 
@@ -15255,7 +15458,7 @@ auto-login session.
 @cindex Xorg, configuration
 @deftp {Data Type} xorg-configuration
 This data type represents the configuration of the Xorg graphical display
-server.  Note that there is not Xorg service; instead, the X server is started
+server.  Note that there is no Xorg service; instead, the X server is started
 by a ``display manager'' such as GDM, SDDM, and SLiM.  Thus, the configuration
 of these display managers aggregates an @code{xorg-configuration} record.
 
@@ -24594,6 +24797,107 @@ Return true if @var{obj} is a platform object.
 Return the name of @var{platform}---a string such as @code{"arm"}.
 @end deffn
 
+
+@subsubheading The Hurd in a Virtual Machine
+
+@cindex @code{hurd}
+@cindex the Hurd
+
+Service @code{hurd-vm} provides support for running GNU/Hurd in a
+virtual machine (VM), a so-called ``Childhurd''.  The virtual machine is
+a Shepherd service that can be referred to by the names @code{hurd-vm}
+and @code{childhurd} and be controlled with commands such as:
+
+@example
+herd start hurd-vm
+herd stop childhurd
+@end example
+
+The given GNU/Hurd operating system configuration is cross-compiled.
+
+@defvr {Scheme Variable} hurd-vm-service-type
+This is the type of the Hurd in a Virtual Machine service.  Its value
+must be a @code{hurd-vm-configuration} object, which specifies the
+operating system (@pxref{operating-system Reference}) and the disk size
+for the Hurd Virtual Machine, the QEMU package to use as well as the
+options for running it.
+
+For example:
+
+@lisp
+(service hurd-vm-service-type
+         (hurd-vm-configuration
+          (disk-size (* 5000 (expt 2 20))) ;5G
+          (memory-size 1024)))             ;1024MiB
+@end lisp
+
+would create a disk image big enough to build GNU@tie{}Hello, with some
+extra memory.
+@end defvr
+
+@deftp {Data Type} hurd-vm-configuration
+The data type representing the configuration for
+@code{hurd-vm-service-type}.
+
+@table @asis
+@item @code{os} (default: @var{%hurd-vm-operating-system})
+The operating system to instantiate.  This default is bare-bones with a
+permissive OpenSSH secure shell daemon listening on port 2222
+(@pxref{Networking Services, @code{openssh-service-type}}).
+
+@item @code{qemu} (default: @code{qemu-minimal})
+The QEMU package to use.
+
+@item @code{image} (default: @var{hurd-vm-disk-image})
+The procedure used to build the disk-image built from this
+configuration.
+
+@item @code{disk-size} (default: @code{'guess})
+The size of the disk image.
+
+@item @code{memory-size} (default: @code{512})
+The memory size of the Virtual Machine in mebibytes.
+
+@item @code{options} (default: @code{'("--snapshot")})
+The extra options for running QEMU.
+
+@item @code{id} (default: @code{#f})
+If set, a non-zero positive integer used to parameterize Childhurd
+instances.  It is appended to the service's name,
+e.g. @code{childhurd1}.
+
+@item @code{net-options} (default: @var{hurd-vm-net-options})
+The procedure used to produce the list of QEMU networking options.
+
+By default, it produces
+
+@lisp
+'("--device" "rtl8139,netdev=net0"
+  "--netdev" "user,id=net0\
+              ,hostfwd=tcp:127.0.0.1:<ssh-port>-:2222\
+              ,hostfwd=tcp:127.0.0.1:<vnc-port>-:5900")
+@end lisp
+with forwarded ports
+@example
+<ssh-port>: @code{(+ 10022 (* 1000 @var{ID}))}
+<vnc-port>: @code{(+ 15900 (* 1000 @var{ID}))}
+@end example
+
+@end table
+@end deftp
+
+Note that by default the VM image is volatile, i.e., once stopped the
+contents are lost.  If you want a stateful image instead, override the
+configuration's @code{image} and @code{options} without
+the @code{--snapshot} flag using something along these lines:
+
+@lisp
+(service hurd-vm-service-type
+         (hurd-vm-configuration
+          (image   (const "/out/of/store/writable/hurd.img"))
+          (options '("--hda"))))
+@end lisp
+
 @node Version Control Services
 @subsection Version Control Services
 
@@ -26438,6 +26742,55 @@ setuid-root (@pxref{Setuid Programs}) such that unprivileged users can invoke
 @command{singularity run} and similar commands.
 @end defvr
 
+@cindex rshiny
+@subsubheading R-Shiny service
+
+The @code{(gnu services science)} module provides the following service.
+
+@defvr {Scheme Variable} rshiny-service-type
+
+This is a type of service which is used to run a webapp created with
+@code{r-shiny}.  This service sets the @code{R_LIBS_USER} environment
+variable and runs the provided script to call @code{runApp}.
+
+@deftp {Data Type} rshiny-configuration
+This is the data type representing the configuration of rshiny.
+
+@table @asis
+
+@item @code{package} (default: @code{r-shiny})
+The package to use.
+
+@item @code{binary} (defaunlt @code{"rshiny"})
+The name of the binary or shell script located at @code{package/bin/} to
+run when the service is run.
+
+The common way to create this file is as follows:
+
+@lisp
+@dots{}
+(let* ((out       (assoc-ref %outputs "out"))
+       (targetdir (string-append out "/share/" ,name))
+       (app       (string-append out "/bin/" ,name))
+       (Rbin      (string-append (assoc-ref %build-inputs "r-min")
+                                 "/bin/Rscript")))
+@dots{}
+  (mkdir-p (string-append out "/bin"))
+  (call-with-output-file app
+    (lambda (port)
+      (format port
+"#!~a
+library(shiny)
+setwd(\"~a\")
+runApp(launch.browser=0, port=4202)~%\n"
+      Rbin targetdir)))
+@dots{}
+@end lisp
+
+@end table
+@end deftp
+@end defvr
+
 @cindex Nix
 @subsubheading Nix service
 
@@ -27442,7 +27795,7 @@ the device corresponding to a USB stick, one can copy the image to it
 using the following command:
 
 @example
-# dd if=$(guix system disk-image my-os.scm) of=/dev/sdc
+# dd if=$(guix system disk-image my-os.scm) of=/dev/sdc status=progress
 @end example
 
 When using @code{docker-image}, a Docker image is produced.  Guix builds
