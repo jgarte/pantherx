@@ -2,13 +2,13 @@
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2017, 2018 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
-;;; Copyright © 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2018, 2019 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2018 Joshua Sierles, Nextjournal <joshua@nextjournal.com>
 ;;; Copyright © 2018, 2019, 2020 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2019, 2020 Guillaume Le Vaillant <glv@posteo.net>
-;;; Copyright © 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2019 Wiktor Żelazny <wzelazny@vurv.cz>
 ;;; Copyright © 2019 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
@@ -59,6 +59,7 @@
   #:use-module (gnu packages curl)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages datastructures)
+  #:use-module (gnu packages docbook)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages elf)
   #:use-module (gnu packages flex)
@@ -86,6 +87,7 @@
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-check)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
@@ -100,10 +102,73 @@
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg))
 
+(define-public memphis
+  (package
+    (name "memphis")
+    (version "0.2.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url "https://github.com/jiuka/memphis.git")
+         (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "068c3943pgbpfjq44pmvn5fmkh005ak5aa67vvrq3fn487c6w54q"))))
+    (build-system glib-or-gtk-build-system)
+    (outputs '("out" "doc"))
+    (arguments
+     `(#:configure-flags
+       (list
+        "--disable-static"
+        "--enable-gtk-doc"
+        "--enable-vala"
+        (string-append "--with-html-dir="
+                       (assoc-ref %outputs "doc")
+                       "/share/gtk-doc/html"))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-autogen
+           (lambda _
+             (substitute* "autogen.sh"
+               (("\\./configure \"\\$@\"")
+                ""))
+             #t))
+         (add-after 'patch-autogen 'patch-docbook-xml
+           (lambda* (#:key inputs #:allow-other-keys)
+             (with-directory-excursion "docs/reference"
+               (substitute* "libmemphis-docs.sgml"
+                 (("http://www.oasis-open.org/docbook/xml/4.3/")
+                  (string-append (assoc-ref inputs "docbook-xml")
+                                 "/xml/dtd/docbook/"))))
+             #t)))))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("docbook-xml" ,docbook-xml-4.3)
+       ("gobject-introspection" ,gobject-introspection)
+       ("gtk-doc" ,gtk-doc)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)
+       ("python" ,python-wrapper)
+       ("seed" ,seed)
+       ("vala" ,vala)))
+    (inputs
+     `(("expat" ,expat)
+       ("glib" ,glib)))
+    (propagated-inputs
+     `(("cairo" ,cairo)))
+    (synopsis "Map-rendering for OpenSteetMap")
+    (description "Memphis is a map-rendering application and a library for
+OpenStreetMap written in C using eXpat, Cairo and GLib.")
+    (home-page "http://trac.openstreetmap.ch/trac/memphis/")
+    (license license:lgpl2.1+)))
+
 (define-public geos
   (package
     (name "geos")
-    (version "3.8.0")
+    (version "3.8.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://download.osgeo.org/geos/geos-"
@@ -111,7 +176,7 @@
                                   ".tar.bz2"))
               (sha256
                (base32
-                "1mb2v9fy1gnbjhcgv0xny11ggfb17vkzsajdyibigwsxr4ylq4cr"))))
+                "1xqpmr10xi0n9sj47fbwc89qb0yr9imh4ybk0jsxpffy111syn22"))))
     (build-system gnu-build-system)
     (arguments `(#:phases
                  (modify-phases %standard-phases
@@ -602,7 +667,7 @@ development.")
 (define-public gdal
   (package
     (name "gdal")
-    (version "3.0.4")
+    (version "3.1.2")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -610,7 +675,7 @@ development.")
                      version ".tar.gz"))
               (sha256
                (base32
-                "10symyajj1b7j98f889lqxxbmhcyvlhq9gg0l42h69bv22wx45gw"))
+                "1p6nmlsr8wbyq350pa6c22vrp98dcsa7yjnqsbhdbp74yj53nw9r"))
               (modules '((guix build utils)))
               (snippet
                 `(begin
@@ -666,9 +731,12 @@ development.")
        ("libwebp" ,libwebp)
        ("netcdf" ,netcdf)
        ("pcre" ,pcre)
+       ("postgresql" ,postgresql) ; libpq
        ("proj" ,proj)
        ("sqlite" ,sqlite)
        ("zlib" ,zlib)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
     (home-page "https://gdal.org/")
     (synopsis "Raster and vector geospatial data format library")
     (description "GDAL is a translator library for raster and vector geospatial
@@ -719,14 +787,14 @@ utilities for data translation and processing.")
 (define-public postgis
   (package
     (name "postgis")
-    (version "3.0.0")
+    (version "3.0.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.osgeo.org/postgis/source/postgis-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "15557fbk0xkngihwhqsbdyz2ng49blisf5zydw81j0gabk6x4vy0"))))
+                "1jmji8i2wjabkrzqil683lypnmimigdmn64a10j3kj3kzlfn98d3"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f
@@ -854,16 +922,16 @@ to create databases that are optimized for rendering/tile/map-services.")
 (define-public libosmium
   (package
     (name "libosmium")
-    (version "2.15.4")
+    (version "2.15.6")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/osmcode/libosmium.git")
+             (url "https://github.com/osmcode/libosmium")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0mlcvqrhp40bzj5r5j9nfc5vbis8hmzcq9xi8jylkciyydaynhz4"))))
+        (base32 "0rqy18bbakp41f44y5id9ixh0ar2dby46z17p4115z8k1vv9znq2"))))
     (build-system cmake-build-system)
     (propagated-inputs
      `(("boost" ,boost)
@@ -887,16 +955,16 @@ OpenStreetMap data.")
 (define-public osm2pgsql
   (package
     (name "osm2pgsql")
-    (version "1.2.1")
+    (version "1.2.2")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/openstreetmap/osm2pgsql.git")
+             (url "https://github.com/openstreetmap/osm2pgsql")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1ysan01lpqzjxlq3y2kdminfjs5d9zksicpf9vvzpdk3fzq51fc9"))
+        (base32 "1j35aa8qinhavliqi5pdm0viyi7lm5xyk402rliaxxs1r2hbsafn"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -941,7 +1009,7 @@ map, geocoding with Nominatim, or general analysis.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/mapbox/tippecanoe.git")
+             (url "https://github.com/mapbox/tippecanoe")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -1032,7 +1100,7 @@ map display.  Downloads map data from a number of websites, including
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/opengribs/XyGrib.git")
+                     (url "https://github.com/opengribs/XyGrib")
                      (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -1208,7 +1276,7 @@ to the OSM opening hours specification.")
 (define-public josm
   (package
     (name "josm")
-    (version "16731")
+    (version "16812")
     (source (origin
               (method svn-fetch)
               (uri (svn-reference
@@ -1217,7 +1285,7 @@ to the OSM opening hours specification.")
                      (recursive? #f)))
               (sha256
                (base32
-                "036kdb1ckhym5f7lj5ydzblli7f1i1pl8z00hxvagf2rczdf5fi3"))
+                "131ly6ah9ygrah1wq1h2199v4hyzgflnh62ychs4jqvy9wz0dal6"))
               (file-name (string-append name "-" version "-checkout"))
               (modules '((guix build utils)))
             (snippet
@@ -1344,7 +1412,7 @@ ways, and relations) and their metadata tags.")
 (define-public libmaxminddb
   (package
     (name "libmaxminddb")
-    (version "1.4.2")
+    (version "1.4.3")
     (source
      (origin
        (method url-fetch)
@@ -1352,14 +1420,11 @@ ways, and relations) and their metadata tags.")
                            "/releases/download/" version "/"
                            "/libmaxminddb-" version ".tar.gz"))
        (sha256
-        (base32 "0mnimbaxnnarlw7g1rh8lpxsyf7xnmzwcczcc3lxw8xyf6ljln6x"))))
+        (base32 "0fd4a4sxiiwzbd5h74wl1ijnb7xybjyybb7q41vdq3w8nk3zdzd5"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-before 'configure 'set-cc-to-gcc
-           (lambda _
-             (setenv "CC" "gcc"))))))
+     `(#:make-flags
+       (list ,(string-append "CC=" (cc-for-target)))))
     (native-inputs
      `(("perl" ,perl)))
     (home-page "https://maxmind.github.io/libmaxminddb/")
@@ -1468,7 +1533,7 @@ using the dataset of topographical information collected by
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Maproom/qmapshack.git")
+             (url "https://github.com/Maproom/qmapshack")
              (commit (string-append "V_" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1534,14 +1599,14 @@ QLandkarte GT application.")
 (define-public readosm
   (package
     (name "readosm")
-    (version "1.1.0")
+    (version "1.1.0a")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.gaia-gis.it/gaia-sins/"
                            "readosm-" version ".tar.gz"))
        (sha256
-        (base32 "1v20pnda67imjd70fn0zw30aar525xicy3d3v49md5cvqklws265"))))
+        (base32 "0zv6p352pqjcv70nvcaf2x3011z35jqa24dcdm27a4ns1wha3cjc"))))
     (build-system gnu-build-system)
     (inputs
      `(("expat" ,expat)
@@ -1620,7 +1685,7 @@ exchanged form one Spatial DBMS and the other.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/OpenCPN/OpenCPN.git")
+             (url "https://github.com/OpenCPN/OpenCPN")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2093,3 +2158,52 @@ architecture.")
       license:opl1.0+
       license:public-domain
       license:qwt1.0))))
+
+(define-public python-geographiclib
+  (package
+    (name "python-geographiclib")
+    (version "1.50")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "geographiclib" version))
+        (sha256
+         (base32
+          "0cn6ap5fkh3mkfa57l5b44z3gvz7j6lpmc9rl4g2jny2gvp4dg8j"))))
+    (build-system python-build-system)
+    (home-page "https://geographiclib.sourceforge.io/1.50/python/")
+    (synopsis "Python geodesic routines from GeographicLib")
+    (description
+     "This is a python implementation of the geodesic routines in GeographicLib.")
+    (license license:expat)))
+
+(define-public python-geopy
+  (package
+    (name "python-geopy")
+    (version "2.0.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "geopy" version))
+        (sha256
+         (base32
+          "0fx0cv0kgbvynpmjgsvq2fpsyngd5idiscdn8pd5201f1ngii3mq"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-geographiclib" ,python-geographiclib)))
+    (native-inputs
+     `(("python-async-generator" ,python-async-generator)
+       ("python-coverage" ,python-coverage)
+       ("python-flake8" ,python-flake8)
+       ("python-isort" ,python-isort)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-aiohttp" ,python-pytest-aiohttp)
+       ("python-readme-renderer" ,python-readme-renderer)
+       ("python-pytz" ,python-pytz)))
+    (home-page "https://github.com/geopy/geopy")
+    (synopsis "Geocoding library for Python")
+    (description "@code{geopy} is a Python client for several popular geocoding
+web services.  @code{geopy} makes it easy for Python developers to locate the
+coordinates of addresses, cities, countries, and landmarks across the globe
+using third-party geocoders and other data sources.")
+    (license license:expat)))

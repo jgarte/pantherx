@@ -19,6 +19,7 @@
 ;;; Copyright © 2020 Konrad Hinsen <konrad.hinsen@fastmail.net>
 ;;; Copyright © 2020 Dimakis Dimakakos <me@bendersteed.tech>
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
+;;; Copyright © 2020 Adam Kandur <rndd@tuta.io>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -54,6 +55,8 @@
   #:use-module (gnu packages compression)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages enchant)
+  #:use-module (gnu packages fonts)
+  #:use-module (gnu packages fontutils)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages imagemagick)
@@ -146,7 +149,7 @@ In order to make one or several variables file-local, use the macros
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/sionescu/fiveam.git")
+             (url "https://github.com/sionescu/fiveam")
              (commit (string-append "v" version))))
        (file-name (git-file-name "fiveam" version))
        (sha256
@@ -176,7 +179,7 @@ interactive development model in mind.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/sionescu/bordeaux-threads.git")
+                    (url "https://github.com/sionescu/bordeaux-threads")
                     (commit (string-append "v" version))))
               (sha256
                (base32 "19i443fz3488v1pbbr9x24y8h8vlyhny9vj6c9jk5prm702awrp6"))
@@ -209,7 +212,7 @@ support.")
          (method git-fetch)
          (uri
           (git-reference
-           (url "https://github.com/trivial-gray-streams/trivial-gray-streams.git")
+           (url "https://github.com/trivial-gray-streams/trivial-gray-streams")
            (commit commit)))
          (sha256
           (base32 "0b1pxlccmnagk9cbh4cy8s5k66g3x0gwib5shjwr24xvrji6lp94"))
@@ -240,7 +243,7 @@ thin compatibility layer for gray streams.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/joaotavora/fiasco.git")
+               (url "https://github.com/joaotavora/fiasco")
                (commit commit)))
          (file-name (git-file-name "fiasco" version))
          (sha256
@@ -274,7 +277,7 @@ logical continuation of Stefil.  It focuses on interactive debugging.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/edicl/flexi-streams.git")
+             (url "https://github.com/edicl/flexi-streams")
              (commit (string-append "v" version))))
        (file-name (git-file-name "flexi-streams" version))
        (sha256
@@ -311,7 +314,7 @@ streams which are similar to string streams.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/edicl/cl-ppcre.git")
+             (url "https://github.com/edicl/cl-ppcre")
              (commit (string-append "v" version))))
        (file-name (git-file-name "cl-ppcre" version))
        (sha256
@@ -338,7 +341,7 @@ compatible with ANSI-compliant Common Lisp implementations.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/edicl/cl-unicode.git")
+                    (url "https://github.com/edicl/cl-unicode")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -382,7 +385,7 @@ ANSI-compliant Common Lisp implementations.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/xach/zpb-ttf.git")
+             (url "https://github.com/xach/zpb-ttf")
              (commit (string-append "release-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -495,7 +498,7 @@ anti-aliased vectorial paths.")))
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/rpav/spatial-trees.git")
+               (url "https://github.com/rpav/spatial-trees")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -532,7 +535,7 @@ spatially-extended data.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/robert-strandh/Flexichain.git")
+               (url "https://github.com/robert-strandh/Flexichain")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -564,7 +567,7 @@ a sequence (or chain) of such elements.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/mbattyani/cl-pdf.git")
+               (url "https://github.com/mbattyani/cl-pdf")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -596,7 +599,7 @@ files.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/sharplispers/clx.git")
+         (url "https://github.com/sharplispers/clx")
          (commit version)))
        (sha256
         (base32
@@ -685,7 +688,7 @@ antialiased TrueType font rendering using CLX and XRender extension.")
          (method git-fetch)
          (uri
           (git-reference
-           (url "https://github.com/joaotavora/sly.git")
+           (url "https://github.com/joaotavora/sly")
            (commit commit)))
          (sha256
           (base32 "0wbpg9p9yg2hd62l15pvy50fk3hndq5zzyqlyyf04g368s895144"))
@@ -1043,7 +1046,7 @@ It is similar to the @code{CL:LOOP} macro, with these distinguishing marks:
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/mishoo/cl-uglify-js.git")
+               (url "https://github.com/mishoo/cl-uglify-js")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -1164,7 +1167,7 @@ utilities that make it even easier to manipulate text in Common Lisp.  It has
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/trivial-features/trivial-features.git")
+               (url "https://github.com/trivial-features/trivial-features")
                (commit commit)))
          (file-name (git-file-name "trivial-features" version))
          (sha256
@@ -1250,7 +1253,7 @@ with a focus on interactive development.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/cl-babel/babel.git")
+               (url "https://github.com/cl-babel/babel")
                (commit commit)))
          (file-name (git-file-name "babel" version))
          (sha256
@@ -1385,10 +1388,11 @@ several blockable channels.)")
   (sbcl-package->ecl-package sbcl-jpl-queues))
 
 (define-public sbcl-eos
-  (let ((commit "b0faca83781ead9a588661e37bd47f90362ccd94"))
+  (let ((commit "b4413bccc4d142cbe1bf49516c3a0a22c9d99243")
+        (revision "2"))
     (package
       (name "sbcl-eos")
-      (version (git-version "0.0.0" "1" commit))
+      (version (git-version "0.0.0" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -1396,8 +1400,7 @@ several blockable channels.)")
                (url "https://github.com/adlai/Eos")
                (commit commit)))
          (sha256
-          (base32
-           "1bq8cfg087iyxmxi1mwgx5cfgy3b8ydrf81xljcis8qbgb2vszph"))
+          (base32 "1afllvmlnx97yzz404gycl3pa3kwx427k3hrbf37rpmjlv47knhk"))
          (file-name (git-file-name "eos" version))))
       (build-system asdf-build-system/sbcl)
       (synopsis "Unit Testing for Common Lisp")
@@ -1754,7 +1757,7 @@ streams, support is included for convenient stream wrappers.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/melisgl/named-readtables.git")
+               (url "https://github.com/melisgl/named-readtables")
                (commit commit)))
          (sha256
           (base32 "01l4831m7k84qvhzyx0qgdl50isr4zmp40qf6dfq2iqcaj8y4h3n"))
@@ -2520,7 +2523,7 @@ non-consing thread safe queues and fibonacci priority queues.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/cffi/cffi.git")
+             (url "https://github.com/cffi/cffi")
              (commit (string-append "v" version))))
        (file-name (git-file-name "cffi-bootstrap" version))
        (sha256
@@ -2805,7 +2808,7 @@ precisely controls the behavior of the parser via Common Lisp restarts.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/trivial-garbage/trivial-garbage.git")
+             (url "https://github.com/trivial-garbage/trivial-garbage")
              (commit (string-append "v" version))))
        (file-name (git-file-name "trivial-garbage" version))
        (sha256
@@ -3133,10 +3136,10 @@ is a library for creating graphical user interfaces.")
   (sbcl-package->cl-source-package sbcl-cl-cffi-gtk))
 
 (define-public sbcl-cl-webkit
-  (let ((commit "f93cb9697e8813068795fe4dc39ac950d814102d"))
+  (let ((commit "6c905a5550b58a5b7602da5a087d7dafc5337122"))
     (package
       (name "sbcl-cl-webkit")
-      (version (git-version "2.4" "3" commit))
+      (version (git-version "2.4" "4" commit))
       (source
        (origin
          (method git-fetch)
@@ -3146,7 +3149,7 @@ is a library for creating graphical user interfaces.")
          (file-name (git-file-name "cl-webkit" version))
          (sha256
           (base32
-           "1sjcw08kjpd5h83sms7zcq2nymddjygk9hm2rpgzrl524an9ziwc"))))
+           "0017ijjflqqbgbj5bf7ffkyw5idhxc0ggly2qh5igf3kz886p9rh"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("cffi" ,sbcl-cffi)
@@ -3521,7 +3524,7 @@ client and server.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/gwkkwg/trivial-backtrace.git")
+             (url "https://github.com/gwkkwg/trivial-backtrace")
              (commit commit)))
        (file-name (git-file-name "trivial-backtrace" version))
        (sha256
@@ -3566,7 +3569,7 @@ backtrace portably.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/jdz/rfc2388.git")
+             (url "https://github.com/jdz/rfc2388")
              (commit commit)))
        (file-name (git-file-name "rfc2388" version))
        (sha256
@@ -3618,7 +3621,7 @@ RFC 1321 by R. Rivest, published April 1992.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/cl-plus-ssl/cl-plus-ssl.git")
+               (url "https://github.com/cl-plus-ssl/cl-plus-ssl")
                (commit commit)))
          (file-name (git-file-name "cl+ssl" version))
          (sha256
@@ -3727,7 +3730,7 @@ encoding table that uses only URI-compatible characters.")
      (origin
        (method git-fetch)
        (uri (git-reference
-              (url "https://github.com/edicl/chunga.git")
+              (url "https://github.com/edicl/chunga")
               (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -3756,7 +3759,7 @@ defined in RFC 2616.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/edicl/cl-who.git")
+               (url "https://github.com/edicl/cl-who")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -3788,7 +3791,7 @@ as good or bad as the next one.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/froydnj/chipz.git")
+               (url "https://github.com/froydnj/chipz")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -3820,7 +3823,7 @@ the format used by the popular compression tool bzip2.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/edicl/drakma.git")
+             (url "https://github.com/edicl/drakma")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -3860,7 +3863,7 @@ sockets, SSL, continuable uploads, file uploads, cookies, and more.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/edicl/hunchentoot.git")
+             (url "https://github.com/edicl/hunchentoot")
              (commit (string-append "v" version))))
        (file-name (git-file-name "hunchentoot" version))
        (sha256
@@ -3900,7 +3903,7 @@ connections (keep-alive), and SSL.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/m2ym/trivial-types.git")
+             (url "https://github.com/m2ym/trivial-types")
              (commit "ee869f2b7504d8aa9a74403641a5b42b16f47d88")))
        (file-name (git-file-name name version))
        (sha256
@@ -3924,7 +3927,7 @@ PROPER-LIST, ASSOCIATION-LIST, PROPERTY-LIST and TUPLE.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/m2ym/cl-syntax.git")
+             (url "https://github.com/m2ym/cl-syntax")
              (commit "03f0c329bbd55b8622c37161e6278366525e2ccc")))
        (file-name (git-file-name "cl-syntax" version))
        (sha256
@@ -3954,7 +3957,7 @@ PROPER-LIST, ASSOCIATION-LIST, PROPERTY-LIST and TUPLE.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/m2ym/cl-annot.git")
+               (url "https://github.com/m2ym/cl-annot")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -4087,7 +4090,7 @@ addition, removal, and random selection.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/fukamachi/quri.git")
+               (url "https://github.com/fukamachi/quri")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -4123,7 +4126,7 @@ Lisp. It is intended to be a replacement of PURI.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/myway.git")
+             (url "https://github.com/fukamachi/myway")
              (commit commit)))
        (file-name (git-file-name "myway" version))
        (sha256
@@ -4266,7 +4269,7 @@ Lisp.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/sionescu/static-vectors.git")
+             (url "https://github.com/sionescu/static-vectors")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -4300,7 +4303,7 @@ memory.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/wlbr/cl-marshal.git")
+             (url "https://github.com/wlbr/cl-marshal")
              (commit commit)))
        (file-name (git-file-name name version))
        (sha256
@@ -4327,7 +4330,7 @@ Only minimal changes required to make your CLOS objects serializable.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/rpav/CheckL.git")
+               (url "https://github.com/rpav/CheckL")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -4365,7 +4368,7 @@ against the last run.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/rpav/fast-io.git")
+             (url "https://github.com/rpav/fast-io")
              (commit commit)))
        (file-name (git-file-name name version))
        (sha256
@@ -4404,7 +4407,7 @@ streams (though primarily the former, while wrapping the latter).")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Rudolph-Miller/jonathan.git")
+             (url "https://github.com/Rudolph-Miller/jonathan")
              (commit commit)))
        (file-name (git-file-name name version))
        (sha256
@@ -4516,7 +4519,7 @@ reset to 0 and you're able to read it again.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/lack.git")
+             (url "https://github.com/fukamachi/lack")
              (commit commit)))
        (file-name (git-file-name "lack-request" version))
        (sha256
@@ -4557,7 +4560,7 @@ performance and simplicity in mind.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/dlowe-net/local-time.git")
+             (url "https://github.com/dlowe-net/local-time")
              (commit commit)))
        (file-name (git-file-name name version))
        (sha256
@@ -4592,7 +4595,7 @@ Long Painful History of Time\".")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/lack.git")
+             (url "https://github.com/fukamachi/lack")
              (commit commit)))
        (file-name (git-file-name name version))
        (sha256
@@ -4633,7 +4636,7 @@ performance and simplicity in mind.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/lack.git")
+             (url "https://github.com/fukamachi/lack")
              (commit commit)))
        (file-name (git-file-name "lack-component" version))
        (sha256
@@ -4669,7 +4672,7 @@ performance and simplicity in mind.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/lack.git")
+             (url "https://github.com/fukamachi/lack")
              (commit commit)))
        (file-name (git-file-name "lack-util" version))
        (sha256
@@ -4707,7 +4710,7 @@ performance and simplicity in mind.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/lack.git")
+             (url "https://github.com/fukamachi/lack")
              (commit commit)))
        (file-name (git-file-name "lack-middleware-backtrace" version))
        (sha256
@@ -4743,7 +4746,7 @@ performance and simplicity in mind.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/Shinmera/trivial-mimes.git")
+               (url "https://github.com/Shinmera/trivial-mimes")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -4790,7 +4793,7 @@ mime-type of a file.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/lack.git")
+             (url "https://github.com/fukamachi/lack")
              (commit commit)))
        (file-name (git-file-name "lack-middleware-static" version))
        (sha256
@@ -4830,7 +4833,7 @@ performance and simplicity in mind.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/lack.git")
+             (url "https://github.com/fukamachi/lack")
              (commit commit)))
        (file-name (git-file-name "lack" version))
        (sha256
@@ -4867,7 +4870,7 @@ performance and simplicity in mind.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/fukamachi/ningle.git")
+               (url "https://github.com/fukamachi/ningle")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -4930,7 +4933,7 @@ performance and simplicity in mind.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/clack.git")
+             (url "https://github.com/fukamachi/clack")
              (commit commit)))
        (file-name (git-file-name name version))
        (sha256
@@ -5026,7 +5029,7 @@ port within a range.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/tgutu/clunit.git")
+               (url "https://github.com/tgutu/clunit")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -5059,7 +5062,7 @@ experience.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/bendudson/py4cl.git")
+               (url "https://github.com/bendudson/py4cl")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -5158,7 +5161,7 @@ high-level way.  This library provides such operators.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/mcandre/cl-quickcheck.git")
+               (url "https://github.com/mcandre/cl-quickcheck")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -5189,7 +5192,7 @@ high-level way.  This library provides such operators.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/snmsts/burgled-batteries3.git")
+               (url "https://github.com/snmsts/burgled-batteries3")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -5254,7 +5257,7 @@ CPython implementation of Python) and Common Lisp.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/gwkkwg/metabang-bind.git")
+               (url "https://github.com/gwkkwg/metabang-bind")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -6550,8 +6553,8 @@ number of other open source projects.
   (sbcl-package->ecl-package sbcl-s-sysdeps))
 
 (define-public sbcl-cl-prevalence
-  (let ((commit "da3ed6c4594b1c2fca90c178c1993973c4bf16c9")
-        (revision "2"))
+  (let ((commit "1e5f030d94237b33d20947a2f6c194abedb10727")
+        (revision "3"))
     (package
       (name "sbcl-cl-prevalence")
       (build-system asdf-build-system/sbcl)
@@ -6566,10 +6569,12 @@ number of other open source projects.
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "0bq905hv1626dl6b7s0zn4lbdh608g1pxaljl1fda6pwp9hmj95a"))))
+           "13yb8lv2aap5wvqa6hw7ms31xnax58f4m2nxifkssrzkb2w2qf29"))))
       (inputs
        `(("s-sysdeps" ,sbcl-s-sysdeps)
          ("s-xml" ,sbcl-s-xml)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
       (synopsis "Implementation of object prevalence for Common Lisp")
       (description "This Common Lisp library implements object prevalence (see
 @url{https://en.wikipedia.org/wiki/System_prevalence}).  It allows
@@ -6631,7 +6636,7 @@ programming style and the efficiency of an iterative programming style.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/jwiegley/periods.git")
+               (url "https://github.com/jwiegley/periods")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -6684,7 +6689,7 @@ providing functions compatible with the series Common Lisp library.")))
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/gwkkwg/metatilities-base.git")
+               (url "https://github.com/gwkkwg/metatilities-base")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -6716,7 +6721,7 @@ which implements a set of utilities.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/gwkkwg/cl-containers.git")
+               (url "https://github.com/gwkkwg/cl-containers")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -6805,7 +6810,7 @@ on the XPTest package by Craig Brozensky and the JUnit package by Kent Beck.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/jwiegley/cambl.git")
+               (url "https://github.com/jwiegley/cambl")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -6863,7 +6868,7 @@ purpose of financial calculations."))))
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/ledger/cl-ledger.git")
+               (url "https://github.com/ledger/cl-ledger")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -6908,7 +6913,7 @@ system.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/glv2/bst.git")
+               (url "https://github.com/glv2/bst")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -6939,7 +6944,7 @@ can contain any kind of values.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/glv2/cl-octet-streams.git")
+             (url "https://github.com/glv2/cl-octet-streams")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -6974,7 +6979,7 @@ cl-plumbing libraries.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/glv2/cl-lzlib.git")
+               (url "https://github.com/glv2/cl-lzlib")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -7019,7 +7024,7 @@ compression/decompression using bindings to the lzlib C library.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/zkat/chanl.git")
+               (url "https://github.com/zkat/chanl")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -7054,7 +7059,7 @@ threads.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/skypher/cl-store.git")
+               (url "https://github.com/skypher/cl-store")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -7268,8 +7273,8 @@ implementation specific equivalent.")
   (sbcl-package->ecl-package sbcl-trivial-macroexpand-all))
 
 (define-public sbcl-serapeum
-  (let ((commit "64f0c4a161bbbda7c275012ca1415b4293b9e169")
-        (revision "1"))
+  (let ((commit "a2ca90cbdcb9f76c2822286110c7abe9ba5b76c2")
+        (revision "2"))
     (package
       (name "sbcl-serapeum")
       (version (git-version "0.0.0" revision commit))
@@ -7283,7 +7288,7 @@ implementation specific equivalent.")
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "0djnj0py8hdjnk5j6shjq2kbmyxqd5sw79cilcfmpfz4dzjdgkx9"))))
+           "1lrk2kf7qh5g6f8xvyg8wf89frzb5mw6m1jzgy46jy744f459i8q"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("alexandria" ,sbcl-alexandria)
@@ -7363,7 +7368,7 @@ Clojure, as well as several expansions on the idea.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/glv2/simple-parallel-tasks.git")
+               (url "https://github.com/glv2/simple-parallel-tasks")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -7427,7 +7432,7 @@ binary heap and a Fibonacci heap) as well as an efficient priority queue.")
          (method git-fetch)
          (uri
           (git-reference
-           (url "https://github.com/eschulte/curry-compose-reader-macros.git")
+           (url "https://github.com/eschulte/curry-compose-reader-macros")
            (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -7458,7 +7463,7 @@ of function partial application and composition.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/phmarek/yason.git")
+             (url "https://github.com/phmarek/yason")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -7535,7 +7540,7 @@ interactive development.")
          (method git-fetch)
          (uri
           (git-reference
-           (url "https://github.com/eschulte/graph.git")
+           (url "https://github.com/eschulte/graph")
            (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -7638,7 +7643,7 @@ results.")
          (method git-fetch)
          (uri
           (git-reference
-           (url "https://github.com/Shinmera/documentation-utils.git")
+           (url "https://github.com/Shinmera/documentation-utils")
            (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -7976,7 +7981,7 @@ intending to program in Lisp.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/edicl/cl-interpol.git")
+               (url "https://github.com/edicl/cl-interpol")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -8016,7 +8021,7 @@ doesn't support them.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/AccelerationNet/symbol-munger.git")
+               (url "https://github.com/AccelerationNet/symbol-munger")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -8055,7 +8060,7 @@ and camel-case rules.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/AccelerationNet/lisp-unit2.git")
+               (url "https://github.com/AccelerationNet/lisp-unit2")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -8088,7 +8093,7 @@ by Chris Riesbeck.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/AccelerationNet/symbol-munger.git")
+               (url "https://github.com/AccelerationNet/symbol-munger")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -8144,7 +8149,7 @@ and camel-case rules.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/AccelerationNet/cl-csv.git")
+               (url "https://github.com/AccelerationNet/cl-csv")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -8183,7 +8188,7 @@ from/to strings, streams and files.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/sellout/external-program.git")
+               (url "https://github.com/sellout/external-program")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -8219,7 +8224,7 @@ sacrificing much in the way of power.")
       (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/ghollisjr/cl-ana.git")
+             (url "https://github.com/ghollisjr/cl-ana")
              (commit commit)))
        (file-name (git-file-name name version))
        (sha256
@@ -9300,7 +9305,7 @@ visualization.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/sharplispers/archive.git")
+                      (url "https://github.com/sharplispers/archive")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -9468,7 +9473,7 @@ transforming Common Lisp code to continuation passing style.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/takagi/cl-coroutine.git")
+               (url "https://github.com/takagi/cl-coroutine")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9515,7 +9520,7 @@ continuations of the @code{cl-cont} library.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/orthecreedence/vom.git")
+               (url "https://github.com/orthecreedence/vom")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9546,7 +9551,7 @@ has a small codebase that's easy to understand and use.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/orthecreedence/cl-libuv.git")
+               (url "https://github.com/orthecreedence/cl-libuv")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9596,7 +9601,7 @@ has a small codebase that's easy to understand and use.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/orthecreedence/cl-async.git")
+               (url "https://github.com/orthecreedence/cl-async")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9724,7 +9729,7 @@ Common Lisp.  It uses the libuv library as backend.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/orthecreedence/blackbird.git")
+               (url "https://github.com/orthecreedence/blackbird")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9759,7 +9764,7 @@ the successor to the now-deprecated cl-async-future project.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/orthecreedence/cl-async-future.git")
+               (url "https://github.com/orthecreedence/cl-async-future")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9794,7 +9799,7 @@ to cl-async.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/thezerobit/green-threads.git")
+               (url "https://github.com/thezerobit/green-threads")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9842,7 +9847,7 @@ possible.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/hargettp/cl-base32.git")
+               (url "https://github.com/hargettp/cl-base32")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9873,7 +9878,7 @@ defined in RFC4648.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/glv2/cl-z85.git")
+               (url "https://github.com/glv2/cl-z85")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -9904,7 +9909,7 @@ ZeroMQ.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/herth/ltk.git")
+             (url "https://github.com/herth/ltk")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -9990,7 +9995,7 @@ from the one running the Lisp program by using a TCP connection.")))
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/djr7C4/cl-lex.git")
+               (url "https://github.com/djr7C4/cl-lex")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10092,7 +10097,7 @@ the library does not depend on X11).
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/sharplispers/cl-jpeg.git")
+               (url "https://github.com/sharplispers/cl-jpeg")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10172,7 +10177,7 @@ ones.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/xach/salza2.git")
+             (url "https://github.com/xach/salza2")
              (commit (string-append "release-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -10202,7 +10207,7 @@ respectively.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/Ramarren/png-read.git")
+               (url "https://github.com/Ramarren/png-read")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10231,7 +10236,7 @@ respectively.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/xach/zpng.git")
+             (url "https://github.com/xach/zpng")
              (commit (string-append "release-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -10258,7 +10263,7 @@ respectively.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/jnjcc/cl-qrencode.git")
+             (url "https://github.com/jnjcc/cl-qrencode")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -10291,7 +10296,7 @@ them as PNG files.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/hdfgroup/hdf5-cffi.git")
+               (url "https://github.com/hdfgroup/hdf5-cffi")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10352,7 +10357,7 @@ them as PNG files.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/lvaruzza/cl-randist.git")
+             (url "https://github.com/lvaruzza/cl-randist")
              (commit "f088a54b540a7adefab7c04094a6103f9edda3d0")))
        (file-name (git-file-name name version))
        (sha256
@@ -10384,7 +10389,7 @@ generation functions from the GSL library.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Shinmera/float-features.git")
+             (url "https://github.com/Shinmera/float-features")
              (commit "d3ef60181635b0849aa28cfc238053b7ca4644b0")))
        (file-name (git-file-name name version))
        (sha256
@@ -10418,7 +10423,7 @@ covered by the Common Lisp standard.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/AccelerationNet/function-cache.git")
+             (url "https://github.com/AccelerationNet/function-cache")
              (commit "6a5ada401e57da2c8abf046f582029926e61fce8")))
        (file-name (git-file-name name version))
        (sha256
@@ -10460,7 +10465,7 @@ caching based on arguments (an expanded form of memoization).")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/guicho271828/type-r.git")
+               (url "https://github.com/guicho271828/type-r")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10497,7 +10502,7 @@ the elements in compound type specifier, e.g. @code{dimensions} in
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/guicho271828/trivialib.type-unify.git")
+               (url "https://github.com/guicho271828/trivialib.type-unify")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10536,7 +10541,7 @@ correctly.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/numcl/specialized-function.git")
+               (url "https://github.com/numcl/specialized-function")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10578,7 +10583,7 @@ code.  The main target of this macro is speed.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/numcl/constantfold.git")
+               (url "https://github.com/numcl/constantfold")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10616,7 +10621,7 @@ additional form that is considered as a candidate for a constant.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/numcl/gtype.git")
+               (url "https://github.com/numcl/gtype")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10656,7 +10661,7 @@ type correctness in Common Lisp.  It is based on CLtL2 extensions.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/numcl/numcl.git")
+               (url "https://github.com/numcl/numcl")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10703,7 +10708,7 @@ and usefulness, not speed.  Track the progress at
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/orivej/pzmq.git")
+               (url "https://github.com/orivej/pzmq")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10750,7 +10755,7 @@ lightweight messaging kernel.")
          (method git-fetch)
          (uri
           (git-reference
-           (url "https://github.com/Shinmera/clss.git")
+           (url "https://github.com/Shinmera/clss")
            (commit commit)))
          (sha256
           (base32 "0la4dbcda78x29szanylccrsljqrn9d1mhh569sqkyp44ni5fv91"))
@@ -10782,7 +10787,7 @@ selectors.  It makes use of the Plump-DOM and is used by lQuery.")
          (method git-fetch)
          (uri
           (git-reference
-           (url "https://github.com/Shinmera/lquery.git")
+           (url "https://github.com/Shinmera/lquery")
            (commit commit)))
          (sha256
           (base32 "0520mcpxc2d6fdm8z61arpgd2z38kan7cf06qs373n5r64rakz6w"))
@@ -10821,7 +10826,7 @@ approach to templating.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/hackinghat/cl-mysql.git")
+               (url "https://github.com/hackinghat/cl-mysql")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10863,7 +10868,7 @@ approach to templating.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/marijnh/Postmodern.git")
+               (url "https://github.com/marijnh/Postmodern")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -10982,7 +10987,7 @@ foreign libraries.
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/cl-dbi.git")
+             (url "https://github.com/fukamachi/cl-dbi")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -11503,7 +11508,7 @@ accompaniment to the standard ANSI facilities.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/laynor/clx-xembed.git")
+               (url "https://github.com/laynor/clx-xembed")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -11566,7 +11571,7 @@ Streams in ICDE’05.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/deadtrickster/prometheus.cl.git")
+             (url "https://github.com/deadtrickster/prometheus.cl")
              (commit "7352b92296996ff383503e19bdd3bcea30409a15")))
        (file-name (git-file-name name version))
        (sha256
@@ -11678,7 +11683,7 @@ Streams in ICDE’05.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/dardoria/uuid.git")
+               (url "https://github.com/dardoria/uuid")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -11710,7 +11715,7 @@ Streams in ICDE’05.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/Shinmera/dissect.git")
+               (url "https://github.com/Shinmera/dissect")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -11744,7 +11749,7 @@ and active restarts.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fukamachi/rove.git")
+             (url "https://github.com/fukamachi/rove")
              (commit "f3695db08203bf26f3b861dc22ac0f4257d3ec21")))
        (file-name (git-file-name name version))
        (sha256
@@ -11778,7 +11783,7 @@ This is intended to be a successor of Prove.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/death/exponential-backoff.git")
+               (url "https://github.com/death/exponential-backoff")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -11808,7 +11813,7 @@ learn about each of the parameters.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/fukamachi/sxql.git")
+               (url "https://github.com/fukamachi/sxql")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -11847,7 +11852,7 @@ learn about each of the parameters.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/lmj/1am.git")
+               (url "https://github.com/lmj/1am")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -11877,7 +11882,7 @@ learn about each of the parameters.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/telephil/cl-ascii-table.git")
+               (url "https://github.com/telephil/cl-ascii-table")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -11904,7 +11909,7 @@ tables.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/SahilKang/cl-rdkafka.git")
+             (url "https://github.com/SahilKang/cl-rdkafka")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -12131,7 +12136,7 @@ implementations of those protocols for different purposes.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/masatoi/cl-libsvm-format.git")
+               (url "https://github.com/masatoi/cl-libsvm-format")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -12166,7 +12171,7 @@ format.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/masatoi/cl-online-learning.git")
+               (url "https://github.com/masatoi/cl-online-learning")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -12205,7 +12210,7 @@ online linear classification written in Common Lisp.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/masatoi/cl-random-forest.git")
+               (url "https://github.com/masatoi/cl-random-forest")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -12247,7 +12252,7 @@ includes an implementation of Global Refinement of Random Forest.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/ahefner/bordeaux-fft.git")
+               (url "https://github.com/ahefner/bordeaux-fft")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -12277,7 +12282,7 @@ portable Common Lisp.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/pkhuong/Napa-FFT3.git")
+               (url "https://github.com/pkhuong/Napa-FFT3")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -12293,3 +12298,1244 @@ convolutions, etc.")
 
 (define-public cl-napa-fft3
   (sbcl-package->cl-source-package sbcl-napa-fft3))
+
+(define-public sbcl-cl-tga
+  (let ((commit "4dc2f7b8a259b9360862306640a07a23d4afaacc")
+        (revision "0"))
+    (package
+      (name "sbcl-cl-tga")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/fisxoj/cl-tga")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "03k3npmn0xd3fd2m7vwxph82av2xrfb150imqrinlzqmzvz1v1br"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/fisxoj/cl-tga")
+      (synopsis "TGA file loader for Common Lisp")
+      (description
+       "Cl-tga was written to facilitate loading @emph{.tga} files into OpenGL
+programs.  It's a very simple library, and, at the moment, only supports
+non-RLE encoded forms of the files.")
+      (license license:expat))))
+
+(define-public cl-tga
+  (sbcl-package->cl-source-package sbcl-cl-tga))
+
+(define-public ecl-cl-tga
+  (sbcl-package->ecl-package sbcl-cl-tga))
+
+(define-public sbcl-com.gigamonkeys.binary-data
+  (let ((commit "22e908976d7f3e2318b7168909f911b4a00963ee")
+        (revision "0"))
+    (package
+      (name "sbcl-com.gigamonkeys.binary-data")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/gigamonkey/monkeylib-binary-data")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "072v417vmcnvmyh8ddq9vmwwrizm7zwz9dpzi14qy9nsw8q649zw"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)))
+      (home-page "https://github.com/gigamonkey/monkeylib-binary-data")
+      (synopsis "Common Lisp library for reading and writing binary data")
+      (description
+       "This a Common Lisp library for reading and writing binary data.  It is
+based on code from chapter 24 of the book @emph{Practical Common Lisp}.")
+      (license license:bsd-3))))
+
+(define-public cl-com.gigamonkeys.binary-data
+  (sbcl-package->cl-source-package sbcl-com.gigamonkeys.binary-data))
+
+(define-public ecl-com.gigamonkeys.binary-data
+  (sbcl-package->ecl-package sbcl-com.gigamonkeys.binary-data))
+
+(define-public sbcl-deflate
+  (package
+    (name "sbcl-deflate")
+    (version "1.0.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/pmai/Deflate")
+             (commit (string-append "release-" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1jpdjnxh6cw2d8hk70r2sxn92is52s9b855irvwkdd777fdciids"))))
+    (build-system asdf-build-system/sbcl)
+    (home-page "https://github.com/pmai/Deflate")
+    (synopsis "Native deflate decompression for Common Lisp")
+    (description
+     "This library is an implementation of Deflate (RFC 1951) decompression,
+with optional support for ZLIB-style (RFC 1950) and gzip-style (RFC 1952)
+wrappers of deflate streams.  It currently does not handle compression.")
+    (license license:expat)))
+
+(define-public cl-deflate
+  (sbcl-package->cl-source-package sbcl-deflate))
+
+(define-public ecl-deflate
+  (sbcl-package->ecl-package sbcl-deflate))
+
+(define-public sbcl-skippy
+  (let ((commit "e456210202ca702c792292c5060a264d45e47090")
+        (revision "0"))
+    (package
+      (name "sbcl-skippy")
+      (version (git-version "1.3.12" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/xach/skippy")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1sxbn5nh24qpx9w64x8mhp259cxcl1x8p126wk3b91ijjsj7l5vj"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://xach.com/lisp/skippy/")
+      (synopsis "Common Lisp library for GIF images")
+      (description
+       "Skippy is a Common Lisp library to read and write GIF image files.")
+      (license license:bsd-2))))
+
+(define-public cl-skippy
+  (sbcl-package->cl-source-package sbcl-skippy))
+
+(define-public ecl-skippy
+  (sbcl-package->ecl-package sbcl-skippy))
+
+(define-public sbcl-cl-freetype2
+  (let ((commit "96058da730b4812df916c1f4ee18c99b3b15a3de")
+        (revision "0"))
+    (package
+      (name "sbcl-cl-freetype2")
+      (version (git-version "1.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/rpav/cl-freetype2")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0f8darhairgxnb5bzqcny7nh7ss3471bdzix5rzcyiwdbr5kymjl"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("cffi" ,sbcl-cffi)
+         ("cffi-grovel" ,sbcl-cffi-grovel)
+         ("freetype" ,freetype)
+         ("trivial-garbage" ,sbcl-trivial-garbage)))
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'fix-paths
+             (lambda* (#:key inputs #:allow-other-keys)
+               (substitute* "src/ffi/ft2-lib.lisp"
+                 (("\"libfreetype\"")
+                  (string-append "\"" (assoc-ref inputs "freetype")
+                                 "/lib/libfreetype\"")))
+               (substitute* "src/ffi/grovel/grovel-freetype2.lisp"
+                 (("-I/usr/include/freetype")
+                  (string-append "-I" (assoc-ref inputs "freetype")
+                                 "/include/freetype")))
+               #t)))))
+      (home-page "https://github.com/rpav/cl-freetype2")
+      (synopsis "Common Lisp bindings for Freetype 2")
+      (description
+       "This is a general Freetype 2 wrapper for Common Lisp using CFFI.  It's
+geared toward both using Freetype directly by providing a simplified API, as
+well as providing access to the underlying C structures and functions for use
+with other libraries which may also use Freetype.")
+      (license license:bsd-3))))
+
+(define-public cl-freetype2
+  (sbcl-package->cl-source-package sbcl-cl-freetype2))
+
+(define-public ecl-cl-freetype2
+  (sbcl-package->ecl-package sbcl-cl-freetype2))
+
+(define-public sbcl-opticl-core
+  (let ((commit "b7cd13d26df6b824b216fbc360dc27bfadf04999")
+        (revision "0"))
+    (package
+      (name "sbcl-opticl-core")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/slyrus/opticl-core")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0458bllabcdjghfrqx6aki49c9qmvfmkk8jl75cfpi7q0i12kh95"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)))
+      (home-page "https://github.com/slyrus/opticl-core")
+      (synopsis "Core classes and pixel access macros for Opticl")
+      (description
+       "This Common Lisp library contains the core classes and pixel access
+macros for the Opticl image processing library.")
+      (license license:bsd-2))))
+
+(define-public cl-opticl-core
+  (sbcl-package->cl-source-package sbcl-opticl-core))
+
+(define-public ecl-opticl-core
+  (sbcl-package->ecl-package sbcl-opticl-core))
+
+(define-public sbcl-retrospectiff
+  (let ((commit "c2a69d77d5010f8cdd9045b3e36a08a73da5d321")
+        (revision "0"))
+    (package
+      (name "sbcl-retrospectiff")
+      (version (git-version "0.2" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/slyrus/retrospectiff")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0qsn9hpd8j2kp43dk05j8dczz9zppdff5rrclbp45n3ksk9inw8i"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (inputs
+       `(("cl-jpeg" ,sbcl-cl-jpeg)
+         ("com.gigamonkeys.binary-data" ,sbcl-com.gigamonkeys.binary-data)
+         ("deflate" ,sbcl-deflate)
+         ("flexi-streams" ,sbcl-flexi-streams)
+         ("ieee-floats" ,sbcl-ieee-floats)
+         ("opticl-core" ,sbcl-opticl-core)))
+      (home-page "https://github.com/slyrus/retrospectiff")
+      (synopsis "Common Lisp library for TIFF images")
+      (description
+       "Retrospectiff is a common lisp library for reading and writing images
+in the TIFF (Tagged Image File Format) format.")
+      (license license:bsd-2))))
+
+(define-public cl-retrospectif
+  (sbcl-package->cl-source-package sbcl-retrospectiff))
+
+(define-public ecl-retrospectiff
+  (sbcl-package->ecl-package sbcl-retrospectiff))
+
+(define-public sbcl-mmap
+  (let ((commit "ba2e98c67e25f0fb8ff838238561120a23903ce7")
+        (revision "0"))
+    (package
+      (name "sbcl-mmap")
+      (version (git-version "1.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/Shinmera/mmap")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0qd0xp20i1pcfn12kkapv9pirb6hd4ns7kz4zf1mmjwykpsln96q"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("cffi" ,sbcl-cffi)
+         ("parachute" ,sbcl-parachute)
+         ("trivial-features" ,sbcl-trivial-features)))
+      (inputs
+       `(("cffi" ,sbcl-cffi)
+         ("documentation-utils" ,sbcl-documentation-utils)))
+      (home-page "https://shinmera.github.io/mmap/")
+      (synopsis "File memory mapping for Common Lisp")
+      (description
+       "This is a utility library providing access to the @emph{mmap} family of
+functions in a portable way.  It allows you to directly map a file into the
+address space of your process without having to manually read it into memory
+sequentially.  Typically this is much more efficient for files that are larger
+than a few Kb.")
+      (license license:zlib))))
+
+(define-public cl-mmap
+  (sbcl-package->cl-source-package sbcl-mmap))
+
+(define-public ecl-mmap
+  (sbcl-package->ecl-package sbcl-mmap))
+
+(define-public sbcl-3bz
+  (let ((commit "d6119083b5e0b0a6dd3abc2877936c51f3f3deed")
+        (revision "0"))
+    (package
+      (name "sbcl-3bz")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/3b/3bz")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0fyxzyf2b6sc0w8d9g4nlva861565z6f3xszj0lw29x526dd9rhj"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("babel" ,sbcl-babel)
+         ("cffi" ,sbcl-cffi)
+         ("mmap" ,sbcl-mmap)
+         ("nibbles" ,sbcl-nibbles)
+         ("trivial-features" ,sbcl-trivial-features)))
+      (arguments
+       ;; FIXME: Without the following line, the build fails (see issue 41437).
+       `(#:asd-system-name "3bz"))
+      (home-page "https://github.com/3b/3bz")
+      (synopsis "Deflate decompression for Common Lisp")
+      (description
+       "3bz is an implementation of Deflate decompression (RFC 1951) optionally
+with zlib (RFC 1950) or gzip (RFC 1952) wrappers, with support for reading from
+foreign pointers (for use with mmap and similar, etc), and from CL octet
+vectors and streams.")
+      (license license:expat))))
+
+(define-public cl-3bz
+  (sbcl-package->cl-source-package sbcl-3bz))
+
+(define-public ecl-3bz
+  (sbcl-package->ecl-package sbcl-3bz))
+
+(define-public sbcl-zpb-exif
+  (package
+    (name "sbcl-zpb-exif")
+    (version "1.2.4")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/xach/zpb-exif")
+             (commit (string-append "release-" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "15s227jhby55cisz14xafb0p1ws2jmrg2rrbbd00lrb97im84hy6"))))
+    (build-system asdf-build-system/sbcl)
+    (home-page "https://xach.com/lisp/zpb-exif/")
+    (synopsis "EXIF information extractor for Common Lisp")
+    (description
+     "This is a Common Lisp library to extract EXIF information from image
+files.")
+    (license license:bsd-2)))
+
+(define-public cl-zpb-exif
+  (sbcl-package->cl-source-package sbcl-zpb-exif))
+
+(define-public ecl-zpb-exif
+  (sbcl-package->ecl-package sbcl-zpb-exif))
+
+(define-public sbcl-pngload
+  (package
+    (name "sbcl-pngload")
+    (version "2.0.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/bufferswap/pngload")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1ix8dd0fxlf8xm0bszh1s7sx83hn0vqq8b8c9gkrd5m310w8mpvh"))))
+    (build-system asdf-build-system/sbcl)
+    (inputs
+     `(("3bz" ,sbcl-3bz)
+       ("alexandria" ,sbcl-alexandria)
+       ("cffi" ,sbcl-cffi)
+       ("mmap" ,sbcl-mmap)
+       ("parse-float" ,sbcl-parse-float)
+       ("static-vectors" ,sbcl-static-vectors)
+       ("swap-bytes" ,sbcl-swap-bytes)
+       ("zpb-exif" ,sbcl-zpb-exif)))
+    (arguments
+     ;; Test suite disabled because of a dependency cycle.
+     ;; pngload tests depend on opticl which depends on pngload.
+     '(#:tests? #f))
+    (home-page "https://github.com/bufferswap/pngload")
+    (synopsis "PNG image decoder for Common Lisp")
+    (description
+     "This is a Common Lisp library to load images in the PNG image format,
+both from files on disk, or streams in memory.")
+    (license license:expat)))
+
+(define-public cl-pngload
+  (sbcl-package->cl-source-package sbcl-pngload))
+
+(define-public ecl-pngload
+  (sbcl-package->ecl-package sbcl-pngload))
+
+(define-public sbcl-opticl
+  (let ((commit "e8684416eca2e78e82a7b436d436ef2ea24c019d")
+        (revision "0"))
+    (package
+      (name "sbcl-opticl")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/slyrus/opticl")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "03rirnnhhisjbimlmpi725h1d3x0cfv00r57988am873dyzawmm1"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("cl-jpeg" ,sbcl-cl-jpeg)
+         ("cl-tga" ,sbcl-cl-tga)
+         ("png-read" ,sbcl-png-read)
+         ("pngload" ,sbcl-pngload)
+         ("retrospectiff" ,sbcl-retrospectiff)
+         ("skippy" ,sbcl-skippy)
+         ("zpng" ,sbcl-zpng)))
+      (home-page "https://github.com/slyrus/opticl")
+      (synopsis "Image processing library for Common Lisp")
+      (description
+       "Opticl is a Common Lisp library for representing, processing, loading,
+and saving 2-dimensional pixel-based images.")
+      (license license:bsd-2))))
+
+(define-public cl-opticl
+  (sbcl-package->cl-source-package sbcl-opticl))
+
+(define-public sbcl-clim-lisp
+  (let ((commit "27b4d7a667c9b3faa74cabcb57706b888314fff7")
+        (revision "0"))
+    (package
+      (name "sbcl-clim-lisp")
+      (version (git-version "0.9.7" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/mcclim/mcclim")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0jijfgkwas6xnpp5wiii6slcx9pgsalngacb8zm29x6pamx2193h"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("closer-mop" ,sbcl-closer-mop)
+         ("log4cl" ,sbcl-log4cl)
+         ("trivial-gray-streams" ,sbcl-trivial-gray-streams)))
+      (home-page "https://common-lisp.net/project/mcclim/")
+      (synopsis "Common Lisp GUI toolkit")
+      (description
+       "McCLIM is an implementation of the @emph{Common Lisp Interface Manager
+specification}, a toolkit for writing GUIs in Common Lisp.")
+      (license license:lgpl2.1+))))
+
+(define-public sbcl-clim-basic
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-clim-basic")
+    (inputs
+     `(("alexandria" ,sbcl-alexandria)
+       ("babel" ,sbcl-babel)
+       ("bordeaux-threads" ,sbcl-bordeaux-threads)
+       ("clim-lisp" ,sbcl-clim-lisp)
+       ("flexichain" ,sbcl-flexichain)
+       ("spatial-trees" ,sbcl-spatial-trees)
+       ("trivial-features" ,sbcl-trivial-features)
+       ("trivial-garbage" ,sbcl-trivial-garbage)))
+    (arguments
+     '(#:asd-file "Core/clim-basic/clim-basic.asd"))))
+
+(define-public sbcl-clim-core
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-clim-core")
+    (inputs
+     `(("clim-basic" ,sbcl-clim-basic)))
+    (arguments
+     '(#:asd-file "Core/clim-core/clim-core.asd"))))
+
+(define-public sbcl-esa-mcclim
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-esa-mcclim")
+    (inputs
+     `(("alexandria" ,sbcl-alexandria)
+       ("clim-core" ,sbcl-clim-core)))
+    (arguments
+     '(#:asd-file "Libraries/ESA/esa-mcclim.asd"))))
+
+(define-public sbcl-mcclim-fonts
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-fonts")
+    (inputs
+     `(("clim-basic" ,sbcl-clim-basic)))
+    (arguments
+     '(#:asd-file "Extensions/fonts/mcclim-fonts.asd"))))
+
+(define-public sbcl-automaton
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-automaton")
+    (inputs
+     `())
+    (arguments
+     '(#:asd-file "Libraries/Drei/cl-automaton/automaton.asd"))))
+
+(define-public sbcl-persistent
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-persistent")
+    (inputs
+     `())
+    (arguments
+     '(#:asd-file "Libraries/Drei/Persistent/persistent.asd"))))
+
+(define-public sbcl-drei-mcclim
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-drei-mcclim")
+    (native-inputs
+     `(("fiveam" ,sbcl-fiveam)))
+    (inputs
+     `(("automaton" ,sbcl-automaton)
+       ("clim-core" ,sbcl-clim-core)
+       ("esa-mcclim" ,sbcl-esa-mcclim)
+       ("flexichain" ,sbcl-flexichain)
+       ("mcclim-fonts" ,sbcl-mcclim-fonts)
+       ("persistent" ,sbcl-persistent)
+       ("swank" ,cl-slime-swank)))
+    (arguments
+     '(#:asd-file "Libraries/Drei/drei-mcclim.asd"))))
+
+(define-public sbcl-clim
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-clim")
+    (inputs
+     `(("clim-core" ,sbcl-clim-core)
+       ("drei-mcclim" ,sbcl-drei-mcclim)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Core/clim/clim.asd"))))
+
+(define-public sbcl-mcclim-backend-common
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-backend-common")
+    (native-inputs
+     `(("fiveam" ,sbcl-fiveam)))
+    (inputs
+     `(("clim" ,sbcl-clim)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/common/mcclim-backend-common.asd"))))
+
+(define-public sbcl-mcclim-clx
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-clx")
+    (inputs
+     `(("alexandria" ,sbcl-alexandria)
+       ("cl-unicode" ,sbcl-cl-unicode)
+       ("clx" ,sbcl-clx)
+       ("mcclim-backend-common" ,sbcl-mcclim-backend-common)
+       ("mcclim-fonts" ,sbcl-mcclim-fonts)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/CLX/mcclim-clx.asd"))))
+
+(define-public sbcl-mcclim-fonts-truetype
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-fonts-truetype")
+    (inputs
+     `(("alexandria" ,sbcl-alexandria)
+       ("cl-aa" ,sbcl-cl-aa)
+       ("cl-paths-ttf" ,sbcl-cl-paths-ttf)
+       ("cl-vectors" ,sbcl-cl-vectors)
+       ("clim-basic" ,sbcl-clim-basic)
+       ("font-dejavu" ,font-dejavu)
+       ("zpb-ttf" ,sbcl-zpb-ttf)))
+    (arguments
+     '(#:asd-file "Extensions/fonts/mcclim-fonts.asd"
+       #:asd-system-name "mcclim-fonts/truetype"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             ;; mcclim-truetype uses DejaVu as default font and
+             ;; sets the path at build time.
+             (substitute* "Extensions/fonts/fontconfig.lisp"
+               (("/usr/share/fonts/truetype/dejavu/")
+                (string-append (assoc-ref inputs "font-dejavu")
+                               "/share/fonts/truetype/")))
+             #t)))))))
+
+(define-public sbcl-mcclim-fonts-clx-truetype
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-fonts-clx-truetype")
+    (inputs
+     `(("mcclim-clx" ,sbcl-mcclim-clx)
+       ("mcclim-fonts-truetype" ,sbcl-mcclim-fonts-truetype)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "./Extensions/fonts/mcclim-fonts.asd"
+       #:asd-system-name "mcclim-fonts/clx-truetype"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "Extensions/fonts/mcclim-fonts.asd"
+               ((":depends-on \\(#:mcclim-fonts/truetype")
+                ":depends-on (#:mcclim-fonts-truetype"))
+             #t)))))))
+
+(define-public sbcl-mcclim-clx-truetype
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-clx-truetype")
+    (inputs
+     `(("mcclim-clx" ,sbcl-mcclim-clx)
+       ("mcclim-fonts-clx-truetype" ,sbcl-mcclim-fonts-clx-truetype)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/CLX/mcclim-clx.asd"
+       #:asd-system-name "mcclim-clx/truetype"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "Backends/CLX/mcclim-clx.asd"
+               (("mcclim-fonts/clx-truetype")
+                "mcclim-fonts-clx-truetype"))
+             #t)))))))
+
+(define-public sbcl-mcclim-fontconfig
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-fontconfig")
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("alexandria" ,sbcl-alexandria)
+       ("cffi" ,sbcl-cffi)
+       ("cffi-grovel" ,sbcl-cffi-grovel)
+       ("fontconfig" ,fontconfig)))
+    (arguments
+     '(#:asd-file "Extensions/fontconfig/mcclim-fontconfig.asd"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "Extensions/fontconfig/src/functions.lisp"
+               (("libfontconfig\\.so")
+                (string-append (assoc-ref inputs "fontconfig")
+                               "/lib/libfontconfig.so")))
+             #t))
+         (add-after 'unpack 'fix-build
+           (lambda _
+             ;; The cffi-grovel system does not get loaded automatically,
+             ;; so we load it explicitly.
+             (substitute* "Extensions/fontconfig/mcclim-fontconfig.asd"
+               (("\\(asdf:defsystem #:mcclim-fontconfig" all)
+                (string-append "(asdf:load-system :cffi-grovel)\n" all)))
+             #t)))))))
+
+(define-public sbcl-mcclim-harfbuzz
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-harfbuzz")
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("alexandria" ,sbcl-alexandria)
+       ("cffi" ,sbcl-cffi)
+       ("cffi-grovel" ,sbcl-cffi-grovel)
+       ("freetype" ,freetype)
+       ("harfbuzz" ,harfbuzz)
+       ("trivial-garbage" ,sbcl-trivial-garbage)))
+    (arguments
+     '(#:asd-file "Extensions/harfbuzz/mcclim-harfbuzz.asd"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "Extensions/harfbuzz/src/functions.lisp"
+               (("libharfbuzz\\.so")
+                (string-append (assoc-ref inputs "harfbuzz")
+                               "/lib/libharfbuzz.so")))
+             #t))
+         (add-after 'unpack 'fix-build
+           (lambda _
+             ;; The cffi-grovel system does not get loaded automatically,
+             ;; so we load it explicitly.
+             (substitute* "Extensions/harfbuzz/mcclim-harfbuzz.asd"
+               (("\\(asdf:defsystem #:mcclim-harfbuzz" all)
+                (string-append "(asdf:load-system :cffi-grovel)\n" all)))
+             #t)))))))
+
+(define-public sbcl-mcclim-fonts-clx-freetype
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-fonts-clx-freetype")
+    (inputs
+     `(("cl-freetype2" ,sbcl-cl-freetype2)
+       ("mcclim-clx" ,sbcl-mcclim-clx)
+       ("mcclim-fontconfig" ,sbcl-mcclim-fontconfig)
+       ("mcclim-fonts" ,sbcl-mcclim-fonts)
+       ("mcclim-harfbuzz" ,sbcl-mcclim-harfbuzz)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Extensions/fonts/mcclim-fonts.asd"
+       #:asd-system-name "mcclim-fonts/clx-freetype"))))
+
+(define-public sbcl-mcclim-clx-freetype
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-clx-freetype")
+    (inputs
+     `(("mcclim-clx" ,sbcl-mcclim-clx)
+       ("mcclim-fonts-clx-freetype" ,sbcl-mcclim-fonts-clx-freetype)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/CLX/mcclim-clx.asd"
+       #:asd-system-name "mcclim-clx/freetype"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "Backends/CLX/mcclim-clx.asd"
+               (("mcclim-fonts/clx-freetype")
+                "mcclim-fonts-clx-freetype"))
+             #t)))))))
+
+(define-public sbcl-mcclim-render
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-render")
+    (inputs
+     `(("alexandria" ,sbcl-alexandria)
+       ("cl-vectors" ,sbcl-cl-vectors)
+       ("clim-basic" ,sbcl-clim-basic)
+       ("mcclim-backend-common" ,sbcl-mcclim-backend-common)
+       ("mcclim-fonts-truetype" ,sbcl-mcclim-fonts-truetype)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Extensions/render/mcclim-render.asd"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "Extensions/render/mcclim-render.asd"
+               (("mcclim-fonts/truetype")
+                "mcclim-fonts-truetype"))
+             #t)))))))
+
+(define-public sbcl-mcclim-clx-fb
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-clx-fb")
+    (inputs
+     `(("mcclim-backend-common" ,sbcl-mcclim-backend-common)
+       ("mcclim-clx" ,sbcl-mcclim-clx)
+       ("mcclim-render" ,sbcl-mcclim-render)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/CLX-fb/mcclim-clx-fb.asd"))))
+
+(define-public sbcl-mcclim-null
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-null")
+    (inputs
+     `(("clim" ,sbcl-clim)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/Null/mcclim-null.asd"))))
+
+(define-public sbcl-clim-postscript-font
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-clim-postscript-font")
+    (inputs
+     `(("clim-basic" ,sbcl-clim-basic)
+       ("mcclim-backend-common" ,sbcl-mcclim-backend-common)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/PostScript/clim-postscript-font.asd"))))
+
+(define-public sbcl-clim-postscript
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-clim-postscript")
+    (native-inputs
+     `(("fiveam" ,sbcl-fiveam)))
+    (inputs
+     `(("clim-basic" ,sbcl-clim-basic)
+       ("clim-postscript-font" ,sbcl-clim-postscript-font)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/PostScript/clim-postscript.asd"
+       ;; Test suite disabled because of a dependency cycle.
+       ;; The tests depend on mcclim/test-util, which depends on mcclim,
+       ;; wich depends on mcclim/extensions, which depends on clim-postscript.
+       #:tests? #f))))
+
+(define-public sbcl-clim-pdf
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-clim-pdf")
+    (native-inputs
+     `(("fiveam" ,sbcl-fiveam)))
+    (inputs
+     `(("cl-pdf" ,sbcl-cl-pdf)
+       ("clim-basic" ,sbcl-clim-basic)
+       ("clim-postscript-font" ,sbcl-clim-postscript-font)
+       ("flexi-streams" ,sbcl-flexi-streams)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Backends/PDF/clim-pdf.asd"
+       ;; Test suite disabled because of a dependency cycle.
+       ;; The tests depend on mcclim/test-util, which depends on mcclim,
+       ;; wich depends on mcclim/extensions, which depends on clim-pdf.
+       #:tests? #f))))
+
+(define-public sbcl-mcclim-looks
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-looks")
+    (inputs
+     `(("clim" ,sbcl-clim)
+       ("mcclim-clx" ,sbcl-mcclim-clx)
+       ("mcclim-clx-fb" ,sbcl-mcclim-clx-fb)
+       ("mcclim-clx-freetype" ,sbcl-mcclim-clx-freetype)
+       ("mcclim-clx-truetype" ,sbcl-mcclim-clx-truetype)
+       ("mcclim-null" ,sbcl-mcclim-null)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "mcclim.asd"
+       #:asd-system-name "mcclim/looks"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "mcclim.asd"
+               (("mcclim-clx/truetype")
+                "mcclim-clx-truetype")
+               (("mcclim-clx/freetype")
+                "mcclim-clx-freetype"))
+             #t)))))))
+
+(define-public sbcl-mcclim-franz
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-franz")
+    (inputs
+     `(("clim" ,sbcl-clim)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Extensions/Franz/mcclim-franz.asd"))))
+
+(define-public sbcl-mcclim-bezier-core
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-bezier-core")
+    (inputs
+     `(("clim" ,sbcl-clim)
+       ("clim-pdf" ,sbcl-clim-pdf)
+       ("clim-postscript" ,sbcl-clim-postscript)
+       ("mcclim-null" ,sbcl-mcclim-null)
+       ("mcclim-render" ,sbcl-mcclim-render)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Extensions/bezier/mcclim-bezier.asd"
+       #:asd-system-name "mcclim-bezier/core"))))
+
+(define-public sbcl-mcclim-bezier-clx
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-bezier-clx")
+    (inputs
+     `(("clim" ,sbcl-clim)
+       ("mcclim-bezier/core" ,sbcl-mcclim-bezier-core)
+       ("mcclim-clx" ,sbcl-mcclim-clx)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Extensions/bezier/mcclim-bezier.asd"
+       #:asd-system-name "mcclim-bezier/clx"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "Extensions/bezier/mcclim-bezier.asd"
+               (("mcclim-bezier/core\\)")
+                "mcclim-bezier-core)"))
+             #t)))))))
+
+(define-public sbcl-mcclim-bezier
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-bezier")
+    (inputs
+     `(("mcclim-bezier/clx" ,sbcl-mcclim-bezier-clx)
+       ("mcclim-bezier/core" ,sbcl-mcclim-bezier-core)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Extensions/bezier/mcclim-bezier.asd"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "Extensions/bezier/mcclim-bezier.asd"
+               (("\\(#:mcclim-bezier/core")
+                "(#:mcclim-bezier-core")
+               (("#:mcclim-bezier/clx\\)\\)")
+                "#:mcclim-bezier-clx))"))
+             #t)))))))
+
+(define-public sbcl-mcclim-bitmaps
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-bitmaps")
+    (inputs
+     `(("clim-basic" ,sbcl-clim-basic)
+       ("opticl" ,sbcl-opticl)))
+    (arguments
+     '(#:asd-file "Extensions/bitmap-formats/mcclim-bitmaps.asd"))))
+
+(define-public sbcl-conditional-commands
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-conditional-commands")
+    (inputs
+     `(("clim-basic" ,sbcl-clim-basic)))
+    (arguments
+     '(#:asd-file "Extensions/conditional-commands/conditional-commands.asd"))))
+
+(define-public sbcl-mcclim-layouts-tab
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-layouts-tab")
+    (inputs
+     `(("clim" ,sbcl-clim)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "Extensions/layouts/mcclim-layouts.asd"
+       #:asd-system-name "mcclim-layouts/tab"))))
+
+(define-public sbcl-mcclim-extensions
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim-extensions")
+    (inputs
+     `(("clim-pdf" ,sbcl-clim-pdf)
+       ("clim-postscript" ,sbcl-clim-postscript)
+       ("conditional-commands" ,sbcl-conditional-commands)
+       ("mcclim-bezier" ,sbcl-mcclim-bezier)
+       ("mcclim-bitmaps" ,sbcl-mcclim-bitmaps)
+       ("mcclim-franz" ,sbcl-mcclim-franz)
+       ("mcclim-layouts-tab" ,sbcl-mcclim-layouts-tab)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:asd-file "mcclim.asd"
+       #:asd-system-name "mcclim/extensions"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "mcclim.asd"
+               (("mcclim-layouts/tab")
+                "mcclim-layouts-tab"))
+             #t)))))))
+
+(define-public sbcl-mcclim
+  (package
+    (inherit sbcl-clim-lisp)
+    (name "sbcl-mcclim")
+    (native-inputs
+     `(("fiveam" ,sbcl-fiveam)))
+    (inputs
+     `(("mcclim-looks" ,sbcl-mcclim-looks)
+       ("mcclim-extensions" ,sbcl-mcclim-extensions)
+       ("swank" ,cl-slime-swank))) ; For drei-mcclim
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-asd-system-names
+           (lambda _
+             (substitute* "mcclim.asd"
+               ((":depends-on \\(\"mcclim/looks\" \"mcclim/extensions\"\\)")
+                ":depends-on (\"mcclim-looks\" \"mcclim-extensions\")"))
+             #t)))
+       ;; Test suite disabled because of a dependency cycle.
+       ;; The tests depend on mcclim/test-util, which depends on mcclim.
+       #:tests? #f))))
+
+(define-public cl-mcclim
+  (let ((base (sbcl-package->cl-source-package sbcl-clim-lisp)))
+    (package
+      (inherit base)
+      (name "cl-mcclim")
+      (native-inputs
+       `(("fiveam" ,cl-fiveam)
+         ("pkg-config" ,pkg-config)))
+      (inputs
+       `(("alexandria" ,cl-alexandria)
+         ("babel" ,cl-babel)
+         ("bordeaux-threads" ,cl-bordeaux-threads)
+         ("cffi" ,cl-cffi)
+         ("cl-aa" ,cl-aa)
+         ("cl-freetype2" ,cl-freetype2)
+         ("cl-paths-ttf" ,cl-paths-ttf)
+         ("cl-pdf" ,cl-pdf)
+         ("cl-unicode" ,cl-unicode)
+         ("cl-vectors" ,cl-vectors)
+         ("closer-mop" ,cl-closer-mop)
+         ("clx" ,cl-clx)
+         ("flexi-streams" ,cl-flexi-streams)
+         ("flexichain" ,cl-flexichain)
+         ("fontconfig" ,fontconfig)
+         ("freetype" ,freetype)
+         ("harfbuzz" ,harfbuzz)
+         ("log4cl" ,cl-log4cl)
+         ("opticl" ,cl-opticl)
+         ("spatial-trees" ,cl-spatial-trees)
+         ("trivial-features" ,cl-trivial-features)
+         ("trivial-garbage" ,cl-trivial-garbage)
+         ("trivial-gray-streams" ,cl-trivial-gray-streams)
+         ("swank" ,cl-slime-swank)
+         ("zpb-ttf" ,cl-zpb-ttf))))))
+
+(define-public sbcl-cl-inflector
+  (let ((commit "f1ab16919ccce3bd82a0042677d9616dde2034fe")
+        (revision "1"))
+    (package
+      (name "sbcl-cl-inflector")
+      (version (git-version "0.2" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/AccelerationNet/cl-inflector")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1xwwlhik1la4fp984qnx2dqq24v012qv4x0y49sngfpwg7n0ya7y"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("lisp-unit2" ,sbcl-lisp-unit2)))
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("cl-ppcre" ,sbcl-cl-ppcre)))
+      (home-page "https://github.com/AccelerationNet/cl-inflector")
+      (synopsis "Library to pluralize/singularize English and Portuguese words")
+      (description
+       "This is a common lisp library to easily pluralize and singularize
+English and Portuguese words.  This is a port of the ruby ActiveSupport
+Inflector module.")
+      (license license:expat))))
+
+(define-public cl-inflector
+  (sbcl-package->cl-source-package sbcl-cl-inflector))
+
+(define-public ecl-cl-inflector
+  (sbcl-package->ecl-package sbcl-cl-inflector))
+
+(define-public sbcl-qbase64
+  (package
+    (name "sbcl-qbase64")
+    (version "0.3.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/chaitanyagupta/qbase64")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1dir0s70ca3hagxv9x15zq4p4ajgl7jrcgqsza2n2y7iqbxh0dwi"))))
+    (build-system asdf-build-system/sbcl)
+    (inputs
+     `(("metabang-bind" ,sbcl-metabang-bind)
+       ("trivial-gray-streams" ,sbcl-trivial-gray-streams)))
+    (native-inputs
+     `(("fiveam" ,sbcl-fiveam)))
+    (home-page "https://github.com/chaitanyagupta/qbase64")
+    (synopsis "Base64 encoder and decoder for Common Lisp")
+    (description "@code{qbase64} provides a fast and flexible base64 encoder
+and decoder for Common Lisp.")
+    (license license:bsd-3)))
+
+(define-public cl-qbase64
+  (sbcl-package->cl-source-package sbcl-qbase64))
+
+(define-public ecl-qbase64
+  (sbcl-package->ecl-package sbcl-qbase64))
+
+(define-public sbcl-hu.dwim.common-lisp
+  (package
+    (name "sbcl-hu.dwim.common-lisp")
+    (version "2015-07-09")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "http://beta.quicklisp.org/archive/hu.dwim.common-lisp/"
+             version "/hu.dwim.common-lisp-"
+             (string-replace-substring version "-" "")
+             "-darcs.tgz"))
+       (sha256
+        (base32 "13cxrvh55rw080mvfir7s7k735l9rcfh3khxp97qfwd5rz0gadb9"))))
+    (build-system asdf-build-system/sbcl)
+    (native-inputs
+     `(("hu.dwim.asdf" ,sbcl-hu.dwim.asdf)))
+    (home-page "http://dwim.hu/")
+    (synopsis "Redefine some standard Common Lisp names")
+    (description "This library is a redefinition of the standard Common Lisp
+package that includes a number of renames and shadows. ")
+    (license license:public-domain)))
+
+(define-public cl-hu.dwim.common-lisp
+  (sbcl-package->cl-source-package sbcl-hu.dwim.common-lisp))
+
+(define-public ecl-hu.dwim.common-lisp
+  (sbcl-package->ecl-package sbcl-hu.dwim.common-lisp))
+
+(define-public sbcl-hu.dwim.common
+  (package
+    (name "sbcl-hu.dwim.common")
+    (version "2015-07-09")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "http://beta.quicklisp.org/archive/hu.dwim.common/"
+             version "/hu.dwim.common-"
+             (string-replace-substring version "-" "")
+             "-darcs.tgz"))
+       (sha256
+        (base32 "12l1rr6w9m99w0b5gc6hv58ainjfhbc588kz6vwshn4gqsxyzbhp"))))
+    (build-system asdf-build-system/sbcl)
+    (native-inputs
+     `(("hu.dwim.asdf" ,sbcl-hu.dwim.asdf)))
+    (inputs
+     `(("alexandria" ,sbcl-alexandria)
+       ("anaphora" ,sbcl-anaphora)
+       ("closer-mop" ,sbcl-closer-mop)
+       ("hu.dwim.common-lisp" ,sbcl-hu.dwim.common-lisp)
+       ("iterate" ,sbcl-iterate)
+       ("metabang-bind" ,sbcl-metabang-bind)))
+    (home-page "http://dwim.hu/")
+    (synopsis "Common Lisp library shared by other hu.dwim systems")
+    (description "")
+    (license license:public-domain)))
+
+(define-public cl-hu.dwim.common
+  (sbcl-package->cl-source-package sbcl-hu.dwim.common))
+
+(define-public ecl-hu.dwim.common
+  (sbcl-package->ecl-package sbcl-hu.dwim.common))
+
+(define-public sbcl-hu.dwim.defclass-star
+  (package
+    (name "sbcl-hu.dwim.defclass-star")
+    (version "2015-07-09")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "http://beta.quicklisp.org/archive/hu.dwim.defclass-star/"
+             version "/hu.dwim.defclass-star-"
+             (string-replace-substring version "-" "")
+             "-darcs.tgz"))
+       (sha256
+        (base32 "032982lyp0hm0ssxlyh572whi2hr4j1nqkyqlllaj373v0dbs3vs"))))
+    (build-system asdf-build-system/sbcl)
+    (native-inputs
+     `(;; These 2 inputs are only needed tests which are disabled, see below.
+       ;; ("hu.dwim.common" ,sbcl-hu.dwim.common)
+       ;; Need cl- package for the :hu.dwim.stefil+hu.dwim.def+swank system.
+       ;; ("hu.dwim.stefil" ,cl-hu.dwim.stefil)
+       ("hu.dwim.asdf" ,sbcl-hu.dwim.asdf)))
+    (arguments
+     `(#:test-asd-file "hu.dwim.defclass-star.test.asd"
+       ;; Tests require a circular dependency: hu.dwim.stefil -> hu.dwim.def
+       ;; -> hu.dwim.util -> hu.dwim.defclass-star.
+       #:tests? #f))
+    (home-page "http://dwim.hu/?_x=dfxn&_f=mRIMfonK")
+    (synopsis "Simplify definitions with defclass* and friends in Common Lisp")
+    (description "@code{defclass-star} provides defclass* and defcondition* to
+simplify class and condition declarations.  Features include:
+
+@itemize
+@item Automatically export all or select slots at compile time.
+@item Define the @code{:initarg} and @code{:accesor} automatically.
+@item Specify a name transformer for both the @code{:initarg} and
+@code{:accessor}, etc.
+@item Specify the @code{:initform} as second slot value.
+@end itemize
+
+See
+@url{https://common-lisp.net/project/defclass-star/configuration.lisp.html}
+for an example.")
+    (license license:public-domain)))
+
+(define-public cl-hu.dwim.defclass-star
+  (sbcl-package->cl-source-package sbcl-hu.dwim.defclass-star))
+
+(define-public ecl-hu.dwim.defclass-star
+  (sbcl-package->ecl-package sbcl-hu.dwim.defclass-star))
+
+(define-public sbcl-livesupport
+  (let ((commit "71e6e412df9f3759ad8378fabb203913d82e228a")
+	(revision "1"))
+    (package
+      (name "sbcl-livesupport")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/cbaggers/livesupport")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1rvnl0mncylbx63608pz5llss7y92j7z3ydambk9mcnjg2mjaapg"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/cbaggers/livesupport")
+      (synopsis "Some helpers that make livecoding a little easier")
+      (description "This package provides a macro commonly used in livecoding to
+enable continuing when errors are raised.  Simply wrap around a chunk of code
+and it provides a restart called @code{continue} which ignores the error and
+carrys on from the end of the body.")
+      (license license:bsd-2))))
+
+(define-public cl-livesupport
+  (sbcl-package->cl-source-package sbcl-livesupport))
+
+(define-public ecl-livesupport
+  (sbcl-package->ecl-package sbcl-livesupport))

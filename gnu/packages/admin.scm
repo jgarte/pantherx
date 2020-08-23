@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
-;;; Copyright © 2014, 2015, 2016, 2018, 2019 Mark H Weaver <mhw@netris.org>
+;;; Copyright © 2014, 2015, 2016, 2018, 2019, 2020 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2020 Eric Bavier <bavier@posteo.net>
 ;;; Copyright © 2015, 2016 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015 Alex Sassmannshausen <alex.sassmannshausen@gmail.com>
@@ -147,7 +147,7 @@
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/nomius/ktsuss.git")
+         (url "https://github.com/nomius/ktsuss")
          (commit version)))
        (sha256
         (base32 "0q9931f9hp47v1n8scli4bdg2rkjpf5jf8v7jj2gdn83aia1r2hz"))
@@ -220,7 +220,7 @@ usual file attributes can be checked for inconsistencies.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Xfennec/progress.git")
+             (url "https://github.com/Xfennec/progress")
              (commit (string-append "v" version))))
        (sha256
         (base32 "1cnb4ixlhshn139mj5sr42k5m6gjjbyqvkn1324c47niwrgp7dqm"))
@@ -443,59 +443,65 @@ graphs and can export its output to different formats.")
 (define-public facter
   (package
     (name "facter")
-    (version "4.0.26")
+    (version "4.0.34")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/puppetlabs/facter-ng")
+                    (url "https://github.com/puppetlabs/facter")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0bab3by926gavbhkvp0in82vim575ybj8z6av3b12jdvla1s9rmz"))))
+                "19lcmmcnxkbirvh5bn5xa9a99z48zmb1b8845cp5r598y019gxqp"))))
     (build-system ruby-build-system)
     (arguments
-     `(#:phases (modify-phases %standard-phases
-                  (add-after 'unpack 'delete-facter-ng-gemspec
-                    (lambda _
-                      ;; XXX: ruby-build-system incorrectly finds
-                      ;; facter-ng.gemspec from this directory and tries to
-                      ;; build that instead of the proper facter.gemspec.
-                      ;; Just delete it as a workaround, as it appears to
-                      ;; only exist for backwards-compatibility after the
-                      ;; facter-ng->facter rename.
-                      (delete-file "agent/facter-ng.gemspec")
-                      #t))
-                  (add-after 'unpack 'embed-iproute-reference
-                    (lambda* (#:key inputs #:allow-other-keys)
-                      (let ((iproute (assoc-ref inputs "iproute")))
-                        ;; Provide an absolute reference to the 'ip' executable
-                        ;; to avoid propagating it.
-                        (substitute* "lib/resolvers/networking_linux_resolver.rb"
-                          (("execute\\('ip")
-                           (string-append "execute('" iproute "/sbin/ip")))
-                        #t)))
-                  (delete 'check)
-                  (add-after 'wrap 'check
-                    (lambda* (#:key tests? outputs #:allow-other-keys)
-                      ;; XXX: The test suite wants to run Bundler and
-                      ;; complains that the gemspec is invalid.  For now
-                      ;; just make sure that we can run the wrapped
-                      ;; executable directly.
-                      (if tests?
-                          (invoke (string-append (assoc-ref outputs "out")
-                                                 "/bin/facter")
-                                  ;; Many facts depend on /sys, /etc/os-release,
-                                  ;; etc, so we only run a small sample.
-                                  "facterversion" "architecture"
-                                  "kernel" "kernelversion")
-                          (format #t "tests disabled~%"))
-                      #t)))))
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'delete-facter-ng-gemspec
+           (lambda _
+             ;; XXX: ruby-build-system incorrectly finds
+             ;; facter-ng.gemspec from this directory and tries to
+             ;; build that instead of the proper facter.gemspec.
+             ;; Just delete it as a workaround, as it appears to
+             ;; only exist for backwards-compatibility after the
+             ;; facter-ng->facter rename.
+             (delete-file "agent/facter-ng.gemspec")
+             #t))
+         (add-after 'unpack 'embed-absolute-references
+           ;; Refer to absolute executable file names to avoid propagation.
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* (find-files "lib/facter/resolvers" "\\.rb$")
+               (("execute\\('(which |)([^ ']+)" _ _ name)
+                (string-append "execute('" (or (which name)
+                                               name))))
+             #t))
+         (delete 'check)
+         (add-after 'wrap 'check
+           (lambda* (#:key tests? outputs #:allow-other-keys)
+             ;; XXX: The test suite wants to run Bundler and
+             ;; complains that the gemspec is invalid.  For now
+             ;; just make sure that we can run the wrapped
+             ;; executable directly.
+             (if tests?
+                 (invoke (string-append (assoc-ref outputs "out")
+                                        "/bin/facter")
+                         ;; Many facts depend on /sys, /etc/os-release,
+                         ;; etc, so we only run a small sample.
+                         "facterversion" "architecture"
+                         "kernel" "kernelversion")
+                 (format #t "tests disabled~%"))
+             #t)))))
     (inputs
-     `(("iproute" ,iproute)
-       ("ruby-hocon" ,ruby-hocon)
+     `(("ruby-hocon" ,ruby-hocon)
        ("ruby-sys-filesystem" ,ruby-sys-filesystem)
-       ("ruby-thor" ,ruby-thor)))
+       ("ruby-thor" ,ruby-thor)
+
+       ;; For ‘embed-absolute-references’.
+       ("dmidecode" ,dmidecode)
+       ("inetutils" ,inetutils)         ; for ‘hostname’
+       ("iproute" ,iproute)
+       ("pciutils" ,pciutils)
+       ("util-linux" ,util-linux)))
     (synopsis "Collect and display system facts")
     (description
      "Facter is a tool that gathers basic facts about nodes (systems) such
@@ -527,6 +533,30 @@ or via the @code{facter} Ruby library.")
      "This is htop, an interactive process viewer.  It is a text-mode
 application (for console or X terminals) and requires ncurses.")
     (license license:gpl2)))
+
+(define-public bashtop
+  (package
+    (name "bashtop")
+    (version "0.9.25")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/aristocratos/bashtop")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "07nlr6vmyb7yihaxj1fp424lmhwkdjl6mls92v90f6gsvikpa13v"))))
+    (build-system gnu-build-system)
+    (arguments
+     '(#:make-flags (list (string-append "PREFIX=" %output))
+       #:tests? #f      ; bats test fails with loading load.bash
+       #:phases (modify-phases %standard-phases (delete 'configure))))
+    (home-page "https://github.com/aristocratos/bashtop")
+    (synopsis "Linux/OSX/FreeBSD resource monitor")
+    (description "Resource monitor that shows usage and stats for processor,
+memory, disks, network and processes.")
+    (license license:asl2.0)))
 
 (define-public pies
   (package
@@ -916,7 +946,7 @@ connection alive.")
 (define-public isc-dhcp
   (let* ((bind-major-version "9")
          (bind-minor-version "11")
-         (bind-patch-version "18")
+         (bind-patch-version "22")
          (bind-release-type "")         ; for patch release, use "-P"
          (bind-release-version "")      ; for patch release, e.g. "6"
          (bind-version (string-append bind-major-version
@@ -1053,7 +1083,7 @@ connection alive.")
                                         "/bind-" bind-version ".tar.gz"))
                     (sha256
                      (base32
-                      "0vws0zzb39mkphj4hhjrgfj9dzw951lc4pfa6pqg5ll5ma51mbsr"))))
+                      "1j9a4r83a77mp8k1y8z524c9rzdqgd8rzwczd6zwmw86a00xiimg"))))
 
                 ;; When cross-compiling, we need the cross Coreutils and sed.
                 ;; Otherwise just use those from %FINAL-INPUTS.
@@ -1366,7 +1396,7 @@ system administrator.")
 (define-public sudo
   (package
     (name "sudo")
-    (version "1.9.1")
+    (version "1.9.2")
     (source (origin
               (method url-fetch)
               (uri
@@ -1376,7 +1406,7 @@ system administrator.")
                                     version ".tar.gz")))
               (sha256
                (base32
-                "1zxd6hxwhxqrm876wsn9bfajbfc4hc6l9ivzj5rjg80hzv71ch99"))
+                "05432672iilb7s52j9l9xzrlambb1wg3k7qvf5973i41y40x563w"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -1488,7 +1518,7 @@ commands and their arguments.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/Duncaen/OpenDoas.git")
+                    (url "https://github.com/Duncaen/OpenDoas")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -1829,7 +1859,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
 (define-public acpica
   (package
     (name "acpica")
-    (version "20200528")
+    (version "20200717")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1837,7 +1867,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
                     version ".tar.gz"))
               (sha256
                (base32
-                "01ajxnz9dpnvdbib7yv20dw21a1yyfgwiw3whg0xi57cf4app2md"))))
+                "0jyy71szjr40c8v40qqw6yh3gfk8d6sl3nay69zrn5d88i3r0jca"))))
     (build-system gnu-build-system)
     (native-inputs `(("flex" ,flex)
                      ("bison" ,bison)))
@@ -1865,13 +1895,13 @@ development, not the kernel implementation of ACPI.")
 (define-public s-tui
   (package
     (name "s-tui")
-    (version "1.0.1")
+    (version "1.0.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "s-tui" version))
        (sha256
-        (base32 "1gqrb2xxii43j7kszy7kvv4f6hr8ac4p0m9q8i1xs5fhsqcx186i"))))
+        (base32 "0xkfdaz5np21311ffdvhks58155qby8j8scbcixhvjd913pj66qx"))))
     (build-system python-build-system)
     (inputs
      `(("python-psutil" ,python-psutil)
@@ -1916,7 +1946,7 @@ system is under heavy load.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/dharple/detox.git")
+                    (url "https://github.com/dharple/detox")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -2106,7 +2136,7 @@ degradation and failure.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/adrianlopezroche/fdupes.git")
+             (url "https://github.com/adrianlopezroche/fdupes")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2165,13 +2195,13 @@ of supported upstream metrics systems simultaneously.")
 (define-public ansible
   (package
     (name "ansible")
-    (version "2.9.10")
+    (version "2.9.11")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ansible" version))
        (sha256
-        (base32 "1kfaxd7w8qiis2vv96kgrhiqh158qb0z4lspr9c8fsdi5m1z2rh8"))))
+        (base32 "1c9ayh61qwasgncmlw7rjx5r4g5n2cpg1d5blgn53zg7xhrx1yc8"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-bcrypt" ,python-bcrypt)
@@ -2358,7 +2388,7 @@ lookup to YAML Mode.  You could enable the mode with @code{(add-hook
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/opsengine/cpulimit.git")
+             (url "https://github.com/opsengine/cpulimit")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2397,7 +2427,7 @@ limits.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/wting/autojump.git")
+             (url "https://github.com/wting/autojump")
              (commit (string-append "release-v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2443,7 +2473,7 @@ frequently used directories by typing only a small pattern.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/clvv/fasd.git")
+                    (url "https://github.com/clvv/fasd")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -2675,7 +2705,7 @@ results (ndiff), and a packet generation and response analysis tool (nping).")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/dagwieers/dstat.git")
+             (url "https://github.com/dagwieers/dstat")
              (commit (string-append "v" version))))
        (file-name (git-file-name "dstat" version))
        (sha256
@@ -2727,7 +2757,7 @@ throughput (in the same interval).")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/nvbn/thefuck.git")
+             (url "https://github.com/nvbn/thefuck")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -2803,7 +2833,7 @@ produce uniform output across heterogeneous networks.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/valr/cbatticon.git")
+             (url "https://github.com/valr/cbatticon")
              (commit version)))
        (sha256
         (base32 "0ivm2dzhsa9ir25ry418r2qg2llby9j7a6m3arbvq5c3kaj8m9jr"))
@@ -2839,7 +2869,7 @@ the status of your battery in the system tray.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/TrilbyWhite/interrobang.git")
+               (url "https://github.com/TrilbyWhite/interrobang")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -2915,7 +2945,7 @@ Kerberos and Heimdal and FAST is supported with recent MIT Kerberos.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/linux-sunxi/sunxi-tools.git")
+             (url "https://github.com/linux-sunxi/sunxi-tools")
              (commit (string-append "v" version))))
        (sha256
         (base32 "04f3jqg8ww4jxsf9c6ddcdgy2xbhkyp0b3l5f1hvvbv94p81rjxd"))
@@ -3020,7 +3050,7 @@ in order to be able to find it.
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/aureliojargas/sedsed.git")
+             (url "https://github.com/aureliojargas/sedsed")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -3170,7 +3200,7 @@ tool for remote execution and deployment.")
 (define-public neofetch
   (package
     (name "neofetch")
-    (version "7.0.0")
+    (version "7.1.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3179,7 +3209,7 @@ tool for remote execution and deployment.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0xc0fdc7n5bhqirh83agqiy8r14l14zwca07czvj8vgnsnfybslr"))))
+                "0i7wpisipwzk0j62pzaigbiq42y1mn4sbraz4my2jlz6ahwf00kv"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; there are no tests
@@ -3344,14 +3374,14 @@ information tool.")
 (define-public nnn
   (package
     (name "nnn")
-    (version "3.2")
+    (version "3.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/jarun/nnn/releases/download/v"
                            version "/nnn-v" version ".tar.gz"))
        (sha256
-        (base32 "1zflz7yj5wzdnl0728g8qrld2z6dqn7sblbmkjvyqlv1fwjd1fsf"))))
+        (base32 "189h950m1jjrnhvgcvzk6nj89l58rkxim7bxa0441ssajxpaw0vq"))))
     (build-system gnu-build-system)
     (inputs
      `(("ncurses" ,ncurses)
@@ -3423,7 +3453,7 @@ on systems running the Linux kernel.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/robertdavidgraham/masscan.git")
+             (url "https://github.com/robertdavidgraham/masscan")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -3534,7 +3564,7 @@ launch daemons into the relevant nodes.")
               ;; We use git checkout to avoid github auto-generated tarballs
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/hpc/Spindle.git")
+                    (url "https://github.com/hpc/Spindle")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -3562,7 +3592,7 @@ Python loading in HPC environments.")
   (let ((real-name "inxi"))
     (package
       (name "inxi-minimal")
-      (version "3.1.04-1")
+      (version "3.1.05-2")
       (source
        (origin
          (method git-fetch)
@@ -3571,7 +3601,7 @@ Python loading in HPC environments.")
                (commit version)))
          (file-name (git-file-name real-name version))
          (sha256
-          (base32 "1mirnrrqfjyl2r7fwnpjlk37i5hf8f7lxv2yxcbdfjf2b3dfbpvl"))))
+          (base32 "1a7nl2wk49yz5hcrph692xh5phv1mdg1m5cbvgv3ya12c6r32pa2"))))
       (build-system trivial-build-system)
       (inputs
        `(("bash" ,bash-minimal)
@@ -3745,7 +3775,7 @@ support forum.  It runs with the @code{/exec} command in most IRC clients.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/pwr/Solaar.git")
+                    (url "https://github.com/pwr/Solaar")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -3954,21 +3984,22 @@ supplied by the user when logging in.")
 (define-public jc
   (package
     (name "jc")
-    (version "1.11.8")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/kellyjonbrazil/jc.git")
-                    (commit (string-append "v" version))))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "0rkckbgm04ql4r48wjgljfiqvsz36n99yqcpcyna8lvlm8h4nmwa"))))
+    (version "1.13.4")
+    (source
+     (origin
+       ;; The PyPI tarball lacks the test suite.
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/kellyjonbrazil/jc")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0rwvyyrdnw43pixp8h51rncq2inc9pbbj1j2191y5si00pjw34zr"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("python-ruamel.yaml" ,python-ruamel.yaml)
-       ("python-xmltodict" ,python-xmltodict)
-       ("python-pygments" ,python-pygments)))
+     `(("python-pygments" ,python-pygments)
+       ("python-ruamel.yaml" ,python-ruamel.yaml)
+       ("python-xmltodict" ,python-xmltodict)))
     (home-page "https://github.com/kellyjonbrazil/jc")
     (synopsis "Convert the output of command-line tools to JSON")
     (description "@code{jc} JSONifies the output of many CLI tools and
@@ -3982,7 +4013,7 @@ file-types for easier parsing in scripts.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/kellyjonbrazil/jtbl.git")
+                    (url "https://github.com/kellyjonbrazil/jtbl")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -4004,7 +4035,7 @@ text table representation to stdout.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/xwmx/hosts.git")
+                    (url "https://github.com/xwmx/hosts")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256

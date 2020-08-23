@@ -57,14 +57,14 @@
 (define-public igraph
   (package
     (name "igraph")
-    (version "0.8.1")
+    (version "0.8.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/igraph/igraph/releases/"
                            "download/" version "/igraph-" version ".tar.gz"))
        (sha256
-        (base32 "0wbvrac3ip3lqmbkckhnxa2swlbc86l1h8mazdlb618kx3winvi6"))))
+        (base32 "158flvl80qh1l1ikfa04p1dzh8kapsvm6q80x3ih5gwcgcg4g2ki"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -78,7 +78,7 @@
        ("lapack" ,lapack)
        ("openblas" ,openblas)
        ("zlib" ,zlib)))
-    (home-page "http://igraph.org")
+    (home-page "https://igraph.org")
     (synopsis "Network analysis and visualization")
     (description
      "This package provides a library for the analysis of networks and graphs.
@@ -90,14 +90,13 @@ more.")
 (define-public python-igraph
   (package (inherit igraph)
     (name "python-igraph")
-    (version "0.8.0")
+    (version "0.8.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "python-igraph" version))
        (sha256
-        (base32
-         "13mbrlmnbgbzw6y8ws7wj0a3ly3in8j4l1ngi6yxvgvxxi4bprj7"))))
+        (base32 "0wkxrs28qdvnrz7d4jzcf2bh6v2yqzx3wyfziihfgsi2gn6n60a6"))))
     (build-system python-build-system)
     (arguments
      '(#:configure-flags
@@ -145,7 +144,7 @@ more.")
      `(("r-magrittr" ,r-magrittr)
        ("r-matrix" ,r-matrix)
        ("r-pkgconfig" ,r-pkgconfig)))
-    (home-page "http://igraph.org")
+    (home-page "https://igraph.org")
     (synopsis "Network analysis and visualization")
     (description
      "This package provides routines for simple graphs and network analysis.
@@ -216,7 +215,7 @@ objects from the @code{graph} package.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/wjrl/RBioFabric.git")
+                      (url "https://github.com/wjrl/RBioFabric")
                       (commit commit)))
                 (file-name (string-append name "-" version "-checkout"))
                 (sha256
@@ -240,7 +239,7 @@ lines.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/plotly/plotly.py.git")
+                    (url "https://github.com/plotly/plotly.py")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -318,7 +317,7 @@ subplots, multiple-axes, polar charts, and bubble charts. ")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/vtraag/louvain-igraph.git")
+                    (url "https://github.com/vtraag/louvain-igraph")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -351,7 +350,7 @@ not be used for new projects.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/facebookresearch/faiss.git")
+                    (url "https://github.com/facebookresearch/faiss")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256

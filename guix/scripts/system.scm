@@ -446,19 +446,6 @@ list of services."
 ;;; Generations.
 ;;;
 
-(define (sexp->channel sexp)
-  "Return the channel corresponding to SEXP, an sexp as found in the
-\"provenance\" file produced by 'provenance-service-type'."
-  (match sexp
-    (('channel ('name name)
-               ('url url)
-               ('branch branch)
-               ('commit commit)
-               rest ...)
-     ;; XXX: In the future REST may include a channel introduction.
-     (channel (name name) (url url)
-              (branch branch) (commit commit)))))
-
 (define* (display-system-generation number
                                     #:optional (profile %system-profile))
   "Display a summary of system generation NUMBER in a human-readable format."
@@ -482,13 +469,10 @@ list of services."
                             (uuid->string root)
                             root))
            (kernel      (boot-parameters-kernel params))
-           (multiboot-modules (boot-parameters-multiboot-modules params))
-           (provenance  (catch 'system-error
-                          (lambda ()
-                            (call-with-input-file
-                                (string-append generation "/provenance")
-                              read))
-                          (const #f))))
+           (multiboot-modules (boot-parameters-multiboot-modules params)))
+      (define-values (channels config-file)
+        (system-provenance generation))
+
       (display-generation profile number)
       (format #t (G_ "  file name: ~a~%") generation)
       (format #t (G_ "  canonical file name: ~a~%") (readlink* generation))
@@ -518,21 +502,16 @@ list of services."
          (format #t (G_ "  multiboot: ~a~%")
                  (string-join modules "\n    "))))
 
-      (match provenance
-        (#f #t)
-        (('provenance ('version 0)
-                      ('channels channels ...)
-                      ('configuration-file config-file))
-         (unless (null? channels)
-           ;; TRANSLATORS: Here "channel" is the same terminology as used in
-           ;; "guix describe" and "guix pull --channels".
-           (format #t (G_ "  channels:~%"))
-           (for-each display-channel (map sexp->channel channels)))
-         (when config-file
-           (format #t (G_ "  configuration file: ~a~%")
-                   (if (supports-hyperlinks?)
-                       (file-hyperlink config-file)
-                       config-file))))))))
+      (unless (null? channels)
+        ;; TRANSLATORS: Here "channel" is the same terminology as used in
+        ;; "guix describe" and "guix pull --channels".
+        (format #t (G_ "  channels:~%"))
+        (for-each display-channel channels))
+      (when config-file
+        (format #t (G_ "  configuration file: ~a~%")
+                (if (supports-hyperlinks?)
+                    (file-hyperlink config-file)
+                    config-file))))))
 
 (define* (list-generations pattern #:optional (profile %system-profile))
   "Display in a human-readable format all the system generations matching
@@ -586,16 +565,14 @@ any, are available.  Raise an error if they're not."
   (define fail? #f)
 
   (define (file-system-location* fs)
-    (location->string
-     (source-properties->location
-      (file-system-location fs))))
+    (and=> (file-system-location fs)
+           source-properties->location))
 
   (let-syntax ((error (syntax-rules ()
                         ((_ args ...)
                          (begin
                            (set! fail? #t)
-                           (format (current-error-port)
-                                   args ...))))))
+                           (report-error args ...))))))
     (for-each (lambda (fs)
                 (catch 'system-error
                   (lambda ()
@@ -603,9 +580,9 @@ any, are available.  Raise an error if they're not."
                   (lambda args
                     (let ((errno  (system-error-errno args))
                           (device (file-system-device fs)))
-                      (error (G_ "~a: error: device '~a' not found: ~a~%")
-                             (file-system-location* fs) device
-                             (strerror errno))
+                      (error (file-system-location* fs)
+                             (G_ "device '~a' not found: ~a~%")
+                             device (strerror errno))
                       (unless (string-prefix? "/" device)
                         (display-hint (format #f (G_ "If '~a' is a file system
 label, write @code{(file-system-label ~s)} in your @code{device} field.")
@@ -615,13 +592,14 @@ label, write @code{(file-system-label ~s)} in your @code{device} field.")
                 (let ((label (file-system-label->string
                               (file-system-device fs))))
                   (unless (find-partition-by-label label)
-                    (error (G_ "~a: error: file system with label '~a' not found~%")
-                           (file-system-location* fs) label))))
+                    (error (file-system-location* fs)
+                           (G_ "file system with label '~a' not found~%")
+                           label))))
               labeled)
     (for-each (lambda (fs)
                 (unless (find-partition-by-uuid (file-system-device fs))
-                  (error (G_ "~a: error: file system with UUID '~a' not found~%")
-                         (file-system-location* fs)
+                  (error (file-system-location* fs)
+                         (G_ "file system with UUID '~a' not found~%")
                          (uuid->string (file-system-device fs)))))
               uuid)
 
@@ -757,6 +735,7 @@ and TARGET arguments."
 
 (define* (perform-action action os
                          #:key
+                         (validate-reconfigure ensure-forward-reconfigure)
                          save-provenance?
                          skip-safety-checks?
                          install-bootloader?
@@ -799,7 +778,8 @@ static checks."
          (operating-system-bootcfg os menu-entries)))
 
   (when (eq? action 'reconfigure)
-    (maybe-suggest-running-guix-pull))
+    (maybe-suggest-running-guix-pull)
+    (check-forward-update validate-reconfigure))
 
   ;; Check whether the declared file systems exist.  This is better than
   ;; instantiating a broken configuration.  Assume that we can only check if
@@ -948,6 +928,9 @@ Some ACTIONS support additional ARGS.\n"))
   -e, --expression=EXPR  consider the operating-system EXPR evaluates to
                          instead of reading FILE, when applicable"))
   (display (G_ "
+      --allow-downgrades for 'reconfigure', allow downgrades to earlier
+                         channel revisions"))
+  (display (G_ "
       --on-error=STRATEGY
                          apply STRATEGY (one of nothing-special, backtrace,
                          or debug) when an error occurs while reading FILE"))
@@ -1002,6 +985,11 @@ Some ACTIONS support additional ARGS.\n"))
          (option '(#\d "derivation") #f #f
                  (lambda (opt name arg result)
                    (alist-cons 'derivations-only? #t result)))
+         (option '("allow-downgrades") #f #f
+                 (lambda (opt name arg result)
+                   (alist-cons 'validate-reconfigure
+                               warn-about-backward-reconfigure
+                               result)))
          (option '("on-error") #t #f
                  (lambda (opt name arg result)
                    (alist-cons 'on-error (string->symbol arg)
@@ -1074,9 +1062,16 @@ Some ACTIONS support additional ARGS.\n"))
     (graft? . #t)
     (debug . 0)
     (verbosity . #f)                              ;default
+    (validate-reconfigure . ,ensure-forward-reconfigure)
     (file-system-type . "ext4")
     (image-size . guess)
     (install-bootloader? . #t)))
+
+(define (verbosity-level opts)
+  "Return the verbosity level based on OPTS, the alist of parsed options."
+  (or (assoc-ref opts 'verbosity)
+      (if (eq? (assoc-ref opts 'action) 'build)
+          2 1)))
 
 
 ;;;
@@ -1137,6 +1132,8 @@ resulting from command-line parsing."
 
       (with-build-handler (build-notifier #:use-substitutes?
                                           (assoc-ref opts 'substitutes?)
+                                          #:verbosity
+                                          (verbosity-level opts)
                                           #:dry-run?
                                           (assoc-ref opts 'dry-run?))
         (run-with-store store
@@ -1159,6 +1156,8 @@ resulting from command-line parsing."
                                #:use-substitutes? (assoc-ref opts 'substitutes?)
                                #:skip-safety-checks?
                                (assoc-ref opts 'skip-safety-checks?)
+                               #:validate-reconfigure
+                               (assoc-ref opts 'validate-reconfigure)
                                #:file-system-type (assoc-ref opts 'file-system-type)
                                #:image-size (assoc-ref opts 'image-size)
                                #:full-boot? (assoc-ref opts 'full-boot?)
@@ -1291,8 +1290,7 @@ argument list and OPTS is the option alist."
            (args     (option-arguments opts))
            (command  (assoc-ref opts 'action)))
       (parameterize ((%graft? (assoc-ref opts 'graft?)))
-        (with-status-verbosity (or (assoc-ref opts 'verbosity)
-                                   (if (eq? command 'build) 2 1))
+        (with-status-verbosity (verbosity-level opts)
           (process-command command args opts))))))
 
 ;;; Local Variables:

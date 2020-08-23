@@ -26,6 +26,7 @@
                 #:select (download-to-store url-fetch))
   #:use-module (guix gnupg)
   #:use-module (guix packages)
+  #:use-module (guix diagnostics)
   #:use-module (guix ui)
   #:use-module (guix base32)
   #:use-module (guix gexp)
@@ -325,10 +326,17 @@ values: 'interactive' (default), 'always', and 'never'."
                                (built-derivations (list drv))
                                (return (derivation->output-path drv))))))))
           (let-values (((status data)
-                        (gnupg-verify* sig data #:key-download key-download)))
+                        (if sig
+                            (gnupg-verify* sig data
+                                           #:key-download key-download)
+                            (values 'missing-signature data))))
             (match status
               ('valid-signature
                tarball)
+              ('missing-signature
+               (warning (G_ "failed to download detached signature from ~a~%")
+                        signature-url)
+               #f)
               ('invalid-signature
                (warning (G_ "signature verification failed for '~a' (key: ~a)~%")
                         url data)
@@ -361,7 +369,7 @@ SOURCE, an <upstream-source>."
      (let*-values (((archive-type)
                     (match (and=> (package-source package) origin-uri)
                       ((? string? uri)
-                       (let ((type (file-extension (basename uri))))
+                       (let ((type (or (file-extension (basename uri)) "")))
                          ;; Sometimes we have URLs such as
                          ;; "https://github.com/…/tarball/v0.1", in which case
                          ;; we must not consider "1" as the extension.
@@ -409,12 +417,13 @@ values: 'always', 'never', and 'interactive' (default)."
                       #f))))
        (match (assq method %method-updates)
          (#f
-          (raise (condition (&message
-                             (message (format #f (G_ "cannot download for \
+          (raise (make-compound-condition
+                  (formatted-message (G_ "cannot download for \
 this method: ~s")
-                                              method)))
-                            (&error-location
-                             (location (package-location package))))))
+                                     method)
+                  (condition
+                   (&error-location
+                    (location (package-location package)))))))
          ((_ . update)
           (update store package source
                   #:key-download key-download)))))
@@ -477,10 +486,8 @@ new version string if an update was made, and #f otherwise."
                 (warning (G_ "~a: could not locate source file")
                          (location-file loc))
                 #f)))
-        (begin
-          (format (current-error-port)
-                  (G_ "~a: ~a: no `version' field in source; skipping~%")
-                  (location->string (package-location package))
-                  name)))))
+        (warning (package-location package)
+                 (G_ "~a: no `version' field in source; skipping~%")
+                 name))))
 
 ;;; upstream.scm ends here

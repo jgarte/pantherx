@@ -30,7 +30,7 @@
   #:use-module (guix describe)
   #:use-module (guix sets)
   #:use-module (guix ui)
-  #:use-module ((guix utils) #:select (source-properties->location))
+  #:use-module (guix diagnostics)
   #:autoload   (guix openpgp) (openpgp-format-fingerprint)
   #:use-module (guix modules)
   #:use-module (gnu packages base)
@@ -89,6 +89,8 @@
 
             system-service-type
             provenance-service-type
+            sexp->system-provenance
+            system-provenance
             boot-service-type
             cleanup-service-type
             activation-service-type
@@ -241,13 +243,13 @@ TYPE does not have a default value, an error is raised."
     (if (eq? default &no-default-value)
         (let ((location (source-properties->location location)))
           (raise
-           (condition
-            (&missing-value-service-error (type type) (location location))
-            (&message
-             (message (format #f (G_ "~a: no value specified \
+           (make-compound-condition
+            (condition
+             (&missing-value-service-error (type type) (location location)))
+            (formatted-message (G_ "~a: no value specified \
 for service of type '~a'")
-                              (location->string location)
-                              (service-type-name type)))))))
+                               (location->string location)
+                               (service-type-name type)))))
         (service type default))))
 
 (define-condition-type &service-error &error
@@ -423,6 +425,19 @@ be parsed by tools; it's potentially more future-proof than code."
             (branch ,(channel-branch channel))
             (commit ,(channel-commit channel))))
 
+(define (sexp->channel sexp)
+  "Return the channel corresponding to SEXP, an sexp as found in the
+\"provenance\" file produced by 'provenance-service-type'."
+  (match sexp
+    (('channel ('name name)
+               ('url url)
+               ('branch branch)
+               ('commit commit)
+               rest ...)
+     ;; XXX: In the future REST may include a channel introduction.
+     (channel (name name) (url url)
+              (branch branch) (commit commit)))))
+
 (define (provenance-file channels config-file)
   "Return a 'provenance' file describing CHANNELS, a list of channels, and
 CONFIG-FILE, which can be either #f or a <local-file> containing the OS
@@ -474,6 +489,31 @@ channels in use and CONFIG-FILE, if it is true."
 itself: the channels used when building the system, and its configuration
 file, when available.")))
 
+(define (sexp->system-provenance sexp)
+  "Parse SEXP, an s-expression read from /run/current-system/provenance or
+similar, and return two values: the list of channels listed therein, and the
+OS configuration file or #f."
+  (match sexp
+    (('provenance ('version 0)
+                  ('channels channels ...)
+                  ('configuration-file config-file))
+     (values (map sexp->channel channels)
+             config-file))
+    (_
+     (values '() #f))))
+
+(define (system-provenance system)
+  "Given SYSTEM, the file name of a system generation, return two values: the
+list of channels SYSTEM is built from, and its configuration file.  If that
+information is missing, return the empty list (for channels) and possibly
+#false (for the configuration file)."
+  (catch 'system-error
+    (lambda ()
+      (sexp->system-provenance
+       (call-with-input-file (string-append system "/provenance")
+         read)))
+    (lambda _
+      (values '() #f))))
 
 ;;;
 ;;; Cleanup.
@@ -693,10 +733,8 @@ and FILE could be \"/usr/bin/env\"."
         (() #t)
         (((file _) rest ...)
          (when (set-contains? seen file)
-           (raise (condition
-                   (&message
-                    (message (format #f (G_ "duplicate '~a' entry for /etc")
-                                     file))))))
+           (raise (formatted-message (G_ "duplicate '~a' entry for /etc")
+                                     file)))
          (loop rest (set-insert file seen))))))
 
   ;; Detect duplicates early instead of letting them through, eventually
@@ -968,12 +1006,12 @@ TARGET-TYPE; return the root service adjusted accordingly."
        vlist-null))
     (()
      (raise
-      (condition (&missing-target-service-error
-                  (service #f)
-                  (target-type target-type))
-                 (&message
-                  (message (format #f (G_ "service of type '~a' not found")
-                                   (service-type-name target-type)))))))
+      (make-compound-condition
+       (condition (&missing-target-service-error
+                   (service #f)
+                   (target-type target-type)))
+       (formatted-message (G_ "service of type '~a' not found")
+                          (service-type-name target-type)))))
     (x
      (raise
       (condition (&ambiguous-target-service-error

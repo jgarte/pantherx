@@ -647,11 +647,11 @@ load path."
                    ,(file-append* source "/etc/completion/zsh/_guix"))
                   ("share/fish/vendor_completions.d/guix.fish"
                    ,(file-append* source "/etc/completion/fish/guix.fish"))
-                  ("share/guix/berlin.guixsd.org.pub"
+                  ("share/guix/berlin.guix.gnu.org.pub"
                    ,(file-append* source
-                                  "/etc/substitutes/berlin.guixsd.org.pub"))
+                                  "/etc/substitutes/berlin.guix.gnu.org.pub"))
                   ("share/guix/ci.guix.gnu.org.pub"  ;alias
-                   ,(file-append* source "/etc/substitutes/berlin.guixsd.org.pub"))
+                   ,(file-append* source "/etc/substitutes/berlin.guix.gnu.org.pub"))
                   ("share/guix/ci.guix.info.pub"  ;alias
                    ,(file-append* source "/etc/substitutes/berlin.guixsd.org.pub"))
                   ("share/guix/build.pantherx.org.pub"  ;alias

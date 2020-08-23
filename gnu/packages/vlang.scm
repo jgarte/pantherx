@@ -17,8 +17,6 @@
 ;;; along with GNU Guix.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gnu packages vlang)
-  #:use-module (gnu packages c)
-  #:use-module (gnu packages gcc)
   #:use-module (gnu packages glib)
   #:use-module (guix build-system gnu)
   #:use-module (guix git-download)
@@ -33,7 +31,7 @@
     (origin
      (method git-fetch)
      (uri (git-reference
-           (url "https://github.com/vlang/v.git")
+           (url "https://github.com/vlang/v")
            (commit version)))
      (file-name (git-file-name name version))
      (sha256
@@ -89,8 +87,7 @@
               (copy-file "v.mod" vmod))
             #t)))))
    (inputs
-    `(("glib" ,glib)
-      ("gcc" ,gcc)))
+    `(("glib" ,glib)))
    (native-inputs
     `(("vc"
        ,(let ((vc-version "0884d7092f4c2a4f8ca16da6f1792efa235247be"))
@@ -103,7 +100,7 @@
           (origin
             (method git-fetch)
             (uri (git-reference
-                  (url "https://github.com/vlang/vc.git")
+                  (url "https://github.com/vlang/vc")
                   (commit vc-version)))
             (file-name (git-file-name "vc" vc-version))
             (sha256

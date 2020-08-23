@@ -23,7 +23,8 @@
   #:use-module (guix monads)
   #:use-module (guix grafts)
   #:use-module ((guix gexp) #:select (local-file local-file-file))
-  #:use-module ((guix utils)
+  #:use-module (guix utils)
+  #:use-module ((guix diagnostics)
                 ;; Rename the 'location' binding to allow proper syntax
                 ;; matching when setting the 'location' field of a package.
                 #:renamer (lambda (name)
@@ -617,12 +618,11 @@
          (string=? (derivation->output-path drv)
                    (package-output %store package "out")))))
 
-(test-assert "patch not found yields a run-time error"
-  (guard (c ((condition-has-type? c &message)
-             (and (string-contains (condition-message c)
-                                   "does-not-exist.patch")
-                  (string-contains (condition-message c)
-                                   "not found"))))
+(test-equal "patch not found yields a run-time error"
+  '("~a: patch not found\n" "does-not-exist.patch")
+  (guard (c ((formatted-message? c)
+             (cons (formatted-message-string c)
+                   (formatted-message-arguments c))))
     (let ((p (package
                (inherit (dummy-package "p"))
                (source (origin
@@ -1109,6 +1109,20 @@
     (match (assoc "dep" inputs)
       (("dep" package)
        (eq? package dep)))))
+
+(test-assert "package->bag, sensitivity to %current-system"
+  (let* ((dep (dummy-package "dep"
+                (propagated-inputs (if (string=? (%current-system)
+                                                 "i586-gnu")
+                                       `(("libxml2" ,libxml2))
+                                       '()))))
+         (pkg (dummy-package "foo"
+                (native-inputs `(("dep" ,dep)))))
+         (bag (package->bag pkg (%current-system) "i586-gnu")))
+    (equal? (parameterize ((%current-system "x86_64-linux"))
+              (bag-transitive-inputs bag))
+            (parameterize ((%current-system "i586-gnu"))
+              (bag-transitive-inputs bag)))))
 
 (test-assert "package->bag, sensitivity to %current-target-system"
   (let* ((dep (dummy-package "dep"

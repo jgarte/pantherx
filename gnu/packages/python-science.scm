@@ -9,6 +9,7 @@
 ;;; Copyright © 2019 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2019 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2020 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -198,6 +199,37 @@ depends on @code{scipy.weave}.  For new code, users are recommended to use
 Cython.")
     (license license:bsd-3)))
 
+(define-public python-scikit-fuzzy
+  (package
+    (name "python-scikit-fuzzy")
+    (version "0.4.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "scikit-fuzzy" version))
+       (sha256
+        (base32 "0bp1n771fj44kdp7a00bcvfwirvv2rc803b7g6yf3va7v0j29c8s"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (invoke "nosetests" "-s" "-v" "skfuzzy")
+             #t)))))
+    (native-inputs
+     `(("python-nose" ,python-nose)))
+    (propagated-inputs
+     `(("python-networkx" ,python-networkx)
+       ("python-numpy" ,python-numpy)
+       ("python-scipy" ,python-scipy)))
+    (home-page "https://github.com/scikit-fuzzy/scikit-fuzzy")
+    (synopsis "Fuzzy logic toolkit for SciPy")
+    (description
+     "This package implements many useful tools for projects involving fuzzy
+logic, also known as grey logic.")
+    (license license:bsd-3)))
+
 (define-public python-scikit-image
   (package
     (name "python-scikit-image")
@@ -216,13 +248,15 @@ Cython.")
     (propagated-inputs
      `(("python-cloudpickle" ,python-cloudpickle)
        ("python-dask" ,python-dask)
+       ("python-imageio" ,python-imageio)
        ("python-matplotlib" ,python-matplotlib)
        ("python-networkx" ,python-networkx)
        ("python-numpy" ,python-numpy)
        ("python-pillow" ,python-pillow)
        ("python-pywavelets" ,python-pywavelets)
        ("python-scipy" ,python-scipy)
-       ("python-six" ,python-six)))
+       ("python-six" ,python-six)
+       ("python-tifffile" ,python-tifffile)))
     (native-inputs
      `(("python-cython" ,python-cython)))
     (home-page "https://scikit-image.org/")
@@ -230,6 +264,26 @@ Cython.")
     (description
      "Scikit-image is a collection of algorithms for image processing.")
     (license license:bsd-3)))
+
+(define-public python-sgp4
+  (package
+    (name "python-sgp4")
+    (version "2.12")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "sgp4" version))
+       (sha256
+        (base32 "0dncp9i5b6afkg7f8mj9j0qzsp008b8v73yc0qkmizhpns7mvwvx"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)))
+    (home-page "https://github.com/brandon-rhodes/python-sgp4")
+    (synopsis "Track earth satellite TLE orbits using SGP4")
+    (description
+     "This package provides a Python implementation of the most recent version
+of the SGP4 satellite tracking algorithm.")
+    (license license:expat)))
 
 (define-public python-pandas
   (package
@@ -354,6 +408,36 @@ doing practical, real world data analysis in Python.")
                       (("if 'NULL byte' in msg:")
                        "if 'NULL byte' in msg or 'line contains NUL' in msg:"))
                     #t)))))))
+
+(define-public python-bottleneck
+  (package
+    (name "python-bottleneck")
+    (version "1.3.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "Bottleneck" version))
+       (sha256
+        (base32 "0wz5320jx3n4q2nsvwvc7cpi66b46qbals9v53m955rmcq5ry5r0"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (invoke "python" "setup.py" "pytest"))))))
+    (native-inputs
+     `(("python-hypothesis" ,python-hypothesis)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-runner" ,python-pytest-runner)))
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)))
+    (home-page "https://github.com/pydata/bottleneck")
+    (synopsis "Fast NumPy array functions written in C")
+    (description
+     "Bottleneck is a collection of fast, NaN-aware NumPy array functions
+written in C.")
+    (license license:bsd-2)))
 
 (define-public python-xarray
   (package

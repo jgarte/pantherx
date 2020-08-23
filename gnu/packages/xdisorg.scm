@@ -11,7 +11,7 @@
 ;;; Copyright © 2015 Florian Paul Schmidt <mista.tapas@gmx.net>
 ;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2016, 2018 Ricardo Wurmus <rekado@elephly.net>
-;;; Copyright © 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016, 2017, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
@@ -37,6 +37,8 @@
 ;;; Copyright © 2020 John Soo <jsoo1@asu.edu>
 ;;; Copyright © 2020 Boris A. Dekshteyn <boris.dekshteyn@gmail.com>
 ;;; Copyright © 2020 Alex McGrath <amk@amk.ie>
+;;; Copyright © 2020 Ivan Kozlov <kanichos@yandex.ru>
+;;; Copyright © 2020 Brett Gilio <brettg@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -220,7 +222,7 @@ used to further tweak the behaviour of the different profiles.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Cloudef/bemenu.git")
+             (url "https://github.com/Cloudef/bemenu")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -264,7 +266,7 @@ with X11 or Wayland, or in a text terminal with ncurses.")
   (source (origin
             (method git-fetch)
             (uri (git-reference
-                   (url "https://github.com/hluk/CopyQ.git")
+                   (url "https://github.com/hluk/CopyQ")
                    (commit (string-append "v" version))))
             (file-name (git-file-name name version))
             (sha256
@@ -295,7 +297,7 @@ application.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/astrand/xclip.git")
+             (url "https://github.com/astrand/xclip")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -626,17 +628,18 @@ move windows, switch between desktops, etc.).")
 (define-public scrot
   (package
     (name "scrot")
-    (version "1.3")
+    (version "1.4")
     (source
      (origin
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/resurrecting-open-source-projects/scrot.git")
+         (url "https://github.com/resurrecting-open-source-projects/scrot")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0x70hd59ik37kqd8xqpwrz46np01jv324iz28x2s0kk36d7sblsj"))))
+        (base32
+         "12xq6glg70icwsvbnfw9gm4dahlbnrc7b6adpd0mpf89h4sj2gds"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -646,6 +649,7 @@ move windows, switch between desktops, etc.).")
      `(("giblib" ,giblib)
        ("libx11" ,libx11)
        ("libXcursor" ,libxcursor)
+       ("libxcomposite" ,libxcomposite)
        ("libXfixes" ,libxfixes)))
     (home-page "https://github.com/resurrecting-open-source-projects/scrot")
     (synopsis "Command-line screen capture utility for X Window System")
@@ -664,7 +668,7 @@ of the screen selected by mouse.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/naelstrof/slop.git")
+                    (url "https://github.com/naelstrof/slop")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -697,7 +701,7 @@ selection's dimensions to stdout.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/naelstrof/maim.git")
+                    (url "https://github.com/naelstrof/maim")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -930,7 +934,7 @@ Guile will work for XBindKeys.")
 (define-public sxhkd
   (package
     (name "sxhkd")
-    (version "0.6.1")
+    (version "0.6.2")
     (source
      (origin
        (method git-fetch)
@@ -939,7 +943,7 @@ Guile will work for XBindKeys.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0j7bl2l06r0arrjzpz7al9j6cwzc730knbsijp7ixzz96pq7xa2h"))))
+        (base32 "1winwzdy9yxvxnrv8gqpigl9y0c2px27mnms62bdilp4x6llrs9r"))))
     (build-system gnu-build-system)
     (inputs
      `(("asciidoc" ,asciidoc)
@@ -1050,7 +1054,7 @@ within a single process.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/alols/xcape.git")
+                    (url "https://github.com/alols/xcape")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -1243,7 +1247,7 @@ color temperature should be set to match the lamps in your room.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/minus7/redshift.git")
+                      (url "https://github.com/minus7/redshift")
                       (commit commit)))
                 (file-name (string-append name "-" version))
                 (sha256
@@ -1359,6 +1363,44 @@ demos.  It also acts as a nice screen locker.")
               (string-append
                "http://metadata.ftp-master.debian.org/changelogs/"
                "/main/x/xscreensaver/xscreensaver_5.36-1_copyright")))))
+
+(define-public xssproxy
+  (package
+    (name "xssproxy")
+    (version "1.0.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/timakro/xssproxy")
+                    (commit (string-append "v" version))))
+              (file-name (string-append name "-" version "-checkout"))
+              (sha256
+               (base32
+                "0c83wmipnsdnbihc5niyczs7jrkss2s8n6iwwjdia7hkjzbd0hl7"))))
+    (build-system gnu-build-system)
+    (arguments `(#:make-flags `("bindir=/bin"
+                                "man1dir=/share/man/man1"
+                                ,(string-append "DESTDIR=" (assoc-ref %outputs "out"))
+                                "CC=gcc")
+                 #:phases (modify-phases %standard-phases
+                            (delete 'configure)
+                            (delete 'check))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("glib" ,glib)
+       ("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("libxscrnsaver" ,libxscrnsaver)
+       ("dbus" ,dbus)))
+    (synopsis "Forward freedesktop.org Idle Inhibition Service calls to Xss")
+    (description "xssproxy implements the @code{org.freedesktop.ScreenSaver}
+D-Bus interface described in the Idle Inhibition Service Draft by the
+freedesktop.org developers.  The inhibition of the screensaver is then
+controlled using the XScreenSaverSuspend function from the Xss (X11 Screen
+Saver extension) library.")
+    (home-page "https://github.com/timakro/xssproxy")
+    (license license:gpl3+)))
 
 (define-public xsel
   (package
@@ -1513,7 +1555,7 @@ actions, a built-in clock, a battery monitor and a system tray.")
      (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/robm/dzen.git")
+                    (url "https://github.com/robm/dzen")
                     (commit commit)))
               (file-name (string-append name "-" version))
               (sha256
@@ -1683,7 +1725,7 @@ invert colors on a specific display/screen.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/dusxmt/nxbelld.git")
+                    (url "https://github.com/dusxmt/nxbelld")
                     (commit version)))
               (sha256
                (base32
@@ -1879,7 +1921,7 @@ to automatically turn it on on login.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/zoltanp/xrandr-invert-colors.git")
+                    (url "https://github.com/zoltanp/xrandr-invert-colors")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -1978,7 +2020,7 @@ temperature of the screen.")
          "--with-xkb"
          "--with-default-authproto-module=/run/setuid-programs/authproto_pam")))
     (native-inputs
-     `(("pandoc" ,ghc-pandoc)
+     `(("pandoc" ,pandoc)
        ("pkg-config" ,pkg-config)))
     (inputs
      `(("fontconfig" ,fontconfig)
@@ -2014,7 +2056,7 @@ binary to setuid-binaries:
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/bugaevc/wl-clipboard.git")
+             (url "https://github.com/bugaevc/wl-clipboard")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2064,7 +2106,7 @@ The cutbuffer and clipboard selection are always synchronized.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/johanmalm/jgmenu.git")
+             (url "https://github.com/johanmalm/jgmenu")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2108,7 +2150,7 @@ can optionally use some appearance settings from XSettings, tint2 and GTK.")
 (define-public xwallpaper
   (package
     (name "xwallpaper")
-    (version "0.6.4")
+    (version "0.6.5")
     (source
      (origin
        (method git-fetch)
@@ -2117,8 +2159,7 @@ can optionally use some appearance settings from XSettings, tint2 and GTK.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "175fzifvia58vah2x7509drvfn3xfv5d9szgh9x1w1a1w8rcs2hx"))))
+        (base32 "121ai4dc0v65qk12gn9w62ixly8hc8a5qrygkbb82vy8ck4jqxj7"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -2184,7 +2225,7 @@ Xwrits hides itself until you should take another break.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/derat/xsettingsd.git")
+             (url "https://github.com/derat/xsettingsd")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2250,7 +2291,7 @@ configuring visual settings in different UI toolkits separately.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/cdown/clipnotify.git")
+             (url "https://github.com/cdown/clipnotify")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -2301,7 +2342,7 @@ tools to complement clipnotify.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/cdown/clipmenu.git")
+               (url "https://github.com/cdown/clipmenu")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -2380,7 +2421,7 @@ After selection, the clip is put onto the PRIMARY and CLIPBOARD X selections.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/qnikst/kbdd.git")
+             (url "https://github.com/qnikst/kbdd")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2416,7 +2457,7 @@ create layout indicator widgets.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/enkore/j4-dmenu-desktop.git")
+                    (url "https://github.com/enkore/j4-dmenu-desktop")
                     (commit (string-append "r" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -2429,6 +2470,11 @@ create layout indicator widgets.")
      `(#:configure-flags '("-DWITH_GIT_CATCH=off")
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'find-catch
+           (lambda _
+             (substitute* "CMakeLists.txt"
+               (("PATH_SUFFIXES catch") "PATH_SUFFIXES catch2"))
+             #t))
          (replace 'check
            (lambda _
              (invoke "./j4-dmenu-tests" "exclude:SearchPath/XDG_DATA_HOME"))))))

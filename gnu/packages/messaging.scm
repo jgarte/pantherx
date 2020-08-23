@@ -235,7 +235,7 @@ identi.ca and status.net).")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/sm00th/bitlbee-discord.git")
+             (url "https://github.com/sm00th/bitlbee-discord")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -265,7 +265,7 @@ identi.ca and status.net).")
                      ("bitlbee" ,bitlbee) ; needs bitlbee headers
                      ("bash" ,bash)))
     (synopsis "Discord plugin for Bitlbee")
-    (description "Bitlbee-discord is a plugin for Bitlbee witch provides
+    (description "Bitlbee-discord is a plugin for Bitlbee which provides
 access to servers running the Discord protocol.")
     (home-page "https://github.com/sm00th/bitlbee-discord/")
     (license license:gpl2+)))
@@ -1005,7 +1005,7 @@ and prevent message loss.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/irungentoo/toxcore.git")
+                      (url "https://github.com/irungentoo/toxcore")
                       (commit commit)))
                 (file-name (string-append name "-" version "-checkout"))
                 (sha256
@@ -1040,7 +1040,7 @@ and prevent message loss.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/TokTok/c-toxcore.git")
+             (url "https://github.com/TokTok/c-toxcore")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1071,7 +1071,7 @@ messenger protocol.")
     (origin
      (method git-fetch)
      (uri (git-reference
-           (url "https://github.com/uTox/uTox.git")
+           (url "https://github.com/uTox/uTox")
            (commit (string-append "v" version))
            (recursive? #t))) ;; Needed for 'minini' git submodule.
      (file-name (string-append name "-" version "-checkout"))
@@ -1195,7 +1195,7 @@ connect with friends and family without anyone else listening in.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Bitmessage/PyBitmessage.git")
+             (url "https://github.com/Bitmessage/PyBitmessage")
              (commit version)))
        (file-name (string-append name "-" version "-checkout"))
        (sha256
@@ -1306,14 +1306,14 @@ with several different talk daemons at the same time.")
 (define-public gloox
   (package
     (name "gloox")
-    (version "1.0.23")
+    (version "1.0.24")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://camaya.net/download/gloox-"
                            version ".tar.bz2"))
        (sha256
-        (base32 "12jz8glg9zmyk0iyv1ywf5i0hq93dfq8lvn6lyjgy8730w66mjwp"))))
+        (base32 "1jgrd07qr9jvbb5hcmhrqz4w4lvwc51m30jls1fgxf1f5az6455f"))))
     (build-system gnu-build-system)
     (inputs
      `(("libidn" ,libidn)
@@ -1639,7 +1639,7 @@ is also scriptable and extensible via Guile.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/boothj5/libmesode.git")
+                    (url "https://github.com/boothj5/libmesode")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -1670,7 +1670,7 @@ manual SSL certificate verification.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/strophe/libstrophe.git")
+             (url "https://github.com/strophe/libstrophe")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -1695,14 +1695,14 @@ are both supported).")
 (define-public profanity
   (package
     (name "profanity")
-    (version "0.8.1")
+    (version "0.9.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://profanity-im.github.io/profanity-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "15yrx2ir2bilxpjfaxpjb93yjpvpvcvh5r7wbsjx6kmmy7qg2zvb"))))
+                "00j9l9v62rz9hprgiy1vrz8v3v59ph18h8kskqxr31fgqvjv5xr3"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags
@@ -1721,7 +1721,8 @@ are both supported).")
        ("libotr" ,libotr)
        ("ncurses" ,ncurses)
        ("openssl" ,openssl)
-       ("readline" ,readline)))
+       ("readline" ,readline)
+       ("sqlite" ,sqlite)))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("autoconf-archive" ,autoconf-archive)
@@ -1777,7 +1778,7 @@ building the IRC clients and bots.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/JFreegman/toxic.git")
+             (url "https://github.com/JFreegman/toxic")
              (commit (string-append "v" version))))
        (sha256
         (base32 "09l2j3lwvrq7bf3051vjsnml9w63790ly3iylgf26gkrmld6k31w"))
@@ -1862,7 +1863,7 @@ QMatrixClient project.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Nheko-Reborn/mtxclient.git")
+             (url "https://github.com/Nheko-Reborn/mtxclient")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1912,7 +1913,7 @@ for the Matrix protocol.  It is built on to of @code{Boost.Asio}.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Nheko-Reborn/nheko.git")
+             (url "https://github.com/Nheko-Reborn/nheko")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2143,20 +2144,20 @@ Telegram messenger.")
     (license license:gpl2+)))
 
 (define-public tdlib
-  (let ((commit "278c7acdec83c5ac17d8e1ed0bb2cacbcea62460")
+  (let ((commit "f45d80fe16f99d112d545b7cd74ce46342fe3437")
         (revision "0")
-        (version "1.6.0"))
+        (version "1.6.6"))
     (package
       (name "tdlib")
       (version (git-version version revision commit))
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/tdlib/td.git")
+                      (url "https://github.com/tdlib/td")
                       (commit commit)))
                 (sha256
                  (base32
-                  "0zlzpl6fgszg18kwycyyyrnkm255dvc6fkq0b0y32m5wvwwl36cv"))
+                  "1q8zw26mqhpdzvqbgc7fmn8rzwm5amb8m7s6impin4342wj7h6nr"))
                 (file-name (git-file-name name version))))
       (build-system cmake-build-system)
       (arguments

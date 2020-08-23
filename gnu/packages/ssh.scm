@@ -14,6 +14,8 @@
 ;;; Copyright © 2019 Gábor Boskovits <boskovits@gmail.com>
 ;;; Copyright © 2019, 2020 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
+;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -69,6 +71,54 @@
   #:use-module (guix packages)
   #:use-module (guix utils)
   #:use-module (srfi srfi-1))
+
+(define-public hss
+  (package
+    (name "hss")
+    (version "1.8")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/six-ddc/hss")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1rpysj65j9ls30bf2c5k5hykzzjfknrihs58imp178bx1wqzw4jl"))))
+    (inputs
+     `(("readline" ,readline)))
+    (arguments
+     `(#:make-flags
+       (list ,(string-append "CC=" (cc-for-target))
+             (string-append "INSTALL_BIN=" (assoc-ref %outputs "out") "/bin"))
+       #:tests? #f                      ; no tests
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-file-names
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (substitute* "Makefile"
+               (("/usr/local/opt/readline")
+                (assoc-ref inputs "readline")))
+             #t))
+         (delete 'configure))))         ; no configure script
+    (build-system gnu-build-system)
+    (home-page "https://github.com/six-ddc/hss/")
+    (synopsis "Interactive SSH client for multiple servers")
+    (description
+     "@command{hss} is an interactive SSH client for multiple servers.  Commands
+are executed on all servers in parallel.  Execution on one server does not need
+to wait for that on another server to finish before starting.  One can run a
+command on hundreds of servers at the same time, with almost the same experience
+as a local Bash shell.
+
+It supports:
+@itemize @bullet
+@item interactive input: based on GNU readline.
+@item history: responding to the @kbd{C-r} key.
+@item auto-completion: @key{TAB}-completion from remote servers for commands and
+file names.
+@end itemize\n")
+    (license license:expat)))
 
 (define-public libssh
   (package
@@ -246,82 +296,81 @@ Additionally, various channel-specific options can be negotiated.")
     (synopsis "OpenSSH client and server without X11 support")))
 
 (define-public guile-ssh
-  (package
-    (name "guile-ssh")
-    (version "0.12.0")
-    (home-page "https://github.com/artyom-poptsov/guile-ssh")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url home-page)
-                    (commit (string-append "v" version))))
-              (file-name (string-append name "-" version ".tar.gz"))
-              (sha256
-               (base32
-                "054hd9rzfhb48gc1hw3rphhp0cnnd4bs5qmidy5ygsyvy9ravlad"))
-              (modules '((guix build utils)))))
-    (build-system gnu-build-system)
-    (outputs '("out" "debug"))
-    (arguments
-     `(;; It makes no sense to build libguile-ssh.a.
-       #:configure-flags '("--disable-static")
-
-       #:phases (modify-phases %standard-phases
-                  (add-before 'build 'fix-libguile-ssh-file-name
-                    (lambda* (#:key outputs #:allow-other-keys)
-                      ;; Build and install libguile-ssh.so so that we can use
-                      ;; its absolute file name in .scm files, before we build
-                      ;; the .go files.
-                      (let* ((out (assoc-ref outputs "out"))
-                             (lib (string-append out "/lib")))
-                        (invoke "make" "install"
-                                "-C" "libguile-ssh"
-                                "-j" (number->string
-                                      (parallel-job-count)))
-                        (substitute* (find-files "." "\\.scm$")
-                          (("\"libguile-ssh\"")
-                           (string-append "\"" lib "/libguile-ssh\"")))
-                        #t)))
-                  ,@(if (%current-target-system)
-                        '()
-                        '((add-before 'check 'fix-guile-path
-                             (lambda* (#:key inputs #:allow-other-keys)
-                               (let ((guile (assoc-ref inputs "guile")))
-                                 (substitute* "tests/common.scm"
-                                   (("/usr/bin/guile")
-                                    (string-append guile "/bin/guile")))
-                                 #t)))))
-                  (add-after 'install 'remove-bin-directory
-                    (lambda* (#:key outputs #:allow-other-keys)
-                      (let* ((out (assoc-ref outputs "out"))
-                             (bin (string-append out "/bin"))
-                             (examples (string-append
-                                        out "/share/guile-ssh/examples")))
-                        (mkdir-p examples)
-                        (rename-file (string-append bin "/ssshd.scm")
-                                     (string-append examples "/ssshd.scm"))
-                        (rename-file (string-append bin "/sssh.scm")
-                                     (string-append examples "/sssh.scm"))
-                        (delete-file-recursively bin)
-                        #t))))
-       ;; Tests are not parallel-safe.
-       #:parallel-tests? #f))
-    (native-inputs `(("autoconf" ,autoconf)
-                     ("automake" ,automake)
-                     ("libtool" ,libtool)
-                     ("texinfo" ,texinfo)
-                     ("pkg-config" ,pkg-config)
-                     ("which" ,which)
-                     ("guile" ,guile-3.0))) ;needed when cross-compiling.
-    (inputs `(("guile" ,guile-3.0)
-              ("libssh" ,libssh)
-              ("libgcrypt" ,libgcrypt)))
-    (synopsis "Guile bindings to libssh")
-    (description
-     "Guile-SSH is a library that provides access to the SSH protocol for
-programs written in GNU Guile interpreter.  It is a wrapper to the underlying
-libssh library.")
-    (license license:gpl3+)))
+  ;; This unreleased commit fixes for <https://issues.guix.gnu.org/42740>.
+  (let ((commit "688d7f3797b5155257a6c2ee4ea5084b3d8cc244")
+        (revision "1"))
+    (package
+      (name "guile-ssh")
+      (version (git-version "0.13.0" revision commit))
+      (home-page "https://github.com/artyom-poptsov/guile-ssh")
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url home-page)
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "0mbff4v8738pmcs6sdma4b9gqb0bklraj346i5g5b1mwdywhzljj"))
+                (modules '((guix build utils)))))
+      (build-system gnu-build-system)
+      (outputs '("out" "debug"))
+      (arguments
+       `(#:configure-flags '("--disable-static")
+         #:phases
+         (modify-phases %standard-phases
+           (add-before 'build 'fix-libguile-ssh-file-name
+             (lambda* (#:key outputs #:allow-other-keys)
+               ;; Build and install libguile-ssh.so so that we can use
+               ;; its absolute file name in .scm files, before we build
+               ;; the .go files.
+               (let* ((out (assoc-ref outputs "out"))
+                      (lib (string-append out "/lib")))
+                 (invoke "make" "install"
+                         "-C" "libguile-ssh"
+                         "-j" (number->string
+                               (parallel-job-count)))
+                 (substitute* (find-files "." "\\.scm$")
+                   (("\"libguile-ssh\"")
+                    (string-append "\"" lib "/libguile-ssh\"")))
+                 #t)))
+           ,@(if (%current-target-system)
+                 '()
+                 '((add-before 'check 'fix-guile-path
+                     (lambda* (#:key inputs #:allow-other-keys)
+                       (let ((guile (assoc-ref inputs "guile")))
+                         (substitute* "tests/common.scm"
+                           (("/usr/bin/guile")
+                            (string-append guile "/bin/guile")))
+                         #t)))))
+           (add-after 'install 'remove-bin-directory
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let* ((out (assoc-ref outputs "out"))
+                      (bin (string-append out "/bin"))
+                      (examples (string-append
+                                 out "/share/guile-ssh/examples")))
+                 (mkdir-p examples)
+                 (rename-file (string-append bin "/ssshd.scm")
+                              (string-append examples "/ssshd.scm"))
+                 (rename-file (string-append bin "/sssh.scm")
+                              (string-append examples "/sssh.scm"))
+                 (delete-file-recursively bin)
+                 #t))))))
+      (native-inputs `(("autoconf" ,autoconf)
+                       ("automake" ,automake)
+                       ("libtool" ,libtool)
+                       ("texinfo" ,texinfo)
+                       ("pkg-config" ,pkg-config)
+                       ("which" ,which)
+                       ("guile" ,guile-3.0))) ;needed when cross-compiling.
+      (inputs `(("guile" ,guile-3.0)
+                ("libssh" ,libssh)
+                ("libgcrypt" ,libgcrypt)))
+      (synopsis "Guile bindings to libssh")
+      (description "Guile-SSH is a library that provides access to the SSH
+protocol for programs written in GNU Guile interpreter.  It is a wrapper to
+the underlying libssh library.")
+      (license license:gpl3+))))
 
 (define-public guile2.0-ssh
   (package
@@ -352,26 +401,25 @@ libssh library.")
     (version "2.0")
     (source
      (origin
-       (method url-fetch)
-       ;; The agroman.net domain name expired on 2017-03-23, and the original
-       ;; "http://www.agroman.net/corkscrew/corkscrew-2.0.tar.gz" now returns
-       ;; bogus HTML.  Perhaps it will yet return.  Until then, use a mirror.
-       (uri (string-append "https://downloads.openwrt.org/sources/"
-                           "corkscrew-" version ".tar.gz"))
-       (sha256 (base32
-                "1gmhas4va6gd70i2x2mpxpwpgww6413mji29mg282jms3jscn3qd"))))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/patpadgett/corkscrew")
+             (commit (string-append "v" version))))
+       (sha256
+        (base32 "0g4pkczrc1zqpnxyyjwcjmyzdj5qqcpzwf1bm3965zdwp94bpppf"))
+       (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
          (replace 'configure
            ;; Replace configure phase as the ./configure script does not like
-           ;; CONFIG_SHELL and SHELL passed as parameters
+           ;; CONFIG_SHELL and SHELL passed as parameters.
            (lambda* (#:key outputs build target #:allow-other-keys)
              (let* ((out   (assoc-ref outputs "out"))
                     (bash  (which "bash"))
                     ;; Set --build and --host flags as the provided config.guess
-                    ;; is not able to detect them
+                    ;; is not able to detect them.
                     (flags `(,(string-append "--prefix=" out)
                              ,(string-append "--build=" build)
                              ,(string-append "--host=" (or target build)))))
@@ -381,9 +429,9 @@ libssh library.")
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (doc (string-append out "/share/doc/" ,name "-" ,version)))
-               (install-file "README" doc)
+               (install-file "README.markdown" doc)
                #t))))))
-    (home-page "http://www.agroman.net/corkscrew")
+    (home-page "https://github.com/patpadgett/corkscrew")
     (synopsis "SSH tunneling through HTTP(S) proxies")
     (description
      "Corkscrew tunnels SSH connections through most HTTP and HTTPS proxies.
@@ -446,7 +494,7 @@ responsive, especially over Wi-Fi, cellular, and long-distance links.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/MisterTea/EternalTCP.git")
+             (url "https://github.com/MisterTea/EternalTCP")
              (commit (string-append "et-v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -779,7 +827,7 @@ of existing remote shell facilities such as SSH.")
       (origin
         (method git-fetch)
         (uri (git-reference
-              (url "https://github.com/skeeto/endlessh.git")
+              (url "https://github.com/skeeto/endlessh")
               (commit version)))
         (file-name (git-file-name name version))
         (sha256

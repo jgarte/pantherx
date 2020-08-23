@@ -36,6 +36,7 @@
 ;;; Copyright © 2020 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2020 Zhu Zihao <all_but_last@163.com>
 ;;; Copyright © 2020 Simen Endsjø <simendsjo@gmail.com>
+;;; Copyright © 2020 Tim Van den Langenbergh <tmt_vdl@gmx.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -384,6 +385,35 @@ Biolinum is available in both Regular and Bold weights.")
     ;; The fonts are released under either of these licenses.
     (license (list license:gpl2+ license:silofl1.1))))
 
+(define-public font-libertinus
+  (package
+    (name "font-libertinus")
+    (version "6.12")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/alerque/libertinus/releases"
+                           "/download/v" version "/libertinus-" version
+                           ".zip"))
+       (sha256
+        (base32 "06pcsd5pijjid7xjxak35jla089krm5hqnbglv8ldncq475q7kb2"))))
+    (build-system font-build-system)
+    (home-page "https://github.com/alerque/libertinus")
+    (synopsis "Font family based on Linux Libertine")
+    (description
+     "The Libertinus font family is a fork of Linux Libertine that addresses
+many bugs in the unmaintained original and adds a new mathematical companion
+font for use with OpenType math-capable applications like LuaTex or XeTeX.
+
+The unified Libertinus family consists of:
+@enumerate
+@item Libertinus Serif, forked from Linux Libertine;
+@item Libertinus Sans Serif, forked from Linux Biolinum;
+@item Libertinus Mono, forked from Linux Libertine Mono; and
+@item Libertinus Math, an original matching OpenType math font.
+@end enumerate\n")
+    (license license:silofl1.1)))
+
 (define-public font-terminus
   (package
     (name "font-terminus")
@@ -431,7 +461,7 @@ for long periods of working with computers (8 or more hours per day).")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/adobe-fonts/source-han-sans.git")
+                     (url "https://github.com/adobe-fonts/source-han-sans")
                      (commit (string-append version "R"))))
               (file-name (git-file-name name version))
               (sha256
@@ -680,7 +710,7 @@ for use at smaller text sizes")))
 (define-public font-gnu-unifont
   (package
     (name "font-gnu-unifont")
-    (version "13.0.02")
+    (version "13.0.03")
     (source
      (origin
        (method url-fetch)
@@ -690,7 +720,7 @@ for use at smaller text sizes")))
              (string-append "mirror://gnu/unifont/unifont-"
                             version "/unifont-" version ".tar.gz")))
        (sha256
-        (base32 "1fg908qadh14kfbpzqfj3vgzlxgx68sdlwhl2prz7arq5r45dami"))))
+        (base32 "04l2sbg6il78qsj3jxqfbz5k1xzihvw8vdlckgkp4zfr0nh2q7h7"))))
     (build-system gnu-build-system)
     (outputs '("out"   ; TrueType version
                "pcf"   ; PCF (bitmap) version
@@ -817,7 +847,7 @@ It contains the following fonts and styles:
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/belluzj/fantasque-sans.git")
+             (url "https://github.com/belluzj/fantasque-sans")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -828,6 +858,7 @@ It contains the following fonts and styles:
        ("woff-tools" ,woff-tools)
        ("fontforge" ,fontforge)
        ("woff2" ,woff2)
+       ("woff2:bin" ,woff2 "bin")
        ("zip" ,zip)))
     (arguments
      `(#:tests? #f                 ;test target intended for visual inspection
@@ -900,7 +931,7 @@ Powerline support.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/adobe-fonts/source-code-pro.git")
+             (url "https://github.com/adobe-fonts/source-code-pro")
              (commit (regexp-substitute/global
                       ;; The upstream tag uses "/" between the roman and italic
                       ;; versions, so substitute our "-" separator here.
@@ -925,7 +956,7 @@ designed to work well in user interface environments.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/adobe-fonts/source-sans-pro.git")
+             (url "https://github.com/adobe-fonts/source-sans-pro")
              (commit (regexp-substitute/global
                       ;; The upstream tag uses "/" between the roman and italic
                       ;; versions, so substitute our "-" separator here.
@@ -950,7 +981,7 @@ work well in user interface (UI) environments.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/adobe-fonts/source-serif-pro.git")
+             (url "https://github.com/adobe-fonts/source-serif-pro")
              (commit (regexp-substitute/global
                       ;; The upstream tag uses "/" between the roman and italic
                       ;; versions, so substitute our "-" separator here.
@@ -993,7 +1024,7 @@ Sans Pro family.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/mozilla/Fira.git")
+                     (url "https://github.com/mozilla/Fira")
                      (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -1038,7 +1069,7 @@ correct spacing.")
    (source (origin
             (method git-fetch)
             (uri (git-reference
-                   (url "https://github.com/FortAwesome/Font-Awesome.git")
+                   (url "https://github.com/FortAwesome/Font-Awesome")
                    (commit (string-append "v" version))))
             (file-name (git-file-name name version))
             (sha256
@@ -1075,7 +1106,7 @@ vector graphics.")
      (origin
        (method git-fetch)
        (uri (git-reference
-              (url "https://github.com/sunaku/tamzen-font.git")
+              (url "https://github.com/sunaku/tamzen-font")
               (commit (string-append "Tamzen-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1358,7 +1389,7 @@ monospace, slab-serif fonts.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/google/material-design-icons.git")
+                     (url "https://github.com/google/material-design-icons")
                      (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -1628,7 +1659,7 @@ formatting.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/uswds/public-sans.git")
+             (url "https://github.com/uswds/public-sans")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1711,7 +1742,7 @@ This package provides the TrueType fonts.")
 (define-public font-jetbrains-mono
   (package
     (name "font-jetbrains-mono")
-    (version "1.0.3")
+    (version "2.001")
     (source
      (origin
        (method url-fetch)
@@ -1719,8 +1750,17 @@ This package provides the TrueType fonts.")
         (string-append "https://download.jetbrains.com/fonts/"
                        "JetBrainsMono-" version ".zip"))
        (sha256
-        (base32 "0zvhwmpdwpm4vywmm6i9a4najz0c7vfi411yikgkd66l5hwd1p6f"))))
+        (base32 "0r3dk3kn536rik4mvpcjin9mwmifl3v8mawvb4a5l59pww0vcxzq"))))
     (build-system font-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'install-license-files
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (doc (string-append out "/share/doc/" ,name "-" ,version)))
+               (install-file "../LICENSE" doc)
+               #t))))))
     (home-page "https://www.jetbrains.com/lp/mono/")
     (synopsis "Mono typeface for developers")
     (description
@@ -1897,3 +1937,27 @@ languages, it contains Japanese characters, including Kana glyphs and more
 than 5,300 Kanji glyphs, as well major international phonetic symbols,
 operators and special symbols.")
     (license (license:non-copyleft "file:///LICENSE_E"))))
+
+(define-public font-catamaran
+  (let ((commit "7559b4906f9c9148fb22c6f89508c3053a78a296")
+        (revision "1"))
+    (package
+      (name "font-catamaran")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/VanillaandCream/Catamaran-Tamil")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1wpp41l7j2kpgnyavhgxcc5wp852a4wqsnwravn39gp980s84yxw"))))
+      (build-system font-build-system)
+      (home-page "https://github.com/VanillaandCream/Catamaran-Tamil")
+      (synopsis "9 weight Tamil and Latin type")
+      (description "Catamaran is a 9 weight Tamil and Latin type.  Catamaran
+is a stylish type with a polished yet relaxed feel.  Its versatility makes it
+suitable for a wide range of uses.")
+      (license license:silofl1.1))))

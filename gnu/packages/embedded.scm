@@ -251,8 +251,7 @@ usable on embedded products.")
            (origin-patches (package-source gcc-7))
            (search-patches "gcc-7-cross-environment-variables.patch")))))
       (native-inputs
-       `(("gcc@5" ,gcc-5)
-         ("flex" ,flex)
+       `(("flex" ,flex)
          ("isl" ,isl-0.18)
          ,@(alist-delete "isl" (package-native-inputs xgcc))))
       (arguments
@@ -596,7 +595,7 @@ with a layered architecture of JTAG interface and TAP support.")
       (source (origin (inherit (package-source xbinutils))
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/parallaxinc/propgcc.git")
+                      (url "https://github.com/parallaxinc/propgcc")
                       (commit commit)))
                 (file-name (string-append name "-" commit "-checkout"))
                 (sha256
@@ -632,7 +631,7 @@ with a layered architecture of JTAG interface and TAP support.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/totalspectrum/gcc-propeller.git")
+                      (url "https://github.com/totalspectrum/gcc-propeller")
                       (commit commit)))
                 (file-name (string-append name "-" commit "-checkout"))
                 (sha256
@@ -667,7 +666,7 @@ with a layered architecture of JTAG interface and TAP support.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/parallaxinc/propgcc.git")
+                      (url "https://github.com/parallaxinc/propgcc")
                       (commit commit)))
                 (file-name (string-append name "-" commit "-checkout"))
                 (sha256
@@ -709,7 +708,7 @@ with a layered architecture of JTAG interface and TAP support.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/parallaxinc/propgcc.git")
+                      (url "https://github.com/parallaxinc/propgcc")
                       (commit commit)))
                 (file-name (string-append name "-" commit "-checkout"))
                 (sha256
@@ -828,7 +827,7 @@ code.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/parallaxinc/propgcc.git")
+                      (url "https://github.com/parallaxinc/propgcc")
                       (commit commit)))
                 (file-name (string-append name "-" commit "-checkout"))
                 (sha256
@@ -913,7 +912,7 @@ larger).")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/parallaxinc/spinsim.git")
+                      (url "https://github.com/parallaxinc/spinsim")
                       (commit commit)))
                 (file-name (string-append name "-" commit "-checkout"))
                 (sha256
@@ -969,7 +968,7 @@ simulator.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                       (url "https://github.com/puppeh/binutils-vc4.git")
+                       (url "https://github.com/puppeh/binutils-vc4")
                        (commit commit)))
                 (file-name (string-append name "-" version "-checkout"))
                 (sha256
@@ -997,7 +996,7 @@ simulator.")
           ,(origin
                 (method git-fetch)
                 (uri (git-reference
-                       (url "https://github.com/puppeh/cgen.git")
+                       (url "https://github.com/puppeh/cgen")
                        (commit "d8e2a9eb70425f180fdd5bfd032884b0855f2032")))
                 (sha256
                  (base32
@@ -1021,7 +1020,7 @@ the Raspberry Pi chip.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/puppeh/gcc-vc4.git")
+                      (url "https://github.com/puppeh/gcc-vc4")
                       (commit commit)))
                 (file-name (string-append name
                                           "-"
@@ -1045,7 +1044,7 @@ the Raspberry Pi chip."))))
       (origin
         (method git-fetch)
         (uri (git-reference
-              (url "https://github.com/daym/libmpsse.git")
+              (url "https://github.com/daym/libmpsse")
               (commit (string-append "v" version))))
         (file-name "libmpsse-checkout")
         (sha256
@@ -1162,14 +1161,14 @@ SPI, I2C, JTAG.")
 (define-public fc-host-tools
   (package
     (name "fc-host-tools")
-    (version "11")
+    (version "13")
     (source (origin
               (method url-fetch)
               (uri (string-append "ftp://ftp.freecalypso.org/pub/GSM/"
                                   "FreeCalypso/fc-host-tools-r" version ".tar.bz2"))
               (sha256
                (base32
-                "0s87lp6gd8i8ivrdd7mnnalysr65035nambcm992rgla7sk76sj1"))))
+                "0bpxz4y0z3hmlirzvfwq0k45yzn9fzgqs9r1fpkrhn48gr2zrpa8"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; No tests exist.
@@ -1283,6 +1282,12 @@ and displaying decoded target responses.
 @item fcup-smsendmult: Send multiple short messages via SMS in one go
 @item fcup-smsendpdu: Send multiple short messages given in PDU format via SMS
 @item sms-pdu-decode: Decode PDU format messages
+@item fc-dspromdump: Dump DSP ROM.
+@item pcm-sms-decode: Decode /pcm/SMS binary files read out of FFS maintained
+by Pirelli DP-L10.  Display the SMS in human-readable form.
+@item srec-regions: Parse S-record (TI's *.m0), identify the set of
+discontiguous regions into which this SREC image deposits bits, and list
+these identified regions.
 @end enumerate")
     (home-page "https://www.freecalypso.org/")
     (license license:public-domain)))

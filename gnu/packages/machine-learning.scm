@@ -15,6 +15,7 @@
 ;;; Copyright © 2019 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2020 Konrad Hinsen <konrad.hinsen@fastmail.net>
 ;;; Copyright © 2020 Edouard Klein <edk@beaver-labs.com>
+;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -53,6 +54,7 @@
   #:use-module (gnu packages boost)
   #:use-module (gnu packages check)
   #:use-module (gnu packages compression)
+  #:use-module (gnu packages cmake)
   #:use-module (gnu packages cran)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages dejagnu)
@@ -70,6 +72,7 @@
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-check)
   #:use-module (gnu packages python-science)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
@@ -93,7 +96,7 @@
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/libfann/fann.git")
+                      (url "https://github.com/libfann/fann")
                       (commit commit)))
                 (file-name (string-append name "-" version "-checkout"))
                 (sha256
@@ -315,7 +318,7 @@ networks) based on simulation of (stochastic) flow in graphs.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fhcrc/mcl.git")
+             (url "https://github.com/fhcrc/mcl")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -412,14 +415,14 @@ sample proximities between pairs of cases.")
 (define-public openfst
   (package
     (name "openfst")
-    (version "1.7.2")
+    (version "1.7.9")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://www.openfst.org/twiki/pub/FST/"
                                   "FstDownload/openfst-" version ".tar.gz"))
               (sha256
                (base32
-                "0fqgk8195kz21is09gwzwnrg7fr9526bi9mh4apyskapz27pbhr1"))))
+                "1pmx1yhn2gknj0an0zwqmzgwjaycapi896244np50a8y3nrsw6ck"))))
     (build-system gnu-build-system)
     (home-page "http://www.openfst.org")
     (synopsis "Library for weighted finite-state transducers")
@@ -576,6 +579,46 @@ tools.  This enables both rapid prototyping of data pipelines and extensibility
 in terms of new algorithms.")
     (license license:gpl3+)))
 
+(define-public python-onnx
+  (package
+    (name "python-onnx")
+    (version "1.7.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "onnx" version))
+       ;; ONNX will build googletest from a git checkout.  Patch CMake
+       ;; to use googletest from Guix and enable tests by default.
+       (patches (search-patches "python-onnx-use-system-googletest.patch"))
+       (sha256
+        (base32 "0j6rgfbhsw3a8id8pyg18y93k68lbjbj1kq6qia36h69f6pvlyjy"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("cmake" ,cmake)
+       ("googletest" ,googletest)
+       ("pybind11" ,pybind11)
+       ("python-coverage" ,python-coverage)
+       ("python-nbval" ,python-nbval)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-runner" ,python-pytest-runner)))
+    (inputs
+     `(("protobuf" ,protobuf)))
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)
+       ("python-protobuf" ,python-protobuf)
+       ("python-six" ,python-six)
+       ("python-tabulate" ,python-tabulate)
+       ("python-typing-extensions"
+        ,python-typing-extensions)))
+    (home-page "https://onnx.ai/")
+    (synopsis "Open Neural Network Exchange")
+    (description
+     "Open Neural Network Exchange (ONNX) provides an open source format for
+AI models, both deep learning and traditional ML.  It defines an extensible
+computation graph model, as well as definitions of built-in operators and
+standard data types.")
+    (license license:expat)))
+
 (define-public rxcpp
   (package
     (name "rxcpp")
@@ -584,7 +627,7 @@ in terms of new algorithms.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/ReactiveX/RxCpp.git")
+             (url "https://github.com/ReactiveX/RxCpp")
              (commit (string-append "v" version))))
        (sha256
         (base32 "1rdpa3jlc181jd08nk437aar085h28i45s6nzrv65apb3xyyz0ij"))
@@ -730,7 +773,8 @@ than 8 bits, and at the end only some significant 8 bits are kept.")
                   #t))))
     (build-system cmake-build-system)
     (arguments
-     `(#:phases
+     `(#:configure-flags '("-DBUILD_SHARED_LIBS=ON")
+       #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'disable-asserts
            (lambda _
@@ -767,12 +811,7 @@ than 8 bits, and at the end only some significant 8 bits are kept.")
                (with-directory-excursion test-dir
                  (invoke "make" "-j" (number->string (parallel-job-count)))
                  (invoke "./dtest" "--runall"))
-               #t)))
-         (add-after 'install 'delete-static-library
-           (lambda* (#:key outputs #:allow-other-keys)
-             (delete-file (string-append (assoc-ref outputs "out")
-                                         "/lib/libdlib.a"))
-             #t)))))
+               #t))))))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ;; For tests.
@@ -803,7 +842,7 @@ computing environments.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/scikit-learn/scikit-learn.git")
+             (url "https://github.com/scikit-learn/scikit-learn")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -860,7 +899,7 @@ data analysis.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/scikit-learn/scikit-learn.git")
+                      (url "https://github.com/scikit-learn/scikit-learn")
                       (commit version)))
                 (file-name (git-file-name "python-scikit-learn" version))
                 (sha256
@@ -1064,7 +1103,7 @@ association studies (GWAS) on extremely large data sets.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/kaldi-asr/kaldi.git")
+                      (url "https://github.com/kaldi-asr/kaldi")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -1175,7 +1214,7 @@ written in C++.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/alumae/gst-kaldi-nnet2-online.git")
+                      (url "https://github.com/alumae/gst-kaldi-nnet2-online")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -1247,7 +1286,7 @@ automatically.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/alumae/kaldi-gstreamer-server.git")
+                      (url "https://github.com/alumae/kaldi-gstreamer-server")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -1351,7 +1390,7 @@ Python.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/tensorflow/tensorflow.git")
+             (url "https://github.com/tensorflow/tensorflow")
              (commit (string-append "v" version))))
        (file-name (string-append "tensorflow-" version "-checkout"))
        (sha256
@@ -1681,7 +1720,7 @@ INSTALL_RPATH " (assoc-ref outputs "out") "/lib)\n")))
            (origin
              (method git-fetch)
              (uri (git-reference
-                   (url "https://github.com/google/double-conversion.git")
+                   (url "https://github.com/google/double-conversion")
                    (commit commit)))
              (file-name
               (git-file-name "double-conversion"
@@ -1726,7 +1765,7 @@ INSTALL_RPATH " (assoc-ref outputs "out") "/lib)\n")))
            (origin
              (method git-fetch)
              (uri (git-reference
-                   (url "https://github.com/google/highwayhash.git")
+                   (url "https://github.com/google/highwayhash")
                    (commit commit)))
              (file-name (string-append "highwayhash-0-" revision
                                        (string-take commit 7)
@@ -1974,7 +2013,7 @@ that:
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/facebookincubator/gloo.git")
+               (url "https://github.com/facebookincubator/gloo")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256

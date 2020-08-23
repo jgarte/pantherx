@@ -74,7 +74,7 @@ continue running in the background, then later reattached.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/jimeh/tmux-themepack.git")
+                      (url "https://github.com/jimeh/tmux-themepack")
                       (commit commit)))
                 (sha256
                  (base32
@@ -104,7 +104,7 @@ continue running in the background, then later reattached.")
     (source (origin
              (method git-fetch)
              (uri (git-reference
-                   (url "https://github.com/jimeh/tmuxifier.git")
+                   (url "https://github.com/jimeh/tmuxifier")
                    (commit (string-append "v" version))))
              (file-name (git-file-name name version))
              (sha256
@@ -145,18 +145,17 @@ windows.")
 (define-public python-libtmux
   (package
     (name "python-libtmux")
-    (version "0.8.2")
+    (version "0.8.3")
     (source
      (origin
        (method git-fetch)
        ;; PyPI source tarball does not include tests.
        (uri (git-reference
-             (url "https://github.com/tmux-python/libtmux.git")
+             (url "https://github.com/tmux-python/libtmux")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "1akjv6aqpc690c4l2cjh0fxbpxxg63sfjggapfjjjaqmcl38g1dz"))))
+        (base32 "18dqqd3jmgq3jb1l3xpgywlh4x82mzjxch61gwnlhfaqx5mzvjph"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("procps" ,procps)))             ;tests need top
@@ -196,7 +195,7 @@ with live tmux sessions.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/edouardklein/daemux.git")
+             (url "https://github.com/edouardklein/daemux")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -231,7 +230,7 @@ them, etc., by attaching to the corresponding pane in tmux.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/greymd/tmux-xpanes.git")
+                    (url "https://github.com/greymd/tmux-xpanes")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256

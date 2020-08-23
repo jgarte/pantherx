@@ -456,7 +456,7 @@ support.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/bjorn/tiled.git")
+                    (url "https://github.com/bjorn/tiled")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -503,7 +503,7 @@ clone.")
               ;; http://mirror0.sfml-dev.org/files/ because files there seem
               ;; to be changed in place.
               (uri (git-reference
-                    (url "https://github.com/SFML/SFML.git")
+                    (url "https://github.com/SFML/SFML")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -593,7 +593,7 @@ sounds from presets such as \"explosion\" or \"powerup\".")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/alemart/surgescript.git")
+             (url "https://github.com/alemart/surgescript")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1403,7 +1403,7 @@ painted with a mouse.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/wgois/OIS.git")
+             (url "https://github.com/wgois/OIS")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1535,7 +1535,7 @@ games.")
 (define-public godot
   (package
     (name "godot")
-    (version "3.2.1")
+    (version "3.2.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1544,7 +1544,7 @@ games.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1kndls0rklha7kz9l4i2ivjxab4jpk3b2j7dcgcg2qc3s81yd0r6"))
+                "1libz83mbyrkbbsmmi8z2rydv3ls0w9r4vb5v6diqqwn7ka8z804"))
               (modules '((guix build utils)
                          (ice-9 ftw)
                          (srfi srfi-1)))
@@ -1933,7 +1933,7 @@ of the others")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/ioquake/ioq3.git")
+               (url "https://github.com/ioquake/ioq3")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -2051,7 +2051,7 @@ double-buffering.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/FNA-XNA/FNA.git")
+             (url "https://github.com/FNA-XNA/FNA")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -2103,7 +2103,7 @@ focuses solely on developing a fully accurate XNA4 runtime for the desktop.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/danfis/libccd.git")
+             (url "https://github.com/danfis/libccd")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2127,14 +2127,14 @@ a.k.a. XenoCollide) as described in Game Programming Gems 7.")
 (define-public ode
   (package
     (name "ode")
-    (version "0.16.1")
+    (version "0.16.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://bitbucket.org/odedevs/ode/downloads/"
                            "ode-" version ".tar.gz"))
        (sha256
-        (base32 "1flfdqgdbcn1bx8nrrd4qnp6cvsxrhvk8cdg7vaq2dzkh6nsqa5j"))
+        (base32 "08hgh4gqdk77jcw8b7gq2mwsfg4a5v5y0j7g42bxiqhmn3ffnsmj"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -2142,12 +2142,7 @@ a.k.a. XenoCollide) as described in Game Programming Gems 7.")
            #t))))
     (build-system cmake-build-system)
     (arguments
-     ;; Tests fail on all systems but x86_64.  This is fixed upstream and can
-     ;; be removed in 0.16.2+.
-     `(#:tests? ,(string-prefix? "x86_64-"
-                                 (or (%current-target-system)
-                                     (%current-system)))
-       #:configure-flags '("-DODE_WITH_LIBCCD_SYSTEM=ON")
+     `(#:configure-flags '("-DODE_WITH_LIBCCD_SYSTEM=ON")
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'unbundle-libccd
@@ -2179,7 +2174,7 @@ computer games, 3D authoring tools and simulation tools.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/slembcke/Chipmunk2D.git")
+             (url "https://github.com/slembcke/Chipmunk2D")
              (commit (string-append "Chipmunk-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2206,7 +2201,7 @@ rigid body physics library written in C.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/libtcod/libtcod.git")
+                    (url "https://github.com/libtcod/libtcod")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256

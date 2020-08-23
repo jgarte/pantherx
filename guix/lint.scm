@@ -668,7 +668,12 @@ patch could not be found."
               ;; Use %make-warning, as condition-mesasge is already
               ;; translated.
               (%make-warning package (condition-message c)
-                             #:field 'patch-file-names))))
+                             #:field 'patch-file-names)))
+            ((formatted-message? c)
+             (list (%make-warning package
+                                  (apply format #f
+                                         (G_ (formatted-message-string c))
+                                         (formatted-message-arguments c))))))
     (define patches
       (match (package-source package)
         ((? origin? origin) (origin-patches origin))
@@ -789,30 +794,39 @@ descriptions maintained upstream."
            (#t
             ;; We found a working URL, so stop right away.
             '())
+           (#f
+            ;; Unsupported URL or other error, skip.
+            (loop rest warnings))
            ((? lint-warning? warning)
             (loop rest (cons warning warnings))))))))
 
   (let ((origin (package-source package)))
-    (if (and (origin? origin)
-             (eqv? (origin-method origin) url-fetch))
-        (let* ((uris     (append-map (cut maybe-expand-mirrors <> %mirrors)
-                                     (map string->uri (origin-uris origin))))
-               (warnings (warnings-for-uris uris)))
+    (if (origin? origin)
+        (cond
+         ((eq? (origin-method origin) url-fetch)
+          (let* ((uris     (append-map (cut maybe-expand-mirrors <> %mirrors)
+                                       (map string->uri (origin-uris origin))))
+                 (warnings (warnings-for-uris uris)))
 
-          ;; Just make sure that at least one of the URIs is valid.
-          (if (= (length uris) (length warnings))
-              ;; When everything fails, report all of WARNINGS, otherwise don't
-              ;; report anything.
-              ;;
-              ;; XXX: Ideally we'd still allow warnings to be raised if *some*
-              ;; URIs are unreachable, but distinguish that from the error case
-              ;; where *all* the URIs are unreachable.
-              (cons*
-               (make-warning package
-                             (G_ "all the source URIs are unreachable:")
-                             #:field 'source)
-               warnings)
-              '()))
+            ;; Just make sure that at least one of the URIs is valid.
+            (if (= (length uris) (length warnings))
+                ;; When everything fails, report all of WARNINGS, otherwise don't
+                ;; report anything.
+                ;;
+                ;; XXX: Ideally we'd still allow warnings to be raised if *some*
+                ;; URIs are unreachable, but distinguish that from the error case
+                ;; where *all* the URIs are unreachable.
+                (cons*
+                 (make-warning package
+                               (G_ "all the source URIs are unreachable:")
+                               #:field 'source)
+                 warnings)
+                '())))
+         ((git-reference? (origin-uri origin))
+          (warnings-for-uris
+           (list (string->uri (git-reference-url (origin-uri origin))))))
+         (else
+          '()))
         '())))
 
 (define (check-source-file-name package)
@@ -949,7 +963,14 @@ descriptions maintained upstream."
                    (make-warning package
                                  (G_ "failed to create ~a derivation: ~a")
                                  (list system
-                                       (condition-message c)))))
+                                       (condition-message c))))
+                  ((formatted-message? c)
+                   (let ((str (apply format #f
+                                     (formatted-message-string c)
+                                     (formatted-message-arguments c))))
+                     (make-warning package
+                                   (G_ "failed to create ~a derivation: ~a")
+                                   (list system str)))))
           (parameterize ((%graft? #f))
             (package-derivation store package system #:graft? #f)
 
