@@ -653,7 +653,7 @@ load path."
                   ("share/guix/ci.guix.gnu.org.pub"  ;alias
                    ,(file-append* source "/etc/substitutes/berlin.guix.gnu.org.pub"))
                   ("share/guix/ci.guix.info.pub"  ;alias
-                   ,(file-append* source "/etc/substitutes/berlin.guixsd.org.pub"))
+                   ,(file-append* source "/etc/substitutes/berlin.guix.gnu.org.pub"))
                   ("share/guix/build.pantherx.org.pub"  ;alias
                    ,(file-append* source "/etc/substitutes/build.pantherx.org.pub")))))
 
