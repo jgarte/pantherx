@@ -63,7 +63,6 @@
   #:re-export (display-profile-content
                channel-commit-hyperlink)
   #:export (channel-list
-            with-git-error-handling
             guix-pull))
 
 
@@ -464,23 +463,6 @@ true, display what would be built without actually building it."
   (unless (honor-system-x509-certificates!)
     (honor-lets-encrypt-certificates! store)))
 
-(define (report-git-error error)
-  "Report the given Guile-Git error."
-  ;; Prior to Guile-Git commit b6b2760c2fd6dfaa5c0fedb43eeaff06166b3134,
-  ;; errors would be represented by integers.
-  (match error
-    ((? integer? error)                           ;old Guile-Git
-     (leave (G_ "Git error ~a~%") error))
-    ((? git-error? error)                         ;new Guile-Git
-     (leave (G_ "Git error: ~a~%") (git-error-message error)))))
-
-(define-syntax-rule (with-git-error-handling body ...)
-  (catch 'git-error
-    (lambda ()
-      body ...)
-    (lambda (key err)
-      (report-git-error err))))
-
 
 ;;;
 ;;; Profile.
@@ -791,6 +773,8 @@ Use '~/.config/guix/channels.scm' instead."))
                                  (%graft? (assoc-ref opts 'graft?)))
                     (with-build-handler (build-notifier #:use-substitutes?
                                                         substitutes?
+                                                        #:verbosity
+                                                        (assoc-ref opts 'verbosity)
                                                         #:dry-run? dry-run?)
                       (set-build-options-from-command-line store opts)
                       (ensure-default-profile)

@@ -3,7 +3,7 @@
 ;;; Copyright © 2014, 2015, 2018 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015, 2017 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -330,7 +330,7 @@ completion for many common commands.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/illusori/bash-tap.git")
+             (url "https://github.com/illusori/bash-tap")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -373,7 +373,7 @@ capturing.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/bats-core/bats-core.git")
+                    (url "https://github.com/bats-core/bats-core")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -409,8 +409,9 @@ capturing.")
     (build-system trivial-build-system)
     (home-page "https://github.com/bats-core/bats-core/")
     (synopsis "Bash Automated Testing System")
-    (description "Bats is a TAP-compliant testing framework for Bash.  It
-provides a simple way to verify that the UNIX programs you write behave as
-expected.  Bats is most useful when testing software written in Bash, but you
-can use it to test any UNIX program.")
+    (description
+     "Bats is a @acronym{TAP, Test Anything Protocol}-compliant testing
+framework for Bash.  It provides a simple way to verify that the UNIX programs
+you write behave as expected.  Bats is most useful when testing software written
+in Bash, but you can use it to test any UNIX program.")
     (license expat)))

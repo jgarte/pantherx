@@ -122,7 +122,7 @@
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/thepowersgang/mrustc.git")
+                      (url "https://github.com/thepowersgang/mrustc")
                       (commit (string-append "v" version))))
                 (file-name (git-file-name name version))
                 (sha256
@@ -227,7 +227,7 @@ safety and thread safety guarantees.")
         (sha256 (base32 "0l8c14qsf42rmkqy92ahij4vf356dbyspxcips1aswpvad81y8qm"))
         (modules '((guix build utils)))
         (snippet '(begin (delete-file-recursively "src/llvm") #t))
-        (patches (map search-patch '("rust-1.19-mrustc.patch")))))
+        (patches (search-patches "rust-1.19-mrustc.patch"))))
     (outputs '("out" "cargo"))
     (properties '((timeout . 72000)               ;20 hours
                   (max-silent-time . 18000)))     ;5 hours (for armel)
@@ -718,8 +718,8 @@ jemalloc = \"" jemalloc "/lib/libjemalloc_pic.a" "\"
                       (delete-file-recursively "src/llvm")
                       (delete-file-recursively "src/llvm-emscripten")
                       #t))
-          (patches (map search-patch
-                        '("rust-1.25-accept-more-detailed-gdb-lines.patch")))))
+          (patches (search-patches
+                     "rust-1.25-accept-more-detailed-gdb-lines.patch"))))
       (arguments
        (substitute-keyword-arguments (package-arguments base-rust)
          ((#:phases phases)
@@ -753,9 +753,9 @@ jemalloc = \"" jemalloc "/lib/libjemalloc_pic.a" "\"
       (source
         (origin
           (inherit (package-source base-rust))
-          (patches (map search-patch
-                        '("rust-coresimd-doctest.patch"
-                          "rust-1.25-accept-more-detailed-gdb-lines.patch")))))
+          (patches (search-patches
+                     "rust-coresimd-doctest.patch"
+                     "rust-1.25-accept-more-detailed-gdb-lines.patch"))))
       (arguments
        (substitute-keyword-arguments (package-arguments base-rust)
          ((#:phases phases)
@@ -823,10 +823,10 @@ jemalloc = \"" jemalloc "/lib/libjemalloc_pic.a" "\"
       (source
         (origin
           (inherit (package-source base-rust))
-          (patches (map search-patch '("rust-coresimd-doctest.patch"
-                                       "rust-bootstrap-stage0-test.patch"
-                                       "rust-1.25-accept-more-detailed-gdb-lines.patch"
-                                       "rust-reproducible-builds.patch")))))
+          (patches (search-patches "rust-coresimd-doctest.patch"
+                                   "rust-bootstrap-stage0-test.patch"
+                                   "rust-1.25-accept-more-detailed-gdb-lines.patch"
+                                   "rust-reproducible-builds.patch"))))
       (native-inputs
        ;; FIXME: Rust 1.27 and some later versions require GDB 8.2 specifically.
        ;; See <https://bugs.gnu.org/37810>.
@@ -859,10 +859,10 @@ jemalloc = \"" jemalloc "/lib/libjemalloc_pic.a" "\"
       (source
         (origin
           (inherit (package-source base-rust))
-          (patches (map search-patch '("rust-coresimd-doctest.patch"
-                                       "rust-bootstrap-stage0-test.patch"
-                                       "rust-1.25-accept-more-detailed-gdb-lines.patch"
-                                       "rust-reproducible-builds.patch")))))
+          (patches (search-patches "rust-coresimd-doctest.patch"
+                                   "rust-bootstrap-stage0-test.patch"
+                                   "rust-1.25-accept-more-detailed-gdb-lines.patch"
+                                   "rust-reproducible-builds.patch"))))
       (inputs
        ;; Use LLVM 6.0
        (alist-replace "llvm" (list llvm-6)
@@ -895,8 +895,8 @@ jemalloc = \"" jemalloc "/lib/libjemalloc_pic.a" "\"
       (source
         (origin
           (inherit (package-source base-rust))
-          (patches (map search-patch '("rust-1.25-accept-more-detailed-gdb-lines.patch"
-                                       "rust-reproducible-builds.patch"))))))))
+          (patches (search-patches "rust-1.25-accept-more-detailed-gdb-lines.patch"
+                                   "rust-reproducible-builds.patch")))))))
 
 (define-public rust-1.30
   (let ((base-rust
@@ -1010,7 +1010,7 @@ move around."
                            (delete-file-recursively "src/tools/lldb")
                            (delete-file-recursively "vendor/jemalloc-sys/jemalloc")
                            #t))
-          (patches (map search-patch '("rust-reproducible-builds.patch")))
+          (patches (search-patches "rust-reproducible-builds.patch"))
           ;; the vendor directory has moved to the root of
           ;; the tarball, so we have to strip an extra prefix
           (patch-flags '("-p2"))))
@@ -1280,7 +1280,42 @@ move around."
   (rust-bootstrapped-package rust-1.43 "1.44.1"
     "0ww4z2v3gxgn3zddqzwqya1gln04p91ykbrflnpdbmcd575n8bky"))
 
-;; NOTE: An update to LLVM 10 is coming in 1.45, make sure not to miss it.
+(define-public rust-1.45
+  (let ((base-rust
+         (rust-bootstrapped-package rust-1.44 "1.45.2"
+           "0273a1g3f59plyi1n0azf21qjzwml1yqdnj5z472crz37qggr8xp")))
+    (package
+      (inherit base-rust)
+      (source
+        (origin
+          (inherit (package-source base-rust))
+          (patches (search-patches "rust-1.45-linker-locale.patch"))))
+      (inputs
+        (alist-replace "llvm" (list llvm-10)
+                       (package-inputs base-rust)))
+      (arguments
+        (substitute-keyword-arguments (package-arguments base-rust)
+          ((#:phases phases)
+           `(modify-phases ,phases
+              ;; These tests make sure that the parser behaves properly when
+              ;; a source file starts with a shebang. Unfortunately,
+              ;; the patch-shebangs phase changes the meaning of these edge-cases.
+              ;; We skip the test since it's drastically unlikely Guix's packaging
+              ;; will introduce a bug here.
+              (add-after 'patch-tests 'skip-shebang-tests
+                (lambda _
+                  (with-directory-excursion "src/test/ui/parser/shebang"
+                    (delete-file "shebang-doc-comment.rs")
+                    (delete-file "sneaky-attrib.rs")
+                    #t)))
+              ;; This test case synchronizes itself by starting a localhost TCP
+              ;; server. This doesn't work as networking is not available.
+              (add-after 'patch-tests 'skip-networking-test
+                (lambda _
+                  (substitute* "src/tools/cargo/tests/testsuite/freshness.rs"
+                    (("fn linking_interrupted" all)
+                     (string-append "#[ignore] " all)))
+                 #t)))))))))
 
 ;; TODO(staging): Bump this variable to the latest packaged rust.
 (define-public rust rust-1.39)

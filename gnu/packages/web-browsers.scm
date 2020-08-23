@@ -12,6 +12,7 @@
 ;;; Copyright © 2019 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
 ;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
+;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -161,14 +162,14 @@ older or slower computers and embedded systems.")
 (define-public links
   (package
     (name "links")
-    (version "2.20.2")
+    (version "2.21")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://links.twibright.com/download/"
                                   "links-" version ".tar.bz2"))
               (sha256
                (base32
-                "097ll98ympzfx7qfdyhc52yzvsp167x5nnjs6v8ih496wv80fksb"))))
+                "0qqdcghsdqm7l6kyi0k752ws3ak5crw85pqkcb11wy67j62yspi8"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -214,16 +215,16 @@ features including, tables, builtin image display, bookmarks, SSL and more.")
 (define-public luakit
   (package
     (name "luakit")
-    (version "2.1")
+    (version "2.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/luakit/luakit.git")
+                     (url "https://github.com/luakit/luakit")
                      (commit version)))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1qa90caxv1k6ak88fn0a7n7h0c4iv8szw6zn2axch8ig83i86az2"))))
+                "0km5nxn6innzn8pfsvlkxvfj2z5g46fp6dy5bnmaklbn13mqlcrn"))))
     (inputs
      `(("lua-5.1" ,lua-5.1)
        ("gtk+" ,gtk+)
@@ -343,7 +344,7 @@ access.")
 (define-public qutebrowser
   (package
     (name "qutebrowser")
-    (version "1.12.0")
+    (version "1.13.1")
     (source
      (origin
        (method url-fetch)
@@ -351,7 +352,7 @@ access.")
                            "qutebrowser/releases/download/v" version "/"
                            "qutebrowser-" version ".tar.gz"))
        (sha256
-        (base32 "0pywyhi4v6ymxpn85grrdr1agmcxsnm5jfqf3rlxqx5swbnxbfs1"))))
+        (base32 "1n72dvrv4dch4i07lsis76p7g16a039fwx8rk7w8q9f60wgqb5i8"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-attrs" ,python-attrs))) ; for tests
@@ -620,7 +621,7 @@ key-bindings and is fully configurable and extensible in Common Lisp.")
                           (install-file "bombadillo.1" mandir)
                           (install-file "bombadillo-icon.png" pixdir)
                           #t)))))))
-    (home-page "http://bombadillo.colorfield.space")
+    (home-page "https://bombadillo.colorfield.space")
     (synopsis "Terminal browser for the gopher, gemini, and finger protocols")
     (description "Bombadillo is a non-web browser for the terminal with
 vim-like key bindings, a document pager, configurable settings, and robust

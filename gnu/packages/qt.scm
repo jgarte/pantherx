@@ -8,7 +8,7 @@
 ;;; Copyright © 2017, 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Quiliro <quiliro@fsfla.org>
 ;;; Copyright © 2017, 2018, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
-;;; Copyright © 2018 Nicolas Goaziou <mail@nicolasgoaziou.fr>
+;;; Copyright © 2018, 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2018 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2018 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2019, 2020 Marius Bakke <mbakke@fastmail.com>
@@ -18,6 +18,8 @@
 ;;; Copyright © 2020 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2020 TomZ <tomz@freedommail.ch>
 ;;; Copyright © 2020 Jonathan Brielmaier <jonathan.brielmaier@web.de>
+;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
+;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -55,6 +57,7 @@
   #:use-module (gnu packages curl)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages documentation)
+  #:use-module (gnu packages enchant)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages flex)
   #:use-module (gnu packages freedesktop)
@@ -72,6 +75,7 @@
   #:use-module (gnu packages linux)
   #:use-module (gnu packages llvm)
   #:use-module (gnu packages maths)
+  #:use-module (gnu packages networking)
   #:use-module (gnu packages ninja)
   #:use-module (gnu packages nss)
   #:use-module (gnu packages pciutils)
@@ -106,7 +110,7 @@
       (origin
         (method git-fetch)
         (uri (git-reference
-              (url "https://github.com/steveire/grantlee.git")
+              (url "https://github.com/steveire/grantlee")
               (commit (string-append "v" version))))
         (file-name (git-file-name name version))
         (sha256
@@ -342,6 +346,7 @@ developers using C++ or QML, a CSS & JavaScript like language.")
 (define-public qtbase
   (package
     (name "qtbase")
+    ;; TODO Remove ((gnu packages kde) qtbase-for-krita) when upgrading qtbase.
     (version "5.14.2")
     (source (origin
              (method url-fetch)
@@ -596,6 +601,27 @@ developers using C++ or QML, a CSS & JavaScript like language.")
 ;; qt used to refer to the monolithic Qt 5.x package
 (define-deprecated qt qtbase)
 
+;; This variable is required by 'python-pyside-2-tools', which copies some
+;; qtbase executables that fail to run because RUNPATH refers to the
+;; wrong $ORIGIN.  TODO: Merge with qtbase in the next rebuild cycle.
+(define qtbase/next
+  (package
+    (inherit qtbase)
+    (source
+     (origin
+       (inherit (package-source qtbase))
+       (patches (append (origin-patches (package-source qtbase))
+                        (search-patches "qtbase-absolute-runpath.patch")))))))
+
+(define-public qtbase-for-krita
+  (hidden-package
+    (package
+      (inherit qtbase)
+      (source (origin
+                (inherit (package-source qtbase))
+                (patches (append (origin-patches (package-source qtbase))
+                                 (search-patches "qtbase-fix-krita-deadlock.patch"))))))))
+
 (define-public qtsvg
   (package (inherit qtbase)
     (name "qtsvg")
@@ -689,6 +715,16 @@ HostData=lib/qt5
               '(begin
                  (delete-file-recursively "src/3rdparty")
                  #t))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments qtsvg)
+       ((#:phases phases)
+        `(modify-phases ,phases
+           (add-after 'unpack 'fix-build
+             (lambda _
+               (substitute* "src/plugins/imageformats/jp2/qjp2handler.cpp"
+                 (("^#include <jasper/jasper.h>")
+                  "#include <jasper/jasper.h>\n#include <QtCore/qmath.h>"))
+               #t))))))
     (native-inputs `())
     (inputs
      `(("jasper" ,jasper)
@@ -1043,8 +1079,22 @@ interacting with serial ports from within Qt.")))
              (sha256
               (base32
                "14bahg82jciciqkl74q9hvf3a8kp3pk5v731vp2416k4b8bn4xqb"))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments qtsvg)
+       ((#:phases phases '%standard-phases)
+        `(modify-phases ,phases
+           (add-after 'unpack 'patch-libsocketcan-reference
+             (lambda* (#:key inputs #:allow-other-keys)
+               (let* ((libcansocket (assoc-ref inputs "libsocketcan"))
+                      (libcansocket.so (string-append libcansocket
+                                                      "/lib/libsocketcan.so")))
+                 (substitute* "src/plugins/canbus/socketcan/libsocketcan.cpp"
+                   (("QStringLiteral\\(\"socketcan\"\\)")
+                    (format #f "QStringLiteral(~s)" libcansocket.so)))
+                 #t)))))))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("libsocketcan" ,libsocketcan)
+       ("qtbase" ,qtbase)
        ("qtserialport" ,qtserialport)))
     (synopsis "Qt Serial Bus module")
     (description "The Qt Serial Bus API provides classes and functions to
@@ -1525,6 +1575,36 @@ reason.  The most common use case where text-to-speech comes in handy is when
 the end-user is driving and cannot attend the incoming messages on the phone.
 In such a scenario, the messaging application can read out the incoming
 message.")))
+
+(define-public qtspell
+  (package
+    (name "qtspell")
+    (version "0.9.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/manisandro/qtspell.git")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1081makirjxixz44ghwz362vgnk5wcks6ni6w01pl667x8wggsd2"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f))                    ;no test
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("qttools" ,qttools)))
+    (inputs
+     `(("enchant" ,enchant)
+       ("qtbase" ,qtbase)))
+    (home-page "https://github.com/manisandro/qtspell")
+    (synopsis "Spell checking for Qt text widgets")
+    (description
+     "QtSpell adds spell-checking functionality to Qt's text widgets,
+using the Enchant spell-checking library.")
+    ;; COPYING file specify GPL3, but source code files all refer to GPL2+.
+    (license license:gpl2+)))
 
 (define-public qtwebengine
   (package
@@ -2566,19 +2646,19 @@ color-related widgets.")
 (define-public python-shiboken-2
   (package
     (name "python-shiboken-2")
-    (version "5.12.6")
+    (version "5.14.2.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.qt.io/official_releases"
                                   "/QtForPython/pyside2/PySide2-" version
-                                  "-src/pyside-setup-everywhere-src-"
+                                  "-src/pyside-setup-opensource-src-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "1n45l6xxyxs6cfp2l4rp8qs1c2fyfwyrdxa4qcpwfsqsi51rydsk"))))
+                "08lhqm0n3fjqpblcx9rshsp8g3bvf7yzbai5q99bly2wa04y6b83"))))
     (build-system cmake-build-system)
     (inputs
-     `(("clang-toolchain" ,clang-toolchain-6)
+     `(("clang-toolchain" ,clang-toolchain)
        ("libxml2" ,libxml2)
        ("libxslt" ,libxslt)
        ("python-wrapper" ,python-wrapper)
@@ -2631,7 +2711,7 @@ color-related widgets.")
     (inputs
      `(("libxml2" ,libxml2)
        ("libxslt" ,libxslt)
-       ("clang-toolchain" ,clang-toolchain-6)
+       ("clang-toolchain" ,clang-toolchain)
        ("qtbase" ,qtbase)
        ("qtdatavis3d" ,qtdatavis3d)
        ("qtlocation" ,qtlocation)
@@ -2699,7 +2779,7 @@ generate Python bindings for your C or C++ code.")
     (inputs
      `(("python-pyside-2" ,python-pyside-2)
        ("python-shiboken-2" ,python-shiboken-2)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase/next)))
     (native-inputs
      `(("python" ,python-wrapper)))
     (arguments

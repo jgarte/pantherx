@@ -66,7 +66,6 @@
     (arguments '(#:tests? #f))
     (inputs
      `(("python-requests" ,python-requests-2.20)
-       ("python-ipaddress" ,python-ipaddress)
        ("python-six" ,python-six)
        ("python-urllib3" ,python-urllib3-1.24)
        ("python-websocket-client" ,python-websocket-client)))
@@ -179,7 +178,7 @@ Python without keeping their credentials in a Docker configuration file.")
      (origin
       (method git-fetch)
       (uri (git-reference
-            (url "https://github.com/containerd/containerd.git")
+            (url "https://github.com/containerd/containerd")
             (commit (string-append "v" version))))
       (file-name (git-file-name name version))
       (sha256
@@ -257,7 +256,7 @@ network attachments.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/docker/libnetwork.git")
+                      (url "https://github.com/docker/libnetwork")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -311,7 +310,7 @@ built-in registry server of Docker.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/docker/engine.git")
+             (url "https://github.com/docker/engine")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -601,7 +600,7 @@ provisioning etc.")
      (origin
       (method git-fetch)
       (uri (git-reference
-            (url "https://github.com/docker/cli.git")
+            (url "https://github.com/docker/cli")
             (commit (string-append "v" version))))
       (file-name (git-file-name name version))
       (sha256
@@ -671,7 +670,7 @@ provisioning etc.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/savoirfairelinux/cqfd.git")
+                    (url "https://github.com/savoirfairelinux/cqfd")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -709,7 +708,7 @@ defined in a per-project configuration file.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/krallin/tini.git")
+                    (url "https://github.com/krallin/tini")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256

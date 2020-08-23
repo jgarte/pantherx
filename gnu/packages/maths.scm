@@ -22,7 +22,7 @@
 ;;; Copyright © 2017, 2019 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Dave Love <me@fx@gnu.org>
-;;; Copyright © 2018, 2019 Jan Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2018, 2019, 2020 Jan Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2018 Joshua Sierles, Nextjournal <joshua@nextjournal.com>
 ;;; Copyright © 2018 Nadya Voronova <voronovank@gmail.com>
 ;;; Copyright © 2018 Adam Massmann <massmannak@gmail.com>
@@ -39,6 +39,7 @@
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Nicolò Balzarotti <nicolo@nixo.xyz>
 ;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
+;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -263,7 +264,7 @@ triangulations.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/cvxopt/cvxopt.git")
+                    (url "https://github.com/cvxopt/cvxopt")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -510,6 +511,50 @@ functions in total.  Subject areas covered by the library include:
 differential equations, linear algebra, Fast Fourier Transforms and random
 numbers.")
     (license license:gpl3+)))
+
+(define-public sleef
+  (package
+    (name "sleef")
+    (version "3.4.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/shibatch/sleef")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1gvf7cfvszmgjrsqivwmyy1jnp3hy80dmszxx827lhjz8yqq5019"))))
+    (build-system cmake-build-system)
+    (arguments
+     '(#:configure-flags (list "-DCMAKE_BUILD_TYPE=Release"
+                               (string-append "-DCMAKE_INSTALL_LIBDIR="
+                                              (assoc-ref %outputs "out")
+                                              "/lib")
+                               (string-append "-DCMAKE_INSTALL_PREFIX="
+                                              (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         ;; SLEEF generates a header library during the build process and writes
+         ;; to it via shell redirection.  Make the checkout writable so the
+         ;; build can succeed.
+         (add-after 'unpack 'make-git-checkout-writable
+           (lambda _
+             (for-each make-file-writable (find-files "."))
+             #t)))))
+    (inputs
+     `(("fftw" ,fftw)
+       ("gmp" ,gmp)
+       ("mpfr" ,mpfr)
+       ("openssl" ,openssl)))
+    (home-page "https://sleef.org/")
+    (synopsis "SIMD library for evaluating elementary functions and DFT")
+    (description
+     "SLEEF (SIMD Library for Evaluating Elementary Functions) is a library that
+implements vectorized versions of all C99 real floating point math functions.
+It can utilize SIMD instructions that are available on modern processors.")
+    (license (list license:boost1.0       ;sleef
+                   license:cc-by4.0))))   ;simplex algorithm
 
 (define-public glpk
   (package
@@ -764,6 +809,62 @@ problems in numerical linear algebra.")
     (license (license:non-copyleft "file://LICENSE"
                                 "See LICENSE in the distribution."))))
 
+(define-public clapack
+  (package
+    (name "clapack")
+    (version "3.2.1")
+    (source
+     (origin
+      (method url-fetch)
+      (uri (string-append "http://www.netlib.org/clapack/clapack-"
+                          version "-CMAKE.tgz"))
+      (sha256
+       (base32
+        "0nnap9q1mv14g57dl3vkvxrdr10k5w7zzyxs6rgxhia8q8mphgqb"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         ;; These tests use a lot of stack variables and segfault without
+         ;; lifting resource limits.
+         (add-after 'unpack 'disable-broken-tests
+           (lambda _
+             (substitute* "TESTING/CMakeLists.txt"
+               (("add_lapack_test.* xeigtstz\\)") ""))
+             #t))
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (libdir (string-append out "/lib"))
+                    (f2cinc (string-append out "/include/libf2c")))
+               (mkdir-p f2cinc)
+               (display (getcwd))
+               (for-each (lambda (file)
+                           (install-file file libdir))
+                         '("SRC/liblapack.a"
+                           "F2CLIBS/libf2c/libf2c.a"
+                           "TESTING/MATGEN/libtmglib.a"
+                           "BLAS/SRC/libblas.a"))
+               (for-each (lambda (file)
+                           (install-file file f2cinc))
+                         (cons "F2CLIBS/libf2c/arith.h"
+                               (find-files (string-append "../clapack-"
+                                                          ,version "-CMAKE/F2CLIBS/libf2c")
+                                           "\\.h$")))
+               (copy-recursively (string-append "../clapack-"
+                                                ,version "-CMAKE/INCLUDE")
+                                 (string-append out "/include"))
+               #t))))))
+    (home-page "https://www.netlib.org/clapack/")
+    (synopsis "Numerical linear algebra library for C")
+    (description
+     "The CLAPACK library was built using a Fortran to C conversion utility
+called f2c.  The entire Fortran 77 LAPACK library is run through f2c to obtain
+C code, and then modified to improve readability.  CLAPACK's goal is to
+provide LAPACK for someone who does not have access to a Fortran compiler.")
+    (license (license:non-copyleft "file://LICENSE"
+                                   "See LICENSE in the distribution."))))
+
 (define-public scalapack
   (package
     (name "scalapack")
@@ -840,7 +941,7 @@ plotting engine by third-party applications like Octave.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/OkoSanto/GCTP.git")
+             (url "https://github.com/OkoSanto/GCTP")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1187,10 +1288,15 @@ extremely large and complex data collections.")
                     (jhdf (string-append lib "/jhdf.jar"))
                     (jhdf5 (string-append lib "/jhdf5.jar"))
                     (testjars
-                     (map (lambda (i)
-                            (string-append (assoc-ref inputs i)
-                                           "/share/java/" i ".jar"))
-                          '("junit" "hamcrest-core" "slf4j-api" "slf4j-simple")))
+                     (append
+                       (map (lambda (i)
+                              (string-append (assoc-ref inputs i)
+                                             "/share/java/" i ".jar"))
+                            '("slf4j-api" "slf4j-simple"))
+                       (list
+                         (car (find-files (assoc-ref inputs "junit") "jar$"))
+                         (car (find-files (assoc-ref inputs "hamcrest-core")
+                                          "jar$")))))
                     (class-path
                      (string-join `("." ,build-dir ,jhdf ,jhdf5 ,@testjars) ":")))
 
@@ -1340,7 +1446,7 @@ Swath).")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Blosc/hdf5-blosc.git")
+             (url "https://github.com/Blosc/hdf5-blosc")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1823,7 +1929,7 @@ script files.")
       (origin
         (method git-fetch)
         (uri (git-reference
-              (url "https://github.com/tpaviot/oce.git")
+              (url "https://github.com/tpaviot/oce")
               (commit (string-append "OCE-" version))))
         (file-name (git-file-name name version))
         (patches (search-patches "opencascade-oce-glibc-2.26.patch"))
@@ -2014,6 +2120,70 @@ modules is done either interactively using the graphical user interface or in
 ASCII text files using Gmsh's own scripting language.")
     (license license:gpl2+)))
 
+(define-public veusz
+  (package
+    (name "veusz")
+    (version "3.2.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "veusz" version))
+       (sha256
+        (base32 "00vmfpvyd6f33l5awlf02qdik3gmbhzyfizfwwbx7qnam2i9bbwy"))))
+    (build-system python-build-system)
+    (arguments
+     `(;; Tests will fail because they depend on optional packages like
+       ;; python-astropy, which is not packaged.
+       #:tests? #f
+       #:phases
+       (modify-phases %standard-phases
+         ;; Veusz will append 'PyQt5' to sip_dir by default. That is not how
+         ;; the path is defined in Guix, therefore we have to change it.
+         (add-after 'unpack 'fix-sip-dir
+           (lambda _
+             (substitute* "pyqtdistutils.py"
+               (("os.path.join\\(sip_dir, 'PyQt5'\\)") "sip_dir"))
+             #t))
+         ;; Now we have to pass the correct sip_dir to setup.py.
+         (replace 'build
+           (lambda* (#:key inputs #:allow-other-keys)
+             ;; We need to tell setup.py where to locate QtCoremod.sip
+             ((@@ (guix build python-build-system) call-setuppy)
+              "build_ext"
+              (list (string-append "--sip-dir="
+                                   (assoc-ref inputs "python-pyqt")
+                                   "/share/sip"))
+              #t)))
+         ;; Ensure that icons are found at runtime.
+         (add-after 'install 'wrap-executable
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (wrap-program (string-append out "/bin/veusz")
+                 `("QT_PLUGIN_PATH" prefix
+                   ,(list (string-append (assoc-ref inputs "qtsvg")
+                                         "/lib/qt5/plugins/"))))))))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ;;("python-astropy" ,python-astropy) ;; FIXME: Package this.
+       ("qttools" ,qttools)))
+    (inputs
+     `(("ghostscript" ,ghostscript) ;optional, for EPS/PS output
+       ("python-dbus" ,python-dbus)
+       ("python-h5py" ,python-h5py) ;optional, for HDF5 data
+       ("python-pyqt" ,python-pyqt)
+       ("qtbase" ,qtbase)
+       ("qtsvg" ,qtsvg)))
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)))
+    (home-page "https://veusz.github.io/")
+    (synopsis "Scientific plotting package")
+    (description
+     "Veusz is a scientific plotting and graphing program with a graphical
+user interface, designed to produce publication-ready 2D and 3D plots.  In
+addition it can be used as a module in Python for plotting.  It supports
+vector and bitmap output, including PDF, Postscript, SVG and EMF.")
+    (license license:gpl2+)))
+
 (define-public maxflow
   (package
     (name "maxflow")
@@ -2023,7 +2193,7 @@ ASCII text files using Gmsh's own scripting language.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/gerddie/maxflow.git")
+                    (url "https://github.com/gerddie/maxflow")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -2411,32 +2581,26 @@ bindings to almost all functions of SLEPc.")
     (license license:bsd-3)))
 
 (define-public metamath
-  ;; Upstream pushed a commit on top of v0.182 that fixes a bug in Makefile.am.
-  ;; Using this commit lets us avoid directly including the patch here.  In the
-  ;; next version bump, we should be able to replace this and directly use the
-  ;; version tag.
-  (let ((commit "5df616efe4119ff88daf77e7041d45b6fa39c578")
-        (revision "0"))
-    (package
-      (name "metamath")
-      (version (git-version "0.182" revision commit))
-      (source
-       (origin
-         (method git-fetch)
-         (uri (git-reference
-               (url "https://github.com/metamath/metamath-exe.git")
-               (commit commit)))
-         (file-name (git-file-name name version))
-         (sha256
-          (base32 "0amjdgy42c7jypf6sz98iczlxcyl9bqx67ws1q8w2zdqk2izsyjp"))))
-      (build-system gnu-build-system)
-      (native-inputs
-       `(("autoconf" ,autoconf)
-         ("automake" ,automake)))
-      (home-page "http://us.metamath.org/")
-      (synopsis "Proof verifier based on a minimalistic formalism")
-      (description
-       "Metamath is a tiny formal language and that can express theorems in
+  (package
+    (name "metamath")
+    (version "0.183")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/metamath/metamath-exe")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1jjf4fy6j53i40dh0yv0f9sngnw4gs24cig99vsg3q0303pwrhg7"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)))
+    (home-page "http://us.metamath.org/")
+    (synopsis "Proof verifier based on a minimalistic formalism")
+    (description
+     "Metamath is a tiny formal language and that can express theorems in
 abstract mathematics, with an accompyaning @command{metamath} executable that
 verifies databases of these proofs.  There is a public database,
 @url{https://github.com/metamath/set.mm, set.mm}, implementing first-order
@@ -2444,7 +2608,7 @@ logic and Zermelo-Frenkel set theory with Choice, along with a large swath of
 associated, high-level theorems, e.g.@: the fundamental theorem of arithmetic,
 the Cauchy-Schwarz inequality, Stirling's formula, etc.  See the Metamath
 book.")
-      (license license:gpl2+))))
+    (license license:gpl2+)))
 
 (define-public mumps
   (package
@@ -2622,28 +2786,17 @@ sparse system of linear equations A x = b using Gaussian elimination.")
 (define-public ruby-asciimath
   (package
     (name "ruby-asciimath")
-    (version "1.0.4")
+    (version "2.0.1")
     (source
      (origin
        (method url-fetch)
        (uri (rubygems-uri "asciimath" version))
        (sha256
         (base32
-         "1d80kiph5mc78zps7si1hv48kv4k12mzaq8jk5kb3pqpjdr72qmc"))))
+         "1aapydwwkydbwgz07n7ma3a5jy9n3v0shy6q6j8mi4wr3crhx45a"))))
     (build-system ruby-build-system)
-    (arguments
-     '(#:phases
-       (modify-phases %standard-phases
-         ;; Apply this patch
-         ;; https://github.com/asciidoctor/asciimath/commit/1c06fdc8086077f4785479f78b0823a4a72d7948
-         (add-after 'unpack 'patch-remove-spurious-backslashes
-           (lambda _
-             (substitute* "spec/parser_spec.rb"
-               (("\\\\\"")
-                "\""))
-             #t)))))
     (native-inputs
-     `(("bundler" ,bundler)
+     `(("ruby-nokogiri" ,ruby-nokogiri)
        ("ruby-rspec" ,ruby-rspec)))
     (synopsis "AsciiMath parsing and conversion library")
     (description
@@ -3230,16 +3383,16 @@ point numbers.")
 (define-public wxmaxima
   (package
     (name "wxmaxima")
-    (version "20.04.0")
+    (version "20.06.6")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/wxMaxima-developers/wxmaxima.git")
+             (url "https://github.com/wxMaxima-developers/wxmaxima")
              (commit (string-append "Version-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0vrjxzfgmjdzm1rgl0crz4b4badl14jwh032y3xkcdvjl5j67lp3"))))
+        (base32 "054f7n5kx75ng5j20rd5q27n9xxk03mrd7sbxyym1lsswzimqh4w"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("gettext" ,gettext-minimal)
@@ -3257,6 +3410,14 @@ point numbers.")
      `(#:test-target "test"
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'patch-doc-path
+           (lambda _
+             ;; Don't look in share/doc/wxmaxima-xx.xx.x for the
+             ;; documentation.  Only licensing information is placed there by
+             ;; Guix.
+             (substitute* "src/Dirstructure.cpp"
+               (("/doc/wxmaxima-\\%s") "/doc/wxmaxima"))
+             #t))
          (add-before 'check 'pre-check
            (lambda _
              ;; Tests require a running X server.
@@ -3343,7 +3504,7 @@ associated functions (e.g., contiguous and non-contiguous submatrix views).")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/beltoforion/muparser.git")
+               (url "https://github.com/beltoforion/muparser")
                (commit (string-append "v" upstream-version))))
          (file-name (git-file-name name version))
          (sha256
@@ -3544,7 +3705,7 @@ access to BLIS implementations via traditional BLAS routine calls.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/JuliaLang/openlibm.git")
+             (url "https://github.com/JuliaLang/openlibm")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -3583,7 +3744,7 @@ environments.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/JuliaLang/openspecfun.git")
+             (url "https://github.com/JuliaLang/openspecfun")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -3621,7 +3782,7 @@ Fresnel integrals, and similar related functions as well.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/DrTimothyAldenDavis/SuiteSparse.git")
+             (url "https://github.com/DrTimothyAldenDavis/SuiteSparse")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -4157,7 +4318,7 @@ set.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/LLNL/hypre.git")
+             (url "https://github.com/LLNL/hypre")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -4613,7 +4774,7 @@ symmetric matrices.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/elemental/Elemental.git")
+                     (url "https://github.com/elemental/Elemental")
                      (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -4665,7 +4826,7 @@ reduction.")
 (define-public mcrl2
   (package
     (name "mcrl2")
-    (version "201908.0")
+    (version "202006.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -4673,7 +4834,7 @@ reduction.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "1i4xgl2d5fgiz1mwi50cyfkrrcpm8nxfayfjgmhq7chs58wlhfsz"))))
+                "167ryrzk1a2j53c2j198jlxa98amcaym070gkcj730619gymv5zl"))))
     (inputs
      `(("boost" ,boost)
        ("glu" ,glu)
@@ -5586,7 +5747,7 @@ fields of knowledge.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/niklasso/minisat.git")
+               (url "https://github.com/niklasso/minisat")
                (commit commit)))
          (file-name (string-append name "-" version "-checkout"))
          (sha256
@@ -5721,6 +5882,6 @@ cli.")
 multi-purpose GUI desktop calculator.  It provides basic and advanced
 functionality.  Features include customizable functions, unit calculations,
 and conversions, physical constants, symbolic calculations (including
-integrals and equations), arbitrary precision, uncertainity propagation,
+integrals and equations), arbitrary precision, uncertainty propagation,
 interval arithmetic, plotting.")
     (license license:gpl2+)))

@@ -171,7 +171,7 @@ both client and server code).")
   (package
     (name "ghc-http")
     (version "4000.3.14")
-    (outputs '("out" "doc"))
+    (outputs '("out" "static" "doc"))
     (source
      (origin
        (method url-fetch)
@@ -197,7 +197,23 @@ both client and server code).")
        ("ghc-network-uri" ,ghc-network-uri)
        ("ghc-split" ,ghc-split)))
     (arguments
-     `(#:tests? #f)) ; FIXME: currently missing libraries used for tests.
+     `(#:tests? #f  ; FIXME: currently missing libraries used for tests.
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'create-simple-paths-module
+           (lambda _
+             (call-with-output-file "Paths_HTTP.hs"
+               (lambda (port)
+                 (format port "\
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE NoRebindableSyntax #-}
+{-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
+module Paths_HTTP (version) where
+import Data.Version (Version(..))
+version :: Version
+version = Version [~a] []
+" (string-map (lambda (chr) (if (eq? chr #\.) #\, chr)) ,version))))
+             #t)))))
     (home-page "https://github.com/haskell/HTTP")
     (synopsis "Library for client-side HTTP")
     (description
@@ -568,7 +584,7 @@ Haskell's Web Application Interface (WAI).")
        ("ghc-tasty-hedgehog" ,ghc-tasty-hedgehog)
        ("ghc-tasty-hunit" ,ghc-tasty-hunit)
        ("ghc-doctest" ,ghc-doctest)))
-    (home-page "http://github.com/sjakobi/bsb-http-chunked")
+    (home-page "https://github.com/sjakobi/bsb-http-chunked")
     (synopsis "Chunked HTTP transfer encoding for bytestring builders")
     (description "This Haskell library contains functions for encoding
 bytestring builders for chunked Hypertext Transfer Protocol (HTTP) 1.1
@@ -616,7 +632,7 @@ transfers.")
        ("ghc-hunit" ,ghc-hunit)
        ("ghc-http-client" ,ghc-http-client)
        ("hspec-discover" ,hspec-discover)))
-    (home-page "http://github.com/yesodweb/wai")
+    (home-page "https://github.com/yesodweb/wai")
     (synopsis "HTTP server library for Haskell's WAI")
     (description "Warp is a server library for HTTP/1.x and HTTP/2
 based WAI (Web Application Interface in Haskell).")
@@ -671,7 +687,7 @@ limitation, automatic pruning, energy saving and replay resistance.")
        ("ghc-tls-session-manager" ,ghc-tls-session-manager)
        ("ghc-wai" ,ghc-wai)
        ("ghc-warp" ,ghc-warp)))
-    (home-page "http://github.com/yesodweb/wai")
+    (home-page "https://github.com/yesodweb/wai")
     (synopsis "SSL/TLS support for Warp")
     (description "This package provides SSL/TLS support for Warp,
 a WAI handler, via the native Haskell TLS implementation.")
@@ -807,7 +823,7 @@ attacks.")
      `(("ghc-attoparsec" ,ghc-attoparsec)
        ("ghc-hspec" ,ghc-hspec)
        ("ghc-quickcheck" ,ghc-quickcheck)))
-    (home-page "http://www.yesodweb.com/")
+    (home-page "https://www.yesodweb.com/")
     (synopsis "CSS parser and renderer")
     (description "This package provides a CSS parser and renderer for
 Haskell.")
@@ -904,6 +920,7 @@ entity decoding bugfixes applied.")
         (base32
          "0k1r1hddjgqighazcazxrx6xfhvy2gm8il8l82ainv3cai13yl30"))))
     (build-system haskell-build-system)
+    (outputs '("out" "static" "doc"))
     (inputs
      `(("ghc-blaze-builder" ,ghc-blaze-builder)
        ("ghc-blaze-markup" ,ghc-blaze-markup)))
@@ -934,6 +951,7 @@ entity decoding bugfixes applied.")
          "1jhabz1lbbv6yqxqiybifi86cb5xlsadrn368n5dd0wzzc7ja4iz"))))
     (build-system haskell-build-system)
     (arguments `(#:tests? #f)) ; FIXME: testing libraries are missing.
+    (outputs '("out" "static" "doc"))
     (inputs
      `(("ghc-attoparsec" ,ghc-attoparsec)
        ("ghc-base-compat" ,ghc-base-compat)
@@ -1288,7 +1306,7 @@ functions, widgets, etc.")
                      ("ghc-wai-extra" ,ghc-wai-extra)
                      ("ghc-yesod-core" ,ghc-yesod-core)
                      ("ghc-persistent-sqlite" ,ghc-persistent-sqlite)))
-    (home-page "http://www.yesodweb.com/")
+    (home-page "https://www.yesodweb.com/")
     (synopsis "Helpers for using Persistent from Yesod")
     (description "This Haskell package provides helpers for using Persistent
 from Yesod.")
@@ -1447,7 +1465,7 @@ ignored.")
     (inputs
      `(("ghc-hxt-charproperties" ,ghc-hxt-charproperties)
        ("ghc-hunit" ,ghc-hunit)))
-    (home-page "http://www.haskell.org/haskellwiki/Regular_expressions_for_XML_Schema")
+    (home-page "https://wiki.haskell.org/Regular_expressions_for_XML_Schema")
     (synopsis "Regular expression library for W3C XML Schema regular expressions")
     (description
      "This library supports full W3C XML Schema regular expressions inclusive
@@ -1470,6 +1488,7 @@ derivations of regular expressions.")
         (base32
          "0836k65px3w9c5h1h2bmzq5a7mp6ajxwvfg3pfr2kbxwkgc0j63j"))))
     (build-system haskell-build-system)
+    (outputs '("out" "static" "doc"))
     (inputs
      `(("ghc-hxt-charproperties" ,ghc-hxt-charproperties)
        ("ghc-hxt-unicode" ,ghc-hxt-unicode)

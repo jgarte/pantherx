@@ -70,7 +70,7 @@
 (define-public vim
   (package
     (name "vim")
-    (version "8.2.1101")
+    (version "8.2.1500")
     (source (origin
              (method git-fetch)
              (uri (git-reference
@@ -79,21 +79,28 @@
              (file-name (git-file-name name version))
              (sha256
               (base32
-               "170k855vscixnk6rz01i3k22crjiz8b2h83fnm2b2ccha0jyn9mf"))))
+               "1f3ghv7g6khcvvs8irkxmskzc352xxmxw3wy0jq9q9r497v6p3ls"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
        #:parallel-tests? #f
        #:phases
        (modify-phases %standard-phases
-         (add-after 'configure 'patch-config-files
+         (add-after 'patch-source-shebangs 'fix-installman
+           (lambda _
+             (substitute* "src/installman.sh"
+               ((" /bin/sh") (which "sh")))
+             #t))
+         (add-after 'configure 'patch-absolute-paths
            (lambda _
              (substitute* "runtime/tools/mve.awk"
                (("/usr/bin/nawk") (which "gawk")))
              (substitute* '("src/testdir/Makefile"
                             "src/testdir/test_normal.vim"
+                            "src/testdir/test_popupwin.vim"
                             "src/testdir/test_system.vim"
-                            "src/testdir/test_terminal.vim")
+                            "src/testdir/test_terminal.vim"
+                            "src/testdir/test_terminal2.vim")
                (("/bin/sh") (which "sh")))
              (substitute* "src/testdir/test_autocmd.vim"
                (("/bin/kill") (which "kill")))
@@ -119,20 +126,15 @@
              (substitute* "src/testdir/test_swap.vim"
                (("if !IsRoot\\(\\)") "if 0"))
 
-             ;; These tests fail on upstream's CI on FreeBSD because they are
-             ;; run as root.  They fail for us because PID 1 and the test suite
-             ;; are run by the same user.
-             (substitute* '("src/testdir/test_backup.vim"
-                            "src/testdir/test_writefile.vim")
-               (("CheckNotBSD") "throw 'Skipped: this test fails on Guix'")
-               (("'bsd'") "'unix'"))
-
-             ;; This test checks how the terminal looks after executing some
+             ;; These tests check how the terminal looks after executing some
              ;; actions.  The path of the bash binary is shown, which results in
              ;; a difference being detected.  Patching the expected result is
              ;; non-trivial due to the special format used, so skip the test.
              (substitute* "src/testdir/test_terminal.vim"
                ((".*Test_terminal_postponed_scrollback.*" line)
+                (string-append line "return\n")))
+             (substitute* "src/testdir/test_popupwin.vim"
+               ((".*Test_popup_drag_termwin.*" line)
                 (string-append line "return\n")))
              #t)))))
     (inputs
@@ -214,19 +216,6 @@ with the editor vim.")))
        ,@(substitute-keyword-arguments (package-arguments vim)
            ((#:phases phases)
             `(modify-phases ,phases
-               (add-before 'check 'skip-test87
-                 ;; This test fails for unknown reasons after switching
-                 ;; to a git checkout.
-                 (lambda _
-                   (delete-file "src/testdir/test87.ok")
-                   (delete-file "src/testdir/test87.in")
-                   (substitute* '("src/Makefile"
-                                  "src/testdir/Make_vms.mms")
-                     (("test87") ""))
-                   (substitute* "src/testdir/Make_all.mak"
-                     (("test86.out \\\\") "test86")
-                     (("test87.out") ""))
-                   #t))
                (add-before 'check 'start-xserver
                  (lambda* (#:key inputs #:allow-other-keys)
                    ;; Some tests require an X server, but does not start one.
@@ -470,7 +459,7 @@ trouble using them, because you do not have to remember each snippet name.")
       (origin
         (method git-fetch)
         (uri (git-reference
-               (url "https://github.com/tpope/vim-fugitive.git")
+               (url "https://github.com/tpope/vim-fugitive")
                (commit (string-append "v" version))))
         (file-name (git-file-name name version))
         (sha256
@@ -586,7 +575,7 @@ are detected, the user is notified.")
       (origin
         (method git-fetch)
         (uri (git-reference
-               (url "https://github.com/editorconfig/editorconfig-vim.git")
+               (url "https://github.com/editorconfig/editorconfig-vim")
                (commit (string-append "v" version))))
         (file-name (git-file-name name version))
         (sha256
@@ -641,7 +630,7 @@ are detected, the user is notified.")))
 (define-public neovim
   (package
     (name "neovim")
-    (version "0.4.3")
+    (version "0.4.4")
     (source
      (origin
        (method git-fetch)
@@ -650,7 +639,7 @@ are detected, the user is notified.")))
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "03p7pic7hw9yxxv7fbgls1f42apx3lik2k6mpaz1a109ngyc5kaj"))))
+        (base32 "11zyj6jvkwas3n6w1ckj3pk6jf81z1g7ngg4smmwm7c27y2a6f2m"))))
     (build-system cmake-build-system)
     (arguments
      `(#:modules ((srfi srfi-26)

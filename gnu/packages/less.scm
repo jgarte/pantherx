@@ -63,7 +63,7 @@ text editors.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/wofr06/lesspipe.git")
+                    (url "https://github.com/wofr06/lesspipe")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -80,7 +80,17 @@ text editors.")
                         (invoke "./configure"
                                 (string-append "--prefix=" out)
                                 "--yes")
-                        #t))))))
+                        #t)))
+                  (add-before 'install 'patch-tput-and-file
+                    (lambda* (#:key inputs #:allow-other-keys)
+                      (substitute* "lesspipe.sh"
+                        (("tput colors")
+                         (string-append (assoc-ref inputs "ncurses")
+                                        "/bin/tput colors"))
+                        (("file -")
+                         (string-append (assoc-ref inputs "file")
+                                        "/bin/file -")))
+                      #t)))))
     (inputs
      `(("file" ,file)
        ("ncurses" ,ncurses)))  ; for tput

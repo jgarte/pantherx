@@ -60,7 +60,7 @@
 (define-public libmpdclient
   (package
     (name "libmpdclient")
-    (version "2.18")
+    (version "2.19")
     (source (origin
               (method url-fetch)
               (uri
@@ -69,7 +69,7 @@
                               "/libmpdclient-" version ".tar.xz"))
               (sha256
                (base32
-                "1yl123xr25gcd3vlsfmn6p7gbrq029pgnxa8m6n6j0byaqgixc2c"))))
+                "12d1fzlkcnjw4ayk2wp11vhglfcvr5k02arzdbkhiavq496av2hm"))))
     (build-system meson-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -92,7 +92,7 @@ interfacing MPD in the C, C++ & Objective C languages.")
 (define-public mpd
   (package
     (name "mpd")
-    (version "0.21.24")
+    (version "0.21.25")
     (source (origin
               (method url-fetch)
               (uri
@@ -101,7 +101,7 @@ interfacing MPD in the C, C++ & Objective C languages.")
                               "/mpd-" version ".tar.xz"))
               (sha256
                (base32
-                "1mjclv7nf42smzry6cswciicsypv0mfsfl8nsykb6wp6h9z2lqw4"))))
+                "00f2cm3sg0vi9gxb1yk35lyyh3fbabwim3mfnsz2syrjpw0sv810"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags '("-Ddocumentation=true"))) ;the default is 'false'...
@@ -350,7 +350,7 @@ MPD servers, search and multimedia key support.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/joshkunz/ashuffle.git")
+                    (url "https://github.com/joshkunz/ashuffle")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256

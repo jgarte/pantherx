@@ -191,7 +191,7 @@ It is the default image viewer on LXDE desktop environment.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/muennich/sxiv.git")
+                    (url "https://github.com/muennich/sxiv")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -237,7 +237,7 @@ it and customize it for your needs.")
       (origin
         (method git-fetch)
         (uri (git-reference
-               (url "https://github.com/hellosiyan/Viewnior.git")
+               (url "https://github.com/hellosiyan/Viewnior")
                (commit (string-append name "-" version))))
         (file-name (git-file-name name version))
         (sha256
@@ -289,7 +289,7 @@ your images.  Among its features are:
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/posva/catimg.git")
+             (url "https://github.com/posva/catimg")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -329,7 +329,7 @@ It supports JPEG, PNG and GIF formats.")
 (define-public luminance-hdr
   (package
     (name "luminance-hdr")
-    (version "2.4.0")
+    (version "2.6.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -337,8 +337,7 @@ It supports JPEG, PNG and GIF formats.")
                     version "/luminance-hdr-" version ".tar.bz2"))
               (sha256
                (base32
-                "00fldbcizrx8jcnjgq74n3zmbm27dxzl96fxa7q49689mfnlw08l"))
-              (patches (search-patches "luminance-hdr-qt-printer.patch"))))
+                "188q0l63nfasqfvwbq4mwx2vh7wsfi2bq9n5nksddspl1qz01lnp"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -346,8 +345,10 @@ It supports JPEG, PNG and GIF formats.")
     (inputs
      `(("qtbase" ,qtbase)
        ("qtdeclarative" ,qtdeclarative)
+       ("qtsvg" ,qtsvg)
        ("qtwebkit" ,qtwebkit)
        ("boost" ,boost)
+       ("eigen" ,eigen)
        ;; ("gtest" ,gtest)
        ("libraw" ,libraw)
        ("zlib" ,zlib)
@@ -360,7 +361,8 @@ It supports JPEG, PNG and GIF formats.")
        ("gsl" ,gsl)
        ("libtiff" ,libtiff)))
     (arguments
-     '(#:phases
+     '(#:tests? #f  ;XXX: some tests fail to compile
+       #:phases
        (modify-phases %standard-phases
          (add-after 'set-paths 'add-ilmbase-include-path
            (lambda* (#:key inputs #:allow-other-keys)
@@ -488,7 +490,7 @@ For PDF support, install the @emph{mupdf} package.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/jurplel/qView.git")
+             (url "https://github.com/jurplel/qView")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256

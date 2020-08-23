@@ -46,14 +46,14 @@
 (define-public fio
   (package
     (name "fio")
-    (version "3.20")
+    (version "3.22")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://brick.kernel.dk/snaps/"
                                   "fio-" version ".tar.bz2"))
               (sha256
                (base32
-                "1mwqafn81a9pxy2kw9rl4p3r2brhg2ckwrcwzy0q4gffxgn3k9c7"))))
+                "0f2x917600y6k0xs34ixgfjm4v1ylbh8svpkqi07xy3474g5s2rv"))))
     (build-system gnu-build-system)
     (arguments
      '(#:test-target "test"
@@ -131,7 +131,7 @@ is to write a job file matching the I/O load one wants to simulate.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/intel/mpi-benchmarks.git")
+                    (url "https://github.com/intel/mpi-benchmarks")
                     (commit (string-append "IMB-v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -217,7 +217,7 @@ This can give a much better understanding of the command's performance.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/google/benchmark.git")
+                    (url "https://github.com/google/benchmark")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256

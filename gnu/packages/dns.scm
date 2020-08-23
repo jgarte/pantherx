@@ -38,6 +38,7 @@
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
+  #:use-module (gnu packages certs)
   #:use-module (gnu packages check)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages documentation)
@@ -45,10 +46,12 @@
   #:use-module (gnu packages crypto)
   #:use-module (gnu packages datastructures)
   #:use-module (gnu packages flex)
+  #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages gcc)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages groff)
   #:use-module (gnu packages groff)
+  #:use-module (gnu packages gtk)
   #:use-module (gnu packages libedit)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages libidn)
@@ -62,6 +65,7 @@
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages shells)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages swig)
   #:use-module (gnu packages tls)
@@ -73,14 +77,203 @@
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix utils)
+  #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system meson)
   #:use-module (guix build-system trivial))
 
+(define-public ldns
+  (package
+    (name "ldns")
+    (version "1.7.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri
+        (string-append "https://www.nlnetlabs.nl/downloads/"
+                       name "/" name "-" version ".tar.gz"))
+       (sha256
+        (base32 "0ac242n7996fswq1a3nlh1bbbhrsdwsq4mx7xq8ffq6aplb4rj4a"))
+       (patches
+        (search-patches
+         ;; To create make-flag vairables,
+         ;; for splitting installation of drill and examples.
+         "ldns-drill-examples.patch"))))
+    (build-system gnu-build-system)
+    (outputs '("out" "drill" "examples" "pyldns"))
+    (arguments
+     `( ;; Tests require Tpkg.
+       ;; https://tpkg.github.io/
+       #:tests? #f
+       #:configure-flags
+       (list
+        "--disable-static"
+        "--enable-gost-anyway"
+        "--enable-rrtype-ninfo"
+        "--enable-rrtype-rkey"
+        "--enable-rrtype-ta"
+        "--enable-rrtype-avc"
+        "--enable-rrtype-doa"
+        "--enable-rrtype-amtrelay"
+        "--with-drill"
+        "--with-examples"
+        "--with-pyldns"
+        ;; Perl module DNS::LDNS not available.
+        ;; https://github.com/erikoest/DNS-LDNS.git
+        ;; "--with-p5-dns-ldns"
+        (string-append "--with-ssl="
+                       (assoc-ref %build-inputs "openssl"))
+        (string-append "--with-ca-path="
+                       (assoc-ref %build-inputs "nss-certs")
+                       "/etc/ssl/certs"))
+       #:make-flags
+       (list
+        (string-append "drillbindir="
+                       (assoc-ref %outputs "drill")
+                       "/bin")
+        (string-append "drillmandir="
+                       (assoc-ref %outputs "drill")
+                       "/share/man")
+        (string-append "examplesbindir="
+                       (assoc-ref %outputs "examples")
+                       "/bin")
+        (string-append "examplesmandir="
+                       (assoc-ref %outputs "examples")
+                       "/share/man")
+        (string-append "python_site="
+                       (assoc-ref %outputs "pyldns")
+                       "/lib/python"
+                       ,(version-major+minor
+                         (package-version python))
+                       "/site-packages"))))
+    (native-inputs
+     `(("doxygen" ,doxygen)
+       ("ksh" ,oksh)
+       ("perl" ,perl)
+       ("perl-devel-checklib" ,perl-devel-checklib)
+       ("pkg-config" ,pkg-config)
+       ("python" ,python-wrapper)
+       ("swig" ,swig)))
+    (inputs
+     `(("libpcap" ,libpcap)
+       ("nss-certs" ,nss-certs)
+       ("openssl" ,openssl)))
+    (synopsis "DNS library that facilitates DNS tool programming")
+    (description "LDNS aims to simplify DNS programming, it supports recent
+RFCs like the DNSSEC documents, and allows developers to easily create
+software conforming to current RFCs, and experimental software for current
+Internet Drafts.  A secondary benefit of using ldns is speed; ldns is written in
+C it should be a lot faster than Perl.")
+    (home-page "https://nlnetlabs.nl/projects/ldns/about/")
+    (license license:bsd-3)))
+
+(define-public dnssec-trigger
+  (package
+    (name "dnssec-trigger")
+    (version "0.17")
+    (source
+     (origin
+       (method url-fetch)
+       (uri
+        (string-append "https://www.nlnetlabs.nl/downloads/"
+                       name "/" name "-" version ".tar.gz"))
+       (sha256
+        (base32 "10928q406x9r66a090xl5kznzgyxpja88w4srwcv454hd351j9f0"))))
+    (build-system glib-or-gtk-build-system)
+    (outputs '("out" "gui" "nm"))
+    (arguments
+     `(#:test-target "test"
+       #:configure-flags
+       (list
+        (string-append "--with-ssl="
+                       (assoc-ref %build-inputs "openssl"))
+        "--with-hooks=networkmanager"
+        (string-append "--with-networkmanager-dispatch="
+                       (assoc-ref %outputs "nm")
+                       "/etc/NetworkManager/dispatcher.d")
+        (string-append "--with-xdg-autostart="
+                       (assoc-ref %outputs "gui")
+                       "/etc/xdg/autostart")
+        (string-append "--with-uidir="
+                       (assoc-ref %outputs "gui")
+                       "/share/dnssec-trigger")
+        (string-append "--with-python="
+                       (assoc-ref %build-inputs "python")
+                       "/bin/python")
+        (string-append "--with-unbound-control="
+                       (assoc-ref %build-inputs "unbound")
+                       "/sbin/unbound-control")
+        "--with-forward-zones-support")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-configure
+           (lambda _
+             (substitute* "configure"
+               (("appindicator-0.1")
+                "appindicator3-0.1"))
+             #t))
+         (add-before 'configure 'patch-makefile
+           (lambda _
+             (substitute* "Makefile.in"
+               (("/usr")
+                "$(prefix)")
+               (("/etc")
+                "$(prefix)/etc")
+               ((".*gtk-update-icon-cache.*")
+                ""))
+             #t))
+         (add-after 'install 'remove-systemd
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out")))
+               (delete-file-recursively
+                (string-append out "/lib/systemd"))
+               #t)))
+         (add-after 'remove-systemd 'move-gui
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (gui (assoc-ref outputs "gui")))
+               (mkdir-p (string-append gui "/bin"))
+               (mkdir-p (string-append gui "/share"))
+               (rename-file
+                (string-append out "/bin")
+                (string-append gui "/bin"))
+               (rename-file
+                (string-append out "/share/icons")
+                (string-append gui "/share/icons"))
+               #t)))
+         (add-after 'move-gui 'move-nm
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (nm (assoc-ref outputs "nm")))
+               (mkdir-p (string-append nm "/libexec"))
+               (rename-file
+                (string-append out "/libexec")
+                (string-append nm "/libexec"))
+               #t))))))
+    (native-inputs
+     `(("cmocka" ,cmocka)
+       ("pkg-config" ,pkg-config)
+       ("python" ,python-wrapper)))
+    (inputs
+     `(("gtk+-2" ,gtk+-2)
+       ("ldns" ,ldns)
+       ("libappindicator" ,libappindicator)
+       ("openssl" ,openssl)
+       ("unbound" ,unbound)))
+    (synopsis "DNSSEC protection for the DNS traffic")
+    (description "DNSSEC-Trigger enables your computer to use DNSSEC protection
+for the DNS traffic.  It relies on the Unbound DNS resolver running locally on
+your system, which performs DNSSEC validation.  It reconfigures Unbound in such
+a way that it will signal it to to use the DHCP obtained forwarders if possible,
+fallback to doing its own AUTH queries if that fails, and if that fails it will
+prompt the user with the option to go with insecure DNS only.")
+    (home-page "https://www.nlnetlabs.nl/projects/dnssec-trigger/about/")
+    (license license:bsd-3)))
+
 (define-public dnsmasq
   (package
     (name "dnsmasq")
-    (version "2.81")
+    (version "2.82")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -88,7 +281,7 @@
                     version ".tar.xz"))
               (sha256
                (base32
-                "1yzq6anwgr5rlnwydpszb51cyhp2vjq29b24ck19flbwac1sk73l"))))
+                "0cn1xd1s6xs78jmrmwjnh9m6w3q38pk6dyqy2phvasqiyd33cll4"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -119,7 +312,7 @@ and BOOTP/TFTP for network booting of diskless machines.")
 (define-public isc-bind
   (package
     (name "bind")
-    (version "9.16.4")
+    (version "9.16.6")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -127,7 +320,7 @@ and BOOTP/TFTP for network booting of diskless machines.")
                     "/bind-" version ".tar.xz"))
               (sha256
                (base32
-                "02ip1xvmnqla3p5k2rmfrksrw4q9iqbrhyg3mamvrj5a7n6hh8km"))))
+                "1jvi6ms51vyrhpflx05xlb7gblyd59zsyj28b8s3pl3xnkrv0rxm"))))
     (build-system gnu-build-system)
     (outputs `("out" "utils"))
     (inputs
@@ -177,14 +370,28 @@ and BOOTP/TFTP for network booting of diskless machines.")
              (with-directory-excursion "fuzz"
                (invoke "make" "check"))
              #t)))))
-    (synopsis "An implementation of the Domain Name System")
+    (synopsis "Domain Name System (DNS) implementation")
     (description "BIND is an implementation of the @dfn{Domain Name System}
 (DNS) protocols for the Internet.  It is a reference implementation of those
 protocols, but it is also production-grade software, suitable for use in
-high-volume and high-reliability applications. The name BIND stands for
-\"Berkeley Internet Name Domain\", because the software originated in the early
-1980s at the University of California at Berkeley.")
-    (home-page "https://www.isc.org/downloads/bind")
+high-volume and high-reliability applications.  The name BIND stands for
+\"Berkeley Internet Name Domain\", because the software originated in the
+early 1980s at the University of California at Berkeley.  The @code{utils}
+output of this package contains the following DNS name servers related command
+line utilities:
+@table @code
+@item delv
+DNS lookup and validation utility
+@item dig
+DNS lookup utility
+@item host
+DNS lookup utility
+@item nslookup
+Internet name servers interactive query utility
+@item nsupdate
+Dynamic DNS update utility
+@end table")
+    (home-page "https://www.isc.org/bind/")
     (license (list license:mpl2.0))))
 
 (define-public dnscrypt-proxy
@@ -321,14 +528,14 @@ asynchronous fashion.")
 (define-public nsd
   (package
     (name "nsd")
-    (version "4.2.4")
+    (version "4.3.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.nlnetlabs.nl/downloads/nsd/nsd-"
                            version ".tar.gz"))
        (sha256
-        (base32 "0z7j3vwqqj0hh8n5irb2yqwzl45k4sn2wczbq1b1lqv5cxv6vgcy"))))
+        (base32 "0ac3mbn5z4nc18782m9aswdpi2m9f4665vidw0ciyigdh0pywp2v"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -748,7 +955,7 @@ LuaJIT, both a resolver library and a daemon.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/ddclient/ddclient.git")
+             (url "https://github.com/ddclient/ddclient")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -915,7 +1122,7 @@ local networks.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/publicsuffix/list.git")
+                      (url "https://github.com/publicsuffix/list")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -952,7 +1159,7 @@ known public suffixes.")
 (define-public maradns
   (package
     (name "maradns")
-    (version "3.5.0004")
+    (version "3.5.0007")
     (source
      (origin
        (method url-fetch)
@@ -960,18 +1167,13 @@ known public suffixes.")
                            (version-major+minor version) "/"
                            version "/maradns-" version ".tar.xz"))
        (sha256
-        (base32
-         "1zv0i6m4m05ay5zlhwq1h88hgjq2d81cjanpnb3gyhr0xhmjwk6a"))))
+        (base32 "0bc19xylg4whww9qaj5i4izwxcrh0c0ja7l1pfcn2la02hlvg1a6"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:tests? #f ; need to be root to run tests
+     `(#:tests? #f                      ; need to be root to run tests
        #:make-flags
        (list
-        (string-append "CC="
-                       (if ,(%current-target-system)
-                           (string-append (assoc-ref %build-inputs "cross-gcc")
-                                          "/bin/" ,(%current-target-system) "-gcc")
-                           "gcc"))
+        ,(string-append "CC=" (cc-for-target))
         (string-append "PREFIX=" %output)
         (string-append "RPM_BUILD_ROOT=" %output))
        #:phases

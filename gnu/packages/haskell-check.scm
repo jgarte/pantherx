@@ -392,7 +392,7 @@ been added since previous test run.")
     (inputs
      `(("ghc-tagged" ,ghc-tagged)
        ("ghc-tasty" ,ghc-tasty)))
-    (home-page "http://github.com/nomeata/tasty-expected-failure")
+    (home-page "https://github.com/nomeata/tasty-expected-failure")
     (synopsis "Mark tasty tests as failure expected")
     (description
      "With the function @code{Test.Tasty.ExpectedFailure.expectFail} in the
@@ -489,7 +489,7 @@ use HUnit assertions as QuickCheck properties.")
   (package
     (name "ghc-quickcheck")
     (version "2.13.2")
-    (outputs '("out" "doc"))
+    (outputs '("out" "static" "doc"))
     (source
      (origin
        (method url-fetch)
@@ -651,7 +651,7 @@ using Template Haskell")
   (package
     (name "ghc-hunit")
     (version "1.6.0.0")
-    (outputs '("out" "doc"))
+    (outputs '("out" "static" "doc"))
     (source
      (origin
        (method url-fetch)
@@ -766,6 +766,7 @@ used to test the in-development version of Hspec.")
         (base32
          "1x8rcr7j1azcaw0fg1xzp8j0gr4ias36z09aj24i4xp8pnyfp341"))))
     (build-system haskell-build-system)
+    (outputs '("out" "static" "doc"))
     (inputs
      `(("ghc-hspec-core" ,ghc-hspec-core)
        ("hspec-discover" ,hspec-discover)

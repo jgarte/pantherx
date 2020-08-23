@@ -44,6 +44,7 @@
 ;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2018, 2019, 2020 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
 ;;; Copyright © 2020 Paul Garlick <pgarlick@tourbillion-technology.com>
+;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -136,6 +137,7 @@
   #:use-module (gnu packages perl)
   #:use-module (gnu packages perl-check)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages pcre)
@@ -156,14 +158,14 @@
 (define-public httpd
   (package
     (name "httpd")
-    (version "2.4.43")
+    (version "2.4.46")
     (source (origin
              (method url-fetch)
              (uri (string-append "mirror://apache/httpd/httpd-"
                                  version ".tar.bz2"))
              (sha256
               (base32
-               "0hqgw47r3p3521ygkkqs8s30s5crm683081avj6330gwncm6b5x4"))))
+               "1sj1rwgbcjgkzac3ybjy7j68c9b3dv3ap71m48mrjhf6w7vds3kl"))))
     (build-system gnu-build-system)
     (native-inputs `(("pcre" ,pcre "bin")))       ;for 'pcre-config'
     (inputs `(("apr" ,apr)
@@ -198,7 +200,7 @@ and its related documentation.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/GrahamDumpleton/mod_wsgi.git")
+                    (url "https://github.com/GrahamDumpleton/mod_wsgi")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -229,14 +231,14 @@ Interface} specification.")
     ;; ’stable’ and recommends that “in general you deploy the NGINX mainline
     ;; branch at all times” (https://www.nginx.com/blog/nginx-1-6-1-7-released/)
     ;; Consider updating the nginx-documentation package together with this one.
-    (version "1.19.0")
+    (version "1.19.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nginx.org/download/nginx-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1j1n3rlvan6l9j3vw8axbbdm96w7s0x6ygmgqvbplzfd3wbid9j4"))))
+                "0wr4ss4gld7x717m4j3a6l6f7ijblrrd55y563lkwhvr7sqpn7vw"))))
     (build-system gnu-build-system)
     (inputs `(("openssl" ,openssl)
               ("pcre" ,pcre)
@@ -360,9 +362,9 @@ documentation.")
 
 (define-public nginx-documentation
   ;; This documentation should be relevant for the current nginx package.
-  (let ((version "1.19.0")
-        (revision 2549)
-        (changeset "c13a55aae487"))
+  (let ((version "1.19.2")
+        (revision 2581)
+        (changeset "324ca14c3003"))
     (package
       (name "nginx-documentation")
       (version (simple-format #f "~A-~A-~A" version revision changeset))
@@ -374,7 +376,7 @@ documentation.")
                (file-name (string-append name "-" version))
                (sha256
                 (base32
-                 "0vwwvk6wf8f6c6n6yffmya9a287s6dbx1p739hdl3hwxfyh2ygc5"))))
+                 "15bdbi6cjqhx8lqsyr3hnwagq2r80bsyh2im80ajmbfv7y47djqi"))))
       (build-system gnu-build-system)
       (arguments
        '(#:tests? #f                    ; no test suite
@@ -423,7 +425,7 @@ documentation.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/giom/nginx_accept_language_module.git")
+               (url "https://github.com/giom/nginx_accept_language_module")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -647,7 +649,7 @@ APIs.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/gnosek/fcgiwrap.git")
+             (url "https://github.com/gnosek/fcgiwrap")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -768,6 +770,7 @@ data.")
 
 (define-public json-c
   (package
+    (replacement json-c/fixed)
     (name "json-c")
     (version "0.14")
     (source (origin
@@ -788,6 +791,15 @@ parse JSON-formatted strings back into the C representation of JSON objects.
 It aims to conform to RFC 7159.")
     (license license:x11)))
 
+(define json-c/fixed
+  (package
+    (inherit json-c)
+    (name "json-c")
+    (version "0.14")
+    (source (origin
+              (inherit (package-source json-c))
+              (patches (search-patches "json-c-CVE-2020-12762.patch"))))))
+
 ;; TODO: Remove these old versions when all dependents have been updated.
 (define-public json-c-0.13
   (package
@@ -800,6 +812,7 @@ It aims to conform to RFC 7159.")
                    version ".tar.gz"))
              (sha256
               (base32 "0ws8dz9nk8q2c0gbf66kg2r6mrkl7kamd3gpdv9zsyrz9n6n0zmq"))
+              (patches (search-patches "json-c-0.13-CVE-2020-12762.patch"))
              (modules '((guix build utils)))
              (snippet
               '(begin
@@ -822,6 +835,7 @@ It aims to conform to RFC 7159.")
                    version ".tar.gz"))
              (sha256
               (base32 "08qibrq29a5v7g23wi5icy6l4fbfw90h9ccps6vq0bcklx8n84ra"))
+              (patches (search-patches "json-c-0.12-CVE-2020-12762.patch"))
              (modules '((guix build utils)))
              (snippet
               '(begin
@@ -844,7 +858,7 @@ It aims to conform to RFC 7159.")
               ;; do not use auto-generated tarballs
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/udp/json-parser.git")
+                    (url "https://github.com/udp/json-parser")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -874,7 +888,7 @@ project)
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/flavio/qjson.git")
+                    (url "https://github.com/flavio/qjson")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -914,7 +928,7 @@ instances, while JSON's objects will be mapped to @code{QVariantMap}.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/ayoy/qoauth.git")
+                    (url "https://github.com/ayoy/qoauth")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -1045,7 +1059,7 @@ current version of any major web browser.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/Tencent/rapidjson.git")
+                    (url "https://github.com/Tencent/rapidjson")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -1086,7 +1100,7 @@ style API.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/lloyd/yajl.git")
+                    (url "https://github.com/lloyd/yajl")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -1117,7 +1131,7 @@ parser written in ANSI C and a small validating JSON generator.")
               ;; things from Git.
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/warmcat/libwebsockets.git")
+                    (url "https://github.com/warmcat/libwebsockets")
                     (commit (string-append "v" version
                                            "-chrome37-firefox30"))))
               (sha256
@@ -1196,7 +1210,7 @@ other systems that want to manipulate WebAssembly files.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/zaphoyd/websocketpp.git")
+             (url "https://github.com/zaphoyd/websocketpp")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -1230,7 +1244,7 @@ high performance.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/tatsuhiro-t/wslay.git")
+             (url "https://github.com/tatsuhiro-t/wslay")
              (commit (string-append "release-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1406,7 +1420,7 @@ of people.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/novnc/websockify.git")
+                    (url "https://github.com/novnc/websockify")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -1492,14 +1506,12 @@ hash/signatures.")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append
-             "http://pyyaml.org/download/libyaml/yaml-"
-             version ".tar.gz"))
+       (uri (string-append "https://pyyaml.org/download/libyaml/yaml-"
+                           version ".tar.gz"))
        (sha256
-        (base32
-         "0mq5wf17ifcwwxq3kbimhi53jn3fg23vcynqpzxjcz3vfjlfs2nq"))))
+        (base32 "0mq5wf17ifcwwxq3kbimhi53jn3fg23vcynqpzxjcz3vfjlfs2nq"))))
     (build-system gnu-build-system)
-    (home-page "http://pyyaml.org/wiki/LibYAML")
+    (home-page "https://pyyaml.org/wiki/LibYAML")
     (synopsis "YAML 1.1 parser and emitter written in C")
     (description
      "LibYAML is a YAML 1.1 parser and emitter written in C.")
@@ -1667,7 +1679,7 @@ minimum to provide high performance operation.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/sass/libsass.git")
+                    (url "https://github.com/sass/libsass")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -1701,7 +1713,7 @@ stylesheets, you'll need to use another program that uses this library,
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/sass/sassc.git")
+                    (url "https://github.com/sass/sassc")
                     (commit  version)))
               (file-name (git-file-name name version))
               (sha256
@@ -1758,7 +1770,7 @@ language known as SASS.")
            (origin
              (method git-fetch)
              (uri (git-reference
-                   (url "https://github.com/sass/libsass.git")
+                   (url "https://github.com/sass/libsass")
                    (commit version)))
              (file-name (git-file-name name version))
              (sha256
@@ -1950,14 +1962,14 @@ instance of a component on each request.")
 (define-public perl-catalyst-devel
   (package
     (name "perl-catalyst-devel")
-    (version "1.40")
+    (version "1.41")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "mirror://cpan/authors/id/J/JJ/JJNAPIORK/"
+       (uri (string-append "mirror://cpan/authors/id/H/HA/HAARG/"
                            "Catalyst-Devel-" version ".tar.gz"))
        (sha256
-        (base32 "1fqnw6cizpxnfr87rpid8w1wpi1p1lxg6imfjpixqn7s055hcpwc"))))
+        (base32 "1r8arq7sw37d0mjyfzkc3pg1a9plgydqbscryc8qpvba4swpljls"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-test-fatal" ,perl-test-fatal)))
@@ -2182,16 +2194,15 @@ Catalyst.")
 (define-public perl-catalyst-plugin-configloader
   (package
     (name "perl-catalyst-plugin-configloader")
-    (version "0.34")
+    (version "0.35")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "mirror://cpan/authors/id/B/BO/BOBTFISH/"
+       (uri (string-append "mirror://cpan/authors/id/H/HA/HAARG/"
                            "Catalyst-Plugin-ConfigLoader-"
                            version ".tar.gz"))
        (sha256
-        (base32
-         "19j7p4v7mbx6wrmpvmrnd974apx7hdl2s095ga3b9zcbdrl77h5q"))))
+        (base32 "0w8r3bbxqnlykvra6sx3sh3wh8ylkj914xg5ql6nw11ddy56jaly"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-path-class" ,perl-path-class)
@@ -2508,15 +2519,14 @@ stash data in JSON format.")
 (define-public perl-catalyst-view-tt
   (package
     (name "perl-catalyst-view-tt")
-    (version "0.44")
+    (version "0.45")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "mirror://cpan/authors/id/E/ET/ETHER/"
+       (uri (string-append "mirror://cpan/authors/id/H/HA/HAARG/"
                            "Catalyst-View-TT-" version ".tar.gz"))
      (sha256
-      (base32
-       "06d1zg4nbb6kcyjbnyxrkf8z4zlscxr8650d94f7187jygfl8rvh"))))
+      (base32 "0jzgpkgq5pwq82zlb0nykdyk40dfpsyn9ilz91d0wpixgi9i5pr8"))))
   (build-system perl-build-system)
   (propagated-inputs
    `(("perl-catalyst-runtime" ,perl-catalyst-runtime)
@@ -4683,14 +4693,14 @@ you'd expect.")
 (define-public uhttpmock
   (package
     (name "uhttpmock")
-    (version "0.5.2")
+    (version "0.5.3")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "http://tecnocode.co.uk/downloads/uhttpmock/"
+       (uri (string-append "https://tecnocode.co.uk/downloads/uhttpmock/"
                            "uhttpmock-" version ".tar.xz"))
        (sha256
-        (base32 "0glyx07kxc3s3cx5vp30kfgscl9q6bghcq1zysfyxm24r0h6j58p"))))
+        (base32 "0bqizz69hxk8rn4z57asz1d45vizl1rj6i5k3rzxn2x3qcik514h"))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      `(("gobject-introspection" ,gobject-introspection)
@@ -5021,7 +5031,7 @@ written in C.  It is developed as part of the NetSurf project.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/tlsa/libcyaml.git")
+             (url "https://github.com/tlsa/libcyaml")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -5502,14 +5512,14 @@ on the fly.")
 (define-public hitch
   (package
     (name "hitch")
-    (version "1.5.2")
+    (version "1.6.0")
     (home-page "https://hitch-tls.org/")
     (source (origin
               (method url-fetch)
               (uri (string-append home-page "source/hitch-" version ".tar.gz"))
               (sha256
                (base32
-                "1nnzqqigfw78nqhp81a72x1s8d6v49ayw4w5df0zzm2cb1jgv95i"))))
+                "01n70yf8hx42jb801jv5q1xhrpqxyjnqhd98hjf81lvxpd5fnisf"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -5747,7 +5757,7 @@ additional capabilities.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/openSUSE/xinetd.git")
+             (url "https://github.com/openSUSE/xinetd")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -5773,7 +5783,7 @@ used to start services with both privileged and non-privileged port numbers.")
 (define-public tidy-html
   (package
     (name "tidy-html")
-    (version "5.6.0")
+    (version "5.7.28")
     (source
      (origin
        (method git-fetch)
@@ -5783,7 +5793,7 @@ used to start services with both privileged and non-privileged port numbers.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0w175c5d1babq0w1zzdzw9gl6iqbgyq58v8587s7srp05y3hwy9k"))))
+         "01k5sqwgcsr26i8031v1yr2r8qcy9a5w7sj800660haszgfbjz2f"))))
     (build-system cmake-build-system)
     (outputs '("out"
                "static"))               ; 1.3MiB of .a files
@@ -5822,7 +5832,7 @@ functions of Tidy.")
 (define-public hiawatha
   (package
     (name "hiawatha")
-    (version "10.10")
+    (version "10.11")
     (source
      (origin
        (method url-fetch)
@@ -5835,7 +5845,7 @@ functions of Tidy.")
                              (list "extra/nghttp2.tgz" "mbedtls"))
                    #t))
        (sha256
-        (base32 "1nd46cx1qp5lh2kwnn2mlwk9zm8jm7pgf90xs9vpwr7saxbnzr5m"))))
+        (base32 "09wpgilbv13zal71v9lbsqr8c3fignygadykpd1p1pb8blb5vn3r"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f                      ; no tests included
@@ -6045,15 +6055,14 @@ inspired by Ruby's @code{fakeweb}.")
 (define-public jo
   (package
     (name "jo")
-    (version "1.3")
+    (version "1.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/jpmens/jo/releases/download/"
                            version "/jo-" version ".tar.gz"))
        (sha256
-        (base32
-         "0r6yb8pjsbcqfyac4240a0sj93pb91fv385bpk395cx3f5bcj9fy"))))
+        (base32 "18jna9xlpxci3cak3z85c448zv2zr41baclgym3hk433p0p4vii4"))))
     (build-system gnu-build-system)
     (home-page "https://github.com/jpmens/jo")
     (synopsis "Output JSON from a shell")
@@ -7311,7 +7320,7 @@ compressed JSON header blocks.
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/UMCUGenetics/hpcguix-web.git")
+                      (url "https://github.com/UMCUGenetics/hpcguix-web")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256

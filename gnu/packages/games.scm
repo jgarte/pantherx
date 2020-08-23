@@ -40,7 +40,7 @@
 ;;; Copyright © 2019, 2020 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2019 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2019 Julien Lepiller <julien@lepiller.eu>
-;;; Copyright © 2019 Jesse Gibbons <jgibbons2357+guix@gmail.com>
+;;; Copyright © 2019, 2020 Jesse Gibbons <jgibbons2357+guix@gmail.com>
 ;;; Copyright © 2019 Dan Frumin <dfrumin@cs.ru.nl>
 ;;; Copyright © 2019, 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2019, 2020 Timotej Lazar <timotej.lazar@araneo.si>
@@ -51,6 +51,9 @@
 ;;; Copyright © 2020 Vitaliy Shatrov <D0dyBo0D0dyBo0@protonmail.com>
 ;;; Copyright © 2020 Jack Hill <jackhill@jackhill.us>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
+;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
+;;; Copyright © 2020 Trevor Hass <thass@okstate.edu>
+;;; Copyright © 2020 Leo Prikler <leo.prikler@student.tugraz.at>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -113,9 +116,11 @@
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
+  #:use-module (gnu packages gnupg)
   #:use-module (gnu packages gnuzilla)
   #:use-module (gnu packages gperf)
   #:use-module (gnu packages graphics)
+  #:use-module (gnu packages gsasl)
   #:use-module (gnu packages gstreamer)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages guile)
@@ -136,6 +141,7 @@
   #:use-module (gnu packages lua)
   #:use-module (gnu packages man)
   #:use-module (gnu packages maths)
+  #:use-module (gnu packages messaging)
   #:use-module (gnu packages mp3)
   #:use-module (gnu packages music)
   #:use-module (gnu packages multiprecision)
@@ -149,6 +155,7 @@
   #:use-module (gnu packages perl-check)
   #:use-module (gnu packages perl-compression)
   #:use-module (gnu packages pkg-config)
+  #:use-module (gnu packages protobuf)
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
@@ -176,8 +183,6 @@
   #:use-module (gnu packages xorg)
   #:use-module (gnu packages xiph)
   #:use-module (gnu packages xml)
-  #:use-module (gnu packages messaging)
-  #:use-module (gnu packages networking)
   #:use-module (guix build-system copy)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system glib-or-gtk)
@@ -343,7 +348,7 @@ mouse and joystick control, and original music.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/carstene1ns/alex4.git")
+             (url "https://github.com/carstene1ns/alex4")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -414,7 +419,7 @@ physics settings to tweak as well.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/viewizard/astromenace.git")
+             (url "https://github.com/viewizard/astromenace")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -474,7 +479,7 @@ regret their insolence.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fph/bastet.git")
+             (url "https://github.com/fph/bastet")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -653,7 +658,7 @@ high a score as possible.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/CleverRaven/Cataclysm-DDA.git")
+             (url "https://github.com/CleverRaven/Cataclysm-DDA")
              (commit version)))
        (sha256
         (base32 "15l6w6lxays7qmsv0ci2ry53asb9an9dh7l7fc13256k085qcg68"))
@@ -718,7 +723,7 @@ want what you have.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/CorsixTH/CorsixTH.git")
+             (url "https://github.com/CorsixTH/CorsixTH")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -773,7 +778,7 @@ more.  This package does @emph{not} provide the game assets.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/tnalpgge/rank-amateur-cowsay.git")
+                     (url "https://github.com/tnalpgge/rank-amateur-cowsay")
                      (commit (string-append name "-" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -816,7 +821,7 @@ tired of cows, a variety of other ASCII-art messengers are available.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/jaseg/lolcat.git")
+               (url "https://github.com/jaseg/lolcat")
                (commit commit)))
          (sha256
           (base32
@@ -984,7 +989,7 @@ The game features:
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/freedoom/freedoom.git")
+             (url "https://github.com/freedoom/freedoom")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1182,7 +1187,7 @@ automata.  The following features are available:
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/bvschaik/julius.git")
+             (url "https://github.com/bvschaik/julius")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1289,7 +1294,7 @@ shadow mimic them to reach blocks you couldn't reach alone.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/alemart/opensurge.git")
+             (url "https://github.com/alemart/opensurge")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -1363,7 +1368,8 @@ built-in level editor.")
     (build-system gnu-build-system)
     (arguments
      '(#:make-flags
-       (list (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       (list (string-append "PREFIX=" (assoc-ref %outputs "out"))
+             "CXXFLAGS=-lpthread")
        #:phases
        (modify-phases %standard-phases
          ;; No configure script.
@@ -1552,14 +1558,14 @@ Chess).  It is similar to standard chess but this variant is far more complicate
 (define-public ltris
   (package
     (name "ltris")
-    (version "1.0.20")
+    (version "1.2.1")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "http://prdownloads.sourceforge.net/lgames/"
+       (uri (string-append "mirror://sourceforge/lgames/ltris/"
                            "ltris-" version ".tar.gz"))
        (sha256
-        (base32 "16zbqsc4amx9g3yjv6054nh4ia09dgfp8k6q4qxpjicl3dw3z0in"))))
+        (base32 "0959vvxh5xnxzpdv7i67lpd2b6ghx69z65ldnclj1z6llyfzfs7q"))))
     (build-system gnu-build-system)
     (arguments
      '(;; The code in LTris uses traditional GNU semantics for inline functions
@@ -1978,7 +1984,7 @@ can be explored and changed freely.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/dulsi/seahorse-adventures.git")
+             (url "https://github.com/dulsi/seahorse-adventures")
              (commit (string-append "release-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2090,7 +2096,7 @@ and defeat them with your bubbles!")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/notapixelstudio/superstarfighter.git")
+             (url "https://github.com/notapixelstudio/superstarfighter")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2435,7 +2441,7 @@ properly.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/nevat/abbayedesmorts-gpl.git")
+             (url "https://github.com/nevat/abbayedesmorts-gpl")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2666,7 +2672,7 @@ is very small), and shoot at the adversaries that keep appear on the screen.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/abishekvashok/cmatrix.git")
+             (url "https://github.com/abishekvashok/cmatrix")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -2726,6 +2732,7 @@ interface or via an external visual interface such as GNU XBoard.")
               (method url-fetch)
               (uri (string-append "mirror://gnu/freedink/freedink-" version
                                   ".tar.gz"))
+              (patches (search-patches "freedink-engine-fix-sdl-hints.patch"))
               (sha256
                (base32
                 "00hhk1bjdrc1np2qz44sa5n1mb62qzwxbvsnws3vpms6iyn3a2sy"))))
@@ -2739,6 +2746,14 @@ interface or via an external visual interface such as GNU XBoard.")
              ;; These tests require a graphical interface.
              (substitute* "src/Makefile.am"
                (("test_gfx_fonts TestIOGfxDisplay") ""))
+             #t))
+         (add-before 'bootstrap 'autoreconf
+           (lambda _
+	     ;; automake is out of date in the source
+	     ;; autoreconf updates the automake scripts
+	     (invoke "autoreconf")
+	     ;; Build fails when autom4te.cache exists.
+	     (delete-file-recursively "autom4te.cache")
              #t)))))
     (native-inputs `(("autoconf" ,autoconf)
                      ("automake" ,automake)
@@ -2983,7 +2998,7 @@ for common mesh file formats, and collision detection.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/thelaui/M.A.R.S..git")
+                      (url "https://github.com/thelaui/M.A.R.S.")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -3024,44 +3039,10 @@ enemies in different game modes such as space ball, death match, team death
 match, cannon keep, and grave-itation pit.")
       (license license:gpl3+))))
 
-(define minetest-data
-  (package
-    (name "minetest-data")
-    (version "5.1.1")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                     (url "https://github.com/minetest/minetest_game")
-                     (commit version)))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "1r9fxz2j24q74a9injvbxbf2xk67fzabv616i676zw2cvgv9hn39"))))
-    (build-system trivial-build-system)
-    (native-inputs
-     `(("source" ,source)))
-    (arguments
-     `(#:modules ((guix build utils))
-       #:builder (begin
-                   (use-modules (guix build utils))
-                   (let ((install-dir (string-append
-                                       %output
-                                       "/share/minetest/games/minetest_game")))
-                     (mkdir-p install-dir)
-                     (copy-recursively
-                       (assoc-ref %build-inputs "source")
-                       install-dir)
-                     #t))))
-    (synopsis "Main game data for the Minetest game engine")
-    (description
-     "Game data for the Minetest infinite-world block sandbox game.")
-    (home-page "https://www.minetest.net/")
-    (license license:lgpl2.1+)))
-
 (define-public minetest
   (package
     (name "minetest")
-    (version "5.1.1")
+    (version "5.3.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3070,7 +3051,7 @@ match, cannon keep, and grave-itation pit.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0cjj63333b7j4ydfq0h9yc6d2jvmyjd7n7zbd08yrf0rcibrj2k0"))
+                "03ga3j3cg38w4lg4d4qxasmnjdl8n3lbizidrinanvyfdyvznyh6"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -3125,6 +3106,64 @@ single player.  Mods and texture packs allow players to personalize the game
 in different ways.")
     (home-page "https://www.minetest.net/")
     (license license:lgpl2.1+)))
+
+(define minetest-data
+  (package
+    (name "minetest-data")
+    (version (package-version minetest))
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/minetest/minetest_game")
+                     (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1liciwlh013z5h08ib0psjbwn5wkvlr937ir7kslfk4vly984cjx"))))
+    (build-system trivial-build-system)
+    (native-inputs
+     `(("source" ,source)))
+    (arguments
+     `(#:modules ((guix build utils))
+       #:builder (begin
+                   (use-modules (guix build utils))
+                   (let ((install-dir (string-append
+                                       %output
+                                       "/share/minetest/games/minetest_game")))
+                     (mkdir-p install-dir)
+                     (copy-recursively
+                       (assoc-ref %build-inputs "source")
+                       install-dir)
+                     #t))))
+    (synopsis "Main game data for the Minetest game engine")
+    (description
+     "Game data for the Minetest infinite-world block sandbox game.")
+    (home-page "https://www.minetest.net/")
+    (license license:lgpl2.1+)))
+
+(define-public minetest-mineclone
+  (package
+    (name "minetest-mineclone")
+    (version "0.66.2")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://git.minetest.land/Wuzzy/MineClone2")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0miszzlzplpvaj0j1yii9867ydr42wsaqa9g6grxdrci75p05g00"))))
+    (build-system copy-build-system)
+    (arguments
+     `(#:install-plan
+       '(("." "share/minetest/games/mineclone"))))
+    (synopsis "Minecraft clone based on Minetest engine")
+    (description
+     "MineClone is a Minetest subgame, that aims to recreate Minecraft as
+closely as the engine allows.")
+    (home-page "https://content.minetest.net/packages/Wuzzy/mineclone2/")
+    (license license:gpl3+)))
 
 (define glkterm
   (package
@@ -3502,14 +3541,16 @@ also available.")
               (file-name (string-append name "-" version ".tar.gz"))
               (sha256
                (base32
-                "1n747p7h0qp48szgp262swg0xh8kxy1bw8ag1qczs4i26hyzs5x4"))))
+                "1n747p7h0qp48szgp262swg0xh8kxy1bw8ag1qczs4i26hyzs5x4"))
+              (patches (search-patches "unknown-horizons-python-3.8-distro.patch"))))
     (build-system python-build-system)
     (arguments
      '(#:phases
        (modify-phases %standard-phases
          (add-before 'build 'set-HOME
            (lambda _
-             (setenv "HOME" "/tmp")))
+             (setenv "HOME" "/tmp")
+             #t))
          (add-after 'build 'build-extra
            (lambda _
              (invoke "python3" "./setup.py" "build_i18n")
@@ -3523,6 +3564,14 @@ also available.")
                   (string-append "os.chdir(\""
                                  (assoc-ref outputs "out")
                                  "/share/unknown-horizons\")"))))
+             #t))
+         (add-before 'check 'fix-tests-with-pytest>=4
+           (lambda _
+             (substitute* "tests/conftest.py"
+               (("pytest_namespace")
+                "pytest_configure")
+               (("get_marker")
+                "get_closest_marker"))
              #t))
          ;; TODO: Run GUI tests as well
          (replace 'check
@@ -3542,6 +3591,7 @@ also available.")
        ("python-pyyaml" ,python-pyyaml)))
     (native-inputs
      `(("intltool" ,intltool)
+       ("python-distro" ,python-distro)
 
        ;; Required for tests
        ("python-greenlet" ,python-greenlet)
@@ -4063,7 +4113,7 @@ Transport Tycoon Deluxe.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/OpenRCT2/OpenRCT2.git")
+             (url "https://github.com/OpenRCT2/OpenRCT2")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -4163,14 +4213,14 @@ are only two levels to play with, but they are very addictive.")
 (define-public pioneers
   (package
     (name "pioneers")
-    (version "15.5")
+    (version "15.6")
     (source (origin
               (method url-fetch)
-              (uri (string-append "http://downloads.sourceforge.net/pio/"
+              (uri (string-append "https://downloads.sourceforge.net/pio/"
                                   "pioneers-" version ".tar.gz"))
               (sha256
                (base32
-                "037gdiiw690jw3wd1s9lxmkqx0caxyk0b4drpm7i9p28gig43q9y"))))
+                "07b3xdd81n8ybsb4fzc5lx0813y9crzp1hj69khncf4faj48sdcs"))))
     (build-system gnu-build-system)
     (inputs `(("avahi" ,avahi)
               ("gtk+" ,gtk+)
@@ -4271,7 +4321,7 @@ http://lavachat.symlynx.com/unix/")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/redeclipse/base.git")
+               (url "https://github.com/redeclipse/base")
                (commit (string-append "v" release))
                (recursive? #t))) ; for game data
          (file-name (git-file-name name version))
@@ -4563,7 +4613,7 @@ in-window at 640x480 resolution or fullscreen.")
 (define-public warzone2100
   (package
     (name "warzone2100")
-    (version "3.4.0")
+    (version "3.4.1")
     (source
      (origin
        (method url-fetch)
@@ -4571,7 +4621,7 @@ in-window at 640x480 resolution or fullscreen.")
                            version
                            "/warzone2100_src.tar.xz"))
        (sha256
-        (base32 "0g4qwi9zw0s4pfgrz3fxhargsj3405rbrh9zy3b2j3arzss2h0gy"))
+        (base32 "0savalmw1kp1sf8vg5aqrl5hc77p4jacxy5y9qj8k2hi2vqdfb7a"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -4649,15 +4699,15 @@ tactics.")
 (define-public widelands
   (package
     (name "widelands")
-    (version "20")
+    (version "21")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://launchpad.net/widelands/"
                            "build" version "/build" version "/+download/"
-                           "widelands-build" version ".tar.bz2"))
+                           "widelands-build" version "-source.tar.gz"))
        (sha256
-        (base32 "1cmwfwk7j6yi2pwmm4rm57s23sdzasqf53nx6567sdagqyc4sn9q"))
+        (base32 "0mz3jily0w1zxxqbnkqrp6hl88xhrwzbil9crq7gpcwidx60w7k0"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -4681,25 +4731,6 @@ tactics.")
                "-DCMAKE_BUILD_TYPE=Release"))
        #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'install-desktop-file-and-icons
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (let* ((share (string-append (assoc-ref outputs "out") "/share"))
-                    (applications (string-append share "/applications"))
-                    (icons (string-append share "/icons/hicolor")))
-               ;; Move desktop entry.
-               (mkdir-p applications)
-               (copy-file "debian/org.widelands.widelands.desktop"
-                          (string-append applications "/widelands.desktop"))
-               ;; Install icons.
-               (for-each (lambda (size)
-                           (let* ((dim (string-append size "x" size))
-                                  (apps (string-append icons "/" dim "/apps")))
-                             (mkdir-p apps)
-                             (copy-file (string-append "data/images/logos"
-                                                       "/wl-ico-" size ".png")
-                                        (string-append apps "/widelands.png"))))
-                         '("16" "32" "48" "64" "128"))
-               #t)))
          (add-after 'unpack 'unbundle-fonts
            ;; Unbundle fonts already packaged in Guix.  XXX: missing fonts are
            ;; amiri, Culmus, mmrCensus, Nakula, and Sinhala.
@@ -4757,7 +4788,7 @@ of war.  Widelands also offers an Artificial Intelligence to challenge you.")
 (define-public starfighter
   (package
     (name "starfighter")
-    (version "2.2.1")
+    (version "2.3.1")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -4766,7 +4797,7 @@ of war.  Widelands also offers an Artificial Intelligence to challenge you.")
                     version "-src.tar.gz"))
               (sha256
                (base32
-                "0bmrid26z7il42lczfs3j3cv671az9fxi2wkf0s22smmzkhcnnrz"))))
+                "13396hvsj4cswlrw52kwqn37dadxps00vhr0hrqgm87fl4ih5yyx"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -5085,7 +5116,7 @@ Linux / Mac OS X servers, and an auto mapper with a VT100 map display.")
     (source
      (origin (method git-fetch)
              (uri (git-reference
-                    (url "https://github.com/sgimenez/laby.git")
+                    (url "https://github.com/sgimenez/laby")
                     (commit (string-append name "-" version))))
              (file-name (git-file-name name version))
              (sha256
@@ -5428,7 +5459,7 @@ into the Space Age.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/bartobri/no-more-secrets.git")
+             (url "https://github.com/bartobri/no-more-secrets")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -5543,7 +5574,7 @@ Magic, Egypt, Indians, Norsemen, Persian or Romans.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/freegish/freegish.git")
+                      (url "https://github.com/freegish/freegish")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -5600,7 +5631,7 @@ emerges from a sewer hole and pulls her below ground.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/cxong/cdogs-sdl.git")
+             (url "https://github.com/cxong/cdogs-sdl")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -5737,7 +5768,7 @@ small robot living in the nano world, repair its maker.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/teeworlds/teeworlds.git")
+                    (url "https://github.com/teeworlds/teeworlds")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -5857,6 +5888,14 @@ The Flag.  You can even design your own maps!")
        (list "--with-system-enet")
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'fix-build-with-new-gcc
+           (lambda _
+             ;; Fix build with GCC6 and later by avoiding comparing ifstream
+             ;; to NULL.  Can be removed for versions > 1.21.
+             (substitute* "src/lev/Proxy.cc"
+               (("ifs != NULL")
+                "ifs"))
+             #t))
          (add-after 'unpack 'find-sdl
            (lambda _
              (substitute* "configure"
@@ -5911,7 +5950,8 @@ with the mouse isn’t always trivial.")
                 "047sf00x71xbmi8bqrhfbmr9bk89l2gbykkqsfpw4wz6yfjscs6y"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:tests? #f))                    ; no tests included
+     `(#:tests? #f                      ; no tests included
+       #:configure-flags '("CFLAGS=-fgnu89-inline"))) ; fix inlines
     (inputs
      `(("sdl-union" ,(sdl-union (list sdl sdl-image sdl-mixer sdl-ttf)))
        ("freetype" ,freetype)
@@ -6579,7 +6619,7 @@ some graphical niceities, and numerous bug-fixes and other improvements.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Novum/vkQuake.git")
+             (url "https://github.com/Novum/vkQuake")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -6714,7 +6754,7 @@ making Yamagi Quake II one of the most solid Quake II implementations available.
      (origin
        (method git-fetch)
        (uri (git-reference
-              (url "https://github.com/the-butterfly-effect/tbe.git")
+              (url "https://github.com/the-butterfly-effect/tbe")
               (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -6766,7 +6806,7 @@ elements to achieve a simple goal in the most complex way possible.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/pioneerspacesim/pioneer.git")
+                    (url "https://github.com/pioneerspacesim/pioneer")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -6813,7 +6853,7 @@ whatever you make of it.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/umayr/badass.git")
+                     (url "https://github.com/umayr/badass")
                      (commit commit)))
               (file-name (git-file-name name version))
               (sha256
@@ -6838,7 +6878,7 @@ Github or Gitlab.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/colobot/colobot.git")
+             (url "https://github.com/colobot/colobot")
              (commit (string-append "colobot-gold-" version))
              (recursive? #t)))          ;for "data/" subdir
        (file-name (git-file-name name version))
@@ -6913,7 +6953,7 @@ You can save humanity and get programming skills!")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/coelckers/gzdoom.git")
+             (url "https://github.com/coelckers/gzdoom")
              (commit (string-append "g" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -7035,7 +7075,7 @@ online.")
 (define-public chocolate-doom
   (package
     (name "chocolate-doom")
-    (version "3.0.0")
+    (version "3.0.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://www.chocolate-doom.org/downloads/"
@@ -7045,7 +7085,7 @@ online.")
                                   ".tar.gz"))
               (sha256
                (base32
-                "1f6sw6qa9z0a70dsjh5cs45fkyyxw68s7vkqlykihz8cjcisdbkk"))))
+                "1iy8rx7kjvi1zjiw4zh77szzmd1sgpqajvbhprh1sj93fhbxcdfl"))))
     (build-system gnu-build-system)
     (inputs `(("sdl2-net" ,sdl2-net)
               ("sdl2-mixer" , sdl2-mixer)
@@ -7075,7 +7115,7 @@ affect gameplay).")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/fabiangreffrath/crispy-doom.git")
+                    (url "https://github.com/fabiangreffrath/crispy-doom")
                     (commit (string-append "crispy-doom-" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -7117,7 +7157,7 @@ original.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/shlomif/rinutils.git")
+                    (url "https://github.com/shlomif/rinutils")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
@@ -7640,7 +7680,7 @@ when packaged in Blorb container files or optionally from individual files.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/kthakore/frozen-bubble.git")
+               (url "https://github.com/kthakore/frozen-bubble")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -7759,7 +7799,7 @@ GameController.")
 (define-public quadrapassel
   (package
     (name "quadrapassel")
-    (version "3.32.0")
+    (version "3.36.02")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/quadrapassel/"
@@ -7767,7 +7807,7 @@ GameController.")
                                   "quadrapassel-" version ".tar.xz"))
               (sha256
                (base32
-                "1zhi1957knz9dm98drn2dh95mr33sdch590yddh1f8r6bzsfjvpy"))))
+                "0c80pzipxricyh4wydffsc94wj6ymnanqr9bg6wdx51hz1mmmilb"))))
     (build-system meson-build-system)
     (arguments
      '(#:glib-or-gtk? #t
@@ -7790,6 +7830,7 @@ GameController.")
     (inputs
      `(("clutter" ,clutter)
        ("clutter-gtk" ,clutter-gtk)
+       ("gsound" ,gsound)
        ("gtk+" ,gtk+)
        ("libcanberra" ,libcanberra)
        ("libmanette" ,libmanette)
@@ -7869,7 +7910,7 @@ civilized than your own.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/stepmania/stepmania.git")
+             (url "https://github.com/stepmania/stepmania")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -8104,7 +8145,7 @@ and cooperative.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/ryanakca/slingshot.git")
+             (url "https://github.com/ryanakca/slingshot")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -8407,7 +8448,7 @@ fight each other on an arena-like map.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/flareteam/flare-engine.git")
+                    (url "https://github.com/flareteam/flare-engine")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -8435,7 +8476,7 @@ action RPGs.")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/flareteam/flare-game.git")
+                    (url "https://github.com/flareteam/flare-game")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -8561,7 +8602,7 @@ Orcus Dome from evil.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/HackerPoet/MarbleMarcher.git")
+                      (url "https://github.com/HackerPoet/MarbleMarcher")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -8619,15 +8660,15 @@ levels to unlock.")
 (define simgear
   (package
     (name "simgear")
-    (version "2018.3.2")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://sourceforge/flightgear/release-"
-                                  (version-major+minor version) "/"
-                                  "simgear-" version ".tar.bz2"))
-              (sha256
-               (base32
-                "1941ay8rngz4vwsx37bbpxr48hpcvcbj3xw1hy264lq4qnl99c68"))))
+    (version "2018.3.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/flightgear/release-"
+                           (version-major+minor version) "/"
+                           "simgear-" version ".tar.bz2"))
+       (sha256
+        (base32 "1vkqm66r1205k3hdjmx5wmx5kvmsb0dgfzrs8n5gqnxj8szs42dl"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -8637,7 +8678,7 @@ levels to unlock.")
              ;; Skip tests that require internet access.
              (invoke "ctest" "-E" "(http|dns)"))))))
     (inputs
-     `(("boost" ,boost-for-mysql) ; fails with 1.69
+     `(("boost" ,boost-for-mysql)       ; fails with 1.69
        ("curl" ,curl)
        ("expat" ,expat)
        ("mesa" ,mesa)
@@ -8656,21 +8697,21 @@ and also provides the base for the FlightGear Flight Simulator.")
   (package
     (name "flightgear")
     (version (package-version simgear))
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://sourceforge/flightgear/release-"
-                                  (version-major+minor version) "/"
-                                  "flightgear-" version ".tar.bz2"))
-              (sha256
-               (base32
-                "0lzy524cjzs8vldcjcc750bgg5c4mq9fkymxxxzqf68ilc4d1jss"))
-              (modules '((guix build utils)))
-              (snippet
-               '(begin
-                  ;; There are some bundled libraries.
-                  (for-each delete-file-recursively
-                            '("3rdparty/sqlite3/"))
-                  #t))))
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/flightgear/release-"
+                           (version-major+minor version) "/"
+                           "flightgear-" version ".tar.bz2"))
+       (sha256
+        (base32 "0ya3vb539kwi1qrifqhsj5j3k4w6s06hrllp2vdzxf6id7cgf0hc"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; There are some bundled libraries.
+           (for-each delete-file-recursively
+                     '("3rdparty/sqlite3/"))
+           #t))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
@@ -8736,7 +8777,7 @@ and also provides the base for the FlightGear Flight Simulator.")
                                "FlightGear-" version "-data.tar.bz2"))
            (sha256
             (base32
-             "0h4npa7gqpf5fw6pv2bpw0wbwr7fa2vhia21cjbigfgd75x82zi7"))))))
+             "04fv9za5zlyxlyfh6jx78y42l3jazvzl9dq2y6rzxqlcc9g5swhk"))))))
     (home-page "https://home.flightgear.org/")
     (synopsis "Flight simulator")
     (description "The goal of the FlightGear project is to create a
@@ -8811,7 +8852,15 @@ play with up to four players simultaneously.  It has network support.")
        #:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda _ (invoke "ctest"))))))
+           (lambda _ (invoke "ctest")))
+         (add-after 'install 'install-icon
+           (lambda _
+             ;; Install icon for the desktop file.
+             (let* ((out (assoc-ref %outputs "out"))
+                    (icons (string-append out "/share/icons/hicolor/512x512/apps")))
+               (with-directory-excursion (string-append "../hedgewars-src-" ,version)
+                 (install-file "misc/hedgewars.png" icons)))
+             #t)))))
     (inputs
      `(("ffmpeg" ,ffmpeg)
        ("freeglut" ,freeglut)
@@ -9432,15 +9481,15 @@ win.")
 (define-public freeorion
   (package
     (name "freeorion")
-    (version "0.4.9")
+    (version "0.4.10")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/freeorion/freeorion/releases/"
                            "download/v" version "/FreeOrion_v" version
-                           "_2020-02-02.db53471_Source.tar.gz"))
+                           "_2020-07-10.f3d403e_Source.tar.gz"))
        (sha256
-        (base32 "1qfnqkysagh8dw26plk229qh17mv4prjxs6qhfyczrmrrakb72an"))
+        (base32 "12xspixrkx6mmmsdqjha0hg02r4y73pk229l0wjq9s0yp8nb8ap7"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -9473,7 +9522,7 @@ win.")
        ("libpng" ,libpng)
        ("libvorbis" ,libvorbis)
        ("openal" ,openal)
-       ("python2" ,python-2.7)
+       ("python" ,python)
        ("sdl2" ,sdl2)
        ("zlib" ,zlib)))
     (home-page "https://www.freeorion.org/index.php/Main_Page")
@@ -9499,7 +9548,7 @@ remake of that series or any other game.")
     (origin
      (method git-fetch)
      (uri (git-reference
-           (url "https://github.com/leela-zero/leela-zero.git")
+           (url "https://github.com/leela-zero/leela-zero")
            (commit (string-append "v" version))))
      (file-name (git-file-name name version))
      (sha256
@@ -9547,7 +9596,7 @@ can be downloaded from @url{https://zero.sjeng.org/best-network}.")
    (source (origin
             (method git-fetch)
             (uri (git-reference
-                  (url "https://github.com/bernds/q5Go.git")
+                  (url "https://github.com/bernds/q5Go")
                   (commit (string-append "q5go-" version))))
             (file-name (git-file-name name version))
             (sha256
@@ -9655,7 +9704,7 @@ can be downloaded from @url{https://zero.sjeng.org/best-network}.")
     (synopsis "Stamp drawing toy")
     (description "KTuberling is a drawing toy intended for small children and
 adults who remain young at heart.  The game has no winner; the only purpose is
-to make the funniest faces you can.  Several activites are possible, e.g.:
+to make the funniest faces you can.  Several activities are possible, e.g.:
 
 @itemize
 @item Give the potato a funny face, clothes, and other goodies
@@ -11163,7 +11212,7 @@ This package is part of the KDE games module.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/xmoto/xmoto.git")
+             (url "https://github.com/xmoto/xmoto")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -11255,7 +11304,7 @@ the more difficult challenges.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/fbergo/eboard.git")
+             (url "https://github.com/fbergo/eboard")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -11357,7 +11406,7 @@ etc.  You can also play games on FICS or against an engine.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/official-stockfish/Stockfish.git")
+             (url "https://github.com/official-stockfish/Stockfish")
              (commit (string-append "sf_" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -11449,7 +11498,7 @@ protect you.")
 (define-public 7kaa
   (package
     (name "7kaa")
-    (version "2.15.3")
+    (version "2.15.4p1")
     (source
      (origin
        (method url-fetch)
@@ -11457,7 +11506,7 @@ protect you.")
                            "releases/download/v" version "/"
                            "7kaa-" version ".tar.xz"))
        (sha256
-        (base32 "0blj47mcsfw1sn3465j6iham8m6ki07iggnq4q8nnaqnryx710jc"))))
+        (base32 "1y7v0jhp3apb619p7asikqr1dnwb2yxbh40wbx1ppmr5f03mq9ph"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("gettext" ,gettext-minimal)
@@ -11489,7 +11538,7 @@ kingdom.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/Neverball/neverball.git")
+               (url "https://github.com/Neverball/neverball")
                (commit commit)))
          (sha256
           (base32
@@ -11593,3 +11642,145 @@ and shovers to get to the goal.  Race against the clock to collect coins to
 earn extra balls.  Also included is Neverputt, which is a 3D miniature golf
 game.")  ;thanks to Debian for description
       (license license:gpl2+))))
+
+(define-public pokerth
+  (package
+    (name "pokerth")
+    (version "1.1.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/pokerth/pokerth/"
+                           version "/pokerth-" version ".tar.gz"))
+       (sha256
+        (base32 "0yi9bj3k8yc1gkwmaf14zbbvvn13n54n1dli8k6j1pkph3p3vjq2"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Remove bundled websocketpp.
+           (delete-file-recursively "src/third_party/websocketpp")
+           (substitute* "pokerth_lib.pro"
+             (("src/third_party/websocketpp")
+              ""))
+           #t))))
+    (build-system qt-build-system)
+    (inputs
+     `(("boost" ,boost)
+       ("curl" ,curl)
+       ("gsasl" ,gsasl)
+       ("libgcrypt" ,libgcrypt)
+       ("libircclient" ,libircclient)
+       ("protobuf" ,protobuf-2)         ; remove package when no longer needed
+       ("qtbase" ,qtbase)
+       ("sdl" ,(sdl-union (list sdl sdl-mixer)))
+       ("sqlite" ,sqlite)
+       ("tinyxml" ,tinyxml)
+       ("websocketpp" ,websocketpp)
+       ("zlib" ,zlib)))
+    (arguments
+     `(#:tests? #f ; No test suite
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* (find-files "." "\\.pro$")
+               (("/opt/gsasl")
+                (assoc-ref inputs "gsasl"))
+               (("\\$\\$\\{PREFIX\\}/include/libircclient")
+                (string-append (assoc-ref inputs "libircclient")
+                               "/include/libircclient"))
+               (("LIB_DIRS =")
+                (string-append "LIB_DIRS = "
+                               (assoc-ref inputs "boost") "/lib")))
+             #t))
+         (add-after 'unpack 'fix-build
+           (lambda _
+             ;; Fixes for Boost versions >= 1.66.
+             (substitute* '("src/net/common/clientthread.cpp"
+                            "src/net/serveraccepthelper.h")
+               (("boost::asio::socket_base::non_blocking_io command\\(true\\);")
+                "")
+               (("newSock->io_control\\(command\\);")
+                "newSock->non_blocking(true);")
+               (("acceptedSocket->io_control\\(command\\);")
+                "acceptedSocket->non_blocking(true);"))
+             #t))
+         (replace 'configure
+           (lambda* (#:key outputs #:allow-other-keys)
+             (invoke "qmake" "pokerth.pro" "CONFIG+=client"
+                     (string-append "PREFIX=" (assoc-ref outputs "out"))))))))
+    (home-page "https://www.pokerth.net")
+    (synopsis "Texas holdem poker game")
+    (description
+     "With PokerTH you can play the Texas holdem poker game, either against
+computer opponents or against real players online.")
+    (license license:agpl3+)))
+
+(define-public azimuth
+  (package
+    (name "azimuth")
+    ;; Not marked as latest release, but it fixes a compiling issue
+    ;; and adds the install target.
+    (version "1.0.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/mdsteele/azimuth")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "1znfvpmqiixd977jv748glk5zc4cmhw5813zp81waj07r9b0828r"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:test-target "test"
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)            ; no configure script
+         ;; Build release version instead of debug version.
+         (add-after 'unpack 'set-release
+           (lambda _
+             (setenv "BUILDTYPE" "release") #t))
+         (add-after 'unpack 'fix-install ; set install directory
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "Makefile" (("/usr") (assoc-ref outputs "out"))) #t)))))
+    (inputs `(("sdl" ,sdl)))
+    (home-page "https://mdsteele.games/azimuth/")
+    (synopsis "Metroidvania game with vector graphics")
+    (description
+     "Pilot your ship inside a planet to find and rescue the colonists trapped
+inside the Zenith Colony.")
+    (license license:gpl3+)))
+
+(define-public paperview
+  (let ((commit "9f8538eb6734c76877b878b8f1e52587f2ae19e6")
+        (revision "1"))
+    (package
+      (name "paperview")
+      (version (git-version "0.0.1" revision commit)) ;no upstream release
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/glouw/paperview")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "09sb9sg44fvkgfdyycrm1ndpx7cnkrglxhci41y8f3gpagnvi7jk"))))
+      (build-system gnu-build-system)
+      (inputs
+       `(("sdl2" ,sdl2)))
+      (arguments
+       '(#:tests? #f ;no tests
+         #:make-flags
+         (list (string-append "PREFIX=" (assoc-ref %outputs "out")))
+         #:phases
+         (modify-phases %standard-phases
+           (delete 'configure))))
+      (home-page "https://github.com/glouw/paperview/")
+      (synopsis "High performance X11 animated wallpaper setter")
+      (description "High performance animated desktop background setter for
+X11 that won't set your CPU on fire, drain your laptop battery, or lower video
+game FPS.")
+      (license license:unlicense))))

@@ -42,6 +42,8 @@
 ;;; Copyright © 2020 Nicolò Balzarotti <nicolo@nixo.xyz>
 ;;; Copyright © 2020 Tanguy Le Carrour <tanguy@bioneland.org>
 ;;; Copyright © 2020 Lars-Dominik Braun <ldb@leibniz-psychology.org>
+;;; Copyright © 2020 Guy Fleury Iteriteka <gfleury@disroot.org>
+;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -147,7 +149,7 @@
     (source (origin
       (method git-fetch)
       (uri (git-reference
-             (url "https://github.com/4store/4store.git")
+             (url "https://github.com/4store/4store")
              (commit (string-append "v" version))))
       (file-name (git-file-name name version))
       (sha256
@@ -608,6 +610,36 @@ RDBMS systems (which are deep in functionality).")
     (license (list license:agpl3
                    ;; Some parts are licensed under the Apache License
                    license:asl2.0))))
+
+(define-public mycli
+  (package
+    (name "mycli")
+    (version "1.22.2")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "mycli" version))
+        (sha256
+          (base32 "1lq2x95553vdmhw13cxcgsd2g2i32izhsb7hxd4m1iwf9b3msbpv"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f))                    ; tests expect a running MySQL
+    (propagated-inputs
+      `(("python-cli-helpers" ,python-cli-helpers)
+        ("python-click" ,python-click)
+        ("python-configobj" ,python-configobj)
+        ("python-cryptography" ,python-cryptography)
+        ("python-prompt-toolkit" ,python-prompt-toolkit)
+        ("python-pygments" ,python-pygments)
+        ("python-pymysql" ,python-pymysql)
+        ("python-sqlparse" ,python-sqlparse)))
+    (home-page "http://mycli.net")
+    (synopsis
+      "Terminal Client for MySQL with AutoCompletion and Syntax Highlighting")
+    (description
+      "MyCLI is a command line interface for MySQL, MariaDB, and Percona with
+auto-completion and syntax highlighting.")
+    (license license:bsd-3)))
 
 ;; XXX When updating, check whether boost-for-mysql is still needed.
 ;; It might suffice to patch ‘cmake/boost.cmake’ as done in the past.
@@ -1147,7 +1179,7 @@ including field and record folding.")))
 (define-public rocksdb
   (package
     (name "rocksdb")
-    (version "6.10.2")
+    (version "6.11.4")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1156,7 +1188,7 @@ including field and record folding.")))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1f2wqb6px812ijcivq3rsknqgkv01wblc6sd8wavhrw8qljgr3s1"))
+                "0n19p9cd13jg0lnibrzwkxs4xlrhyj3knypkd2ic41arbds0bdnl"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -1401,7 +1433,7 @@ which uses SQL to describe changes.")
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://github.com/coffeeandscripts/sqlcrush.git")
+                      (url "https://github.com/coffeeandscripts/sqlcrush")
                       (commit commit)))
                 (file-name (git-file-name name version))
                 (sha256
@@ -1941,14 +1973,14 @@ sets, bitmaps and hyperloglogs.")
 (define-public kyotocabinet
   (package
     (name "kyotocabinet")
-    (version "1.2.77")
+    (version "1.2.78")
     (source (origin
               (method url-fetch)
-              (uri (string-append "http://fallabs.com/kyotocabinet/pkg/"
-                                  name "-" version ".tar.gz"))
+              (uri (string-append "https://fallabs.com/kyotocabinet/pkg/"
+                                  "kyotocabinet-" version ".tar.gz"))
               (sha256
                (base32
-                "1rlx4307adbzd842b4npq6cwlw8h010ingxaz3qz1ijc70lr72an"))))
+                "1bxkf9kmcavq9rqridb8mvmrk3hj4447ffi24m2admsbm61n6k29"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -1957,7 +1989,7 @@ sets, bitmaps and hyperloglogs.")
         (string-append "LDFLAGS=-Wl,-rpath="
                        (assoc-ref %outputs "out") "/lib"))))
     (inputs `(("zlib" ,zlib)))
-    (home-page "http://fallabs.com/kyotocabinet/")
+    (home-page "https://fallabs.com/kyotocabinet/")
     (synopsis
      "Kyoto Cabinet is a modern implementation of the DBM database")
     (description
@@ -2117,7 +2149,7 @@ database.")
 (define-public lmdb
   (package
     (name "lmdb")
-    (version "0.9.25")
+    (version "0.9.26")
     (source
      (origin
        (method git-fetch)
@@ -2126,7 +2158,7 @@ database.")
              (commit (string-append "LMDB_" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0i60zlca8r6fib23gdgl4c80gxpx24772ggpvz94yr7zaai4k11w"))))
+        (base32 "0323xwb2rqyrr9vr6gbxc2kl89drhqw0ifmyh9pg9qgqmymyhxdx"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -2160,7 +2192,7 @@ virtual address space — not physical RAM.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/drycpp/lmdbxx.git")
+             (url "https://github.com/drycpp/lmdbxx")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -2389,7 +2421,7 @@ for ODBC.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/brianb/mdbtools.git")
+             (url "https://github.com/brianb/mdbtools")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -2418,13 +2450,13 @@ etc., and an SQL engine for performing simple SQL queries.")
 (define-public python-lmdb
   (package
     (name "python-lmdb")
-    (version "0.98")
+    (version "0.99")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "lmdb" version))
               (sha256
                (base32
-                "027pgbdhhdcbwj53vrzr6a60gjhmz4s75gl3180fd4q8pwlbq986"))
+                "12fwlzfd82471ss9xzbqwcqc6f5miy51y72y2yya9j5cm9589szr"))
               (modules '((guix build utils)))
               (snippet
                ;; Delete bundled lmdb source files.
@@ -2517,7 +2549,19 @@ implementation for Python.")
        ;; TODO: Removing the libsrc/zlib source directory breaks the build.
        ;; This indicates that the internal zlib code may still be used.
        #:configure-flags '("--without-internal-zlib"
-                           "--with-readline")))
+                           "--with-readline"
+                           "--enable-static=no")
+       #:phases
+       (modify-phases %standard-phases
+         ;; Even with "--enable-static=no", "libvirtuoso-t.a" is left in
+         ;; the build output.  The following phase removes it.
+         (add-after 'install 'remove-static-libs
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((lib (string-append (assoc-ref outputs "out") "/lib")))
+               (for-each (lambda (file)
+                           (delete-file (string-append lib "/" file)))
+                         '("libvirtuoso-t.a"
+                           "libvirtuoso-t.la"))))))))
     (inputs
      `(("openssl" ,openssl-1.0)
        ("net-tools" ,net-tools)
@@ -2588,13 +2632,13 @@ Database API 2.0T.")
 (define-public python-sqlalchemy
   (package
     (name "python-sqlalchemy")
-    (version "1.3.15")
+    (version "1.3.18")
     (source
      (origin
       (method url-fetch)
       (uri (pypi-uri "SQLAlchemy" version))
       (sha256
-       (base32 "0iglkvymfp35zm5pxy5kzqvcv96kkas0chqdx7xpla86sspa9k64"))))
+       (base32 "1rwc6ss1cnz3kxx0p9p6xw0w79r8qw03lcc29k31yb3rcigvfbys"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-cython" ,python-cython) ; for C extensions
@@ -2671,15 +2715,13 @@ You might also want to install the following optional dependencies:
 (define-public python-alembic
   (package
     (name "python-alembic")
-    (version "1.4.1")
+    (version "1.4.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "alembic" version))
-       (patches (search-patches "python-alembic-exceptions-cause.patch"))
        (sha256
-        (base32
-         "0a4hzn76csgbf1px4f5vfm256byvjrqkgi9869nkcjrwjn35c6kr"))))
+        (base32 "1gsdrzx9h7wfva200qvvsc9sn4w79mk2vs0bbnzjhxi1jw2b0nh3"))))
     (build-system python-build-system)
     (arguments
      '(#:phases (modify-phases %standard-phases
@@ -2855,13 +2897,13 @@ designed to be easy and intuitive to use.")
 (define-public python-psycopg2
   (package
     (name "python-psycopg2")
-    (version "2.8.4")
+    (version "2.8.5")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "psycopg2" version))
        (sha256
-        (base32 "1djvh98pi4hjd8rxbq8qzc63bg8v78k33yg6pl99wak61b6fb67q"))))
+        (base32 "06081jk9srkd4ra9j8b93x9ld3a2yxsbsf5bbbcivbm1yx065m7p"))))
     (build-system python-build-system)
     (arguments
      ;; Tests would require a postgresql database "psycopg2_test"
@@ -3074,13 +3116,13 @@ is designed to have a low barrier to entry.")
 (define-public python-sqlparse
   (package
     (name "python-sqlparse")
-    (version "0.2.4")
+    (version "0.3.1")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "sqlparse" version))
               (sha256
                (base32
-                "1v3xh0bkfhb262dbndgzhivpnhdwavdzz8jjhx9vx0xbrx2880nf"))))
+                "0j652a6z7bdf6c77aczfn8m8b2nsr1bcqq48wzghf8vi6wvj0qp1"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -3125,7 +3167,7 @@ transforms idiomatic python function calls to well-formed SQL queries.")
     (source
      (origin (method git-fetch)
              (uri (git-reference
-                   (url "https://github.com/kayak/pypika.git")
+                   (url "https://github.com/kayak/pypika")
                    (commit (string-append "v" version))))
              (file-name (git-file-name name version))
              (sha256

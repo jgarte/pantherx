@@ -125,15 +125,14 @@ in intelligent transportation networks.")
 (define-public p11-kit
   (package
     (name "p11-kit")
-    (version "0.23.20")
+    (version "0.23.21")
     (source
      (origin
       (method url-fetch)
       (uri (string-append "https://github.com/p11-glue/p11-kit/releases/"
                           "download/" version "/p11-kit-" version ".tar.xz"))
       (sha256
-       (base32
-        "0131maw666ha4d6iyj13fkz18c4pnb3lw2xwv5kvkmnzqcj61n0l"))))
+       (base32 "09q6n63qmqcdw6v0fwmhdmsqrcndnp5m9jvby1kxi82wy29s9fpi"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -891,22 +890,29 @@ then ported to the GNU / Linux environment.")
 (define-public mbedtls-apache
   (package
     (name "mbedtls-apache")
-    (version "2.16.6")
+    ;; XXX Check whether ‘-Wformat-signedness’ still breaks mbedtls-for-hiawatha
+    ;; when updating.
+    (version "2.23.0")
     (source
      (origin
-       (method url-fetch)
-       ;; XXX: The download links on the website are script redirection links
-       ;; which effectively lead to the format listed in the uri here.
-       (uri (string-append "https://tls.mbed.org/download/mbedtls-"
-                           version "-apache.tgz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/ARMmbed/mbedtls")
+             (commit (string-append "mbedtls-" version))))
        (sha256
-        (base32
-         "0w0p51vx0cc6fyqfdn59669q6n4187vi64fw5ha302hrlqimwib6"))))
+        (base32 "13fa9h2i989cbf8n8c0j019mshv6wg213va18my1s787lhcq2d62"))
+       (file-name (git-file-name name version))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
        (list "-DUSE_SHARED_MBEDTLS_LIBRARY=ON"
-             "-DUSE_STATIC_MBEDTLS_LIBRARY=OFF")))
+             "-DUSE_STATIC_MBEDTLS_LIBRARY=OFF")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'make-source-writable
+           (lambda _
+             (for-each make-file-writable (find-files "."))
+             #t)))))
     (native-inputs
      `(("perl" ,perl)
        ("python" ,python)))
@@ -925,17 +931,19 @@ coding footprint.")
    (package
      (inherit mbedtls-apache)
      (arguments
-      (substitute-keyword-arguments
-          `(#:phases
-            (modify-phases %standard-phases
-              (add-after 'configure 'configure-extra-features
-                (lambda _
-                  (for-each (lambda (feature)
-                              (invoke "scripts/config.pl" "set" feature))
-                            (list "MBEDTLS_THREADING_C"
-                                  "MBEDTLS_THREADING_PTHREAD"))
-                  #t)))
-            ,@(package-arguments mbedtls-apache)))))))
+      (substitute-keyword-arguments (package-arguments mbedtls-apache)
+        ((#:phases phases)
+         `(modify-phases ,phases
+            (add-before 'configure 'configure-extra-features
+              (lambda _
+                (for-each (lambda (feature)
+                            (invoke "scripts/config.pl" "set" feature))
+                          (list "MBEDTLS_THREADING_C"
+                                "MBEDTLS_THREADING_PTHREAD"))
+                ;; XXX The above enables code that breaks with -Werror…
+                (substitute* "CMakeLists.txt"
+                  ((" -Wformat-signedness") ""))
+                #t)))))))))
 
 (define-public dehydrated
   (package

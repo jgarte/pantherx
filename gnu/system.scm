@@ -35,8 +35,9 @@
   #:use-module (guix packages)
   #:use-module (guix derivations)
   #:use-module (guix profiles)
-  #:use-module (guix ui)
-  #:use-module (guix utils)
+  #:use-module ((guix utils) #:select (substitute-keyword-arguments))
+  #:use-module (guix i18n)
+  #:use-module (guix diagnostics)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages cross-base)
@@ -118,6 +119,7 @@
             operating-system-sudoers-file
             operating-system-swap-devices
             operating-system-kernel-loadable-modules
+            operating-system-location
 
             operating-system-derivation
             operating-system-profile
@@ -255,7 +257,12 @@
                    (default %setuid-programs))    ; list of string-valued gexps
 
   (sudoers-file operating-system-sudoers-file     ; file-like
-                (default %sudoers-specification)))
+                (default %sudoers-specification))
+
+  (location operating-system-location             ; <location>
+            (default (and=> (current-source-location)
+                            source-properties->location))
+            (innate)))
 
 (define (operating-system-kernel-arguments os root-device)
   "Return all the kernel arguments, including the ones not specified
@@ -644,7 +651,20 @@ bookkeeping."
                                     gc-root-service-type roots)
                     (operating-system-user-services os)))))
 
-(define* (operating-system-with-provenance os #:optional config-file)
+(define (operating-system-configuration-file os)
+  "Return the configuration file of OS, based on its 'location' field, or #f
+if it could not be determined."
+  (let ((file (and=> (operating-system-location os)
+                     location-file)))
+    (and file
+         (or (and (string-prefix? "/" file) file)
+             (search-path %load-path file)))))
+
+(define* (operating-system-with-provenance os
+                                           #:optional
+                                           (config-file
+                                            (operating-system-configuration-file
+                                             os)))
   "Return a variant of OS that stores its own provenance information,
 including CONFIG-FILE, if available.  This is achieved by adding an instance
 of PROVENANCE-SERVICE-TYPE to its services."
@@ -1026,9 +1046,13 @@ we're running in the final root."
 
 (define (operating-system-root-file-system os)
   "Return the root file system of OS."
-  (find (lambda (fs)
-          (string=? "/" (file-system-mount-point fs)))
-        (operating-system-file-systems os)))
+  (or (find (lambda (fs)
+              (string=? "/" (file-system-mount-point fs)))
+            (operating-system-file-systems os))
+      (raise (condition
+              (&message (message "missing root file system"))
+              (&error-location
+               (location (operating-system-location os)))))))
 
 (define (operating-system-initrd-file os)
   "Return a gexp denoting the initrd file of OS."
@@ -1102,9 +1126,7 @@ TYPE (one of 'iso9660 or 'dce).  Return a UUID object."
   "Variant of 'locale-name->definition' that raises an error upon failure."
   (match (locale-name->definition name)
     (#f
-     (raise (condition
-             (&message
-              (message (format #f (G_ "~a: invalid locale name") name))))))
+     (raise (formatted-message (G_ "~a: invalid locale name") name)))
     (def def)))
 
 (define (operating-system-locale-directory os)
