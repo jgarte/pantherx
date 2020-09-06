@@ -2575,7 +2575,7 @@ interrupted, published, and collaborated on while in progress.")
 (define-public git-lfs
   (package
     (name "git-lfs")
-    (version "2.7.2")
+    (version "2.11.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2584,10 +2584,35 @@ interrupted, published, and collaborated on while in progress.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1nf40rbdz901vsahg5cm09pznpina6wimmxl0lmh8pn0mi51yzvc"))))
+                "05qd96bn2cl7gn5qarbcv6scdpj28qiwdfzalamqk5jjiidpmng5"))))
     (build-system go-build-system)
     (arguments
-     '(#:import-path "github.com/git-lfs/git-lfs"))
+     `(#:import-path "github.com/git-lfs/git-lfs"
+       #:install-source? #f
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'build 'man-gen
+           ;; Without this, the binary generated in 'build
+           ;; phase won't have any embedded usage-text.
+           (lambda _
+             (with-directory-excursion "src/github.com/git-lfs/git-lfs"
+               (invoke "make" "mangen"))))
+         (add-after 'build 'build-man-pages
+           (lambda _
+             (with-directory-excursion "src/github.com/git-lfs/git-lfs"
+               (invoke "make" "man"))
+             #t))
+         (add-after 'install 'install-man-pages
+           (lambda _
+             (with-directory-excursion "src/github.com/git-lfs/git-lfs/man"
+               (let ((out (assoc-ref %outputs "out")))
+                 (for-each
+                   (lambda (manpage)
+                     (install-file manpage (string-append out "/share/man/man1")))
+                   (find-files "." "^git-lfs.*\\.1$"))))
+             #t)))))
+    ;; make `ronn` available during build for man page generation
+    (native-inputs `(("ronn-ng" ,ronn-ng)))
     (home-page "https://git-lfs.github.com/")
     (synopsis "Git extension for versioning large files")
     (description

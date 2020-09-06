@@ -3,7 +3,7 @@
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2017 Christopher Baines <mail@cbaines.net>
 ;;; Copyright © 2016, 2017 Danny Milosavljevic <dannym+a@scratchpost.org>
-;;; Copyright © 2013, 2014, 2015, 2016 Andreas Enge <andreas@enge.fr>
+;;; Copyright © 2013, 2014, 2015, 2016, 2020 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2016, 2017, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Roel Janssen <roel@gnu.org>
@@ -1856,6 +1856,27 @@ WebSocket usage in Python programs.")
           ,python2-backport-ssl-match-hostname)
          ,@(package-native-inputs base))))))
 
+(define-public python-purl
+  (package
+    (name "python-purl")
+    (version "1.5")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "purl" version))
+        (sha256
+          (base32
+            "15ibnz1xrh5msmn04j0nr00sz4n7jwx6cwd6zlx99kkz3vpin53m"))))
+    (build-system python-build-system)
+    (propagated-inputs `(("python-six" ,python-six)))
+    (home-page
+      "https://github.com/codeinthehole/purl")
+    (synopsis
+      "Python package for URL manipulation")
+    (description
+      "Purl is a Python package for handling URLs.")
+    (license license:expat)))
+
 (define-public python-requests
   (package
     (name "python-requests")
@@ -1898,18 +1919,6 @@ than Python’s urllib2 library.")
               ("python-idna" ,python-idna-2.7)
               ,@(package-propagated-inputs python-requests)))))
 
-;; Some software requires an older version of Requests, notably Docker
-;; Compose.
-(define-public python-requests-2.7
-  (package (inherit python-requests)
-    (version "2.7.0")
-    (source (origin
-             (method url-fetch)
-             (uri (pypi-uri "requests" version))
-             (sha256
-              (base32
-               "0gdr9dxm24amxpbyqpbh3lbwxc2i42hnqv50sigx568qssv3v2ir"))))))
-
 (define-public python2-requests
   (package-with-python2 python-requests))
 
@@ -1940,14 +1949,14 @@ library.")
 (define-public python-requests-mock
   (package
     (name "python-requests-mock")
-    (version "1.3.0")
+    (version "1.8.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "requests-mock" version))
        (sha256
         (base32
-         "0jr997dvk6zbmhvbpcv3rajrgag69mcsm1ai3w3rgk2jdh6rg1mx"))))
+         "09nj8fmyj7xz2mgwyvbw0fl9zybmx2d3qd2hf529vvjc9s24d3z6"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-requests" ,python-requests)
@@ -1958,9 +1967,10 @@ library.")
        ("python-docutils" ,python-docutils)
        ("python-fixtures" ,python-fixtures)
        ("python-mock" ,python-mock)
+       ("python-purl" ,python-purl)
+       ("python-pytest" ,python-pytest)
        ("python-sphinx" ,python-sphinx)
-       ("python-testrepository" ,python-testrepository)
-       ("python-testtools" ,python-testtools)))
+       ("python-testrepository" ,python-testrepository)))
     (home-page "https://requests-mock.readthedocs.org/")
     (synopsis "Mock out responses from the requests package")
     (description
@@ -2002,6 +2012,20 @@ with python-requests.")
 
 (define-public python2-requests-toolbelt
   (package-with-python2 python-requests-toolbelt))
+
+(define-public python-requests-toolbelt-0.9.1
+  (package
+    (inherit python-requests-toolbelt)
+    (version "0.9.1")
+    (source (origin
+             (method url-fetch)
+             (uri (pypi-uri "requests-toolbelt" version))
+             (sha256
+              (base32
+               "1h3gm88dcjbd7gm229a7x5qkkhnsqsjz0m0l2xyavm2ab3a8k04n"))))
+    (arguments
+     `(;; FIXME: Some tests require network access.
+       #:tests? #f))))
 
 (define-public python-oauthlib
   (package
@@ -4651,4 +4675,40 @@ using a pure Python implementation.")
     (description
      "This package provices a simple implementation of Encrypted Content
 Encoding for HTTP.")
+    (license license:expat)))
+
+(define-public python-cloudscraper
+  (package
+    (name "python-cloudscraper")
+    (version "1.2.46")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "cloudscraper" version))
+       (sha256
+        (base32
+         "1br4p648yassywsd7whz1c7s10rwdysnd7wdqfjq9bksqfxrac3r"))
+       (modules '((guix build utils)))
+       (snippet
+        '(with-directory-excursion "cloudscraper"
+           (for-each delete-file
+                     '("captcha/2captcha.py"
+                       "captcha/9kw.py"
+                       "captcha/anticaptcha.py"
+                       "captcha/deathbycaptcha.py"
+                       "interpreters/js2py.py"
+                       "interpreters/v8.py"))
+           #t))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-requests" ,python-requests)
+       ("python-requests-toolbelt" ,python-requests-toolbelt-0.9.1)
+       ("python-pyparsing" ,python-pyparsing-2.4.7)))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/venomous/cloudscraper")
+    (synopsis "Cloudflare anti-bot bypass")
+    (description
+     "This module acts as a webbrowser solving Cloudflare's Javascript
+challenges.")
     (license license:expat)))

@@ -2437,11 +2437,11 @@ The picture values can directly be displayed in Geiser.")
                       guile-picture-language))
 
 (define-public guile-studio
-  (let ((commit "d24d59a68e3f1fa9477e3430fc48a2efe97b805d")
+  (let ((commit "5c05b03e8a5c450f7358ceec7ea602f29c49d54e")
         (revision "1"))
     (package
       (name "guile-studio")
-      (version (git-version "0.0.2" revision commit))
+      (version (git-version "0.0.3" revision commit))
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
@@ -2450,7 +2450,7 @@ The picture values can directly be displayed in Geiser.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0kqi0q8a7si65n21b7gn8vbninwcg0fqy5hmvy3l1bi6iync20zr"))))
+                  "11wyf6x7mhyhimv0cd57pl39zgav9hc9ljqi3g2g35b264hylpnx"))))
       (build-system gnu-build-system)
       (arguments
        `(#:modules
@@ -2487,6 +2487,7 @@ The picture values can directly be displayed in Geiser.")
          ("emacs-geiser" ,emacs-geiser)
          ("emacs-company" ,emacs-company)
          ("emacs-flycheck" ,emacs-flycheck)
+         ("emacs-flycheck-guile" ,emacs-flycheck-guile)
          ("emacs-smart-mode-line" ,emacs-smart-mode-line)
          ("emacs-paren-face" ,emacs-paren-face)
          ("adwaita-icon-theme" ,adwaita-icon-theme)))
@@ -2803,6 +2804,60 @@ pre-alpha code.")
 parameters, which  define* and lambda* special forms")
     (license license:gpl3+)))
 
+(define-public guile-srfi-145
+  (package
+    (name "guile-srfi-145")
+    (version "0.0.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.com/mjbecze/guile-srfi-145.git")
+             (commit version)))
+       (sha256
+         (base32
+           "1gssa8cmcp8640fil9z8dpil8v5l279wlalqjcx3fls5jwv13q1b"))
+       (file-name (git-file-name name version))))
+    (build-system guile-build-system)
+    (native-inputs
+     `(("guile" ,guile-3.0)))
+    (home-page "https://gitlab.com/mjbecze/guile-srfi-145")
+    (synopsis "SRFI-145 port for Guile")
+    (description
+     "This package provides SRFI-145.  This provides the means to
+denote the invalidity of certain code paths in a Scheme program.")
+    (license license:gpl3+)))
+
+(define-public guile-srfi-158
+  (package
+    (name "guile-srfi-158")
+    (version "0.0.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.com/mjbecze/guile-srfi-158.git")
+             (commit version)))
+       (sha256
+        (base32
+         "0b8hlv1bldbcwkcxi9y8mm6xp5gbgpg7b15bwqxv70iynl9d9a7c"))
+       (file-name (git-file-name name version))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("guile" ,guile-3.0)))
+    (home-page "https://gitlab.com/samplet/guile-srfi-158")
+    (synopsis "SRFI 158 (Generators and Accumulators) for Guile")
+    (description "This package provides an implementation of SRFI 158
+for Guile.  SRFI 158 defines utility procedures that create,
+transform, and consume generators.  It also defines procedures that
+return accumulators.  It is implemented by wrapping the sample
+implementation in a thin Guile compatibility layer.")
+    (license license:gpl3+)))
+
 (define-public guile-srfi-159
   (let ((commit "1bd98abda2ae4ef8f36761a167903e55c6bda7bb")
         (revision "0"))
@@ -2832,6 +2887,45 @@ formatting combinators specified by
 @uref{https://srfi.schemers.org/srfi-159/srfi-159.html, SRFI-159}.  These are
 more expressive and flexible than the traditional @code{format} procedure.")
       (license license:bsd-3))))
+
+(define-public guile-srfi-180
+  (let ((commit "9188bf9724c6d320ef804579d222e855b007b193")
+        (revision "0"))
+    (package
+      (name "guile-srfi-180")
+      (version (git-version "0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/scheme-requests-for-implementation/srfi-180.git")
+               (commit commit)))
+         (sha256
+          (base32
+           "08lf70rsak8mwfij55xc37pg9zg7c87fizmhz7ln46skzj68sl3y"))
+         (modules '((guix build utils)))
+         (snippet
+          '(begin
+             (delete-file-recursively "srfi/files")
+             (delete-file "srfi/run-r7rs-checks.guile.scm")
+             (delete-file "srfi/run-r7rs-checks.scm")
+             (delete-file "srfi/check.scm")
+             #t))
+         (file-name (git-file-name name version))))
+      (build-system guile-build-system)
+      (arguments
+       '(#:not-compiled-file-regexp "body\\.scm$"))
+      (native-inputs
+       `(("guile" ,guile-3.0)))
+      (propagated-inputs
+       `(("guile-srfi-145" ,guile-srfi-145)))
+      (home-page "https://srfi.schemers.org/srfi-180/")
+      (synopsis "JSON parser and printer for Guile")
+      (description
+       "This library implements a JavaScript Object Notation (JSON) parser and printer.
+It also supports parsing JSON objects that may be bigger than memory with a streaming
+API.")
+      (license license:expat))))
 
 (define-public emacsy
   (package
