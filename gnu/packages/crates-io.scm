@@ -8,6 +8,7 @@
 ;;; Copyright © 2019, 2020 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020 Leo Famulari <leo@famulari.name>
+;;; Copyright © 2020 Gabriel Arazas <foo.dogsquared@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -441,6 +442,37 @@ shapes, lines and text to buffers.")
     (synopsis "Glue for the Android JNI")
     (description "This package provides the glue for the Android JNI.")
     (license license:expat)))
+
+(define-public rust-ansi-colours-1
+  (package
+    (name "rust-ansi-colours")
+    (version "1.0.1")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "ansi_colours" version))
+        (file-name
+         (string-append name "-" version ".tar.gz"))
+        (sha256
+         (base32
+          "1dnqmpk68mzvncj37jlv0362kdgsgjxg010c6psagimgh4m303qx"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:cargo-inputs
+       (("rust-cc" ,rust-cc-1))
+       #:cargo-development-inputs
+       (("rust-delta-e" ,rust-delta-e-0.2)
+        ("rust-lab" ,rust-lab-0.4))))
+    (home-page "https://github.com/mina86/ansi_colours")
+    (synopsis "Palette converter between true-colour and ANSI terminal")
+    (description
+     "@code{ansi_colours} is a library which converts between 24-bit sRGB
+colours and 8-bit colour palette used by ANSI terminals such as @code{xterm} on
+@code{rxvt-unicode} in 256-colour mode.
+The most common use case is when using 24-bit colours in a terminal emulator
+which only support 8-bit colour palette.  This package allows true-colours to be
+approximated by values supported by the terminal.")
+    (license license:lgpl3+)))
 
 (define-public rust-ansi-term-0.12
   (package
@@ -5443,6 +5475,29 @@ and arithmetic.")
         (sha256
          (base32
           "17giv0n0n1r64z0dahfvkjy3ys517jxyhs8sd9lmgvcljpjyryxa"))))))
+
+(define-public rust-delta-e-0.2
+  (package
+    (name "rust-delta-e")
+    (version "0.2.1")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "delta_e" version))
+        (file-name
+         (string-append name "-" version ".tar.gz"))
+        (sha256
+         (base32
+          "18rxibmi27ark8vj367qm2iqmv5x293l8fm9ang4y2sv3l251sf5"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:cargo-inputs (("rust-lab" ,rust-lab-0.7))))
+    (home-page "https://github.com/elliotekj/DeltaE")
+    (synopsis "Pure Rust implementation of the CIEDE2000 algorithm")
+    (description "DeltaE is a pure-Rust implementation of the
+@url{http://en.wikipedia.org/wiki/Color_difference#CIEDE2000, CIEDE2000}
+algorithm which serves to quantify the difference between two colors.")
+    (license license:expat)))
 
 (define-public rust-demo-hack-0.0
   (package
@@ -12219,6 +12274,74 @@ script, countries and other regions.  They are commonly used in HTML and HTTP
 currently supports parsing (fully conformant parser), formatting and comparing
 language tags.")
     (license license:expat)))
+
+(define-public rust-lab-0.8
+  (package
+    (name "rust-lab")
+    (version "0.8.1")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "lab" version))
+        (file-name
+         (string-append name "-" version ".tar.gz"))
+        (sha256
+         (base32
+          "1ysnbviwi35mq6xyz9c59mpgigyfp4s4y2mispxzrms4vk83bx15"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:cargo-development-inputs
+       (("rust-approx" ,rust-approx-0.3)
+        ("rust-criterion" ,rust-criterion-0.3)
+        ("rust-lazy-static" ,rust-lazy-static-1)
+        ("rust-pretty-assertions" ,rust-pretty-assertions-0.6)
+        ("rust-rand" ,rust-rand-0.5))))
+    (home-page "https://github.com/TooManyBees/lab")
+    (synopsis "Convert RGB to CIE-LAB for Rust")
+    (description
+     "This package contains tools for converting RGB colors to the CIE-LAB color
+space, and comparing differences in color.")
+    (license license:expat)))
+
+(define-public rust-lab-0.7
+  (package
+    (inherit rust-lab-0.8)
+    (name "rust-lab")
+    (version "0.7.2")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "lab" version))
+        (file-name
+         (string-append name "-" version ".tar.gz"))
+        (sha256
+         (base32
+          "0g692d489lq01pv3mzfhxd98j0r22lw28l6bk112m74djlfzxdmw"))))
+    (arguments
+     `(#:tests? #f  ; test suite assumes avx2 support
+       #:cargo-development-inputs
+       (("rust-criterion" ,rust-criterion-0.3)
+        ("rust-lazy-static" ,rust-lazy-static-1)
+        ("rust-pretty-assertions" ,rust-pretty-assertions-0.6)
+        ("rust-rand" ,rust-rand-0.5))))))
+
+(define-public rust-lab-0.4
+  (package
+    (inherit rust-lab-0.8)
+    (name "rust-lab")
+    (version "0.4.4")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "lab" version))
+        (file-name
+         (string-append name "-" version ".tar.gz"))
+        (sha256
+         (base32
+          "0h4ig5bvzmwlzd74zj7b4sh7kzi3c6mjjnw7yjz8ijxvr4mrcr1s"))))
+    (arguments
+     `(#:cargo-development-inputs
+       (("rust-rand" ,rust-rand-0.3))))))
 
 (define-public rust-lalrpop-0.17
   (package

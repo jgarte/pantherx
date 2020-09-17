@@ -137,7 +137,10 @@ call THUNK."
              (loop)))))))
 
 
-(define (guix-repl . args)
+(define-command (guix-repl . args)
+  (category plumbing)
+  (synopsis "read-eval-print loop (REPL) for interactive programming")
+
   (define opts
     (args-fold* args %options
                 (lambda (opt name arg result)
@@ -175,7 +178,10 @@ call THUNK."
        (lambda ()
          (set-program-arguments script)
          (set-user-module)
-         (load-in-vicinity "." (car script)))))
+
+         ;; When passed a relative file name, 'load-in-vicinity' searches the
+         ;; file in %LOAD-PATH.  Thus, pass (getcwd) instead of ".".
+         (load-in-vicinity (getcwd) (car script)))))
 
     (when (null? script)
       ;; Start REPL

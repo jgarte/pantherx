@@ -130,8 +130,8 @@
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
   (let ((version "1.1.0")
-        (commit "49e569c9d447e14c5e3f7d3ae14a50087af55efc")
-        (revision 25))
+        (commit "1c21468c7a7d09fbe065d1ceebf5f542537c877c")
+        (revision 27))
     (package
       (name "guix")
 
@@ -147,7 +147,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "1h5sabcbk828wpnp2qw8dc7mywv189mgyrk4lh91ahxf85l2rmjw"))
+                  "0bprn9inpqmc41ldcykl5pnybgz3slflrnb9pywfn3gsr4r48lbm"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -1150,15 +1150,15 @@ for packaging and deployment of cross-compiled Windows applications.")
 (define-public libostree
   (package
     (name "libostree")
-    (version "2020.5")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append
-                    "https://github.com/ostreedev/ostree/releases/download/v"
-                    (version-major+minor version) "/libostree-" version ".tar.xz"))
-              (sha256
-               (base32
-                "1k92177hjalbdpmg45ymwwrni68vh9rs5x9zvy5fzl9lng12fgpb"))))
+    (version "2020.6")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://github.com/ostreedev/ostree/releases/download/v"
+             (version-major+minor version) "/libostree-" version ".tar.xz"))
+       (sha256
+        (base32 "0wk9fgj9jl25ns2hcgcb6j24k5mvfn13b02ka0p8l4hdh8c4hpc6"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
