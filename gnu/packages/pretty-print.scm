@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2016, 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017 Ludovic Courtès <ludo@gnu.org>
@@ -168,14 +168,14 @@ different programming languages.")
 (define-public fmt
   (package
     (name "fmt")
-    (version "6.2.1")
+    (version "7.0.3")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/fmtlib/fmt/releases/download/"
                            version "/fmt-" version ".zip"))
        (sha256
-        (base32 "06l8g59frbsbwj15kg6x2bbn6p8yidh6wzsigdhbdjncvm1agzll"))))
+        (base32 "0kgajl3qsrdyj0csqsz8b8h84kasdy0pnh16byl0y1vlsaddzkyy"))))
     (build-system cmake-build-system)
     (arguments
      '(#:configure-flags '("-DBUILD_SHARED_LIBS=ON")))
@@ -189,6 +189,19 @@ It can be used as a safe alternative to @code{printf} or as a fast alternative
 to @code{IOStreams}.")
     ;; The library is bsd-2, but documentation and tests include other licenses.
     (license (list bsd-2 bsd-3 psfl))))
+
+(define-public fmt-6
+  (package
+    (inherit fmt)
+    (name "fmt")
+    (version "6.2.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/fmtlib/fmt/releases/download/"
+                           version "/fmt-" version ".zip"))
+       (sha256
+        (base32 "06l8g59frbsbwj15kg6x2bbn6p8yidh6wzsigdhbdjncvm1agzll"))))))
 
 (define-public source-highlight
   (package
@@ -247,14 +260,14 @@ seen in a terminal.")
 (define-public highlight
   (package
     (name "highlight")
-    (version "3.54")
+    (version "3.58")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://www.andre-simon.de/zip/highlight-"
                            version ".tar.bz2"))
        (sha256
-        (base32 "1l6nxk3vwd7rkxpq9aqisjyps89r008wzn3abh4566q6jigahl4a"))))
+        (base32 "1y25vc3nysdih4y9z6yqn1k3i6lgkbyqkmdaib2xyfpqw4djb06z"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no tests

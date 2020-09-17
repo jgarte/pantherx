@@ -197,7 +197,10 @@ example, modify the message headers or body, or encrypt or sign the message.")
                                  version ".tar.xz"))
              (sha256
               (base32
-               "17smrxjdgbbzbzakik30vj46q4iib85ksqhb82jr4vjp57akszh9"))))
+               "17smrxjdgbbzbzakik30vj46q4iib85ksqhb82jr4vjp57akszh9"))
+             (patches
+              ;; Fixes https://issues.guix.gnu.org/43088.
+              (search-patches "mailutils-fix-uninitialized-variable.patch"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -395,7 +398,7 @@ to run without any changes.")
 (define-public fetchmail
   (package
     (name "fetchmail")
-    (version "6.4.11")
+    (version "6.4.12")
     (source
      (origin
        (method url-fetch)
@@ -403,7 +406,7 @@ to run without any changes.")
                            (version-major+minor version) "/"
                            "fetchmail-" version ".tar.xz"))
        (sha256
-        (base32 "177276dha2pchsvlki0skf460kmjnixqmzc6nj33fz4hd7c1sj1y"))))
+        (base32 "11s83af63gs9nnrjb66yq58xriyvi8hzj4ykxp3kws5z3nby111b"))))
     (build-system gnu-build-system)
     (inputs
      `(("openssl" ,openssl)))
@@ -626,6 +629,117 @@ Extension (MIME).")
               (sha256
                (base32
                 "0slzlzcr3h8jikpz5a5amqd0csqh2m40gdk910ws2hnaf5m6hjbi"))))))
+
+(define-public altermime
+  (package
+    (name "altermime")
+    (version "0.3.10")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "http://pldaniels.com/altermime/altermime-"
+                                  version ".tar.gz"))
+              (sha256
+               (base32
+                "0vn3vmbcimv0n14khxr1782m76983zz9sf4j2kz5v86lammxld43"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags (list "CC=gcc"
+                          (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:tests? #f ; there are none
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (add-after 'unpack 'fix-bugs
+           (lambda _
+             (substitute* "MIME_headers.c"
+               (("hinfo->filename, sizeof\\(hinfo->name\\)")
+                "hinfo->filename, sizeof(hinfo->filename)")
+               (("memset\\(hinfo->defects, 0, _MIMEH_DEFECT_ARRAY_SIZE\\);")
+                "memset(hinfo->defects, 0, sizeof(hinfo->defects));"))
+             (substitute* "pldstr.c"
+               (("if \\(\\(st->start\\)&&\\(st->start != '\\\\0'\\)\\)")
+                "if ((st->start)&&(*st->start != '\\0'))"))
+             (substitute* "qpe.c"
+               (("if \\(lineend != '\\\\0'\\)")
+                "if (*lineend != '\\0')"))
+             #t))
+         (add-after 'unpack 'install-to-prefix
+           (lambda _
+             (substitute* "Makefile"
+               (("/usr/local") "${PREFIX}")
+               (("cp altermime.*") "install -D -t ${PREFIX}/bin altermime\n"))
+             #t))
+         (add-after 'unpack 'disable-Werror
+           (lambda _
+             (substitute* "Makefile"
+               (("-Werror") ""))
+             #t)))))
+    (home-page "https://pldaniels.com/altermime/")
+    (synopsis "Modify MIME-encoded messages")
+    (description
+     "alterMIME is a small program which is used to alter your mime-encoded
+mailpack.  What can alterMIME do?
+
+@enumerate
+@item Insert disclaimers,
+@item insert arbitary X-headers,
+@item modify existing headers,
+@item remove attachments based on filename or content-type,
+@item replace attachments based on filename.
+@end enumerate
+.")
+    ;; MIME_headers.c is distributed under BSD-3; the rest of the code is
+    ;; published under the alterMIME license.
+    (license (list (license:non-copyleft "file://LICENSE")
+                   license:bsd-3))))
+
+(define-public ripmime
+  ;; Upstream does not tag or otherwise provide any releases (only a version
+  ;; number in the source)
+  (let ((commit "a556ffe08d620602475c976732e8e1a82f3169e9")
+        (revision "1"))
+    (package
+      (name "ripmime")
+      (version (git-version "1.4.0.10" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/inflex/ripMIME")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "1z8ar8flvkd9q3ax4x28sj5pyq8ykk5pq249y967lj2406lxparh"))))
+      (build-system gnu-build-system)
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           ;; Source has no configure script
+           (delete 'configure)
+           ;; Buildcodes make the build non-reproducible; remove them
+           (add-after 'unpack 'strip-buildcodes
+             (lambda _
+               (substitute* "generate-buildcodes.sh"
+                 (("`date \\+%s`") "0")
+                 (("`date`") "0")
+                 (("`uname -a`") "Guix"))
+               #t))
+           ;; https://github.com/inflex/ripMIME/pull/16 makes 'mkdir-p-bin-man unnecessary
+           (add-before 'install 'mkdir-p-bin-man
+             (lambda _
+               (mkdir-p (string-append (assoc-ref %outputs "out") "/bin"))
+               (mkdir-p (string-append (assoc-ref %outputs "out") "/man"))
+               #t)))
+         ;; Makefile has no tests
+         #:tests? #f
+         #:make-flags (list (string-append "LOCATION=" (assoc-ref %outputs "out"))
+                            "CC=gcc")))
+      (synopsis "Extract attachments from MIME-encoded email")
+      (description
+       "ripMIME is a small program to extract the attached files out of a
+MIME-encoded email package.")
+      (home-page "https://github.com/inflex/ripMIME")
+      (license license:bsd-3))))
 
 (define-public bogofilter
   (package
@@ -928,20 +1042,14 @@ invoking @command{notifymuch} from the post-new hook.")
 (define-public notmuch
   (package
     (name "notmuch")
-    (version "0.30-0.31rc1")  ; Ensure it is ordered before "0.31"
+    (version "0.31")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://notmuchmail.org/releases/notmuch-"
-                                  ;; version
-                                  "0.31~rc1" ;FIXME: Remove on the next update
-                                  ".tar.xz"))
-              ;; FIXME: The 'file-name' field below is needed only because of
-              ;; the tilde "~" in the URL base name.  Remove it when the tilde
-              ;; is no longer there.
-              (file-name (string-append name "-" version ".tar.xz"))
+                                  version ".tar.xz"))
               (sha256
                (base32
-                "11f10r9pp3p22afpfsrlz0xa0raas4w7fg2jkscgkjj5710ws8fw"))))
+                "1543l57viqzqikjgfzp2abpwz3p0k2iq0b1b3wmn31lwaghs07sp"))))
     (build-system gnu-build-system)
     (arguments
      `(#:modules ((guix build gnu-build-system)
@@ -973,7 +1081,7 @@ invoking @command{notifymuch} from the post-new hook.")
                                 (string-append "--emacsetcdir=" elisp)))))
                   (add-before 'check 'disable-failing-tests
                     ;; FIXME: Investigate why these tests are failing,
-                    ;; and try removing this for notmuch versions >= 0.31.
+                    ;; and try removing this for notmuch versions > 0.31.
                     (lambda _
                       (substitute* "test/T356-protected-headers.sh"
                         (("\\$NOTMUCH_GMIME_X509_CERT_VALIDITY") "0"))
@@ -1149,7 +1257,7 @@ useful features.")
 (define-public libetpan
   (package
     (name "libetpan")
-    (version "1.9.3")
+    (version "1.9.4")
     (source (origin
              (method git-fetch)
              (uri (git-reference
@@ -1157,7 +1265,7 @@ useful features.")
                    (commit version)))
              (file-name (git-file-name name version))
              (sha256
-               (base32 "19g4qskg71jv7sxfxsdkjmrxk9mk5kf9b6fhw06g6wvm3205n95f"))))
+               (base32 "0g7an003simfdn7ihg9yjv7hl2czsmjsndjrp39i7cad8icixscn"))))
     (build-system gnu-build-system)
     (native-inputs `(("autoconf" ,autoconf-wrapper)
                      ("automake" ,automake)

@@ -1066,13 +1066,13 @@ other storage medium.  Subsequent incremental backups can then be layered on
 top of the full backup.  The restore command performs the inverse function of
 dump; it can restore a full backup of a file system.  Single files and
 directory subtrees may also be restored from full or partial backups in
-interractive mode.")
+interactive mode.")
     (license license:bsd-3)))
 
 (define-public burp
   (package
     (name "burp")
-    (version "2.3.32")
+    (version "2.3.34")
     (source
      (origin
        (method git-fetch)
@@ -1080,7 +1080,7 @@ interractive mode.")
              (url "https://github.com/grke/burp")
              (commit version)))
        (sha256
-        (base32 "0cxxf9ni34c9662ffmr2qc8xmh4g9pmg3swqvhn49mqgr5ra6k2g"))
+        (base32 "0ri62xshcjrk5vgyx8s11vsllab132mk1pcy4xxl9kzijdsjhdpy"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments

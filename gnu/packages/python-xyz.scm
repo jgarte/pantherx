@@ -123,17 +123,20 @@
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
+  #:use-module (gnu packages gnupg)
   #:use-module (gnu packages graphviz)
   #:use-module (gnu packages graphics)
   #:use-module (gnu packages gsasl)
   #:use-module (gnu packages gstreamer)
   #:use-module (gnu packages gtk)
+  #:use-module (gnu packages haskell-xyz)
   #:use-module (gnu packages icu4c)
   #:use-module (gnu packages image)
   #:use-module (gnu packages imagemagick)
   #:use-module (gnu packages kerberos)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages libffi)
+  #:use-module (gnu packages libidn)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages llvm)
   #:use-module (gnu packages man)
@@ -187,6 +190,52 @@
   #:use-module (guix build-system trivial)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26))
+
+(define-public python-slixmpp
+  (package
+    (name "python-slixmpp")
+    (version "1.5.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url "https://lab.louiz.org/poezio/slixmpp.git")
+         (commit
+          (string-append "slix-" version))))
+       (file-name
+        (git-file-name name version))
+       (sha256
+        (base32 "15mqxcws14bjvh5jcfwl86zsvrymkdw3ya07vb44md7vfnsnclwx"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch
+           (lambda _
+             (substitute* "setup.py"
+               (("'CC', 'cc'")
+                "'CC', 'gcc'"))
+             #t)))))
+    (native-inputs
+     `(("cython" ,python-cython)
+       ("gnupg" ,gnupg)
+       ("pkg-config" ,pkg-config)))
+    (propagated-inputs
+     `(("python-aiodns" ,python-aiodns)
+       ("python-aiohttp" ,python-aiohttp)
+       ("python-pyasn1" ,python-pyasn1)
+       ("python-pyasn1-modules" ,python-pyasn1-modules)))
+    (inputs
+     `(("libidn" ,libidn)
+       ("python" ,python))) ; We are building a Python extension.
+    (synopsis "XMPP library without threads")
+    (description "Slixmpp is a XMPP library for Python 3.7+.  It is a fork of
+SleekXMPP.  Its goal is to only rewrite the core of the library (the low level
+socket handling, the timers, the events dispatching) in order to remove all
+threads.")
+    (home-page "https://lab.louiz.org/poezio/slixmpp")
+    (license license:expat)))
 
 (define-public python-tenacity
   (package
@@ -8181,6 +8230,48 @@ expressions after the entire file has been read.  This enables support for
 first-class forward references that stub files use.")
     (license license:expat)))
 
+(define-public python-flake8-pie
+  (package
+    (name "python-flake8-pie")
+    (version "0.5.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "flake8-pie" version))
+       (sha256
+        (base32 "0kgipl5gljlp7aa7ykx15pswpzkd0d0qiznihb2z0d9a73181dyd"))))
+    (build-system python-build-system)
+    (home-page "https://github.com/sbdchd/flake8-pie")
+    (synopsis "Flake8 extension that implements lints")
+    (description
+     "This package provides a flake8 extension that implements miscellaneous
+lints.")
+    (license license:bsd-2)))
+
+(define-public python-autoflake
+  (package
+    (name "python-autoflake")
+    (version "1.3.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "autoflake" version))
+       (sha256
+        (base32 "0nzr057dbmgprp4a52ymafdkdd5zp2wcqf42913xc7hhvvdbj338"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-pyflakes" ,python-pyflakes)))
+    (home-page "https://github.com/myint/autoflake")
+    (synopsis "Removes unused imports and unused variables")
+    (description
+     "@code{autoflake} removes unused imports and unused variables from Python
+code as reported by @code{pyflakes}.
+
+By default, it only removes unused imports for modules that are part of the
+standard library.  Removal of unused variables is also disabled by default.
+It also removes useless @code{pass} statements.")
+    (license license:expat)))
+
 (define-public python-mistune
   (package
     (name "python-mistune")
@@ -9337,10 +9428,14 @@ Python's @code{ctypes} foreign function interface (FFI).")
     (native-inputs (if (%current-target-system)
                        `(("self" ,this-package))
                        '()))
-    (synopsis "Python bindings to the libmagic file type guesser.  Note that
-this module and the python-magic module both provide a \"magic.py\" file;
-these two modules, which are different and were developed separately, both
-serve the same purpose: provide Python bindings for libmagic.")))
+    (synopsis "Python bindings to the libmagic file type guesser")
+    (description "This package provides Python bindings to the libmagic file
+type guesser.
+
+Note that this module and the @code{python-magic} module both provide a
+@file{magic.py} file; these two modules, which are different and were
+developed separately, both serve the same purpose: provide Python bindings for
+libmagic.")))
 
 (define-public python2-file
   (package-with-python2 python-file))
@@ -14349,7 +14444,7 @@ PKCS#5 v2.0 Password-Based Key Derivation is a key derivation function which
 is part of the RSA Public Key Cryptography Standards series.  The provided
 implementation takes a password or a passphrase and a salt value (and
 optionally a iteration count, a digest module, and a MAC module) and provides
-a file-like object from which an arbitrarly-sized key can be read.")
+a file-like object from which an arbitrarily-sized key can be read.")
     (license license:expat)))
 
 (define-public python2-pbkdf2
@@ -14429,7 +14524,7 @@ to ansi-escaped strings suitable for display in a terminal.")
     (synopsis "Convert ANSI-decorated console output to HTML")
     (description
      "@command{ansi2html} is a Python library and command line utility for
-convering text with ANSI color codes to HTML or LaTeX.")
+converting text with ANSI color codes to HTML or LaTeX.")
     (license license:gpl3+)))
 
 (define-public python2-ansi2html
@@ -19217,6 +19312,54 @@ programs that do multiple things at the same time with parallelized I/O.")
     ;; Either license applies.
     (license (list license:expat license:asl2.0))))
 
+(define-public python-trio-typing
+  (package
+    (name "python-trio-typing")
+    (version "0.5.0")
+    (source
+     (origin
+      (method url-fetch)
+      (uri (pypi-uri "trio-typing" version))
+      (sha256
+       (base32 "1yvlj4vf3wyvp16dw6vyfm4i2idm8lvdc3fvjhi6mhm62zv7s07j"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (invoke "pytest" "-vv"))))))
+    (native-inputs
+     `(("python-attrs" ,python-attrs)
+       ("python-pytest" ,python-pytest)))
+    (propagated-inputs
+     `(("python-mypy" ,python-mypy)
+       ("python-mypy-extensions"
+        ,python-mypy-extensions)
+       ("python-trio" ,python-trio)
+       ("python-typing-extensions"
+        ,python-typing-extensions)))
+    (home-page "https://github.com/python-trio/trio-typing")
+    (synopsis "Static type checking support for Trio and related projects")
+    (description
+     "This package provides:
+
+@itemize
+@item PEP 561 typing stubs packages for the Trio project packages:
+
+@itemize
+@item trio (@code{trio-stubs})
+@item outcome (@code{outcome-stubs})
+@item async_generator (@code{async_generator-stubs})
+@end itemize
+
+@item A package @code{trio_typing} containing types that Trio programs often
+want to refer to (@code{AsyncGenerator[Y, S]} and @code{TaskStatus[T])} and
+a mypy plugin that smooths over some limitations in the basic type hints.
+@end itemize")
+    ;; Either license applies.
+    (license (list license:expat license:asl2.0))))
+
 (define-public python-humanize
   (package
     (name "python-humanize")
@@ -20342,6 +20485,49 @@ files.  These files are used to translate strings in android apps.")
 such as a file modification and trigger an action.  This is similar to inotify,
 but portable.")
     (license license:asl2.0)))
+
+(define-public python-watchgod
+  (package
+    (name "python-watchgod")
+    (version "0.6")
+    (source
+     (origin
+       ;; There are no tests in the PyPI tarball.
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/samuelcolvin/watchgod")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1lqx44wkryakgpyqj3m0hsz61bqr07vc7smgzh188374hwvscp66"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (invoke "pytest" "-vv"))))))
+    (native-inputs
+     `(("python-coverage" ,python-coverage)
+       ("python-docutils" ,python-docutils)
+       ("python-flake8" ,python-flake8)
+       ("python-isort" ,python-isort)
+       ("python-pycodestyle" ,python-pycodestyle)
+       ("python-pyflakes" ,python-pyflakes)
+       ("python-pygments" ,python-pygments)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-pytest-aiohttp" ,python-pytest-aiohttp)
+       ("python-pytest-mock" ,python-pytest-mock)
+       ("python-pytest-sugar" ,python-pytest-sugar)
+       ("python-pytest-toolbox" ,python-pytest-toolbox)))
+    (home-page "https://github.com/samuelcolvin/watchgod")
+    (synopsis "Simple, modern file watching and code reload in Python")
+    (description
+     "Simple, modern file watching and code reload in Python inspired by
+@code{watchdog}.  Among the differences are a unified approach for each
+operating systems and an elegant approach to concurrency using threading.")
+    (license license:expat)))
 
 (define-public python-wget
   (package
@@ -21794,3 +21980,45 @@ dates in almost any string formats commonly found on web pages.")
     (description "Safety checks installed dependencies for known vulnerabilities.
 By default it uses the open Python vulnerability database Safety DB.")
   (license license:expat)))
+
+(define-public python-pypandoc
+  (package
+    (name "python-pypandoc")
+    (version "1.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pypandoc" version))
+       (sha256
+        (base32
+         "1zvn9764cf7kkjkmr9gw6wc8adpk06qxr1rhxwa9pg0zmdvrk90l"))))
+    (build-system python-build-system)
+    (inputs
+     `(("pandoc" ,pandoc)
+       ("pandoc-citeproc" ,pandoc-citeproc)))
+    (propagated-inputs
+     `(("wheel" ,python-wheel)))
+    (native-inputs
+     `(("texlive" ,(texlive-union (list texlive-amsfonts
+                                        texlive-fonts-ec
+                                        texlive-latex-hyperref
+                                        texlive-latex-oberdiek
+                                        texlive-lm
+                                        texlive-xcolor)))))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-before 'check 'disable-tests
+           (lambda _
+             ;; Disable test requiring network access
+             (substitute* "tests.py"
+               (("test_basic_conversion_from_http_url")
+                "skip_test_basic_conversion_from_http_url"))
+             ;; Needed by texlive-union to generate fonts
+             (setenv "HOME" "/tmp")
+             #t)))))
+    (home-page "https://github.com/bebraw/pypandoc")
+    (synopsis "Python wrapper for pandoc")
+    (description "pypandoc is a thin Python wrapper around pandoc
+and pandoc-citeproc.")
+    (license license:expat)))

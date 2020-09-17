@@ -7341,3 +7341,63 @@ collect all requests from all packages and write them to an external
 XML file.
 @end enumerate\n")
       (license license:lppl1.3c))))
+
+(define-public texlive-biblatex
+  (let ((template (simple-texlive-package
+                   "texlive-biblatex"
+                   (list "/doc/latex/biblatex/"
+                         "/tex/latex/biblatex/")
+                   (base32
+                    "11kzvny50iklzkamr0rqd5x532q8rxny1xhmf96jl8mzj1d2zmay")
+                   #:trivial? #t)))
+    (package
+      (inherit template)
+      (propagated-inputs
+       `(("texlive-logreq" ,texlive-logreq)
+         ("texlive-url" ,texlive-url)))
+      (home-page "https://www.ctan.org/pkg/biblatex")
+      (synopsis "Sophisticated bibliographies in LaTeX")
+      (description "BibLaTeX is a complete reimplementation of the
+bibliographic facilities provided by LaTeX.  Formatting of the
+bibliography is entirely controlled by LaTeX macros, facilitating the
+design of new bibliography and citation styles.  BibLaTeX uses its own
+data backend program \"biber\" to read and process the bibliographic
+data.  With biber, the range of features provided by biblatex
+includes:
+
+@enumerate
+@item
+full unicode support,
+
+@item
+customisable bibliography labels,
+
+@item
+multiple bibliographies in the same document, and
+
+@item
+subdivided bibliographies, such as bibliographies per chapter or
+section.
+@end enumerate\n")
+      (license license:lppl1.3c))))
+
+(define-public texlive-todonotes
+  (let ((template (simple-texlive-package
+                   "texlive-todonotes"
+                   (list "/doc/latex/todonotes/"
+                         "/tex/latex/todonotes/")
+                   (base32
+                    "0lvxsskz4bdfxhd59hf77kiq8k4nh2spb66vc6hifdgi21z8r8wm")
+                   #:trivial? #t)))
+    (package
+      (inherit template)
+      (propagated-inputs
+       `(("texlive-latex-pgf" ,texlive-latex-pgf)
+         ("texlive-latex-xkeyval" ,texlive-latex-xkeyval)))
+      (home-page "http://www.ctan.org/pkg/todonotes")
+      (synopsis "Marking things to do in a LaTeX document")
+      (description "The @code{todonotes} package lets the user mark
+things to do later, in a simple and visually appealing way.  The
+package takes several options to enable customization and finetuning
+of the visual appearance.")
+      (license license:lppl1.3+))))

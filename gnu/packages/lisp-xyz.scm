@@ -3472,10 +3472,10 @@ client and server.")
   (sbcl-package->ecl-package sbcl-s-xml-rpc))
 
 (define-public sbcl-trivial-clipboard
-  (let ((commit "5af3415d1484e6d69a1b5c178f24680d9fd01796"))
+  (let ((commit "afcd3743b842f5a81fc86dba60f9db59970f49c5"))
     (package
       (name "sbcl-trivial-clipboard")
-      (version (git-version "0.0.0.0" "2" commit))
+      (version (git-version "0.0.0.0" "3" commit))
       (source
        (origin
          (method git-fetch)
@@ -3485,7 +3485,7 @@ client and server.")
          (file-name (git-file-name "trivial-clipboard" version))
          (sha256
           (base32
-           "1gb515z5yq6h5548pb1fwhmb0hhq1ssyb78pvxh4alq799xipxs9"))))
+           "1qfbvkzmvkbqpc5s3sx31c5653sy6qlcixafgzd10qpykb843prr"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("xclip" ,xclip)))
@@ -13613,7 +13613,8 @@ package that includes a number of renames and shadows. ")
        ("metabang-bind" ,sbcl-metabang-bind)))
     (home-page "http://dwim.hu/")
     (synopsis "Common Lisp library shared by other hu.dwim systems")
-    (description "")
+    (description "This package contains a support library for other
+hu.dwim systems.")
     (license license:public-domain)))
 
 (define-public cl-hu.dwim.common
@@ -14093,7 +14094,7 @@ can begin writing unit tests as soon as the project is generated.")
                (for-each delete-file
                          '("README.v1.markdown" "caveman.asd" "caveman-test.asd")))))
          ;; TODO: Tests fail with:
-         ;; writing /gnu/store/j4l1k28yq47qbg074b4yf1b7wnccg8j1-sbcl-caveman-2.4.0-1.faa5f7e/share/common-lisp/sbcl-source/caveman2/v2/t/tmp/myapp573/tests/myapp573.lisp
+         ;; writing /gnu/store/...-sbcl-caveman-2.4.0-1.faa5f7e/share/common-lisp/sbcl-source/caveman2/v2/t/tmp/myapp573/tests/myapp573.lisp
          ;; While evaluating the form starting at line 38, column 0
          ;;   of #P"/tmp/guix-build-sbcl-caveman-2.4.0-1.faa5f7e.drv-0/source/v2/t/caveman.lisp":
          ;; Unhandled ASDF/FIND-COMPONENT:MISSING-COMPONENT in thread #<SB-THREAD:THREAD "main thread" RUNNING

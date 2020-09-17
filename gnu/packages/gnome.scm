@@ -2919,7 +2919,13 @@ API add-ons to make GTK+ widgets OpenGL-capable.")
     (description "Glade is a rapid application development (RAD) tool to
 enable quick & easy development of user interfaces for the GTK+ toolkit and
 the GNOME desktop environment.")
-    (license license:lgpl2.0+)))
+    (license license:lgpl2.0+)
+    (native-search-paths (list (search-path-specification
+                                (variable "GLADE_CATALOG_SEARCH_PATH")
+                                (files '("share/glade/catalogs")))
+                               (search-path-specification
+                                (variable "GLADE_MODULE_SEARCH_PATH")
+                                (files '("lib/glade/modules")))))))
 
 (define-public libcroco
   (package
@@ -6178,7 +6184,7 @@ USB transfers with your high-level application or system daemon.")
 (define-public simple-scan
   (package
     (name "simple-scan")
-    (version "3.36.4")
+    (version "3.36.6")
     (source
      (origin
        (method url-fetch)
@@ -6186,7 +6192,7 @@ USB transfers with your high-level application or system daemon.")
                            (version-major+minor version) "/"
                            "simple-scan-" version ".tar.xz"))
        (sha256
-        (base32 "09gmzrlljdqkj3w6wa1c27wypy6j8z9dw3jzv9izfqvp38liibsn"))))
+        (base32 "0x9hzqnji5l966yy2k5gppl8hqasn3sd5an4sr8srjmncxcs80ys"))))
     (build-system meson-build-system)
     ;; TODO: Fix icons in home screen, About dialogue, and scan menu.
     (arguments
@@ -7889,7 +7895,7 @@ usage and information about running processes.")
 (define-public gnome-bluetooth
   (package
     (name "gnome-bluetooth")
-    (version "3.34.0")
+    (version "3.34.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -7897,7 +7903,7 @@ usage and information about running processes.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "1bvbxcsjkyl0givy8nfm7112bq3c0vn1v89fdk2pip714dsfcrz8"))))
+                "11nk8nvz5yrbx7wp75vsiaf4rniv7ik2g3nwmgwx2b42q9v11j9y"))))
     (build-system meson-build-system)
     (native-inputs
      `(("glib:bin" ,glib "bin") ; for gdbus-codegen, etc.
@@ -10489,7 +10495,7 @@ advanced image management tool")
 (define-public libhandy
   (package
     (name "libhandy")
-    (version "0.90.0")
+    (version "1.0.0")
     (source
      (origin
        (method git-fetch)
@@ -10498,11 +10504,11 @@ advanced image management tool")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1zpfbn2x27lp69w819afxf3ylkgfz9k44srfgmkbb2c33r14ajwy"))))
+        (base32 "193y09yy0302x8fkyrnq591m805xp68bkd93fl5qggxi52k8pj0v"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags
-       '("-Dglade_catalog=disabled"
+       '("-Dglade_catalog=enabled"
          "-Dgtk_doc=true")
        #:phases
        (modify-phases %standard-phases
@@ -10513,7 +10519,9 @@ advanced image management tool")
              (setenv "DISPLAY" ":1")
              #t)))))
     (inputs
-     `(("gtk+" ,gtk+)))
+     `(("gtk+" ,gtk+)
+       ("glade" ,glade3)
+       ("libxml2" ,libxml2)))
     (native-inputs
      `(("glib:bin" ,glib "bin")
        ("gobject-introspection" ,gobject-introspection) ; for g-ir-scanner
@@ -10544,7 +10552,11 @@ for usage on small and big screens.")
              (commit (string-append "v" version))))
        (file-name (git-file-name "libhandy" version))
        (sha256
-        (base32 "1y23k623sjkldfrdiwfarpchg5mg58smcy1pkgnwfwca15wm1ra5"))))))
+        (base32 "1y23k623sjkldfrdiwfarpchg5mg58smcy1pkgnwfwca15wm1ra5"))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments libhandy)
+       ((#:configure-flags flags)
+        '(list "-Dglade_catalog=disabled" "-Dgtk_doc=true"))))))
 
 (define-public libgit2-glib
   (package
@@ -11425,4 +11437,131 @@ integrated profiler via Sysprof, debugging support, and more.")
     (synopsis "Manga reader for GNOME")
     (description "Komikku is an online/offline manga reader for GNOME,
 developed with the aim of being used with the Librem 5 phone.")
+    (license license:gpl3+)))
+
+(define-public libgda
+  (package
+    (name "libgda")
+    (version "5.2.9")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.gnome.org/GNOME/libgda.git/")
+             (commit "LIBGDA_5_2_9")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "122anbk15vj2dfxrw7s48b6zwlpp7cyppshxizynvf3zmc0ygw3j"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags '("--enable-vala")
+       ;; There's a race between check_cnc_lock and check_threaded_cnc
+       ;; in tests/multi-threading.
+       #:parallel-tests? #f
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-glade-install
+           (lambda _
+             (substitute* "configure.ac"
+               (("`\\$PKG_CONFIG --variable=catalogdir gladeui-2\\.0`")
+                "${datadir}/glade/catalogs")
+               (("`\\$PKG_CONFIG --variable=pixmapdir gladeui-2\\.0`")
+                "${datadir}/glade/pixmaps"))
+             #t))
+         (add-before 'check 'pre-check
+           (lambda* (#:key inputs #:allow-other-keys)
+             ;; Tests require a running X server.
+             (system "Xvfb :1 &")
+             (setenv "DISPLAY" ":1")
+             #t))
+         (add-after 'install 'symlink-glade-module
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((shlib "libgda-ui-5.0.so")
+                    (out (assoc-ref outputs "out"))
+                    (out/lib (string-append out "/lib"))
+                    (moduledir (string-append out/lib "/glade/modules")))
+               (mkdir-p moduledir)
+               (symlink (string-append out/lib "/" shlib)
+                        (string-append moduledir "/" shlib))
+               #t))))))
+    (propagated-inputs
+     `(("libxml2" ,libxml2)))           ; required by libgda-5.0.pc
+    (inputs
+     `(("glib" ,glib)
+       ("glade" ,glade3)
+       ("gtk+" ,gtk+)
+       ("libsecret" ,libsecret)
+       ("libxslt" ,libxslt)
+       ("openssl" ,openssl)
+       ("vala" ,vala)))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("glib:bin" ,glib "bin")
+       ("gnome-common" ,gnome-common)
+       ("gobject-introspection" ,gobject-introspection)
+       ("gtk-doc" ,gtk-doc)
+       ("intltool" ,intltool)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)
+       ("vala" ,vala)
+       ("which" ,which)
+       ("xorg-server" ,xorg-server-for-tests)
+       ("yelp-tools" ,yelp-tools)))
+    (home-page "https://gitlab.gnome.org/GNOME/libgda")
+    (synopsis "Uniform data access")
+    (description
+     "GNU Data Access (GDA) is an attempt to provide uniform access to
+different kinds of data sources (databases, information servers, mail spools,
+etc).  It is a complete architecture that provides all you need to access
+your data.")
+    (license license:lgpl2.1+)))
+
+(define-public gtranslator
+  (package
+    (name "gtranslator")
+    (version "3.36.0")
+        (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://gnome/sources/" name "/"
+                                  (version-major+minor version) "/"
+                                  name "-" version ".tar.xz"))
+              (sha256
+               (base32
+                "1lxd2nkji4jk8g2xmyc1a1r3ww710ddk91zh9psmx8xlb4xivaid"))))
+    (build-system meson-build-system)
+    (inputs
+     `(("json-glib" ,json-glib)
+       ("jsonrpc-glib" ,jsonrpc-glib)
+       ("gettext" ,gettext-minimal)
+       ("glib" ,glib)
+       ("gtk+" ,gtk+)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+       ("gspell" ,gspell)
+       ("libdazzle" ,libdazzle)
+       ("libgda" ,libgda)
+       ("libsoup" ,libsoup)))
+    (native-inputs
+     `(("glib:bin" ,glib "bin")
+       ("itstool" ,itstool)
+       ("pkg-config" ,pkg-config)))
+    (propagated-inputs
+     `(("gtksourceview" ,gtksourceview))) ; required for source view
+    (arguments
+     `(#:build-type "release"
+       #:phases
+       (modify-phases %standard-phases
+       (add-after 'unpack 'skip-gtk-update-icon-cache
+           (lambda _
+             (substitute* "build-aux/meson/meson_post_install.py"
+               (("gtk-update-icon-cache") (which "true")))
+             #t)))))
+    (home-page "https://wiki.gnome.org/Apps/Gtranslator")
+    (synopsis "Translation making program")
+    (description
+     "gtranslator is a quite comfortable gettext po/po.gz/(g)mo files editor
+for the GNOME 3.x platform with many features.  It aims to be a very complete
+editing environment for translation issues within the GNU gettext/GNOME desktop
+world.")
     (license license:gpl3+)))
