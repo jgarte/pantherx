@@ -480,7 +480,7 @@ other machines/servers.  Electrum does not download the Bitcoin blockchain.")
 (define-public electron-cash
   (package
     (name "electron-cash")
-    (version "4.1.0")
+    (version "4.1.1")
     (source
      (origin
        (method git-fetch)
@@ -489,7 +489,7 @@ other machines/servers.  Electrum does not download the Bitcoin blockchain.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1ccfm6kkmbkvykfdzrisxvr0lx9kgq4l43ixk6v3xnvhnbfwz4s2"))))
+        (base32 "1fllz2s20lg4hrppzmnlgjy9mrq7gaq66l2apb3vz1avzvsjw3gm"))))
     (build-system python-build-system)
     (inputs
      `(("libevent" ,libevent)
@@ -1061,7 +1061,7 @@ amongst which a great number of VAT and other tax numbers,
 personal identity and company identification codes,
 international standard numbers (ISBN, IBAN, EAN, etc.)
 and various other formats.
-The module also inclused implementations of the Verhoeff,
+The module also includes implementations of the Verhoeff,
 Luhn and family of ISO/IEC 7064 check digit algorithms. ")
     (license license:lgpl2.1+)))
 

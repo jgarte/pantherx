@@ -123,15 +123,15 @@ greatest common divisor operations.")
 (define-public cm
   (package
    (name "cm")
-   (version "0.3")
+   (version "0.3.1")
    (source (origin
             (method url-fetch)
             (uri (string-append
-                  "http://www.multiprecision.org/cm/download/cm-"
+                  "http://www.multiprecision.org/downloads/cm-"
                   version ".tar.gz"))
             (sha256
              (base32
-              "1nf5kr0nqmhbzrsrinky18z0ighjpsmb5cr8zyg8jf04bfbyrfmc"))))
+              "0qq6b1kwb1byj8ws33ya5awq0ilkpm32037pi1l4cf2737fg9m42"))))
    (build-system gnu-build-system)
    (propagated-inputs
      `(("mpfrcx" ,mpfrcx)
@@ -151,12 +151,7 @@ line applications.")
 (define-public fplll
   (package
     (name "fplll")
-    ;; The most recent version 5.3.3 fails in the configure phase:
-    ;; ./configure: line 12956: syntax error near unexpected token `LIBQD,'
-    ;; ./configure: line 12956: `  PKG_CHECK_MODULES(LIBQD, qd, have_libqd="yes",'
-    ;; The error disappears when adding qd as an input; but this is
-    ;; supposed to be an optional input.
-    (version "5.3.2")
+    (version "5.3.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -165,13 +160,15 @@ line applications.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "00iyz218ywspizjiimrjdcqvdqmrsb2367zyy3vkmypnf9i9l680"))))
+                "06nyfidagp8pc2kfcw88ldgb2b1xm0a8z31n0sln7j72ihlmd8zj"))
+              (patches (search-patches "fplll-std-fenv.patch"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
-       ("libtool" ,libtool)))
-    (inputs
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
+    (propagated-inputs ; header files pulled in by fplll/defs.h
      `(("gmp" ,gmp)
        ("mpfr" ,mpfr)))
     (home-page "https://github.com/fplll/fplll")

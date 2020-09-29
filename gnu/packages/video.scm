@@ -134,6 +134,7 @@
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages networking)
   #:use-module (gnu packages ocr)
+  #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages perl-check)
   #:use-module (gnu packages perl-web)
@@ -697,14 +698,15 @@ old-fashioned output methods with powerful ascii-art renderer.")
 (define-public celluloid
   (package
     (name "celluloid")
-    (version "0.19")
+    (version "0.20")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "https://github.com/celluloid-player/celluloid/releases"
-                           "/download/v" version "/celluloid-" version ".tar.xz"))
+       (uri (string-append "https://github.com/celluloid-player/celluloid"
+                           "/releases/download/v" version
+                           "/celluloid-" version ".tar.xz"))
        (sha256
-        (base32 "1s3qkism96gi44incvsb6rqg255qcvjvw61ya7nw30md0sapj4sl"))))
+        (base32 "0kjjv2pcdvwcn4yi8kbpsca7pnx6cx6xdznv7ppqm0fssx68qyb3"))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      `(("intltool" ,intltool)
@@ -878,14 +880,14 @@ H.264 (MPEG-4 AVC) video streams.")
 (define-public mkvtoolnix
   (package
     (name "mkvtoolnix")
-    (version "37.0.0")
+    (version "50.0.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://mkvtoolnix.download/sources/"
                            "mkvtoolnix-" version ".tar.xz"))
        (sha256
-        (base32 "0r4d9318ymb9a0mkc0shi9p4kjy3m70s49v4f8dmjhvj63silhix"))
+        (base32 "09485qfbdirr9g536shglzdm271yipb1669r3dm3hxp46k0x59aq"))
        (modules '((guix build utils)))
        (snippet '(begin
                    ;; Delete bundled libraries.
@@ -911,6 +913,7 @@ H.264 (MPEG-4 AVC) video streams.")
        ("libogg" ,libogg)
        ("libvorbis" ,libvorbis)
        ("lzo" ,lzo)
+       ("pcre2" ,pcre2)
        ("pugixml" ,pugixml)
        ("qtbase" ,qtbase)
        ("qtmultimedia" ,qtmultimedia)
@@ -2165,7 +2168,7 @@ To load this plugin, specify the following option when starting mpv:
 (define-public youtube-dl
   (package
     (name "youtube-dl")
-    (version "2020.09.14")
+    (version "2020.09.20")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/ytdl-org/youtube-dl/"
@@ -2173,7 +2176,7 @@ To load this plugin, specify the following option when starting mpv:
                                   version ".tar.gz"))
               (sha256
                (base32
-                "18wfhprbaszpxgqkac3hb050ngvdsaibbcifg88rkv5vc6bc2mq6"))))
+                "1pkw3hnkddk1kqv0in152q1k4jjgbmf2xvc9j3r5nd38z6f7j6mc"))))
     (build-system python-build-system)
     (arguments
      ;; The problem here is that the directory for the man page and completion
