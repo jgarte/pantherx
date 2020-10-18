@@ -48,6 +48,7 @@
   #:use-module (gnu packages maths)
   #:use-module (gnu packages mpi)
   #:use-module (gnu packages multiprecision)
+  #:use-module (gnu packages ocaml)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages pulseaudio)
@@ -354,7 +355,7 @@ precision.")
 (define-public giac
   (package
     (name "giac")
-    (version "1.6.0-7")
+    (version "1.6.0-25")
     (source
      (origin
        (method url-fetch)
@@ -366,7 +367,7 @@ precision.")
                            "~parisse/debian/dists/stable/main/source/"
                            "giac_" version ".tar.gz"))
        (sha256
-        (base32 "1pvgp137zcl0rbhdn1j41xxfml7fp771a7x4ph8qrhhlx0hxzn3p"))))
+        (base32 "11kik2csdg9wy0npiih21kaag0nc89i9ldgk7ak7gvf9ycddm6mh"))))
     (build-system gnu-build-system)
     (arguments
      `(#:modules ((ice-9 ftw)
@@ -377,7 +378,8 @@ precision.")
          (add-after 'unpack 'patch-bin-cp
            ;; Some Makefiles contain hard-coded "/bin/cp".
            (lambda _
-             (substitute* (find-files "doc" "^Makefile")
+             (substitute* (cons "micropython-1.12/xcas/Makefile"
+                                (find-files "doc" "^Makefile"))
                (("/bin/cp") (which "cp")))
              #t))
          (add-after 'unpack 'disable-failing-test
@@ -406,7 +408,7 @@ precision.")
                (delete-file (string-append out "/bin/xcasnew"))
                #t))))))
     (inputs
-;;; TODO: Add libnauty.
+     ;; TODO: Add libnauty, unbundle "libmicropython.a".
      `(("fltk" ,fltk)
        ("glpk" ,glpk)
        ("gmp" ,gmp)
@@ -430,6 +432,8 @@ precision.")
     (native-inputs
      `(("bison" ,bison)
        ("flex" ,flex)
+       ("hevea" ,hevea)
+       ("python" ,python-wrapper)
        ("readline" ,readline)
        ("texlive" ,texlive-tiny)))
     (home-page "https://www-fourier.ujf-grenoble.fr/~parisse/giac.html")
@@ -1551,7 +1555,7 @@ structure constants of Schubert polynomials.")
          "0akwhhz9b40bz6lrfxpamp7r7wkk48p455qbn04mfnl9a1l6db8x"))))
     (build-system gnu-build-system)
     (inputs
-     `(("gmp", gmp)
+     `(("gmp" ,gmp)
        ("cblas" ,openblas))) ; or any other BLAS library; the documentation
                              ; mentions ATLAS in particular
     (arguments

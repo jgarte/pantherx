@@ -40,6 +40,7 @@
 ;;; Copyright © 2020 Nicolò Balzarotti <nicolo@nixo.xyz>
 ;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
 ;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
+;;; Copyright © 2020 Simon Tournier <zimon.toutoune@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -2156,7 +2157,7 @@ This is the certified version of the Open Cascade Technology (OCCT) library.")
 (define-public gmsh
   (package
     (name "gmsh")
-    (version "2.16.0")
+    (version "4.6.0")
     (source
      (origin
       (method git-fetch)
@@ -2168,12 +2169,11 @@ This is the certified version of the Open Cascade Technology (OCCT) library.")
                                         version)))))
       (file-name (git-file-name name version))
       (sha256
-       (base32 "08rq4jajwmlpivnm9yifz2jhaivnz065lnk0h2zv773nwl9wf162"))
+       (base32 "0m0pjxcy1bnr7a20i11lh0ih159pphq9wsvfjr3sfx4y3lginz5y"))
       (modules '((guix build utils)))
       (snippet
-       ;; Remove non-free METIS code
        '(begin
-          (delete-file-recursively "contrib/Metis")
+          (delete-file-recursively "contrib/metis")
           #t))))
     (build-system cmake-build-system)
     (propagated-inputs
@@ -2184,14 +2184,15 @@ This is the certified version of the Open Cascade Technology (OCCT) library.")
        ("lapack" ,lapack)
        ("mesa" ,mesa)
        ("glu" ,glu)
-       ("opencascade-oce" ,opencascade-oce)
+       ("metis" ,metis)
+       ("opencascade-occt" ,opencascade-occt)
        ("libx11" ,libx11)
        ("libxext" ,libxext)))
     (inputs
      `(("fontconfig" ,fontconfig)
        ("libxft" ,libxft)))
     (arguments
-     `(#:configure-flags `("-DENABLE_METIS:BOOL=OFF"
+     `(#:configure-flags `("-DENABLE_SYSTEM_CONTRIB:BOOL=ON"
                            "-DENABLE_BUILD_SHARED:BOOL=ON"
                            "-DENABLE_BUILD_DYNAMIC:BOOL=ON")))
     (home-page "http://gmsh.info/")
@@ -3862,7 +3863,7 @@ Fresnel integrals, and similar related functions as well.")
 (define-public suitesparse
   (package
     (name "suitesparse")
-    (version "5.7.1")
+    (version "5.8.1")
     (source
      (origin
        (method git-fetch)
@@ -3872,7 +3873,7 @@ Fresnel integrals, and similar related functions as well.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "174p3l78kv9gaa0i5hflyai2ydwnjzh34k9938sl4aa3li0543s8"))
+         "0qjlyfxs8s48rs63c2fzspisgq1kk4bwkgnhmh125hgkdhrq2w1c"))
        (patches (search-patches "suitesparse-mongoose-cmake.patch"))
        (modules '((guix build utils)))
        (snippet
@@ -3885,7 +3886,6 @@ Fresnel integrals, and similar related functions as well.")
      '(#:tests? #f  ;no "check" target
        #:make-flags
        (list "CC=gcc"
-             "BLAS=-lblas"
              "TBB=-ltbb"
              "MY_METIS_LIB=-lmetis"
              ;; Flags for cmake (required to build GraphBLAS and Mongoose)
@@ -3907,6 +3907,8 @@ Fresnel integrals, and similar related functions as well.")
     (inputs
      `(("tbb" ,tbb)
        ("lapack" ,lapack)
+       ("gmp" ,gmp)
+       ("mpfr" ,mpfr)
        ("metis" ,metis)))
     (native-inputs
      `(("cmake" ,cmake-minimal)
@@ -5764,10 +5766,10 @@ compiled against the nauty library.")
          "1j5aji1g2vmdvc0gqz45n2ll2l2f6czca04wiyfl5g3sm3a6vhvb"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("m4", m4)))
+     `(("m4" ,m4)))
     (inputs
      `(("glpk" ,glpk)
-       ("gmp", gmp)))
+       ("gmp" ,gmp)))
     (home-page "https://www.bugseng.com/parma-polyhedra-library")
     (synopsis
      "Parma Polyhedra Library for computations with polyhedra")
