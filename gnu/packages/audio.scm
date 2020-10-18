@@ -3304,7 +3304,7 @@ Tracker 3 S3M and Impulse Tracker IT files.")
 (define-public soundtouch
   (package
     (name "soundtouch")
-    (version "2.1.2")
+    (version "2.2")
     (source
      (origin
        (method git-fetch)
@@ -3313,7 +3313,7 @@ Tracker 3 S3M and Impulse Tracker IT files.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "174wgm3s0inmbnkrlnspxjwm2014qhjhkbdqa5r8rbfi0nzqxzsz"))))
+        (base32 "12i6yg8vvqwyk412lxl2krbfby6hnxld8qxy0k4m5xp4g94jiq4p"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -3965,10 +3965,31 @@ mixers.")
 (define-public python2-pyalsaaudio
   (package-with-python2 python-pyalsaaudio))
 
+(define-public ldacbt
+  (package
+    (name "ldacbt")
+    (version "2.0.2.3")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://github.com/EHfive/ldacBT"
+                                  "/releases/download/v" version
+                                  "/ldacBT-" version ".tar.gz"))
+              (sha256
+               (base32
+                "1d65dms4klzql29abi15i90f41h523kl6mxrz9hi6p5vg37fxn2b"))))
+    (build-system cmake-build-system)
+    (arguments `(#:tests? #f)) ; no check target
+    (home-page "https://github.com/EHfive/ldacBT/")
+    (synopsis "LDAC Bluetooth encoder and ABR library")
+    (description "This package provides an encoder for the LDAC
+high-resolution Bluetooth audio streaming codec for streaming at up to 990
+kbps at 24 bit/96 kHz.")
+    (license license:asl2.0)))
+
 (define-public bluez-alsa
   (package
     (name "bluez-alsa")
-    (version "2.0.0")
+    (version "3.0.0")
     (source (origin
               ;; The tarballs are mere snapshots and don't contain a
               ;; bootstrapped build system.
@@ -3979,11 +4000,12 @@ mixers.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "08mppgnjf1j2733bk9yf0cny6rfxxwiys0s62lz2zd2lpdl6d9lz"))))
+                "1jlsgxyqfhncfhx1sy3ry0dp6p95kd4agh7g2b7g51h0c4cv74h8"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
-       (list (string-append "--with-alsaplugindir="
+       (list "--enable-ldac"
+             (string-append "--with-alsaplugindir="
                             (assoc-ref %outputs "out")
                             "/lib/alsa-lib")
              (string-append "--with-dbusconfdir="
@@ -3999,6 +4021,7 @@ mixers.")
        ("bluez" ,bluez)
        ("dbus" ,dbus)
        ("glib" ,glib)
+       ("ldacbt" ,ldacbt)
        ("libbsd" ,libbsd)
        ("ncurses" ,ncurses)
        ("ortp" ,ortp)
@@ -4519,7 +4542,7 @@ workstations as well as consumer software such as music players.")
     (inputs
      `(("cairo" ,cairo)))
     (native-inputs
-     `(("pkg-config", pkg-config)))
+     `(("pkg-config" ,pkg-config)))
     (synopsis "Small GUI toolkit")
     (description "Redkite is a small GUI toolkit developed in C++17 and
 inspired from other well known GUI toolkits such as Qt and GTK.  It is
@@ -4665,7 +4688,7 @@ in the package.")
     `(("libsamplerate" ,libsamplerate)
       ("libsndfile" ,libsndfile)))
    (native-inputs
-     `(("pkg-config", pkg-config)))
+     `(("pkg-config" ,pkg-config)))
    (synopsis "Library for reading and resampling audio files")
    (description "libaudec is a wrapper library over ffmpeg, sndfile and
 libsamplerate for reading and resampling audio files, based on Robin Gareus'
@@ -4693,11 +4716,11 @@ libsamplerate for reading and resampling audio files, based on Robin Gareus'
        `("-Delf-tests=true" ; for checking symbol visibility
          "-Donline-tests=true"))) ; for checking URI existence
     (inputs
-      `(("curl", curl)
-        ("libelf", libelf)
-        ("lilv", lilv)))
+      `(("curl" ,curl)
+        ("libelf" ,libelf)
+        ("lilv" ,lilv)))
     (native-inputs
-      `(("pkg-config", pkg-config)))
+      `(("pkg-config" ,pkg-config)))
     (synopsis "LV2 plugin lint tool")
     (description "lv2lint is an LV2 lint-like tool that checks whether a
 given plugin and its UI(s) match up with the provided metadata and adhere
@@ -4728,11 +4751,11 @@ to well-known best practices.")
       (modify-phases %standard-phases
         (delete 'configure))))
     (inputs
-      `(("jalv", jalv)
-        ("lilv", lilv)))
+      `(("jalv" ,jalv)
+        ("lilv" ,lilv)))
     (native-inputs
-      `(("help2man", help2man)
-        ("pkg-config", pkg-config)))
+      `(("help2man" ,help2man)
+        ("pkg-config" ,pkg-config)))
     (synopsis "Documentation generator for LV2 plugins")
     (description
       "lv2toweb allows the user to create an xhtml page with information

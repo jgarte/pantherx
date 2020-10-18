@@ -317,14 +317,13 @@ provide connectivity for client applications written in any language.")
 (define-public nml
   (package
     (name "nml")
-    (version "0.5.2")
+    (version "0.5.3")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "nml" version))
        (sha256
-        (base32
-         "1lwf5sc5qqzrkxfx5wkkj3yh2j2nzh5r599ly5psy8yw92km24hy"))))
+        (base32 "0l5pfs8q7jrl3xscqq7pnwh5h5d17fsyjy7xspkc73sa0ayjm9jx"))))
     (build-system python-build-system)
     ;; TODO: Fix test that fails with
     ;; "AttributeError: partially initialized module 'nml.nmlop' has no
@@ -485,6 +484,35 @@ clone.")
     ;; As noted in 'COPYING', part of it is under GPLv2+, while the rest is
     ;; under BSD-2.
     (license license:gpl2+)))
+
+(define-public tsukundere
+  (package
+    (name "tsukundere")
+    (version "0.2.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://gitlab.com/leoprikler/tsukundere")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0qmqch8hh7vsa8qaz853vwbkz0krb106955dnz8dsl7skbm5jpn6"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("autoconf" ,autoconf-wrapper)
+       ("automake" ,automake)
+       ("guile" ,guile-3.0)
+       ("pkg-config" ,pkg-config)))
+    (propagated-inputs
+     `(("guile-sdl2" ,guile3.0-sdl2)))
+    (home-page "https://gitlab.com/leoprikler/tsukundere")
+    (synopsis "Visual novel engine")
+    (description "Tsukundere is a game engine geared heavily towards the
+development of visual novels, written on top of Guile-SDL2.  It is still
+experimental and at the time of writing contains little more than the Guile
+modules, that make up its runtime.")
+    (license license:lgpl3+)))
 
 (define-public sfml
   (package
@@ -1528,7 +1556,7 @@ games.")
 (define-public godot
   (package
     (name "godot")
-    (version "3.2.2")
+    (version "3.2.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1537,7 +1565,7 @@ games.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1libz83mbyrkbbsmmi8z2rydv3ls0w9r4vb5v6diqqwn7ka8z804"))
+                "19vrp5lhyvxbm6wjxzn28sn3i0s8j08ca7nani8l1nrhvlc8wi0v"))
               (modules '((guix build utils)
                          (ice-9 ftw)
                          (srfi srfi-1)))

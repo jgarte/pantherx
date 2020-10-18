@@ -187,6 +187,29 @@
                  (string=? (manifest-pattern-version pattern) "1")
                  (string=? (manifest-pattern-output pattern) "out")))))))
 
+(test-equal "transaction-upgrade-entry, transformation options preserved"
+  (derivation-file-name (package-derivation %store grep))
+
+  (let* ((old   (dummy-package "emacs" (version "1")))
+         (props '((transformations . ((with-input . "emacs=grep")))))
+         (tx    (transaction-upgrade-entry
+                 %store
+                 (manifest-entry
+                   (inherit (package->manifest-entry old))
+                   (properties props)
+                   (item (string-append (%store-prefix) "/"
+                                        (make-string 32 #\e) "-foo-1")))
+                 (manifest-transaction))))
+    (match (manifest-transaction-install tx)
+      (((? manifest-entry? entry))
+       (and (string=? (manifest-entry-version entry)
+                      (package-version grep))
+            (string=? (manifest-entry-name entry)
+                      (package-name grep))
+            (equal? (manifest-entry-properties entry) props)
+            (derivation-file-name
+             (package-derivation %store (manifest-entry-item entry))))))))
+
 (test-assert "transaction-upgrade-entry, grafts"
   ;; Ensure that, when grafts are enabled, 'transaction-upgrade-entry' doesn't
   ;; try to build stuff.
@@ -1406,6 +1429,26 @@
           ;; for equality is to lower to a derivation.
           (derivation-file-name
            (package-derivation %store coreutils))))))))
+
+(test-assert "package-with-c-toolchain"
+  (let* ((dep (dummy-package "chbouib"
+                (build-system gnu-build-system)
+                (native-inputs `(("x" ,grep)))))
+         (p0  (dummy-package "thingie"
+                (build-system gnu-build-system)
+                (inputs `(("foo" ,grep)
+                          ("bar" ,dep)))))
+         (tc  (dummy-package "my-toolchain"))
+         (p1  (package-with-c-toolchain p0 `(("toolchain" ,tc)))))
+    (define toolchain-packages
+      '("gcc" "binutils" "glibc" "ld-wrapper"))
+
+    (match (bag-build-inputs (package->bag p1))
+      ((("foo" foo) ("bar" bar) (_ (= package-name packages) . _) ...)
+       (and (not (any (cut member <> packages) toolchain-packages))
+            (member "my-toolchain" packages)
+            (eq? foo grep)
+            (eq? bar dep))))))
 
 (test-equal "package-patched-vulnerabilities"
   '(("CVE-2015-1234")
