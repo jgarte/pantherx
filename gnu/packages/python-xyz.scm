@@ -87,6 +87,7 @@
 ;;; Copyright © 2020 Malte Frank Gerdes <malte.f.gerdes@gmail.com>
 ;;; Copyright © 2020 Joseph LaFreniere <joseph@lafreniere.xyz>
 ;;; Copyright © 2020 Tim Gesthuizen <tim.gesthuizen@yahoo.de>
+;;; Copyright © 2020 Bonface Munyoki Kilyungi <bonfacemunyoki@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -108,6 +109,7 @@
   #:use-module (gnu packages)
   #:use-module (gnu packages algebra)
   #:use-module (gnu packages adns)
+  #:use-module (gnu packages aidc)
   #:use-module (gnu packages attr)
   #:use-module (gnu packages backup)
   #:use-module (gnu packages bash)
@@ -1666,7 +1668,24 @@ of @code{xmlfile}.")
     (description "This Python library allows reading and writing to the Excel XLSX, XLSM,
 XLTX and XLTM file formats that are defined by the Office Open XML (OOXML)
 standard.")
+    (properties  `((python2-variant . ,(delay python2-openpyxl))))
     (license license:expat)))
+
+(define-public python2-openpyxl
+  (let ((base (package-with-python2
+               (strip-python2-variant python-openpyxl))))
+    (package
+      (inherit base)
+      ;; This is the latest version that has python2 support
+      (version "2.6.4")
+      (source
+        (origin
+          (method url-fetch)
+          (uri (pypi-uri "openpyxl" version))
+          (sha256
+           (base32
+            "1qzjj8nwj4dn0mhq1j64f136afiqqb81lvqiikipz3g1g0b80lqx"))))
+      (arguments '(#:tests? #f)))))     ; No test suite.
 
 (define-public python-eventlet
   (package
@@ -4034,14 +4053,14 @@ matching of file paths.")
 (define-public python-black
   (package
     (name "python-black")
-    (version "19.10b0")
+    (version "20.8b1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "black" version))
        (sha256
         (base32
-         "0f8mr0yzj78q1dx7v6ggbgfir2wv0n5z2shfbbvfdq7910xbgvf2"))))
+         "1spv6sldp3mcxr740dh3ywp25lly9s8qlvs946fin44rl1x5a0hw"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -4059,7 +4078,11 @@ matching of file paths.")
                                                   "")))))
              #t))
          (add-after 'unpack 'disable-broken-tests
-           (lambda _
+           (lambda* (#:key outputs inputs #:allow-other-keys)
+             ;; Make installed package available for running the tests
+             (setenv "PATH" (string-append (assoc-ref outputs "out") "/bin"
+                                           ":" (getenv "PATH")))
+
              ;; These tests are supposed to be skipped when the blackd
              ;; dependencies are missing, but this doesn't quite work.
              (substitute* "tests/test_black.py"
@@ -4073,15 +4096,21 @@ matching of file paths.")
              (substitute* "tests/test_black.py"
                (("( *)def test_self" match indent)
                 (string-append indent "@unittest.skip(\"guix\")\n" match)))
+
+             (substitute* "tests/test_black.py"
+               (("( *)def test_python38" match indent)
+                (string-append indent "@unittest.skip(\"guix\")\n" match)))
              #t)))))
     (propagated-inputs
      `(("python-click" ,python-click)
        ("python-attrs" ,python-attrs)
        ("python-appdirs" ,python-appdirs)
        ("python-pathspec" ,python-pathspec)
+       ("python-mypy-extensions" ,python-mypy-extensions)
        ("python-regex" ,python-regex)
        ("python-toml" ,python-toml)
-       ("python-typed-ast" ,python-typed-ast)))
+       ("python-typed-ast" ,python-typed-ast)
+       ("python-typing-extensions" ,python-typing-extensions)))
     (native-inputs
      `(("python-setuptools-scm" ,python-setuptools-scm)))
     (home-page "https://github.com/ambv/black")
@@ -6037,6 +6066,61 @@ memoizing PEG/Packrat parser in Python.")
 
 (define-public python2-grako
   (package-with-python2 python-grako))
+
+(define-public python-grandalf
+  (package
+    (name "python-grandalf")
+    (version "0.7")
+    (source
+     (origin
+       ;; There's no source tarball on PyPI.
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/bdcht/grandalf")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "03p8w8ljpb87qbyldm3s6b7qi30hfcn43h33iwlgqcf31fjsyr4g"))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _
+             (invoke "python" "setup.py" "pytest"))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-pytest-runner" ,python-pytest-runner)))
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)
+       ("python-ply" ,python-ply)))
+    (home-page "https://github.com/bdcht/grandalf")
+    (synopsis "Graph and drawing algorithms framework")
+    (description
+     "Grandalf is a Python package made for experimentations with graphs
+drawing algorithms.  It is written in pure Python, and currently implements
+two layouts: the Sugiyama hierarchical layout and the force-driven or energy
+minimization approach.  While not as fast or featured as graphviz or other
+libraries like OGDF (C++), it provides a way to walk and draw graphs no larger
+than thousands of nodes, while keeping the source code simple enough to tweak
+and hack any part of it for experimental purpose.  With a total of about 1500
+lines of Python, the code involved in drawing the Sugiyama (dot) layout fits
+in less than 600 lines.  The energy minimization approach is comprised of only
+250 lines!
+
+Grandalf does only 2 not-so-simple things:
+@itemize
+@item computing the nodes (x,y) coordinates (based on provided nodes
+dimensions, and a chosen layout)
+@item routing the edges with lines or nurbs
+@end itemize
+
+It doesn’t depend on any GTK/Qt/whatever graphics toolkit.  This means that it
+will help you find where to draw things like nodes and edges, but it’s up to
+you to actually draw things with your favorite toolkit.")
+    ;; The user can choose either license.
+    (license (list license:gpl2 license:epl1.0))))
 
 (define-public python-gridmap
   (package
@@ -17225,6 +17309,31 @@ user's @file{~/Trash} directory.")
                        (string-append (getcwd) ":" (getenv "PYTHONPATH")))
                #t))))))))
 
+(define-public python-pyfavicon
+  (package
+    (name "python-pyfavicon")
+    (version "0.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pyfavicon" version))
+       (sha256
+        (base32 "15wfpa99hvcfsv8j0m8iprmydi2p4qkhm86qfx485244y0ia5mgx"))))
+    (build-system python-build-system)
+    (arguments
+     ;; There are no tests in the PyPI tarball and the tests from the
+     ;; repository require online data.
+     '(#:tests? #f))
+    (propagated-inputs
+     `(("python-aiohttp" ,python-aiohttp)
+       ("python-beautifulsoup4" ,python-beautifulsoup4)
+       ("python-pillow" ,python-pillow)))
+    (home-page "https://github.com/bilelmoussaoui/pyfavicon")
+    (synopsis "Async favicon fetcher")
+    (description
+     "@code{pyfavicon} is an async favicon fetcher.")
+    (license license:expat)))
+
 (define-public python-yapf
   (package
     (name "python-yapf")
@@ -17385,6 +17494,58 @@ Week instances stringify to this form.")
 
 (define-public python2-isoweek
   (package-with-python2 python-isoweek))
+
+(define-public python-pyzbar
+  (package
+    (name "python-pyzbar")
+    (version "0.1.8")
+    (source
+     (origin
+       ;; There's no source tarball on PyPI.
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/NaturalHistoryMuseum/pyzbar")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1fqlfg5p2v9lzzzi0si2sz54lblprk6jjjhjw54b64lp58c1yhsl"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'remove-failing-test
+           (lambda _
+             ;; This tests if find_library was called once, but we remove
+             ;; the call in the stage below to make the library find libzbar.
+             (delete-file "pyzbar/tests/test_zbar_library.py")
+             #t))
+         (add-before 'build 'set-library-file-name
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((libzbar (assoc-ref inputs "zbar")))
+               (substitute* "pyzbar/zbar_library.py"
+                 (("find_library\\('zbar'\\)")
+                  (string-append "'" libzbar "/lib/libzbar.so.0'")))
+               #t))))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("python-numpy" ,python-numpy)
+       ("python-pillow" ,python-pillow)))
+    (inputs
+     `(("zbar" ,zbar)))
+    (home-page "https://github.com/NaturalHistoryMuseum/pyzbar/")
+    (synopsis "Read one-dimensional barcodes and QR codes")
+    (description
+     "Read one-dimensional barcodes and QR codes using the zbar library.
+
+Features:
+
+@itemize
+@item Pure python
+@item Works with PIL / Pillow images, OpenCV / numpy ndarrays, and raw bytes
+@item Decodes locations of barcodes
+@item No dependencies, other than the zbar library itself
+@end itemize")
+    (license license:expat)))
 
 (define-public python-tokenize-rt
   (package
@@ -22343,3 +22504,33 @@ NestedText is both simple and natural.  Only a small number of concepts and rule
 be kept in mind when creating it.  It is easily created, modified, or viewed with
 a text editor and easily understood and used by both programmers and non-programmers.")
     (license license:expat))) ; MIT license
+
+(define-public python-parallel
+  (package
+    (name "python-parallel")
+    (version "1.6.4.4")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://www.parallelpython.com/downloads/pp/pp-"
+             version ".zip"))
+       (sha256
+        (base32
+         "1mzk4yabxj6r149fswhis18hd8dnag5sj8i4wb06450zq3pi8dh7"))))
+    (native-inputs
+     `(("unzip" ,unzip)))
+    (build-system python-build-system)
+    (arguments '(#:tests? #f))  ; No test suite.
+    (home-page "https://www.parallelpython.com")
+    (synopsis "Parallel and distributed programming for Python")
+    (description "Parallel Python module (PP) provides an easy and efficient
+way to create parallel-enabled applications for SMP computers and clusters.
+PP module features cross-platform portability and dynamic load balancing.
+Thus applications written with PP will parallelize efficiently even on
+heterogeneous and multi-platform clusters (including clusters running other
+applications with variable CPU loads).")
+    (license license:bsd-3)))
+
+(define-public python2-parallel
+  (package-with-python2 python-parallel))

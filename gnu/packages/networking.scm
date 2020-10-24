@@ -240,13 +240,13 @@ Android, and ChromeOS.")
        ("gtk-doc" ,gtk-doc)
        ("pkg-config" ,pkg-config)))
     (inputs
-     `(("gnutls" ,gnutls)
-       ("gstreamer" ,gstreamer)
+     `(("gstreamer" ,gstreamer)
        ("gst-plugins-base" ,gst-plugins-base)
        ("libnsl" ,libnsl)))
     (propagated-inputs
      `(("glib" ,glib)
-       ("glib-networking" ,glib-networking)))
+       ("glib-networking" ,glib-networking)
+       ("gnutls" ,gnutls)))
     (synopsis "GLib ICE implementation")
     (description "LibNice is a library that implements the Interactive
 Connectivity Establishment (ICE) standard (RFC 5245 & RFC 8445).  It provides a
@@ -331,11 +331,10 @@ supported, including rtmp://, rtmpt://, rtmpe://, rtmpte://, and rtmps://.")
                        (assoc-ref %outputs "out") "/lib")
         (string-append "-DCMAKE_INSTALL_INCLUDEDIR="
                        (assoc-ref %outputs "out") "/include")
-        "-DENABLE_UNITTESTS=ON"
-        "-DENABLE_CODE_COVERAGE=ON")))
+        "-DENABLE_STATIC=OFF"
+        "-DENABLE_UNITTESTS=ON")))
     (native-inputs
-     `(("git" ,git-minimal)
-       ("gtest" ,googletest)
+     `(("gtest" ,googletest)
        ("pkg-config" ,pkg-config)
        ("tclsh" ,tcl)))
     (propagated-inputs
@@ -900,10 +899,14 @@ more.")
        #:phases (modify-phases %standard-phases
                   (add-before 'check 'patch-tests
                     (lambda _
-                      ;; XXX FIXME: Disable the zproc test, which fails on some
-                      ;; hardware: <https://github.com/zeromq/czmq/issues/2007>.
                       (substitute* "src/czmq_selftest.c"
+                        ;; Disable the zproc test, which fails on some hardware
+                        ;; (see: https://github.com/zeromq/czmq/issues/2007).
                         (("\\{ \"zproc\", zproc_test.*")
+                         "")
+                        ;; Also disable the zarmour test, which fails as well
+                        ;; (see: https://github.com/zeromq/czmq/issues/2125).
+                        (("\\{ \"zarmour\", zarmour_test.*")
                          ""))
                       #t)))))
     (inputs

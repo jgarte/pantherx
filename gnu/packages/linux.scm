@@ -351,7 +351,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The current "stable" kernel. That is, the most recently released major
 ;; version.
-(define-public linux-libre-5.8-version "5.8.15")
+(define-public linux-libre-5.8-version "5.8.16")
 (define deblob-scripts-5.8
   (linux-libre-deblob-scripts
    linux-libre-5.8-version
@@ -359,7 +359,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0z28yj4f7hhc253hssslm6xl9sg92agbiw50jxb9y72d8zp6sksq")))
 (define-public linux-libre-5.8-pristine-source
   (let ((version linux-libre-5.8-version)
-        (hash (base32 "0hfnq4n902pws8sjxd1lsdxxa0v45g988imp73xnqfqv2d71r0bj")))
+        (hash (base32 "1icxa0pgqhji924ryz37mpjjf4zlkrm8bidanjyn2mzbar7migzx")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.8)))
@@ -367,7 +367,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
-(define-public linux-libre-5.4-version "5.4.71")
+(define-public linux-libre-5.4-version "5.4.72")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
    linux-libre-5.4-version
@@ -375,12 +375,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1h6gbc9cfhb7dqx669iq26a23whka6km5av0ysk61aaz2z57vkrk")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "1ivcimngj5h7lxslkrdljpfw9hfvdhrm8wrp7gp4d3gk7kpljw3k")))
+        (hash (base32 "0whi5kr1ziy9y20p42adnmqks41cavsraa36g9dbbrbgsmdn890f")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.151")
+(define-public linux-libre-4.19-version "4.19.152")
 (define deblob-scripts-4.19
   (linux-libre-deblob-scripts
    linux-libre-4.19-version
@@ -388,12 +388,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1jiaw0as1ippkrjdpd52657w5mz9qczg3y2hlra7m9k0xawwiqlf")))
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "0vm3nsi9la3azxrsvndbd6fpz79pch7309f2144xyxszsk339cf7")))
+        (hash (base32 "0p857b1gmmc2bv8limrdbfb3zsnchvg275sx5fkyy4185jfam9m5")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.201")
+(define-public linux-libre-4.14-version "4.14.202")
 (define deblob-scripts-4.14
   (linux-libre-deblob-scripts
    linux-libre-4.14-version
@@ -401,12 +401,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1qij18inijj6c3ma8hv98yjagnzxdxyn134da9fd23ky8q6hbvky")))
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "0nr3w5m7dz28v7qfhp99ih4c369qrhq751wfikbz8ga3di0dqa72")))
+        (hash (base32 "0a739g3s0lc579zp4478xr645qzvhmrm1w19x0rj7p8bbfmigiwm")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.239")
+(define-public linux-libre-4.9-version "4.9.240")
 (define deblob-scripts-4.9
   (linux-libre-deblob-scripts
    linux-libre-4.9-version
@@ -414,12 +414,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0fxajshb75siq39lj5h8xvhdj8lcmddkslwlyj65rhlwk6g2r4b2")))
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "0lfbn5amykvwz1svvxayzhsz1dvm4mgzsnq1g0wqffclxm148hr3")))
+        (hash (base32 "0vvpvw5wsvjnwch5ci63x08qc7qyzpyxbiaxx4521nl8d7371r06")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.239")
+(define-public linux-libre-4.4-version "4.4.240")
 (define deblob-scripts-4.4
   (linux-libre-deblob-scripts
    linux-libre-4.4-version
@@ -427,7 +427,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0hhin1jpfkd6nwrb6xqxjzl3hdxy4pn8a15hy2d3d83yw6pflbsf")))
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "03myd9ngmjmnddh4iqqsgcfg9rd11vyvwym38yh4m1p08j1zbg0k")))
+        (hash (base32 "131pamgxxmx4ba4gn2qxczv8w3lxrmwlqg0a7pdjzg0sy9lirygk")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -978,7 +978,16 @@ It has been modified to remove all non-free binary blobs.")
                      #:extra-options
                      (append
                       `(;; needed to fix the RTC on rockchip platforms
-                        ("CONFIG_RTC_DRV_RK808" . #t))
+                        ("CONFIG_RTC_DRV_RK808" . #t)
+                        ;; Pinebook display, battery, charger and usb
+                        ("CONFIG_DRM_ANALOGIX_ANX6345" . m)
+                        ("CONFIG_CHARGER_AXP20X" . m)
+                        ("CONFIG_INPUT_AXP20X_PEK" . m)
+                        ("CONFIG_CHARGER_AXP20X" . m)
+                        ("CONFIG_BATTERY_AXP20X" . m)
+                        ("CONFIG_PINCTRL_AXP209" . m)
+                        ("CONFIG_AXP20X_POWER" . m)
+                        ("CONFIG_AXP20X_ADC" . m))
                       %default-extra-linux-options)))
 
 (define-public linux-libre-arm64-generic-5.4
@@ -1002,8 +1011,8 @@ It has been modified to remove all non-free binary blobs.")
 (define-public linux-libre-with-bpf
   (let ((base-linux-libre
          (make-linux-libre*
-          linux-libre-5.4-version
-          linux-libre-5.4-source
+          linux-libre-5.8-version
+          linux-libre-5.8-source
           '("x86_64-linux" "i686-linux" "armhf-linux"
             "aarch64-linux" "riscv64-linux")
           #:extra-version "bpf"
