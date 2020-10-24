@@ -826,8 +826,8 @@ shared library and encoder and decoder command-line executables.")
 (define-public libx264
   ;; There are no tags in the repository, so we take the version number from
   ;; the X264_BUILD variable defined in x264.h.
-  (let ((version "159")
-        (commit "1771b556ee45207f8711744ccbd5d42a3949b14c")
+  (let ((version "161")
+        (commit "4c2aafd864dd201832ec2be0fef4484925146650")
         (revision "0"))
     (package
       (name "libx264")
@@ -840,7 +840,7 @@ shared library and encoder and decoder command-line executables.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0kmi78gs5101d4df33il5bmjbns54nvdjsyn44xiw60lwsg11vwz"))))
+                  "1i6v9h3xx9pi0zmlj3anwwjxqa63sbhy9crrif8dphipwfn9hyg5"))))
       (build-system gnu-build-system)
       (native-inputs
        `(("pkg-config" ,pkg-config)
@@ -1005,7 +1005,7 @@ H.264 (MPEG-4 AVC) video streams.")
 (define-public straw-viewer
   (package
     (name "straw-viewer")
-    (version "0.0.7")
+    (version "0.1.0")
     (source
      (origin
        (method git-fetch)
@@ -1014,7 +1014,7 @@ H.264 (MPEG-4 AVC) video streams.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "11ywip9ck2rgyj8s1pyr6za3si0bnx8rl2f3cv84xgcq36ac3rv4"))))
+        (base32 "0786bppk8dhp5p2284qp7pm3b9vwh1cm4n03hiqwd2vvgv41aypy"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-build" ,perl-module-build)
@@ -1635,11 +1635,19 @@ audio/video codec library.")
                "1j7mdk9szrljgv4sdx69bm1pnbb3cldbdxbkr42jbdi9zn11gl7g"))))
     (arguments
      (substitute-keyword-arguments (package-arguments ffmpeg)
+       ((#:modules modules %gnu-build-system-modules)
+        `((srfi srfi-1)
+          ,@modules))
        ((#:configure-flags flags)
-        `(delete "--enable-libdav1d" (delete "--enable-libaom" (delete "--enable-librav1e"
-                  ,flags))))))
-    (inputs (alist-delete "dav1d" (alist-delete "libaom" (alist-delete "rav1e"
-                           (package-inputs ffmpeg)))))))
+        `(fold delete
+               ,flags
+               '("--enable-libdav1d"
+                 "--enable-libaom"
+                 "--enable-librav1e"
+                 "--enable-libsrt")))))
+    (inputs (fold alist-delete
+                  (package-inputs ffmpeg)
+                  '("dav1d" "libaom" "rav1e" "srt")))))
 
 (define-public ffmpeg-2.8
   (package
