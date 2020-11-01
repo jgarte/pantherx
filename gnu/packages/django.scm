@@ -1052,7 +1052,7 @@ provides features like a Web-browsable API and authentication policies.")
        ("python-six" ,python-six)))
     (home-page "https://github.com/divio/django-sekizai")
     (synopsis "Template blocks for Django projects")
-    (description "Sekizai means blocks in Japanese, and thats what this app
+    (description "Sekizai means blocks in Japanese, and that is what this app
 provides.  A fresh look at blocks.  With @code{django-sekizai} you can define
 placeholders where your blocks get rendered and at different places in your
 templates append to those blocks.  This is especially useful for css and
@@ -1193,7 +1193,7 @@ FileFields during tests.")
     (home-page "https://github.com/django-auth-ldap/django-auth-ldap")
     (synopsis "Django LDAP authentication backend")
     (description
-     "This packages provides a LDAP authentication backend for Django.")
+     "This package provides an LDAP authentication backend for Django.")
     (license license:bsd-2)))
 
 (define-public python-django-logging-json
@@ -1291,6 +1291,6 @@ to ElasticSearch.")
     (description
      "The main goal of Django URL Filter is to provide an easy URL interface
 for filtering data.  It allows the user to safely filter by model attributes
-and also allows to specify the lookup type for each filter (very much like
+and also specify the lookup type for each filter (very much like
 Django's filtering system in ORM).")
     (license license:expat)))

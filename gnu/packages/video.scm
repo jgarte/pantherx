@@ -44,6 +44,7 @@
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2020 Brett Gilio <brettg@gnu.org>
+;;; Copyright © 2020 Alexandru-Sergiu Marton <brown121407@posteo.ro>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -881,14 +882,14 @@ H.264 (MPEG-4 AVC) video streams.")
 (define-public mkvtoolnix
   (package
     (name "mkvtoolnix")
-    (version "50.0.0")
+    (version "51.0.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://mkvtoolnix.download/sources/"
                            "mkvtoolnix-" version ".tar.xz"))
        (sha256
-        (base32 "09485qfbdirr9g536shglzdm271yipb1669r3dm3hxp46k0x59aq"))
+        (base32 "0w2crz6wnfw18m9m4zrij1yplcq5drzhz8n58w9kp51wl48a0yn1"))
        (modules '((guix build utils)))
        (snippet '(begin
                    ;; Delete bundled libraries.
@@ -1467,7 +1468,6 @@ operate properly.")
        ("perl" ,perl)
        ("pkg-config" ,pkg-config)
        ("texinfo" ,texinfo)
-       ("python" ,python-2) ; scripts use interpreter python2
        ("speex" ,speex)
        ("yasm" ,yasm)))
     (arguments
@@ -2188,9 +2188,8 @@ To load this plugin, specify the following option when starting mpv:
     (version "2020.09.20")
     (source (origin
               (method url-fetch)
-              (uri (string-append "https://github.com/ytdl-org/youtube-dl/"
-                                  "releases/download/" version "/youtube-dl-"
-                                  version ".tar.gz"))
+              (uri (string-append "https://youtube-dl.org/downloads/latest/"
+                                  "youtube-dl-" version ".tar.gz"))
               (sha256
                (base32
                 "1pkw3hnkddk1kqv0in152q1k4jjgbmf2xvc9j3r5nd38z6f7j6mc"))))
@@ -3721,6 +3720,47 @@ MPEG-2, MPEG-4, DVD (VOB)...
 information and other metadata about audio or video files.  It supports the
 many codecs and formats supported by libmediainfo.")
     (license license:bsd-2)))
+
+(define-public atomicparsley
+  (package
+    (name "atomicparsley")
+    (version "20200701.154658.b0d6223")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/wez/atomicparsley")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1kym2l5y34nmbrrlkfmxsf1cwrvch64kb34jp0hpa0b89idbhwqh"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f ;; no tests included
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'configure 'set-cmake-version
+           (lambda* _
+             (substitute* "CMakeLists.txt"
+               ;; At the time of writing, Guix has CMake at 3.16, but
+               ;; AtomicParsley uses 3.17.  This brings the required CMake
+               ;; version down to what Guix can afford.
+               (("VERSION 3.17") "VERSION 3.16"))
+             #t))
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin")))
+               (install-file "AtomicParsley" bin))
+             #t)))))
+    (inputs
+     `(("zlib" ,zlib)))
+    (synopsis "Metadata editor for MPEG-4 files")
+    (description "AtomicParsley is a lightweight command line program for
+reading, parsing and setting metadata into MPEG-4 files, in particular,
+iTunes-style metadata.")
+    (home-page "https://github.com/wez/atomicparsley")
+    (license license:gpl2+)))
 
 (define-public livemedia-utils
   (package

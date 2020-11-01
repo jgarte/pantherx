@@ -131,8 +131,8 @@
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
   (let ((version "1.1.0")
-        (commit "321995826c9d82560f252c278b92d80e8cb3d3e7")
-        (revision 30))
+        (commit "1c6d98533153bc8e0e36236e7fbcf1eb5e178d26")
+        (revision 31))
     (package
       (name "guix")
 
@@ -148,7 +148,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "1xg8kwc27f10x53npa5isd28bak955cihj843rh0fnsgip6n6rln"))
+                  "0cnc0fq0krdgh28k7spivy0jqv0k5vx59vxi3yxdsyqn8iznnqn1"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -642,6 +642,25 @@ typically used for managing software packages installed from source, by
 letting you install them apart in distinct directories and then create
 symlinks to the files in a common directory such as /usr/local.")
     (license license:gpl3+)))
+
+(define-public xstow
+  (package
+    (name "xstow")
+    (version "1.0.2")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://sourceforge/xstow/xstow-"
+                                  version ".tar.bz2"))
+              (sha256
+               (base32
+                "1vy6lcswpkixh7h5mvsmq2wbcih6lpsmcva3m7v6f5npllciy13g"))))
+    (build-system gnu-build-system)
+    (synopsis "Replacement of GNU Stow written in C++")
+    (description
+     "XStow is a replacement of GNU Stow written in C++.  It supports all
+features of Stow with some extensions.")
+    (home-page "http://xstow.sourceforge.net/")
+    (license license:gpl2)))
 
 (define-public rpm
   (package

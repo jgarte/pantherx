@@ -18,6 +18,77 @@
 (channel-news
  (version 0)
 
+ (entry (commit "3b6e4e5fd05e72b8a32ff1a2d5e21464260e21e6")
+        (title (en "List of substitute keys is now declarative on Guix System")
+               (de "Liste der Substitutschlüssel auf Guix System ist jetzt deklarativ")
+               (es "Claves para sustituciones del sistema Guix en formato declarativo")
+               (fr "Liste des clefs de substituts désormais déclarative sur Guix System"))
+        (body
+         (en "The list of authorized substitute keys, available in
+@file{/etc/guix/acl}, is now built by default in a purely declarative fashion
+on Guix System based on the @code{authorized-keys} field of the configuration
+of @code{guix-service-type}.  This means that manual changes to
+@file{/etc/guix/acl} are now @emph{discarded} upon reconfiguration or
+reboot (a backup is made as @file{/etc/guix/acl.bak} in that case).
+
+We recommend updating your operating system configuration to explicitly list
+all the authorized substitute keys.  See @command{info \"(guix) Base
+Services\"}, for more info about @code{guix-configuration} and
+@code{authorized-keys}.
+
+Alternatively, you can set the @code{authorize-key?} field of
+@code{guix-configuration} to @code{#f} to restore previous behavior.")
+         (de "Die Liste von autorisierten Substitutschlüsseln, die in
+@file{/etc/guix/acl} steht, wird auf Guix System nach Vorgabe jetzt auf rein
+deklarative Weise erstellt, je nach Inhalt des @code{authorized-keys}-Feldes
+der Konfiguration des @code{guix-service-type}. Das hat zur Folge, dass
+manuelle Änderungen an @file{/etc/guix/acl} von jetzt an nach jedem
+Rekonfigurieren oder Neustarten @emph{verworfen} werden (in diesem Fall wird
+eine Sicherheitskopie namens @file{/etc/guix/acl.bak} angelegt).
+
+Wir empfehlen, dass Sie Ihre Betriebssystemkonfiguration aktualisieren, damit
+dort alle autorisierten Substitutschlüssel ausdrücklich aufgeführt
+werden. Siehe @command{info \"(guix.de) Basisdienste\"} für mehr Informationen
+zur @code{guix-configuration} und @code{authorized-keys}.
+
+Alternativ können Sie das @code{authorize-key?}-Feld der
+@code{guix-configuration} auf @code{#f} setzen, um zum alten Verhalten
+zurückzugehen.")
+         (es "El listado de claves autorizadas para la obtención de
+sustituciones, disponible en @file{/etc/guix/acl}, ahora se genera de manera
+predeterminada en el sistema Guix de forma completamente declarativa en base
+al campo @code{authorized-keys} del la configuración para el servicio
+@code{guix-service-type}. Esto significa que los cambios que se hayan
+realizado de manera manual en @file{/etc/guix/acl} @emph{se descartan} tras
+una reconfiguración del sistema o tras un reinicio (se realiza una copia de
+seguridad en la ruta @file{/etc/guix/acl.bak} en este caso).
+
+Le recomendamos que actualice su configuración del sistema operativo para que
+enumere explícitamente todas las claves que desea autorizar para la obtención
+de sustituciones.  Véase @command{info \"(guix.es) Servicios base\"}, para
+obtener más información sobre @code{guix-configuration} y
+@code{authorized-keys}.
+
+También puede proporcionar el valor @code{#f} en el campo
+@code{authorize-key?} de @code{guix-configuration} para volver al
+comportamiento que se obtenía con versiones previas.")
+         (fr "La liste des clefs de substituts autorisées, stockée dans
+@file{/guix/guix/acl}, est dorénavant construite par défaut de manière
+déclarative sur Guix System, en se basant sur le champs @code{authorized-keys}
+de la configuration de @code{guix-service-type}.  Cela signifie que les
+modifications apportées manuellement à @file{/etc/guix/acl} seront désormais
+@emph{perdues} lors d'une reconfiguration ou d'un redémarrage (dans ce cas une
+sauvegarde est faite dans @file{/etc/guix/acl.bak}).
+
+Nous recommandons de mettre à jour sa configuration de système d'exploitation
+pour y lister explicitement les clefs autorisées.  Lancez @command{info
+\"(guix.fr) Services de base\"} pour plus d'informations sur
+@code{guix-configuration} et @code{authorized-keys}.
+
+Il est également possible de mettre le champs @code{authorize-key?} de
+@code{guix-configuration} à @code{#f} pour restaurer le comportement qui
+prévalait jusqu'à maintenant.")))
+
  (entry (commit "6aeda81602555fbeac0c0a209e74f5262093b513")
         (title (en "New @option{--with-debug-info} package transformation option")
                (de "Neue Paketumwandlungsoption @option{--with-debug-info}")

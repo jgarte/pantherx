@@ -874,6 +874,18 @@ tools.")
          "audiofile-division-by-zero-BlockCodec-runPull.patch"
          "audiofile-CVE-2018-13440.patch"
          "audiofile-CVE-2018-17095.patch"))))
+    (properties `((lint-hidden-cve . ("CVE-2017-6829"
+
+                                      "CVE-2017-6827" "CVE-2017-6828"
+                                      "CVE-2017-6832" "CVE-2017-6835"
+                                      "CVE-2017-6837"
+
+                                      "CVE-2017-6839"
+
+                                      "CVE-2017-6830" "CVE-2017-6834"
+                                      "CVE-2017-6836" "CVE-2017-6838"
+
+                                      "CVE-2017-6831" "CVE-2017-6833"))))
     (build-system gnu-build-system)
     (inputs
      `(("alsa-lib" ,alsa-lib)))
@@ -2926,7 +2938,7 @@ aimed at audio/musical applications.")
     (description "This package contains the @command{resample} and
 @command{windowfilter} command line utilities.  The @command{resample} command
 allows changing the sampling rate of a sound file, while the
-@command{windowfilter} command allows to design Finite Impulse Response (FIR)
+@command{windowfilter} command allows designing Finite Impulse Response (FIR)
 filters using the so-called @emph{window method}.")
     (home-page "https://ccrma.stanford.edu/~jos/resample/Free_Resampling_Software.html")
     (license license:lgpl2.1+)))

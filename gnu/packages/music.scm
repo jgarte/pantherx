@@ -4220,6 +4220,7 @@ audio samples and various soft sythesizers.  It can receive input from a MIDI ke
        `("-DBUILD_TELEMETRY_MODULE=OFF" ;don't phone home
          "-DBUILD_WEBENGINE=OFF"
          "-DDOWNLOAD_SOUNDFONT=OFF"
+         "-DMUSESCORE_BUILD_CONFIG=release"
          "-DUSE_SYSTEM_FREETYPE=ON")
        ;; There are tests, but no simple target to run.  The command used to
        ;; run them is:
@@ -4252,8 +4253,9 @@ audio samples and various soft sythesizers.  It can receive input from a MIDI ke
      `(("pkg-config" ,pkg-config)
        ("qttools" ,qttools)))
     (synopsis "Music composition and notation software")
-    (description "MuseScore is a music score typesetter.  Its main purpose is
-the creation of high-quality engraved musical scores in a WYSIWYG environment.
+    (description
+     "MuseScore is a music score typesetter.  Its main purpose is the creation
+of high-quality engraved musical scores in a WYSIWYG environment.
 
 It supports unlimited staves, linked parts and part extraction, tablature,
 MIDI input, percussion notation, cross-staff beaming, automatic transposition,
@@ -5047,7 +5049,7 @@ complete without obstructing your daily work.")
 (define-public playerctl
   (package
     (name "playerctl")
-    (version "2.0.2")
+    (version "2.2.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -5056,7 +5058,7 @@ complete without obstructing your daily work.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1f3njnpd52djx3dmhh9a8p5a67f0jmr1gbk98icflr2q91149gjz"))))
+                "17hi33sw3663qz5v54bqqil31sgkrlxkb2l5bgqk87pac6x2wnbz"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags '("-Dintrospection=false" "-Dgtk-doc=false")))
