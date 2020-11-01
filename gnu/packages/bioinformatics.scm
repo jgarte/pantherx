@@ -313,7 +313,7 @@ BAM files.")
 (define-public bcftools
   (package
     (name "bcftools")
-    (version "1.9")
+    (version "1.11")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/samtools/bcftools/"
@@ -321,11 +321,11 @@ BAM files.")
                                   version "/bcftools-" version ".tar.bz2"))
               (sha256
                (base32
-                "1j3h638i8kgihzyrlnpj82xg1b23sijibys9hvwari3fy7kd0dkg"))
+                "0r508mp15pqzf8r1269kb4v5naw9zsvbwd3cz8s1yj7carsf9viw"))
               (modules '((guix build utils)))
               (snippet '(begin
                           ;; Delete bundled htslib.
-                          (delete-file-recursively "htslib-1.9")
+                          (delete-file-recursively "htslib-1.11")
                           #t))))
     (build-system gnu-build-system)
     (arguments
@@ -4215,7 +4215,7 @@ performance.")
 (define-public htslib
   (package
     (name "htslib")
-    (version "1.9")
+    (version "1.11")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -4223,7 +4223,7 @@ performance.")
                     version "/htslib-" version ".tar.bz2"))
               (sha256
                (base32
-                "16ljv43sc3fxmv63w7b2ff8m1s7h89xhazwmbm1bicz8axq8fjz0"))))
+                "1mrq4mihzx37yqhj3sfz6da6mw49niia808bzsw2gkkgmadxvyng"))))
     (build-system gnu-build-system)
     ;; Let htslib translate "gs://" and "s3://" to regular https links with
     ;; "--enable-gcs" and "--enable-s3". For these options to work, we also
@@ -5613,7 +5613,7 @@ to the user's query of interest.")
 (define-public samtools
   (package
     (name "samtools")
-    (version "1.9")
+    (version "1.11")
     (source
      (origin
        (method url-fetch)
@@ -5622,11 +5622,11 @@ to the user's query of interest.")
                        version "/samtools-" version ".tar.bz2"))
        (sha256
         (base32
-         "10ilqbmm7ri8z431sn90lvbjwizd0hhkf9rcqw8j823hf26nhgq8"))
+         "1dp5wknak4arnw5ghhif9mmljlfnw5bgm91wib7z0j8wdjywx0z2"))
        (modules '((guix build utils)))
        (snippet '(begin
                    ;; Delete bundled htslib.
-                   (delete-file-recursively "htslib-1.9")
+                   (delete-file-recursively "htslib-1.11")
                    #t))))
     (build-system gnu-build-system)
     (arguments

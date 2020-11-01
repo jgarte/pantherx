@@ -81,6 +81,7 @@ Copyright @copyright{} 2020 R Veera Kumar@*
 Copyright @copyright{} 2020 Pierre Langlois@*
 Copyright @copyright{} 2020 pinoaffe@*
 Copyright @copyright{} 2020 André Batista@*
+Copyright @copyright{} 2020 Alexandru-Sergiu Marton@*
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -222,6 +223,7 @@ Substitutes
 
 * Official Substitute Server::  One particular source of substitutes.
 * Substitute Server Authorization::  How to enable or disable substitutes.
+* Getting Substitutes from Other Servers::  Substitute diversity.
 * Substitute Authentication::   How Guix verifies substitutes.
 * Proxy Settings::              How to get substitutes via proxy.
 * Substitution Failure::        What happens when substitution fails.
@@ -251,6 +253,7 @@ Programming Interface
 
 * Package Modules::             Packages from the programmer's viewpoint.
 * Defining Packages::           Defining new packages.
+* Defining Package Variants::   Customizing packages.
 * Build Systems::               Specifying how packages are built.
 * Build Phases::                Phases of the build process of a package.
 * Build Utilities::             Helpers for your package definitions and more.
@@ -258,7 +261,7 @@ Programming Interface
 * Derivations::                 Low-level interface to package derivations.
 * The Store Monad::             Purely functional interface to the store.
 * G-Expressions::               Manipulating build expressions.
-* Invoking guix repl::          Programming Guix in Guile
+* Invoking guix repl::          Programming Guix in Guile.
 
 Defining Packages
 
@@ -667,7 +670,7 @@ not emit warnings about ``implausibly old time stamps'' (such
 warnings were triggered by GNU@tie{}tar 1.26 and older; recent
 versions are fine).
 They stem from the fact that all the
-files in the archive have their modification time set to zero (which
+files in the archive have their modification time set to 1 (which
 means January 1st, 1970).  This is done on purpose to make sure the
 archive content is independent of its creation time, thus making it
 reproducible.
@@ -1467,14 +1470,17 @@ When the daemon runs with @option{--no-substitutes}, clients can still
 explicitly enable substitution @i{via} the @code{set-build-options}
 remote procedure call (@pxref{The Store}).
 
-@item --substitute-urls=@var{urls}
 @anchor{daemon-substitute-urls}
+@item --substitute-urls=@var{urls}
 Consider @var{urls} the default whitespace-separated list of substitute
 source URLs.  When this option is omitted,
 @indicateurl{https://@value{SUBSTITUTE-SERVER}} is used.
 
 This means that substitutes may be downloaded from @var{urls}, as long
 as they are signed by a trusted signature (@pxref{Substitutes}).
+
+@xref{Getting Substitutes from Other Servers}, for more information on
+how to configure the daemon to get substitutes from other servers.
 
 @cindex offloading
 @item --no-offload
@@ -3554,6 +3560,7 @@ also result from derivation builds, can be available as substitutes.
 @menu
 * Official Substitute Server::  One particular source of substitutes.
 * Substitute Server Authorization::  How to enable or disable substitutes.
+* Getting Substitutes from Other Servers::  Substitute diversity.
 * Substitute Authentication::   How Guix verifies substitutes.
 * Proxy Settings::              How to get substitutes via proxy.
 * Substitution Failure::        What happens when substitution fails.
@@ -3602,6 +3609,11 @@ must add its public key to the access control list (ACL) of archive
 imports, using the @command{guix archive} command (@pxref{Invoking guix
 archive}).  Doing so implies that you trust @code{@value{SUBSTITUTE-SERVER}} to not
 be compromised and to serve genuine substitutes.
+
+@quotation Note
+If you are using Guix System, you can skip this section: Guix System
+authorizes substitutes from @code{@value{SUBSTITUTE-SERVER}} by default.
+@end quotation
 
 The public key for @code{@value{SUBSTITUTE-SERVER}} is installed along with Guix, in
 @code{@var{prefix}/share/guix/@value{SUBSTITUTE-SERVER}.pub}, where @var{prefix} is
@@ -3652,6 +3664,108 @@ The substitute mechanism can be disabled globally by running
 guix-daemon}).  It can also be disabled temporarily by passing the
 @option{--no-substitutes} option to @command{guix package},
 @command{guix build}, and other command-line tools.
+
+@node Getting Substitutes from Other Servers
+@subsection Getting Substitutes from Other Servers
+
+@cindex substitute servers, adding more
+Guix can look up and fetch substitutes from several servers.  This is
+useful when you are using packages from additional channels for which
+the official server does not have substitutes but another server
+provides them.  Another situation where this is useful is when you would
+prefer to download from your organization's substitute server, resorting
+to the official server only as a fallback or dismissing it altogether.
+
+You can give Guix a list of substitute server URLs and it will check
+them in the specified order.  You also need to explicitly authorize the
+public keys of substitute servers to instruct Guix to accept the
+substitutes they sign.
+
+On Guix System, this is achieved by modifying the configuration of the
+@code{guix} service.  Since the @code{guix} service is part of the
+default lists of services, @code{%base-services} and
+@code{%desktop-services}, you can use @code{modify-services} to change
+its configuration and add the URLs and substitute keys that you want
+(@pxref{Service Reference, @code{modify-services}}).
+
+As an example, suppose you want to fetch substitutes from
+@code{guix.example.org} and to authorize the signing key of that server,
+in addition to the default @code{@value{SUBSTITUTE-SERVER}}.  The
+resulting operating system configuration will look something like:
+
+@lisp
+(operating-system
+  ;; @dots{}
+  (services
+    ;; Assume we're starting from '%desktop-services'.  Replace it
+    ;; with the list of services you're actually using.
+    (modify-services %desktop-services
+      (guix-service-type config =>
+                        (guix-configuration
+                          (inherit config)
+                          (substitute-urls
+                            (append (list "https://guix.example.org")
+                                    %default-substitute-urls))
+                          (authorized-keys
+                            (append (list (local-file "./key.pub"))
+                                    %default-authorized-guix-keys)))))))
+@end lisp
+
+This assumes that the file @file{key.pub} contains the signing key of
+@code{guix.example.org}.  With this change in place in your operating
+system configuration file (say @file{/etc/config.scm}), you can
+reconfigure and restart the @code{guix-daemon} service or reboot so the
+changes take effect:
+
+@example
+$ sudo guix system reconfigure /etc/config.scm
+$ sudo herd restart guix-daemon
+@end example
+
+If you're running Guix on a ``foreign distro'', you would instead take
+the following steps to get substitutes from additional servers:
+
+@enumerate
+@item
+Edit the service configuration file for @code{guix-daemon}; when using
+systemd, this is normally
+@file{/etc/systemd/system/guix-daemon.service}.  Add the
+@option{--substitute-urls} option on the @command{guix-daemon} command
+line and list the URLs of interest (@pxref{daemon-substitute-urls,
+@code{guix-daemon --substitute-urls}}):
+
+@example
+@dots{} --substitute-urls='https://guix.example.org https://@value{SUBSTITUTE-SERVER}'
+@end example
+
+@item
+Restart the daemon.  For systemd, it goes like this:
+
+@example
+systemctl daemon-reload
+systemctl restart guix-daemon.service
+@end example
+
+@item
+Authorize the key of the new server (@pxref{Invoking guix archive}):
+
+@example
+guix archive --authorize < key.pub
+@end example
+
+Again this assumes @file{key.pub} contains the public key that
+@code{guix.example.org} uses to sign substitutes.
+@end enumerate
+
+Now you're all set!  Substitutes will be preferably taken from
+@code{https://guix.example.org}, using @code{@value{SUBSTITUTE-SERVER}}
+as a fallback.  Of course you can list as many substitute servers as you
+like, with the caveat that substitute lookup can be slowed down if too
+many servers need to be contacted.
+
+Note that there are also situations where one may want to add the URL of
+a substitute server @emph{without} authorizing its key.
+@xref{Substitute Authentication}, to understand this fine point.
 
 @node Substitute Authentication
 @subsection Substitute Authentication
@@ -4310,7 +4424,7 @@ Scheme code that evaluates to a list of channel objects.
 @end table
 
 As for @command{guix pull}, the absence of any options means that the
-the latest commit on the master branch will be used. The command
+latest commit on the master branch will be used. The command
 
 @example
 guix time-machine -- build hello
@@ -5386,7 +5500,7 @@ Another typical use case for containers is to run security-sensitive
 applications such as a web browser.  To run Eolie, we must expose and
 share some files and directories; we include @code{nss-certs} and expose
 @file{/etc/ssl/certs/} for HTTPS authentication; finally we preserve the
-the @env{DISPLAY} environment variable since containerized graphical
+@env{DISPLAY} environment variable since containerized graphical
 applications won't display without it.
 
 @example
@@ -6091,6 +6205,7 @@ package definitions.
 @menu
 * Package Modules::             Packages from the programmer's viewpoint.
 * Defining Packages::           Defining new packages.
+* Defining Package Variants::   Customizing packages.
 * Build Systems::               Specifying how packages are built.
 * Build Phases::                Phases of the build process of a package.
 * Build Utilities::             Helpers for your package definitions and more.
@@ -6360,79 +6475,8 @@ and operating system, such as @code{"aarch64-linux-gnu"}
 (@pxref{Specifying Target Triplets,,, autoconf, Autoconf}).
 @end deffn
 
-@cindex package transformations
-@cindex input rewriting
-@cindex dependency tree rewriting
-Packages can be manipulated in arbitrary ways.  An example of a useful
-transformation is @dfn{input rewriting}, whereby the dependency tree of
-a package is rewritten by replacing specific inputs by others:
-
-@deffn {Scheme Procedure} package-input-rewriting @var{replacements} @
-           [@var{rewrite-name}] [#:deep? #t]
-Return a procedure that, when passed a package, replaces its direct and
-indirect dependencies, including implicit inputs when @var{deep?} is
-true, according to @var{replacements}.  @var{replacements} is a list of
-package pairs; the first element of each pair is the package to replace,
-and the second one is the replacement.
-
-Optionally, @var{rewrite-name} is a one-argument procedure that takes
-the name of a package and returns its new name after rewrite.
-@end deffn
-
-@noindent
-Consider this example:
-
-@lisp
-(define libressl-instead-of-openssl
-  ;; This is a procedure to replace OPENSSL by LIBRESSL,
-  ;; recursively.
-  (package-input-rewriting `((,openssl . ,libressl))))
-
-(define git-with-libressl
-  (libressl-instead-of-openssl git))
-@end lisp
-
-@noindent
-Here we first define a rewriting procedure that replaces @var{openssl}
-with @var{libressl}.  Then we use it to define a @dfn{variant} of the
-@var{git} package that uses @var{libressl} instead of @var{openssl}.
-This is exactly what the @option{--with-input} command-line option does
-(@pxref{Package Transformation Options, @option{--with-input}}).
-
-The following variant of @code{package-input-rewriting} can match packages to
-be replaced by name rather than by identity.
-
-@deffn {Scheme Procedure} package-input-rewriting/spec @var{replacements} [#:deep? #t]
-Return a procedure that, given a package, applies the given
-@var{replacements} to all the package graph, including implicit inputs
-unless @var{deep?} is false.  @var{replacements} is a list of
-spec/procedures pair; each spec is a package specification such as
-@code{"gcc"} or @code{"guile@@2"}, and each procedure takes a matching
-package and returns a replacement for that package.
-@end deffn
-
-The example above could be rewritten this way:
-
-@lisp
-(define libressl-instead-of-openssl
-  ;; Replace all the packages called "openssl" with LibreSSL.
-  (package-input-rewriting/spec `(("openssl" . ,(const libressl)))))
-@end lisp
-
-The key difference here is that, this time, packages are matched by spec and
-not by identity.  In other words, any package in the graph that is called
-@code{openssl} will be replaced.
-
-A more generic procedure to rewrite a package dependency graph is
-@code{package-mapping}: it supports arbitrary changes to nodes in the
-graph.
-
-@deffn {Scheme Procedure} package-mapping @var{proc} [@var{cut?}] [#:deep? #f]
-Return a procedure that, given a package, applies @var{proc} to all the packages
-depended on and returns the resulting package.  The procedure stops recursion
-when @var{cut?} returns true for a given package.  When @var{deep?} is true, @var{proc} is
-applied to implicit inputs as well.
-@end deffn
+Once you have package definitions, you can easily define @emph{variants}
+of those packages.  @xref{Defining Package Variants}, for more on that.
 
 @menu
 * package Reference::           The package data type.
@@ -6789,6 +6833,205 @@ commit:
   (commit "dc7dc56a00e48fe6f231a58f6537139fe2908fb9"))
 @end lisp
 @end deftp
+
+@node Defining Package Variants
+@section Defining Package Variants
+
+@cindex customizing packages
+@cindex variants, of packages
+One of the nice things with Guix is that, given a package definition,
+you can easily @emph{derive} variants of that package---for a different
+upstream version, with different dependencies, different compilation
+options, and so on.  Some of these custom packages can be defined
+straight from the command line (@pxref{Package Transformation Options}).
+This section describes how to define package variants in code.  This can
+be useful in ``manifests'' (@pxref{profile-manifest,
+@option{--manifest}}) and in your own package collection
+(@pxref{Creating a Channel}), among others!
+
+@cindex inherit, for package definitions
+As discussed earlier, packages are first-class objects in the Scheme
+language.  The @code{(guix packages)} module provides the @code{package}
+construct to define new package objects (@pxref{package Reference}).
+The easiest way to define a package variant is using the @code{inherit}
+keyword together with @code{package}.  This allows you to inherit from a
+package definition while overriding the fields you want.
+
+For example, given the @code{hello} variable, which contains a
+definition for the current version of GNU@tie{}Hello, here's how you
+would define a variant for version 2.2 (released in 2006, it's
+vintage!):
+
+@lisp
+(use-modules (gnu packages base))    ;for 'hello'
+
+(define hello-2.2
+  (package
+    (inherit hello)
+    (version "2.2")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://gnu/hello/hello-" version
+                                  ".tar.gz"))
+              (sha256
+               (base32
+                "0lappv4slgb5spyqbh6yl5r013zv72yqg2pcl30mginf3wdqd8k9"))))))
+@end lisp
+
+The example above corresponds to what the @option{--with-source} package
+transformation option does.  Essentially @code{hello-2.2} preserves all
+the fields of @code{hello}, except @code{version} and @code{source},
+which it overrides.  Note that the original @code{hello} variable is
+still there, in the @code{(gnu packages base)} module, unchanged.  When
+you define a custom package like this, you are really @emph{adding} a
+new package definition; the original one remains available.
+
+You can just as well define variants with a different set of
+dependencies than the original package.  For example, the default
+@code{gdb} package depends on @code{guile}, but since that is an
+optional dependency, you can define a variant that removes that
+dependency like so:
+
+@lisp
+(use-modules (gnu packages gdb)    ;for 'gdb'
+             (srfi srfi-1))        ;for 'alist-delete'
+
+(define gdb-sans-guile
+  (package
+    (inherit gdb)
+    (inputs (alist-delete "guile"
+                          (package-inputs gdb)))))
+@end lisp
+
+The @code{alist-delete} call above removes the tuple from the
+@code{inputs} field that has @code{"guile"} as its first element
+(@pxref{SRFI-1 Association Lists,,, guile, GNU Guile Reference
+Manual}).
+
+@cindex package transformations
+These are pretty simple package variants.  As a convenience, the
+@code{(guix transformations)} module provides a high-level interface
+that directly maps to package transformation options (@pxref{Package
+Transformation Options}):
+
+@deffn {Scheme Procedure} options->transformation @var{opts}
+Return a procedure that, when passed an object to build (package,
+derivation, etc.), applies the transformations specified by @var{opts} and returns
+the resulting objects.  @var{opts} must be a list of symbol/string pairs such as:
+
+@example
+((with-branch . "guile-gcrypt=master")
+ (without-tests . "libgcrypt"))
+@end example
+
+Each symbol names a transformation and the corresponding string is an argument
+to that transformation.
+@end deffn
+
+For instance, a manifest equivalent to this command:
+
+@example
+guix build guix \
+  --with-branch=guile-gcrypt=master \
+  --with-debug-info=zlib
+@end example
+
+@noindent
+... would look like this:
+
+@lisp
+(use-modules (guix transformations))
+
+(define transform
+  ;; The package transformation procedure.
+  (options->transformation
+   '((with-branch . "guile-gcrypt=master")
+     (with-debug-info . "zlib"))))
+
+(packages->manifest
+ (list (transform (specification->package "guix"))))
+@end lisp
+
+@cindex input rewriting
+@cindex dependency graph rewriting
+The @code{options->transformation} procedure is convenient, but it's
+perhaps also not as flexible as you may like.  How is it implemented?
+The astute reader probably noticed that most package transformation
+options go beyond the superficial changes shown in the first examples of
+this section: they involve @dfn{input rewriting}, whereby the dependency
+graph of a package is rewritten by replacing specific inputs by others.
+
+Dependency graph rewriting, for the purposes of swapping packages in the
+graph, is what the @code{package-input-rewriting} procedure in
+@code{(guix packages)} implements.
+
+@deffn {Scheme Procedure} package-input-rewriting @var{replacements} @
+           [@var{rewrite-name}] [#:deep? #t]
+Return a procedure that, when passed a package, replaces its direct and
+indirect dependencies, including implicit inputs when @var{deep?} is
+true, according to @var{replacements}.  @var{replacements} is a list of
+package pairs; the first element of each pair is the package to replace,
+and the second one is the replacement.
+
+Optionally, @var{rewrite-name} is a one-argument procedure that takes
+the name of a package and returns its new name after rewrite.
+@end deffn
+
+@noindent
+Consider this example:
+
+@lisp
+(define libressl-instead-of-openssl
+  ;; This is a procedure to replace OPENSSL by LIBRESSL,
+  ;; recursively.
+  (package-input-rewriting `((,openssl . ,libressl))))
+
+(define git-with-libressl
+  (libressl-instead-of-openssl git))
+@end lisp
+
+@noindent
+Here we first define a rewriting procedure that replaces @var{openssl}
+with @var{libressl}.  Then we use it to define a @dfn{variant} of the
+@var{git} package that uses @var{libressl} instead of @var{openssl}.
+This is exactly what the @option{--with-input} command-line option does
+(@pxref{Package Transformation Options, @option{--with-input}}).
+
+The following variant of @code{package-input-rewriting} can match packages to
+be replaced by name rather than by identity.
+
+@deffn {Scheme Procedure} package-input-rewriting/spec @var{replacements} [#:deep? #t]
+Return a procedure that, given a package, applies the given
+@var{replacements} to all the package graph, including implicit inputs
+unless @var{deep?} is false.  @var{replacements} is a list of
+spec/procedures pair; each spec is a package specification such as
+@code{"gcc"} or @code{"guile@@2"}, and each procedure takes a matching
+package and returns a replacement for that package.
+@end deffn
+
+The example above could be rewritten this way:
+
+@lisp
+(define libressl-instead-of-openssl
+  ;; Replace all the packages called "openssl" with LibreSSL.
+  (package-input-rewriting/spec `(("openssl" . ,(const libressl)))))
+@end lisp
+
+The key difference here is that, this time, packages are matched by spec and
+not by identity.  In other words, any package in the graph that is called
+@code{openssl} will be replaced.
+
+A more generic procedure to rewrite a package dependency graph is
+@code{package-mapping}: it supports arbitrary changes to nodes in the
+graph.
+
+@deffn {Scheme Procedure} package-mapping @var{proc} [@var{cut?}] [#:deep? #f]
+Return a procedure that, given a package, applies @var{proc} to all the packages
+depended on and returns the resulting package.  The procedure stops recursion
+when @var{cut?} returns true for a given package.  When @var{deep?} is true, @var{proc} is
+applied to implicit inputs as well.
+@end deffn
+
 
 @node Build Systems
 @section Build Systems
@@ -10042,6 +10285,11 @@ that does not respect a @code{#:tests? #f} setting.  Therefore,
 
 @end table
 
+Wondering how to achieve the same effect using Scheme code, for example
+in your manifest, or how to write your own package transformation?
+@xref{Defining Package Variants}, for an overview of the programming
+interfaces available.
+
 @node Additional Build Options
 @subsection Additional Build Options
 
@@ -11415,6 +11663,15 @@ and exit.
 Only enable the checkers specified in a comma-separated list using the
 names returned by @option{--list-checkers}.
 
+@item --exclude
+@itemx -x
+Only disable the checkers specified in a comma-separated list using the
+names returned by @option{--list-checkers}.
+
+@item --no-network
+@itemx -n
+Only enable the checkers that do not depend on Internet access.
+
 @item --load-path=@var{directory}
 @itemx -L @var{directory}
 Add @var{directory} to the front of the package module search path
@@ -11873,12 +12130,8 @@ spawn an HTTP server on port 8080:
 guix publish
 @end example
 
-Once a publishing server has been authorized (@pxref{Invoking guix
-archive}), the daemon may download substitutes from it:
-
-@example
-guix-daemon --substitute-urls=http://example.org:8080
-@end example
+Once a publishing server has been authorized, the daemon may download
+substitutes from it.  @xref{Getting Substitutes from Other Servers}.
 
 By default, @command{guix publish} compresses archives on the fly as it
 serves them.  This ``on-the-fly'' mode is convenient in that it requires
@@ -11977,12 +12230,19 @@ in advance, so @command{guix publish} does not add a
 prevents clients from knowing the amount of data being downloaded.
 
 Conversely, when @option{--cache} is used, the first request for a store
-item (@i{via} a @code{.narinfo} URL) returns 404 and triggers a
+item (@i{via} a @code{.narinfo} URL) triggers a
 background process to @dfn{bake} the archive---computing its
 @code{.narinfo} and compressing the archive, if needed.  Once the
 archive is cached in @var{directory}, subsequent requests succeed and
 are served directly from the cache, which guarantees that clients get
 the best possible bandwidth.
+
+That first @code{.narinfo} request nonetheless returns 200, provided the
+requested store item is ``small enough'', below the cache bypass
+threshold---see @option{--cache-bypass-threshold} below.  That way,
+clients do not have to wait until the archive is baked.  For larger
+store items, the first @code{.narinfo} request returns 404, meaning that
+clients have to wait until the archive is baked.
 
 The ``baking'' process is performed by worker threads.  By default, one
 thread per CPU core is created, but this can be customized.  See
@@ -12008,6 +12268,21 @@ for as long as @var{ttl}.
 Additionally, when @option{--cache} is used, cached entries that have
 not been accessed for @var{ttl} and that no longer have a corresponding
 item in the store, may be deleted.
+
+@item --cache-bypass-threshold=@var{size}
+When used in conjunction with @option{--cache}, store items smaller than
+@var{size} are immediately available, even when they are not yet in
+cache.  @var{size} is a size in bytes, or it can be prefixed by @code{M}
+for megabytes and so on.  The default is @code{10M}.
+
+``Cache bypass'' allows you to reduce the publication delay for clients
+at the expense of possibly additional I/O and CPU use on the server
+side: depending on the client access patterns, those store items can end
+up being baked several times until a copy is available in cache.
+
+Increasing the threshold may be useful for sites that have few users, or
+to guarantee that users get substitutes even for store items that are
+not popular.
 
 @item --nar-path=@var{path}
 Use @var{path} as the prefix for the URLs of ``nar'' files
@@ -12935,14 +13210,38 @@ A list of mapped devices.  @xref{Mapped Devices}.
 @item @code{file-systems}
 A list of file systems.  @xref{File Systems}.
 
-@item @code{swap-devices} (default: @code{'()})
 @cindex swap devices
-A list of strings identifying devices or files to be used for ``swap
+@cindex swap space
+@item @code{swap-devices} (default: @code{'()})
+A list of UUIDs, file system labels, or strings identifying devices or
+files to be used for ``swap
 space'' (@pxref{Memory Concepts,,, libc, The GNU C Library Reference
-Manual}).  For example, @code{'("/dev/sda3")} or @code{'("/swapfile")}.
+Manual}).  Here are some examples:
+
+@table @code
+@item (list (uuid "4dab5feb-d176-45de-b287-9b0a6e4c01cb"))
+Use the swap partition with the given UUID.  You can learn the UUID of a
+Linux swap partition by running @command{swaplabel @var{device}}, where
+@var{device} is the @file{/dev} file name of that partition.
+
+@item (list (file-system-label "swap"))
+Use the partition with label @code{swap}.  Again, the
+@command{swaplabel} command allows you to view and change the label of a
+Linux swap partition.
+
+@item (list "/swapfile")
+Use the file @file{/swapfile} as swap space.
+
+@item (list "/dev/sda3" "/dev/sdb2")
+Use the @file{/dev/sda3} and @file{/dev/sdb2} partitions as swap space.
+We recommend referring to swap devices by UUIDs or labels as shown above
+instead.
+@end table
+
 It is possible to specify a swap file in a file system on a mapped
-device, provided that the necessary device mapping and file system are
-also specified.  @xref{Mapped Devices} and @ref{File Systems}.
+device (under @file{/dev/mapper}), provided that the necessary device
+mapping and file system are also specified.  @xref{Mapped Devices} and
+@ref{File Systems}.
 
 @item @code{users} (default: @code{%base-user-accounts})
 @itemx @code{groups} (default: @code{%base-groups})
@@ -14582,17 +14881,53 @@ Whether to authorize the substitute keys listed in
 @code{authorized-keys}---by default that of @code{@value{SUBSTITUTE-SERVER}}
 (@pxref{Substitutes}).
 
+When @code{authorize-key?} is true, @file{/etc/guix/acl} cannot be
+changed by invoking @command{guix archive --authorize}.  You must
+instead adjust @code{guix-configuration} as you wish and reconfigure the
+system.  This ensures that your operating system configuration file is
+self-contained.
+
+@quotation Note
+When booting or reconfiguring to a system where @code{authorize-key?}
+is true, the existing @file{/etc/guix/acl} file is backed up as
+@file{/etc/guix/acl.bak} if it was determined to be a manually modified
+file.  This is to facilitate migration from earlier versions, which
+allowed for in-place modifications to @file{/etc/guix/acl}.
+@end quotation
+
 @vindex %default-authorized-guix-keys
 @item @code{authorized-keys} (default: @code{%default-authorized-guix-keys})
 The list of authorized key files for archive imports, as a list of
 string-valued gexps (@pxref{Invoking guix archive}).  By default, it
 contains that of @code{@value{SUBSTITUTE-SERVER}} (@pxref{Substitutes}).
+See @code{substitute-urls} below for an example on how to change it.
 
 @item @code{use-substitutes?} (default: @code{#t})
 Whether to use substitutes.
 
 @item @code{substitute-urls} (default: @code{%default-substitute-urls})
 The list of URLs where to look for substitutes by default.
+
+Suppose you would like to fetch substitutes from @code{guix.example.org}
+in addition to @code{@value{SUBSTITUTE-SERVER}}.  You will need to do
+two things: (1) add @code{guix.example.org} to @code{substitute-urls},
+and (2) authorize its signing key, having done appropriate checks
+(@pxref{Substitute Server Authorization}).  The configuration below does
+exactly that:
+
+@lisp
+(guix-configuration
+  (substitute-urls
+   (append (list "https://guix.example.org")
+           %default-substitute-urls))
+  (authorized-keys
+   (append (list (local-file "./guix.example.org-key.pub"))
+           %default-authorized-guix-keys)))
+@end lisp
+
+This example assumes that the file @file{./guix.example.org-key.pub}
+contains the public key that @code{guix.example.org} uses to sign
+substitutes.
 
 @item @code{max-silent-time} (default: @code{0})
 @itemx @code{timeout} (default: @code{0})
@@ -14840,6 +15175,12 @@ archives and meta-data ready to be sent.  @xref{Invoking guix publish,
 When it is an integer, this is the number of worker threads used for
 caching; when @code{#f}, the number of processors is used.
 @xref{Invoking guix publish, @option{--workers}}, for more information.
+
+@item @code{cache-bypass-threshold} (default: 10 MiB)
+When @code{cache} is true, this is the maximum size in bytes of a store
+item for which @command{guix publish} may bypass its cache in case of a
+cache miss.  @xref{Invoking guix publish,
+@option{--cache-bypass-threshold}}, for more information.
 
 @item @code{ttl} (default: @code{#f})
 When it is an integer, this denotes the @dfn{time-to-live} in seconds
@@ -18420,20 +18761,20 @@ without a @code{pulseaudio} package, consider enabling it through the
 Data type representing the configuration for @code{pulseaudio-service}.
 
 @table @asis
-@item @var{client-conf} (default: @code{'()})
+@item @code{client-conf} (default: @code{'()})
 List of settings to set in @file{client.conf}.
 Accepts a list of strings or a symbol-value pairs.  A string will be
 inserted as-is with a newline added.  A pair will be formatted as
 ``key = value'', again with a newline added.
 
-@item @var{daemon-conf} (default: @code{'((flat-volumes . no))})
+@item @code{daemon-conf} (default: @code{'((flat-volumes . no))})
 List of settings to set in @file{daemon.conf}, formatted just like
 @var{client-conf}.
 
-@item @var{script-file} (default: @code{(file-append pulseaudio "/etc/pulse/default.pa")})
+@item @code{script-file} (default: @code{(file-append pulseaudio "/etc/pulse/default.pa")})
 Script file to use as @file{default.pa}.
 
-@item @var{system-script-file} (default: @code{(file-append pulseaudio "/etc/pulse/system.pa")})
+@item @code{system-script-file} (default: @code{(file-append pulseaudio "/etc/pulse/system.pa")})
 Script file to use as @file{system.pa}.
 @end table
 @end deftp
@@ -18496,24 +18837,24 @@ Data type representing the configuration for the
 @code{postgresql-service-type}.
 
 @table @asis
-@item @var{postgresql}
+@item @code{postgresql}
 PostgreSQL package to use for the service.
 
-@item @var{port} (default: @code{5432})
+@item @code{port} (default: @code{5432})
 Port on which PostgreSQL should listen.
 
-@item @var{locale} (default: @code{"en_US.utf8"})
+@item @code{locale} (default: @code{"en_US.utf8"})
 Locale to use as the default when creating the database cluster.
 
-@item @var{config-file} (default: @code{(postgresql-config-file)})
+@item @code{config-file} (default: @code{(postgresql-config-file)})
 The configuration file to use when running PostgreSQL.  The default
 behaviour uses the postgresql-config-file record with the default values
 for the fields.
 
-@item @var{data-directory} (default: @code{"/var/lib/postgresql/data"})
+@item @code{data-directory} (default: @code{"/var/lib/postgresql/data"})
 Directory in which to store the data.
 
-@item @var{extension-packages} (default: @code{'()})
+@item @code{extension-packages} (default: @code{'()})
 @cindex postgresql extension-packages
 Additional extensions are loaded from packages listed in
 @var{extension-packages}.  Extensions are available at runtime.  For instance,
@@ -18531,7 +18872,10 @@ configure the postgresql-service as in this example:
   (packages (cons* postgresql %base-packages))
   (services
     (cons*
-      (postgresql-service #:extension-packages (list postgis))
+      (service postgresql-service-type
+               (postgresql-configuration
+                (postgresql postgresql-10)
+                (extension-packages (list postgis))))
       %base-services)))
 @end lisp
 
@@ -18549,6 +18893,54 @@ psql -U postgres
 There is no need to add this field for contrib extensions such as hstore or
 dblink as they are already loadable by postgresql.  This field is only
 required to add extensions provided by other packages.
+
+@end table
+@end deftp
+
+@deftp {Data Type} postgresql-config-file
+Data type representing the PostgreSQL configuration file.  As shown in
+the following example, this can be used to customize the configuration
+of PostgreSQL.  Note that you can use any G-expression or filename in
+place of this record, if you already have a configuration file you'd
+like to use for example.
+
+@lisp
+(service postgresql-service-type
+         (postgresql-configuration
+          (config-file
+           (postgresql-config-file
+            (log-destination "stderr")
+            (hba-file
+             (plain-file "pg_hba.conf"
+                         "
+local	all	all			trust
+host	all	all	127.0.0.1/32 	md5
+host	all	all	::1/128 	md5"))
+            (extra-config
+             '(("session_preload_libraries"     "'auto_explain'")
+               ("random_page_cost"              "2")
+               ("auto_explain.log_min_duration" "'100ms'")
+               ("work_mem"                      "'500MB'")
+               ("logging_collector"             "on")
+               ("log_directory"                 "'/var/log/postgresql'")))))))
+@end lisp
+
+@table @asis
+@item @code{log-destination} (default: @code{"syslog"})
+The logging method to use for PostgreSQL.  Multiple values are accepted,
+separated by commas.
+
+@item @code{hba-file} (default: @code{%default-postgres-hba})
+Filename or G-expression for the host-based authentication
+configuration.
+
+@item @code{ident-file} (default: @code{%default-postgres-ident})
+Filename or G-expression for the user name mapping configuration.
+
+@item @code{extra-config} (default: @code{'()})
+List of additional keys and values to include in the PostgreSQL config
+file.  Each entry in the list should be a list where the first element
+is the key, and the remaining elements are the values.
 
 @end table
 @end deftp
@@ -23356,6 +23748,40 @@ Thus, make sure to add @code{nss-certs} or another certificate package to the
 @code{packages} field of your configuration.  @ref{X.509 Certificates}, for
 more information on X.509 certificates.
 @end quotation
+
+@subsubheading gmnisrv
+
+@cindex gmnisrv
+The @uref{https://git.sr.ht/~sircmpwn/gmnisrv, gmnisrv} program is a
+simple @uref{https://gemini.circumlunar.space/, Gemini} protocol server.
+
+@deffn {Scheme Variable} gmnisrv-service-type
+This is the type of the gmnisrv service, whose value should be a
+@code{gmnisrv-configuration} object, as in this example:
+
+@lisp
+(service gmnisrv-service-type
+         (gmnisrv-configuration
+           (config-file (local-file "./my-gmnisrv.ini"))))
+@end lisp
+@end deffn
+
+@deftp {Data Type} gmnisrv-configuration
+Data type representing the configuration of gmnisrv.
+
+@table @asis
+@item @code{package} (default: @var{gmnisrv})
+Package object of the gmnisrv server.
+
+@item @code{config-file} (default: @code{%default-gmnisrv-config-file})
+File-like object of the gmnisrv configuration file to use.  The default
+configuration listens on port 1965 and serves files from
+@file{/srv/gemini}.  Certificates are stored in
+@file{/var/lib/gemini/certs}.  For more information, run @command{man
+gmnisrv} and @command{man gmnisrv.ini}.
+
+@end table
+@end deftp
 
 @node Certificate Services
 @subsection Certificate Services
@@ -28506,8 +28932,8 @@ The configuration rules that will be used to generate
 @file{/etc/security/pam_mount.conf.xml}.
 
 The configuration rules are SXML elements (@pxref{SXML,,, guile, GNU
-Guile Reference Manual}), and the the default ones don't mount anything
-for anyone at login:
+Guile Reference Manual}), and the default ones don't mount anything for
+anyone at login:
 
 @lisp
 `((debug (@@ (enable "0")))
@@ -30931,7 +31357,7 @@ decompress with @command{xz -d}, and then you can pass it to an emulator such
 as QEMU (see below for details).
 
 This image boots the Xfce graphical environment and it contains some
-commonly-used tools.  You can install more software in the image by running
+commonly used tools.  You can install more software in the image by running
 @command{guix package} in a terminal (@pxref{Invoking guix package}).  You can
 also reconfigure the system based on its initial configuration file available
 as @file{/run/current-system/configuration.scm} (@pxref{Using the
@@ -30991,8 +31417,8 @@ better performance than if it were emulating a complete disk drive.  See the
 QEMU and KVM documentation for more info.
 
 @item -drive if=none,file=/tmp/qemu-image,id=myhd
-Use our QCOW image, the @file{/tmp/qemu-image} file, as the backing store the
-the ``myhd'' drive.
+Use our QCOW image, the @file{/tmp/qemu-image} file, as the backing
+store of the ``myhd'' drive.
 @end table
 
 The default @command{run-vm.sh} script that is returned by an invocation of

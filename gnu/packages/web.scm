@@ -46,6 +46,7 @@
 ;;; Copyright © 2020 Paul Garlick <pgarlick@tourbillion-technology.com>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Ryan Prior <rprior@protonmail.com>
+;;; Copyright © 2020 Alexandru-Sergiu Marton <brown121407@posteo.ro>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -128,6 +129,7 @@
   #:use-module (gnu packages lisp-xyz)
   #:use-module (gnu packages lsof)
   #:use-module (gnu packages lua)
+  #:use-module (gnu packages man)
   #:use-module (gnu packages markup)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages networking)
@@ -1422,7 +1424,7 @@ used to validate and fix HTML data.")
 (define-public esbuild
   (package
     (name "esbuild")
-    (version "0.7.16")
+    (version "0.8.0")
     (source
      (origin
        (method git-fetch)
@@ -1432,7 +1434,7 @@ used to validate and fix HTML data.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0lmq7yqssnc1cgd63m5zl734ahf8c0q0k1p2zdcn3qm15wfz7sh7"))
+         "17qzmadjixjivwbxbj20683j3n6igk7bx7v4k5bs2rqfvigdx2ps"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -1447,14 +1449,14 @@ used to validate and fix HTML data.")
        (modify-phases %standard-phases
          (replace 'check
            (lambda* (#:key tests? unpack-path #:allow-other-keys)
-             (if tests?
+             (when tests?
                (with-directory-excursion (string-append "src/" unpack-path)
                  (invoke "make" "test-go")))
              #t)))))
     (inputs
-     `(("go-golang-org-x-sys" ,go-golang-org-x-sys)))
+     `(("golang.org/x/sys" ,go-golang-org-x-sys)))
     (native-inputs
-     `(("go-github-com-kylelemons-godebug" ,go-github-com-kylelemons-godebug)))
+     `(("github.com/kylelemons/godebug" ,go-github-com-kylelemons-godebug)))
     (home-page "https://github.com/evanw/esbuild")
     (synopsis "Bundler and minifier tool for JavaScript and TypeScript")
     (description
@@ -7702,3 +7704,44 @@ solution for any project's interface needs:
 @item Easily integrated and extensible with Python or Lua scripting.
 @end itemize\n")
     (license license:expat)))
+
+(define-public gmnisrv
+  (let ((commit "a22bec51494a50c044416d469cc33e043480e7fd"))
+    (package
+      (name "gmnisrv")
+      (version (git-version "0" "0" commit))
+      (home-page "https://git.sr.ht/~sircmpwn/gmnisrv")
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url home-page)
+                      (commit commit)))
+                (sha256
+                 (base32
+                  "1k1n7cqd37jgbhxyh231bagdxdxqwpr6n5pk3gax2516w6xbzlb9"))
+                (file-name (git-file-name name version))))
+      (build-system gnu-build-system)
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           (add-before 'configure 'set-variables
+             (lambda _
+               (setenv "CC" "gcc")
+               #t))
+           (delete 'check)
+           (add-after 'install 'install-config
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let ((etc (string-append (assoc-ref outputs "out")
+                                         "/etc")))
+                 (mkdir-p etc)
+                 (copy-file "config.ini" (string-append etc "/gmnisrv.ini"))
+                 #t))))))
+      (inputs
+       `(("openssl" ,openssl)))
+      (native-inputs
+       `(("pkg-config" ,pkg-config)
+         ("scdoc" ,scdoc)))
+      (synopsis "Simple Gemini protocol server")
+      (description "gmnisrv is a simple Gemini protocol server written in C.")
+      (license (list license:gpl3+
+                     license:bsd-3))))) ;; for ini.c and ini.h

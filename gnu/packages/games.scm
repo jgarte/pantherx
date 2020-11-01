@@ -1186,7 +1186,7 @@ automata.  The following features are available:
 (define-public julius
   (package
     (name "julius")
-    (version "1.4.1")
+    (version "1.5.0")
     (source
      (origin
        (method git-fetch)
@@ -1195,7 +1195,7 @@ automata.  The following features are available:
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "12hhnhdwgz7hd3hlndbnk15pxggm1375qs0764ija4nl1gbpb110"))
+        (base32 "1g1ci34bjn67ia3ckk9wgqg4283flfdvjq0w5lf83h6ymckppnr6"))
        ;; Remove unused bundled libraries.
        (modules '((guix build utils)))
        (snippet
@@ -1222,7 +1222,7 @@ does not include game data.")
   (package
     (inherit julius)
     (name "augustus")
-    (version (package-version julius))
+    (version "1.4.1a")
     (source
      (origin
        (method git-fetch)
@@ -1231,7 +1231,7 @@ does not include game data.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ii0w0iwa9zv5bbqfcps5mxifd796m6fw4gvjf09pkm3yjgqc0ag"))
+        (base32 "1xqv8j8jh3f13fjhyf7hk1anrn799cwwsvsd75kpl9n5yh5s1j5y"))
        ;; Remove unused bundled libraries.
        (modules '((guix build utils)))
        (snippet
@@ -6456,7 +6456,7 @@ Crowther & Woods, its original authors, in 1995.  It has been known as
 (define-public tome4
   (package
     (name "tome4")
-    (version "1.6.7")
+    (version "1.7.0")
     (synopsis "Single-player, RPG roguelike game set in the world of Eyal")
     (source
      (origin
@@ -6464,7 +6464,7 @@ Crowther & Woods, its original authors, in 1995.  It has been known as
        (uri (string-append "https://te4.org/dl/t-engine/t-engine4-src-"
                            version ".tar.bz2"))
        (sha256
-        (base32 "0283hvms5hr29zr0grd6gq059k0hg8hcz3fsmwjmysiih8790i68"))
+        (base32 "1fs0320n3ndd5kd6j9y22jsd1hbn356d4dr11kl3iy5ssix7832s"))
        (modules '((guix build utils)))
        (snippet
         '(begin
