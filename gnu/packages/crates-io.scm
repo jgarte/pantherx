@@ -653,6 +653,30 @@ be used with the stdlib.")
     (description "This package provides the glue for the Android JNI.")
     (license license:expat)))
 
+(define-public rust-ansi-parser-0.6
+  (package
+    (name "rust-ansi-parser")
+    (version "0.6.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (crate-uri "ansi-parser" version))
+       (file-name
+        (string-append name "-" version ".tar.gz"))
+       (sha256
+        (base32 "152idb8a6gwdxzj6m099h3xgx8vw0sjc6skgw94nm2k3y5swc6kn"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:cargo-inputs
+       (("rust-heapless" ,rust-heapless-0.5)
+        ("rust-nom" ,rust-nom-4.2))))
+    (home-page "https://gitlab.com/DavidBittner/ansi-parser")
+    (synopsis "Library using nom for parsing ANSI escape codes")
+    (description
+     "This package provides a library using nom for parsing ANSI
+escape codes.")
+    (license license:mpl2.0)))
+
 (define-public rust-antidote-1.0
   (package
     (name "rust-antidote")
@@ -31056,6 +31080,26 @@ If that fails, no determination is made, and calls return None.")
         (sha256
          (base32
           "1pf91pvj8n6akh7w6j5ypka6aqz08b3qpzgs0ak2kjf4frkiljwi"))))))
+
+(define-public rust-version-compare-0.0
+  (package
+    (name "rust-version-compare")
+    (version "0.0.11")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (crate-uri "version-compare" version))
+       (file-name
+        (string-append name "-" version ".tar.gz"))
+       (sha256
+        (base32 "06v688jg6gd00zvm3cp7qh2h3mz8cs2ngr09bnwxhyddxrcwh60w"))))
+    (build-system cargo-build-system)
+    (home-page "https://github.com/timvisee/version-compare")
+    (synopsis "Rust library to easily compare version numbers")
+    (description
+     "This package provides a Rust library to easily compare version
+numbers, and test them against various comparison operators.")
+    (license license:expat)))
 
 (define-public rust-version-sync-0.8
   (package

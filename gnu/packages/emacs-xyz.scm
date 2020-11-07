@@ -83,6 +83,8 @@
 ;;; Copyright © 2020 Tomás Ortín Fernández <tomasortin@mailbox.org>
 ;;; Copyright © 2020 Zhu Zihao <all_but_last@163.com>
 ;;; Copyright © 2020 Adam Kandur <rndd@tuta.io>
+;;; Copyright © 2020 Tim Howes <timhowes@lavabit.com>
+;;; Copyright © 2020 Noah Landis <noahlandis@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -961,6 +963,33 @@ for editing Racket's Scribble documentation syntax in Emacs.")
 using the Buffers User Interface library.  You can view, copy, and edit secrets
 from within Emacs.")
     (license license:gpl3+)))
+
+(define-public emacs-solidity
+  ;; This commit fixes a spacing issue and adds new keywords.
+  (let ((commit "d166a86b83907e0cfd64c191e9dfce4b44a9843e")
+        (revision "0"))
+    (package
+      (name "emacs-solidity")
+      (version (git-version "0.1.10" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ethereum/emacs-solidity")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "19hgvsrqch2vp49ag6m76bi5qxd20v95z0ib838rib9as15b17wq"))))
+      (build-system emacs-build-system)
+      (propagated-inputs
+       `(("emacs-company" ,emacs-company)
+         ("emacs-flycheck" ,emacs-flycheck)))
+      (home-page "https://github.com/ethereum/emacs-solidity")
+      (synopsis "Major mode for writing Solidity code")
+      (description
+       "This is a simple language mode for the Solidity language.  It is
+a constant work in progress as the language itself also progresses.")
+      (license license:gpl3+))))
 
 (define-public emacs-unpackaged-el
   (let ((commit "746801a677ada6cd6fa076e423aa0953779f3fad")
@@ -7366,7 +7395,7 @@ highlighted.  Pressing that character will switch to that window.")
   ;; There is no proper release.  The base version is extracted from the
   ;; "Version" keyword in the main file.
   (let ((revision "1")
-	(commit "62c2846bbe95b0a73e996c75e4a644d05f57aaaa"))
+        (commit "62c2846bbe95b0a73e996c75e4a644d05f57aaaa"))
     (package
       (name "emacs-windsize")
       (version (git-version "0.1" revision commit))
@@ -7376,6 +7405,7 @@ highlighted.  Pressing that character will switch to that window.")
          (uri (git-reference
                (url "https://github.com/grammati/windsize")
                (commit commit)))
+         (file-name (git-file-name name version))
          (sha256
           (base32 "13kfrmv3vmkfanxv9nym5v43hx5p7xkgqmx65zcxh4gcbaham1mi"))))
       (build-system emacs-build-system)
@@ -7883,23 +7913,19 @@ E-Prime forbids the use of the \"to be\" form to strengthen your writing.")
       (license license:gpl3+))))
 
 (define-public emacs-julia-mode
-  ;; XXX: Upstream version remained stuck at 0.3.  See
-  ;; <https://github.com/JuliaEditorSupport/julia-emacs/issues/46>.
-  (let ((commit "115d4dc8a07445301772da8376b232fa8c7168f4")
-        (revision "1"))
     (package
       (name "emacs-julia-mode")
-      (version (string-append "0.3-" revision "." (string-take commit 8)))
+      (version "0.4")
       (source
        (origin
          (method git-fetch)
          (uri (git-reference
                (url "https://github.com/JuliaEditorSupport/julia-emacs")
-               (commit commit)))
+               (commit version)))
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "1is4dcv6blslpzbjcg8l2jpxi8xj96q4cm0nxjxsyswpm8bw8ki0"))))
+           "1w131jb9mhvyjxa0p93iwfhzidgbcs6b8i6jg79yisqb9wchik99"))))
       (build-system emacs-build-system)
       (arguments
        `(#:tests? #t
@@ -7910,7 +7936,7 @@ E-Prime forbids the use of the \"to be\" form to strengthen your writing.")
       (synopsis "Major mode for Julia")
       (description "This Emacs package provides a mode for the Julia
 programming language.")
-      (license license:expat))))
+      (license license:expat)))
 
 (define-public emacs-smex
   (package
@@ -21192,11 +21218,11 @@ compatible with Emacs' shell modes.")
       (license license:gpl3+))))
 
 (define-public emacs-vdiff
-  (let ((commit "09e15fc932bfd2febe1d4a65780a532394562b07")
-        (revision "1"))
+  ;; There is no proper tag, but the commit below matches the version bump.
+  (let ((commit "007e44be19d068fd6b49874b6e9b8df8b1f552bd"))
     (package
       (name "emacs-vdiff")
-      (version (git-version "0.2.3" revision commit))
+      (version "0.2.4")
       (source
        (origin
          (method git-fetch)
@@ -21205,8 +21231,7 @@ compatible with Emacs' shell modes.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32
-           "1gvqi5l4zs872nn4pmj603aza09d81qad2rgijzv268lif8z34db"))))
+          (base32 "197xrwph1llrzjgkhlvagiwdgfp68pb45w5afg89ndahpqc2725s"))))
       (build-system emacs-build-system)
       (propagated-inputs
        `(("emacs-hydra" ,emacs-hydra)))
@@ -21217,8 +21242,9 @@ compatible with Emacs' shell modes.")
                           "-f" "ert-run-tests-batch-and-exit")))
       (home-page "https://github.com/justbur/emacs-vdiff/")
       (synopsis "Frontend for diffing based on vimdiff")
-      (description "This package permits comparisons of two or three buffers
-based on diff output.")
+      (description
+       "This package permits comparisons of two or three buffers based on diff
+output.")
       (license license:gpl3+))))
 
 (define-public emacs-vdiff-magit
@@ -22551,14 +22577,14 @@ federated microblogging social network.")
 (define-public emacs-ebdb
   (package
     (name "emacs-ebdb")
-    (version "0.6.19")
+    (version "0.6.20")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://elpa.gnu.org/packages/"
                            "ebdb-" version ".tar"))
        (sha256
-        (base32 "0ch5vzhxa8h5v75lg3blsmrln497lr3ylivx6w28aiyb6cv5016l"))))
+        (base32 "1rhmnz2g4nmk893gzxm1hfwqf5nan20yss5mxilfpza2jh4368h3"))))
     (build-system emacs-build-system)
     (home-page "https://github.com/girzel/ebdb")
     (synopsis "EIEIO port of BBDB, Emacs's contact-management package")
@@ -22879,15 +22905,24 @@ Emacs that integrate with major modes like Org-mode.")
 (define-public emacs-modus-operandi-theme
   (package
     (name "emacs-modus-operandi-theme")
-    (version "0.12.0")
+    (version "0.13.0")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "https://elpa.gnu.org/packages/"
-                           "modus-operandi-theme-" version ".el"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.com/protesilaos/modus-themes")
+             (commit version)))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "1mllyysn701qfnglxs7n2f6mrzrz55v9hcwspvafc6fl2blr393y"))))
+        (base32 "0i6n3pzrmlgabsijy6z0hhs71q7g99yagwr2m33lr30skqc9rvdn"))))
     (build-system emacs-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'remove-other-theme
+           (lambda _
+             (delete-file "modus-vivendi-theme.el")
+             #t)))))
     (home-page "https://gitlab.com/protesilaos/modus-themes")
     (synopsis "Accessible light theme (WCAG AAA)")
     (description
@@ -22900,15 +22935,24 @@ standard.  This is the highest standard of its kind.")
 (define-public emacs-modus-vivendi-theme
   (package
     (name "emacs-modus-vivendi-theme")
-    (version "0.12.0")
+    (version "0.13.0")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "https://elpa.gnu.org/packages/"
-                           "modus-vivendi-theme-" version ".el"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.com/protesilaos/modus-themes")
+             (commit version)))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "01f6z5xjnmki1k9m83jwva42lxidb31pdpwm4wpxjzxqmb96picn"))))
+        (base32 "0i6n3pzrmlgabsijy6z0hhs71q7g99yagwr2m33lr30skqc9rvdn"))))
     (build-system emacs-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'remove-other-theme
+           (lambda _
+             (delete-file "modus-operandi-theme.el")
+             #t)))))
     (home-page "https://gitlab.com/protesilaos/modus-themes")
     (synopsis "Accessible dark theme (WCAG AAA)")
     (description
@@ -24716,7 +24760,7 @@ snippets for Emacs.")
 (define-public emacs-org-roam
   (package
     (name "emacs-org-roam")
-    (version "1.2.1")
+    (version "1.2.2")
     (source
      (origin
        (method git-fetch)
@@ -24725,7 +24769,7 @@ snippets for Emacs.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "10s7mcyshgj6yva4k1j086xm61k9zck3r586f1maar5b2z6hwvsa"))))
+        (base32 "0fanv0nl03qn65amxsq4q544zrhv94a37gdg9bwydik9439avbsc"))))
     (build-system emacs-build-system)
     (propagated-inputs
      `(("emacs-company" ,emacs-company)
@@ -25265,3 +25309,25 @@ the TypeScript implementation.")
       (description "This package provides an Emacs client for the Rocket.chat
 service.")
       (license license:expat))))
+
+(define-public emacs-nord-theme
+  (package
+    (name "emacs-nord-theme")
+    (version "0.5.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/arcticicestudio/nord-emacs")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "096f8cik4jz89bvkifwp3gm9iraqrd75ljy2q9js724v7yj88711"))))
+    (build-system emacs-build-system)
+    (home-page "https://www.nordtheme.com/")
+    (synopsis "Low contrast arctic color theme for Emacs")
+    (description
+     "Nord is an arctic, north-bluish color scheme created for a clean and
+uncluttered design pattern to achieve optimal focus and readability for code
+syntax highlighting and UI components.")
+    (license license:expat)))
