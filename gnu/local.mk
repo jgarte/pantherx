@@ -822,6 +822,17 @@ dist_patch_DATA =						\
   %D%/packages/patches/bastet-change-source-of-unordered_set.patch	\
   %D%/packages/patches/bazaar-CVE-2017-14176.patch		\
   %D%/packages/patches/bc-fix-cross-compilation.patch		\
+  %D%/packages/patches/bsd-games-2.17-64bit.patch		\
+  %D%/packages/patches/bsd-games-add-configure-config.patch	\
+  %D%/packages/patches/bsd-games-add-wrapper.patch		\
+  %D%/packages/patches/bsd-games-bad-ntohl-cast.patch		\
+  %D%/packages/patches/bsd-games-dont-install-empty-files.patch	\
+  %D%/packages/patches/bsd-games-gamescreen.h.patch		\
+  %D%/packages/patches/bsd-games-getline.patch			\
+  %D%/packages/patches/bsd-games-null-check.patch		\
+  %D%/packages/patches/bsd-games-number.c-and-test.patch	\
+  %D%/packages/patches/bsd-games-prevent-name-collisions.patch	\
+  %D%/packages/patches/bsd-games-stdio.h.patch			\
   %D%/packages/patches/beancount-disable-googleapis-fonts.patch	\
   %D%/packages/patches/beets-werkzeug-compat.patch		\
   %D%/packages/patches/behave-skip-a-couple-of-tests.patch	\
@@ -1642,6 +1653,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/u-boot-riscv64-fix-extlinux.patch	\
   %D%/packages/patches/ucx-tcp-iface-ioctl.patch		\
   %D%/packages/patches/udiskie-no-appindicator.patch		\
+  %D%/packages/patches/ungoogled-chromium-extension-search-path.patch	\
   %D%/packages/patches/ungoogled-chromium-system-nspr.patch	\
   %D%/packages/patches/unison-fix-ocaml-4.08.patch		\
   %D%/packages/patches/unknown-horizons-python-3.8-distro.patch	\
@@ -1713,6 +1725,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/xsane-fix-snprintf-buffer-length.patch	\
   %D%/packages/patches/xsane-support-ipv6.patch			\
   %D%/packages/patches/xsane-tighten-default-umask.patch	\
+  %D%/packages/patches/yggdrasil-extra-config.patch	\
   %D%/packages/patches/zziplib-CVE-2018-16548.patch
 
 MISC_DISTRO_FILES =				\

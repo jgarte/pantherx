@@ -714,7 +714,7 @@ of known objects without needing a central registrar.")
 (define-public zeitgeist
   (package
     (name "zeitgeist")
-    (version "1.0.2")
+    (version "1.0.3")
     (source
      (origin
        (method git-fetch)
@@ -726,7 +726,7 @@ of known objects without needing a central registrar.")
        (file-name
         (git-file-name name version))
        (sha256
-        (base32 "0ig3d3j1n0ghaxsgfww6g2hhcdwx8cljwwfmp9jk1nrvkxd6rnmv"))))
+        (base32 "0y6fyzxl5np4yskcxibd0p03h619w9ir907nhf40h02y0pk1kgkp"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:configure-flags
@@ -4279,10 +4279,10 @@ requirements and without using a different ABI compared to applications and
 libraries written in C.")
     (license license:lgpl2.1+)))
 
-(define-public vala-0.48
+(define-public vala-0.50
   (package
     (inherit vala)
-    (version "0.48.9")
+    (version "0.50.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/vala/"
@@ -4290,7 +4290,7 @@ libraries written in C.")
                                   "vala-" version ".tar.xz"))
               (sha256
                (base32
-                "1agyrvslv2yh9ikiw7k5nw6j6il1l2zrzfan0pzdpb9xpg9idslw"))))))
+                "0v4g2gvn7x7cl33h8sj1y2xyyskw5ayaj4jm2jrd3my3r439z3cm"))))))
 
 (define-public vte
   (package
@@ -5065,14 +5065,14 @@ keyboard shortcuts.")
 (define-public colord
   (package
     (name "colord")
-    (version "1.4.4")
+    (version "1.4.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.freedesktop.org/software/colord/releases/"
                            "colord-" version ".tar.xz"))
        (sha256
-        (base32 "19f0938fr7nvvm3jr263dlknaq7md40zrac2npfyz25zc00yh3ws"))))
+        (base32 "05sydi6qqqx1rrqwnga1vbg9srkf89wdcfw5w4p4m7r37m2flx5p"))))
     (build-system meson-build-system)
     (arguments
      '(;; FIXME: One test fails:
@@ -6474,14 +6474,14 @@ almost all of them.")
 (define-public eolie
   (package
     (name "eolie")
-    (version "0.9.99")
+    (version "0.9.100")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://adishatz.org/eolie/eolie-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "0zj5v7wxqj7c20bmil127ah0vnjfzvvf6kzz82b9ip3846h43j02"))))
+                "1vzhfp8j1z3jvd5ndqfyn7nqrx3zdvx9mv1byjl36nnd9g63ji62"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t

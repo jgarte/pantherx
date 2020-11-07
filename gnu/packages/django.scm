@@ -47,13 +47,13 @@
 (define-public python-django
   (package
     (name "python-django")
-    (version "3.1.1")
+    (version "3.1.3")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "Django" version))
               (sha256
                (base32
-                "0bzwy58hrxbsh7szak1yfh7qvvfnpdpi8ay1x7d3pvbkm1f15j2r"))))
+                "13rz3v0bwk8i3xcccn5awbafahab3cyk8wwv57v2xazdzxspgf0l"))))
     (build-system python-build-system)
     (arguments
      '(#:phases
@@ -132,13 +132,13 @@ to the @dfn{don't repeat yourself} (DRY) principle.")
 (define-public python-django-2.2
   (package
     (inherit python-django)
-    (version "2.2.16")
+    (version "2.2.17")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "Django" version))
               (sha256
                (base32
-                "1535g2r322cl4x52fb0dmzlbg23539j2wx6027j54p22xvjlbkv2"))))
+                "0qdq0h2gw45j0h9j22c2sdn49ybl7jsrcyraskb9snknsyj70lyg"))))
     (native-inputs
      `(;; XXX: In 2.2 and 3.0, selenium is required for the test suite.
        ("python-selenium" ,python-selenium)
@@ -1013,14 +1013,14 @@ Django projects, which allows association of a number of tags with any
 (define-public python-djangorestframework
   (package
     (name "python-djangorestframework")
-    (version "3.11.1")
+    (version "3.12.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "djangorestframework" version))
        (sha256
         (base32
-         "0chbl1d0m1x23mmpdj7y85k3n32lpxrhcdl07ywnylfj9dd2vl3d"))))
+         "0jb22psb823vh5fj9az63p5lgyax9ygjy2faah16ajxvvsp54i6m"))))
     (build-system python-build-system)
     (arguments
      '(;; No included tests

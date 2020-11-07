@@ -234,14 +234,14 @@ Interface} specification.")
     ;; ’stable’ and recommends that “in general you deploy the NGINX mainline
     ;; branch at all times” (https://www.nginx.com/blog/nginx-1-6-1-7-released/)
     ;; Consider updating the nginx-documentation package together with this one.
-    (version "1.19.3")
+    (version "1.19.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nginx.org/download/nginx-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1w4dkq7bl5gyix3x0ap3d9lndh7zyvc3mscl693d4ybql57vgrci"))))
+                "03h0hhrbfy3asla9gki2cp97zjn7idxbp5lk9xi0snlh4xlm9pv1"))))
     (build-system gnu-build-system)
     (inputs `(("openssl" ,openssl)
               ("pcre" ,pcre)
@@ -325,8 +325,8 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
 (define-public nginx-documentation
   ;; This documentation should be relevant for the current nginx package.
   (let ((version "1.19.3")
-        (revision 2603)
-        (changeset "94ebfbcd68bb"))
+        (revision 2615)
+        (changeset "3cb2736bb74c"))
     (package
       (name "nginx-documentation")
       (version (simple-format #f "~A-~A-~A" version revision changeset))
@@ -338,7 +338,7 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
                (file-name (string-append name "-" version))
                (sha256
                 (base32
-                 "1yryharm4dkjnj424r7sy0rc28h8ypfyj8as255a42gmllkwl2pg"))))
+                 "0dpn5zl8wld0c1l68wzl76wlii2k8bawq0609gnzkahwnsrqnad9"))))
       (build-system gnu-build-system)
       (arguments
        '(#:tests? #f                    ; no test suite
@@ -1424,7 +1424,7 @@ used to validate and fix HTML data.")
 (define-public esbuild
   (package
     (name "esbuild")
-    (version "0.8.0")
+    (version "0.8.4")
     (source
      (origin
        (method git-fetch)
@@ -1434,7 +1434,7 @@ used to validate and fix HTML data.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "17qzmadjixjivwbxbj20683j3n6igk7bx7v4k5bs2rqfvigdx2ps"))
+         "0aaqyfnl4dncrpw8n2sqkkavx7ki7i2r9pdi82pp9syql3b5495y"))
        (modules '((guix build utils)))
        (snippet
         '(begin
