@@ -121,7 +121,7 @@ Xfce Desktop Environment.")
 (define-public xfconf
   (package
     (name "xfconf")
-    (version "4.14.3")
+    (version "4.14.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/xfce/"
@@ -129,7 +129,7 @@ Xfce Desktop Environment.")
                                   "xfconf-" version ".tar.bz2"))
               (sha256
                (base32
-                "00hcb96bw5ylfs9ppblchj8zv9026m3dlf7lnmgiq5f6xyh5542q"))))
+                "0wszp93z64112jq5wm4133s64in2ndvnzbgsbn8dh7p5xhp64dyc"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -755,7 +755,7 @@ on the screen.")
 (define-public xfdesktop
   (package
     (name "xfdesktop")
-    (version "4.14.2")
+    (version "4.14.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/xfce/"
@@ -763,7 +763,7 @@ on the screen.")
                                   "xfdesktop-" version ".tar.bz2"))
               (sha256
                (base32
-                "0x1yx9sd5aanrlr1qnbwd2nsmcg09g4132k0kyb7z47a3x3381d3"))
+                "14sp5a4n21prwmh2l5mjq5fjaq7r2pbjxddfx4wzaix8867x1mq6"))
               (modules '((guix build utils)))
               (snippet
                #~(begin
@@ -898,7 +898,7 @@ system resources, while still being visually appealing and user friendly.")
 (define-public xfce4-power-manager
   (package
     (name "xfce4-power-manager")
-    (version "1.7.0")
+    (version "1.7.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/xfce/"
@@ -906,7 +906,7 @@ system resources, while still being visually appealing and user friendly.")
                                   "xfce4-power-manager-" version ".tar.bz2"))
               (sha256
                (base32
-                "0jqjwy341dxyijjm9k77a12iih6b5r3f4cmpr2lppa7mf37qqdj5"))))
+                "1ki088iyr266cfyq9bmmhhd27wrsrmbhsblyf4yqby03hlvqif3k"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -1176,7 +1176,7 @@ A plugin for the Xfce panel is also available.")
 (define-public xfce4-screensaver
   (package
     (name "xfce4-screensaver")
-    (version "0.1.10")
+    (version "0.1.11")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/apps/"
@@ -1186,7 +1186,7 @@ A plugin for the Xfce panel is also available.")
                                   version ".tar.bz2"))
               (sha256
                (base32
-                "0mqxbyq9np6jzky8y35dlxxmk78q2w0jvwg9kh7a4ib7vmw1qvsq"))))
+                "0xxcvvcch8bqd35ksq8l88a46xnidp59iq4ssyygki0a2vd20h41"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -1986,7 +1986,7 @@ lan interface (signal state, signal quality, network name (SSID)).")
 (define-public xfce4-weather-plugin
   (package
    (name "xfce4-weather-plugin")
-   (version "0.10.1")
+   (version "0.10.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/panel-plugins/"
@@ -1995,7 +1995,7 @@ lan interface (signal state, signal quality, network name (SSID)).")
                                   "/xfce4-weather-plugin-" version ".tar.bz2"))
               (sha256
                (base32
-                "12bs2rfmmy021087i10vxibdbbvd5vld0vk3h5hymhpz7rgszcmg"))))
+                "1ik2qvmwylsz5vyz4np2y0mmd37s89xkayxi97490c4mj85pj5wh"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("intltool" ,intltool)
