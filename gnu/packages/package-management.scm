@@ -566,14 +566,14 @@ out) and returning a package that uses that as its 'source'."
 (define-public nix
   (package
     (name "nix")
-    (version "2.3.7")
+    (version "2.3.8")
     (source (origin
              (method url-fetch)
-             (uri (string-append "http://nixos.org/releases/nix/nix-"
+             (uri (string-append "https://nixos.org/releases/nix/nix-"
                                  version "/nix-" version ".tar.xz"))
              (sha256
               (base32
-               "15p50jkss6szinisb7axhxybgfi29sm9grz7mxwair8ljj2553yx"))))
+               "0amd5nnqslvkfpz042l4ydihw2qsy68nmjbwaagcrggaq4irh4f7"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags '("--sysconfdir=/etc" "--enable-gc")
@@ -1009,8 +1009,8 @@ environments.")
     (license (list license:gpl3+ license:agpl3+ license:silofl1.1))))
 
 (define-public guix-build-coordinator
-  (let ((commit "d38698d85174b4594e6dc2f9be50083a50786026")
-        (revision "4"))
+  (let ((commit "98f50831612b9d1253ae8ca2bceb547fed373f41")
+        (revision "5"))
     (package
       (name "guix-build-coordinator")
       (version (git-version "0" revision commit))
@@ -1021,7 +1021,7 @@ environments.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "1jb36p8bbhiav6nb1qpi90j03qjbvr8akn53am3xbz32ps0hf34j"))
+                  "08xwb5phh14cxgwv4fxcd2hhpjgqxfknm9zkx9qp26zb56w2xzkz"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -1075,6 +1075,7 @@ environments.")
          ("guix" ,guix)
          ("guile-prometheus" ,guile-prometheus)
          ("guile-fibers" ,guile-fibers)
+         ("guile-lib" ,guile-lib)
          ("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))))
       (inputs
        `(("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))
@@ -1085,6 +1086,7 @@ environments.")
          ("guile-prometheus" ,guile-prometheus)
          ("guile-gcrypt" ,guile-gcrypt)
          ("guile-json" ,guile-json-4)
+         ("guile-lib" ,guile-lib)
          ("guile-lzlib" ,guile-lzlib)
          ("guile-zlib" ,guile-zlib)
          ("guile-sqlite3" ,guile-sqlite3)

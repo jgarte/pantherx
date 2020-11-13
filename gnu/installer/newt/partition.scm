@@ -64,7 +64,7 @@ are being formatted."
   ;; of device names of the user partitions that will be formatted.
   (run-confirmation-page (format #f (G_ "We are about to write the configured \
 partition table to the disk and format the partitions listed below.  Their \
-data will be lost.  Do you wish to continue?~%~{ - ~a~%~}")
+data will be lost.  Do you wish to continue?~%~%~{ - ~a~%~}")
                                  (map user-partition-file-name
                                       (filter user-partition-need-formatting?
                                               partitions)))
@@ -681,7 +681,7 @@ by pressing the Exit button.~%~%")))
                       (G_ "Guided partitioning")
                       (G_ "Manual partitioning"))
           #:info-textbox-width 76         ;we need a lot of room for INFO-TEXT
-          #:listbox-height 12
+          #:listbox-height (max 5 (- (screen-rows) 30))
           #:listbox-items (disk-items)
           #:listbox-item->text cdr
           #:sort-listbox-items? #f

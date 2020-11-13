@@ -1868,8 +1868,8 @@ role, and your gender.")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "http://downloads.sourceforge.net/pipewalker/"
-                           "pipewalker-" version ".tar.gz"))
+       (uri (string-append "mirror://sourceforge/pipewalker/pipewalker/"
+                           version "/pipewalker-" version ".tar.gz"))
        (sha256
         (base32 "1x46wgk0s55562pd96cxagxkn6wpgglq779f9b64ff1k3xzp3myn"))))
     (build-system gnu-build-system)
@@ -5253,7 +5253,7 @@ Linux / Mac OS X servers, and an auto mapper with a VT100 map display.")
 (define-public laby
   (package
     (name "laby")
-    (version "0.6.4")
+    (version "0.7.0")
     (source
      (origin (method git-fetch)
              (uri (git-reference
@@ -5262,7 +5262,7 @@ Linux / Mac OS X servers, and an auto mapper with a VT100 map display.")
              (file-name (git-file-name name version))
              (sha256
               (base32
-               "12fq9hhrxpzgfinmj9ra9ckss9yficwdlrmgjvvsq7agvh3sgyl1"))
+               "1y6nfxcjhqg9bb81hs0wijg7kcwk5kff81rgd8bsv5ps7ia9nj6b"))
              (patches (search-patches "laby-make-install.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -6590,7 +6590,7 @@ Crowther & Woods, its original authors, in 1995.  It has been known as
 (define-public tome4
   (package
     (name "tome4")
-    (version "1.7.0")
+    (version "1.7.2")
     (synopsis "Single-player, RPG roguelike game set in the world of Eyal")
     (source
      (origin
@@ -6598,7 +6598,7 @@ Crowther & Woods, its original authors, in 1995.  It has been known as
        (uri (string-append "https://te4.org/dl/t-engine/t-engine4-src-"
                            version ".tar.bz2"))
        (sha256
-        (base32 "1fs0320n3ndd5kd6j9y22jsd1hbn356d4dr11kl3iy5ssix7832s"))
+        (base32 "1xa0pdn9pggwf7hnqb87ya2qxqhjahkdjwf8cr2y01gixgrkj9lv"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -6620,7 +6620,9 @@ Crowther & Woods, its original authors, in 1995.  It has been known as
        ("vorbis" ,libvorbis)
        ("luajit" ,luajit)))
     (arguments
-     `(#:make-flags '("CC=gcc" "config=release")
+     `(#:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             "config=release")
        ;; XXX: Building in parallel occasionally causes this build failure:
        ;;   ../src/luajit2/src/host/buildvm.c:73:10: fatal error: buildvm_arch.h:
        ;;   No such file or directory

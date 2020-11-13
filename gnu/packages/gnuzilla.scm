@@ -550,8 +550,8 @@ from forcing GEXP-PROMISE."
                       #:system system
                       #:guile-for-build guile)))
 
-(define %icecat-version "78.4.0-guix0-preview1")
-(define %icecat-build-id "20201019000000") ;must be of the form YYYYMMDDhhmmss
+(define %icecat-version "78.4.1-guix0-preview1")
+(define %icecat-build-id "20201110000000") ;must be of the form YYYYMMDDhhmmss
 
 ;; 'icecat-source' is a "computed" origin that generates an IceCat tarball
 ;; from the corresponding upstream Firefox ESR tarball, using the 'makeicecat'
@@ -573,11 +573,11 @@ from forcing GEXP-PROMISE."
                   "firefox-" upstream-firefox-version ".source.tar.xz"))
             (sha256
              (base32
-              "1z3hj45bnd12z3g6ajv9qrgclca7fymi1sxj9l9nh9q6y6xz0g4f"))))
+              "0q57b0s6xhps4dzp2cih4ajdj6hdas0j6jx0sidzj72vjzfywy0r"))))
 
-         (upstream-icecat-base-version "78.4.0") ; maybe older than base-version
+         (upstream-icecat-base-version "78.4.1") ; maybe older than base-version
          ;;(gnuzilla-commit (string-append "v" upstream-icecat-base-version))
-         (gnuzilla-commit "05adddbf87a5ee11de7cd90794c331a178bcfd5c")
+         (gnuzilla-commit "df2c2e22a0c6ea5b4dcaed52884223bfa6ffacde")
          (gnuzilla-source
           (origin
             (method git-fetch)
@@ -589,7 +589,7 @@ from forcing GEXP-PROMISE."
                                       (string-take gnuzilla-commit 8)))
             (sha256
              (base32
-              "128h0gnn1adinjkfmskxdjkvyh60li8czlar2xdjn2b6myiq5yny"))))
+              "1y1p2g9xvqsg0im58lhdkrp8z0zlxw6i3qqplqdpbidmjwibmqjz"))))
 
          ;; 'search-patch' returns either a valid file name or #f, so wrap it
          ;; in 'assume-valid-file-name' to avoid 'local-file' warnings.
@@ -1475,6 +1475,27 @@ standards of the IceCat project.")
      "This package provides an email client built based on Mozilla
 Thunderbird.  It supports email, news feeds, chat, calendar and contacts.")
     (license license:mpl2.0)))
+
+(define-public icedove/wayland
+  (package/inherit icedove
+    (name "icedove-wayland")
+    (arguments
+     (substitute-keyword-arguments (package-arguments icedove)
+       ((#:phases phases)
+        `(modify-phases ,phases
+          (replace 'wrap-program
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (lib (string-append out "/lib"))
+                    (gtk (assoc-ref inputs "gtk+"))
+                    (gtk-share (string-append gtk "/share"))
+                    (pulseaudio (assoc-ref inputs "pulseaudio"))
+                    (pulseaudio-lib (string-append pulseaudio "/lib")))
+               (wrap-program (car (find-files lib "^icedove$"))
+                 `("MOZ_ENABLE_WAYLAND" = ("1"))
+                 `("XDG_DATA_DIRS" prefix (,gtk-share))
+                 `("LD_LIBRARY_PATH" prefix (,pulseaudio-lib)))
+               #t)))))))))
 
 (define-public firefox-decrypt
   (package
