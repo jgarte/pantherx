@@ -159,14 +159,14 @@ this package.  E.g.: @code{(udev-rules-service 'rtl-sdr rtl-sdr)}")
 (define-public chirp
   (package
     (name "chirp")
-    (version "20201014")
+    (version "20201121")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://trac.chirp.danplanet.com/chirp_daily/daily-"
                            version "/chirp-daily-" version ".tar.gz"))
        (sha256
-        (base32 "16x3ix2n7a9l7lln2pri1xfmhyfvvzxb0nr3h33iajqimbwckxj0"))))
+        (base32 "092jryb1jn9li6zj243awv6piz1lhghqsm4phrz7j0rgqf76dy4n"))))
     (build-system python-build-system)
     (inputs
      `(("python2-libxml2" ,python2-libxml2)
@@ -577,14 +577,14 @@ using GNU Radio and the Qt GUI toolkit.")
 (define-public fldigi
   (package
     (name "fldigi")
-    (version "4.1.15")
+    (version "4.1.16")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://www.w1hkj.com/files/fldigi/fldigi-"
                            version ".tar.gz"))
        (sha256
-        (base32 "1fzbcv2dgg6byb2l8m2d6i69yn0a44pq52mpmms756jdf6z622i6"))))
+        (base32 "1dfkvhs0ri5kbyskk730ik8ix5z138qys26b31p6kixd8jjkw3k4"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))

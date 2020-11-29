@@ -245,7 +245,7 @@
        ("faac" ,faac)
        ("ffmpeg" ,ffmpeg)
        ("freetype" ,freetype)
-       ("imagemagick" ,imagemagick)
+       ("imagemagick" ,imagemagick-next)
        ("lame" ,lame)
        ("liba52" ,liba52)
        ("libdv" ,libdv)
@@ -286,7 +286,7 @@ video and audio streams from a DVD.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/OpenVisualCloud/SVT-HEVC.git")
+         (url "https://github.com/OpenVisualCloud/SVT-HEVC")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -314,7 +314,7 @@ efficiency.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/Intel-Media-SDK/MediaSDK.git")
+         (url "https://github.com/Intel-Media-SDK/MediaSDK")
          (commit (string-append "intel-" name "-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -490,7 +490,7 @@ and mmsh protocols.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/farindk/libvideogfx.git")
+         (url "https://github.com/farindk/libvideogfx")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -528,17 +528,17 @@ applications by providing high-level classes for commonly required tasks.")
 (define-public libde265
   (package
     (name "libde265")
-    (version "1.0.7")
+    (version "1.0.8")
     (source
      (origin
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/strukturag/libde265.git")
+         (url "https://github.com/strukturag/libde265")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0x7g9771457z49qvzpk4iswfhq018i0mzsflv9gg8if5hjqhfdp0"))))
+        (base32 "1dzflqbk248lz5ws0ni5acmf32b3rmnq5gsfaz7691qqjxkl1zml"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -575,7 +575,7 @@ other software.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/libts/tslib.git")
+         (url "https://github.com/libts/tslib")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -1007,7 +1007,7 @@ H.264 (MPEG-4 AVC) video streams.")
 (define-public straw-viewer
   (package
     (name "straw-viewer")
-    (version "0.1.0")
+    (version "0.1.1")
     (source
      (origin
        (method git-fetch)
@@ -1016,7 +1016,7 @@ H.264 (MPEG-4 AVC) video streams.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0786bppk8dhp5p2284qp7pm3b9vwh1cm4n03hiqwd2vvgv41aypy"))))
+        (base32 "0idp1ayqghi5bg83v9qmvzz9wj05flwrp1fxb4kqa6vwxmprvhyk"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-build" ,perl-module-build)
@@ -1191,7 +1191,7 @@ designed to encode video or images into an H.265 / HEVC encoded bitstream.")
 (define-public libass
   (package
     (name "libass")
-    (version "0.14.0")
+    (version "0.15.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1199,8 +1199,10 @@ designed to encode video or images into an H.265 / HEVC encoded bitstream.")
                     version "/libass-" version ".tar.xz"))
               (sha256
                (base32
-                "18iqznl4mabhj9ywfsz4kwvbsplcv1jjxq50nxssvbj8my1267w8"))))
+                "0cz8v6kh3f2j5rdjrra2z0h715fa16vjm7kambvqx9hak86262cz"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("nasm" ,nasm)))
@@ -1208,8 +1210,7 @@ designed to encode video or images into an H.265 / HEVC encoded bitstream.")
      `(("freetype" ,freetype)
        ("fribidi" ,fribidi)
        ("fontconfig" ,fontconfig)
-       ("harfbuzz" ,harfbuzz)
-       ("enca" ,enca)))
+       ("harfbuzz" ,harfbuzz)))
     (home-page "https://github.com/libass/libass")
     (synopsis "Subtitle rendering library for the ASS/SSA format")
     (description "libass is a subtitle rendering library for the
@@ -1326,7 +1327,7 @@ libebml is a C++ library to read and write EBML files.")
 (define-public libva
   (package
     (name "libva")
-    (version "2.7.1")
+    (version "2.9.0")
     (source
      (origin
        (method url-fetch)
@@ -1338,7 +1339,7 @@ libebml is a C++ library to read and write EBML files.")
              (string-append "https://www.freedesktop.org/software/vaapi/releases/"
                             "libva/libva-" version "/libva-" version ".tar.bz2")))
        (sha256
-        (base32 "014av7ayyc624xfmr63xhbgg7nw8fynsswj1g2wmk4lnkyfz23x0"))))
+        (base32 "0jsq6ia3fzyzvq7lxsrn4a8kn2kx4z3v777xkxn6k4ny5lww2i73"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -2004,7 +2005,7 @@ SVCD, DVD, 3ivx, DivX 3/4/5, WMV and H.264 movies.")
 (define-public mpv
   (package
     (name "mpv")
-    (version "0.32.0")
+    (version "0.33.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2013,7 +2014,7 @@ SVCD, DVD, 3ivx, DivX 3/4/5, WMV and H.264 movies.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0kmy1q0hp87vq4rpv7py04x8bpg1wmlzaibavmkf713jqp6qy596"))))
+                "06cmycd2gb826kf2zv470w6nhzyk9sdhjydsdiinbgb902lzcpfy"))))
     (build-system waf-build-system)
     (native-inputs
      `(("perl" ,perl) ; for zsh completion file
@@ -2188,14 +2189,14 @@ To load this plugin, specify the following option when starting mpv:
 (define-public youtube-dl
   (package
     (name "youtube-dl")
-    (version "2020.11.12")
+    (version "2020.11.26")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://youtube-dl.org/downloads/latest/"
                                   "youtube-dl-" version ".tar.gz"))
               (sha256
                (base32
-                "0c98sjaj6mvxnjp0qnwqbr6fibgb4dlizad2xvkiswf4g4h0pc5f"))))
+                "0zvgb1b5kzd2y97rvynxf7qvz3narllf1m26xsph1zll1zb6q47v"))))
     (build-system python-build-system)
     (arguments
      ;; The problem here is that the directory for the man page and completion
@@ -2347,7 +2348,7 @@ other site that youtube-dl supports.")
 (define-public you-get
   (package
     (name "you-get")
-    (version "0.4.1475")
+    (version "0.4.1488")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2356,7 +2357,7 @@ other site that youtube-dl supports.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1hsa99fgx1zhzkf3n0hlbinckvipd54vhs6y4jkq0rd9r6yc1h7f"))))
+                "10dx1gka92m42f8ah1mzylbd71apzrphfa48r5ci7g1j8ysdcs7q"))))
     (build-system python-build-system)
     (inputs
      `(("ffmpeg" ,ffmpeg)))             ; for multi-part and >=1080p videos
@@ -2653,7 +2654,7 @@ for use with HTML5 video.")
 (define-public avidemux
   (package
     (name "avidemux")
-    (version "2.7.4")
+    (version "2.7.6")
     (source (origin
              (method url-fetch)
              (uri (string-append
@@ -2661,7 +2662,7 @@ for use with HTML5 video.")
                    "avidemux_" version ".tar.gz"))
              (sha256
               (base32
-               "1acdb3m37vdzzbm8mwyibcn8msi7birb5v30qfi7jli5r00src3x"))
+               "1kwkn976ppahrcr74bnv6sqx75pzl9y21m1mvr5ksi1m6lgp924s"))
              (patches (search-patches "avidemux-install-to-lib.patch"))))
     (build-system cmake-build-system)
     (native-inputs
@@ -2679,6 +2680,7 @@ for use with HTML5 video.")
        ("glu" ,glu)
        ("jack" ,jack-1)
        ("lame" ,lame)
+       ("libaom" ,libaom)
        ("libva" ,libva)
        ("libvdpau" ,libvdpau)
        ("libvorbis" ,libvorbis)
@@ -2693,7 +2695,7 @@ for use with HTML5 video.")
        #:phases
        ;; Make sure files inside the included ffmpeg tarball are
        ;; patch-shebanged.
-       (let ((ffmpeg "ffmpeg-4.1.4"))
+       (let ((ffmpeg "ffmpeg-4.2.3"))
          (modify-phases %standard-phases
            (add-before 'patch-source-shebangs 'unpack-ffmpeg
              (lambda _
@@ -3103,7 +3105,7 @@ and JACK.")
 (define-public libvdpau
   (package
     (name "libvdpau")
-    (version "1.3")
+    (version "1.4")
     (source
       (origin
         (method git-fetch)
@@ -3113,7 +3115,7 @@ and JACK.")
         (file-name (git-file-name name version))
         (sha256
          (base32
-          "1fb1nh5apr9kzx9bm2lysjwpyva1s60b2l2p230nqgvb11q25hd2"))))
+          "1hc4mcrbr1yhfiy4zfd8wc2iiqbp90z6jswap0jia20vmyk5lqld"))))
     (build-system meson-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -3798,7 +3800,7 @@ iTunes-style metadata.")
 (define-public livemedia-utils
   (package
     (name "livemedia-utils")
-    (version "2019.05.29")
+    (version "2020.11.19")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -3806,11 +3808,12 @@ iTunes-style metadata.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "08i63jr8ihn1xiq5z5n3yls3yz6li5sg0s454l56p5bcvbrw81my"))))
+                "16w6yxdbmjdhvffnrb752dn4llf3l0wb00dgdkyia0vqsv2qqyn7"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:tests? #f                      ; no tests
-       #:make-flags (list "CC=gcc"
+     `(#:tests? #f                      ; no tests
+       #:make-flags (list (string-append "CC=" ,(cc-for-target))
+                          (string-append "CXX=" ,(cxx-for-target))
                           (string-append "LDFLAGS=-Wl,-rpath="
                                          (assoc-ref %outputs "out") "/lib")
                           (string-append "PREFIX="
@@ -3825,6 +3828,8 @@ iTunes-style metadata.")
                     (lambda _
                       (invoke "./genMakefiles"
                               "linux-with-shared-libraries"))))))
+    (inputs
+     `(("openssl" ,openssl)))
     (home-page "http://www.live555.com/liveMedia/")
     (synopsis "Set of C++ libraries for multimedia streaming")
     (description "This code forms a set of C++ libraries for multimedia
@@ -4374,15 +4379,17 @@ transitions, and effects and then export your film to many common formats.")
 (define-public dav1d
   (package
     (name "dav1d")
-    (version "0.7.1")
+    (version "0.8.0")
     (source
       (origin
-        (method url-fetch)
-        (uri (string-append "https://downloads.videolan.org/pub/videolan"
-                            "/dav1d/" version "/dav1d-" version ".tar.xz"))
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://code.videolan.org/videolan/dav1d.git")
+               (commit version)))
+        (file-name (git-file-name name version))
         (sha256
          (base32
-          "1hnkfcg57bv5rib6cnj39dy1jx0q7zi5fb2fz52hf2y0bv8bad1k"))))
+          "0mjn87xjdqv0q1gj4s4f6fdmsj504mhk4qmqiyrhq2rs7yqj4csv"))))
     (build-system meson-build-system)
     (native-inputs `(("nasm" ,nasm)))
     (home-page "https://code.videolan.org/videolan/dav1d")

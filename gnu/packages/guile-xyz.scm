@@ -886,8 +886,8 @@ Vicare Scheme and IronScheme.  Right now it contains:
     (license license:bsd-3)))
 
 (define-public guile-prometheus
-  (let ((commit "8980f39bafb3e59d6de17e7b311df4932e5b5182")
-        (revision "1"))
+  (let ((commit "12d3d9de676f518eccf0a384d461cc4c035939b0")
+        (revision "2"))
     (package
     (name "guile-prometheus")
     (version (git-version "0" revision commit))
@@ -898,7 +898,7 @@ Vicare Scheme and IronScheme.  Right now it contains:
                     (commit commit)))
               (sha256
                (base32
-                "04vwza78b5nq0szzxzvpnfjyfkb4pqf2w4dx3kz1f082n01xnwss"))
+                "0d45g2719xy84l2si5h1fw7vlig4pqqkhp5zlw9dlr5gzaa3yrrs"))
               (file-name (string-append name "-" version "-checkout"))))
     (build-system gnu-build-system)
     (native-inputs
@@ -966,8 +966,8 @@ convenient nested tree operations.")
     (license license:gpl3+)))
 
 (define-public guile-simple-zmq
-  (let ((commit "68bedb6679716214fb9d3472da57544526f7a618")
-        (revision "3"))
+  (let ((commit "5fc3b7190d31c258ce969c2a5d2ad38c66a09d09")
+        (revision "4"))
     (package
       (name "guile-simple-zmq")
       (version (git-version "0.0.0" revision commit))
@@ -979,7 +979,7 @@ convenient nested tree operations.")
                (commit commit)))
          (sha256
           (base32
-           "1ad3xg69qqviy1f6dnlw0ysmfdbmp1jq65rfqb8nfd8dsrq2syli"))
+           "0inhvl5jssvbw3nd129wdahfwyvy1iciq403wzf0algbvl1fqs7z"))
          (file-name (git-file-name name version))))
       (build-system guile-build-system)
       (arguments
@@ -2973,7 +2973,7 @@ more expressive and flexible than the traditional @code{format} procedure.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/scheme-requests-for-implementation/srfi-180.git")
+               (url "https://github.com/scheme-requests-for-implementation/srfi-180")
                (commit commit)))
          (sha256
           (base32
@@ -3734,7 +3734,7 @@ models and also supports a rich set of boolean query operators.")
     (source (origin (method git-fetch)
                     (uri (git-reference
                           (url
-                           "https://github.com/o-nly/torrent.git")
+                           "https://github.com/o-nly/torrent")
                           (commit version)))
                     (file-name (git-file-name name version))
                     (sha256
@@ -3877,7 +3877,7 @@ manipulating graphs and datasets.")
 (define-public guile-jsonld
   (package
     (name "guile-jsonld")
-    (version "1.0.1")
+    (version "1.0.2")
     (source
       (origin
         (method git-fetch)
@@ -3887,13 +3887,13 @@ manipulating graphs and datasets.")
         (file-name (git-file-name name version))
         (sha256
          (base32
-          "0zfn3nwlz6xzip1j8xbj768dc299r037cfc81bk6kwl9xhzkjbrg"))))
+          "1ryyvh71899z2inivqglb8d78zzp1sd0wv9a56kvcmrxf1966z6r"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f)); require network
     (propagated-inputs
      `(("guile-gnutls" ,gnutls)
-       ("guile-json" ,guile-json-3)
+       ("guile-json" ,guile-json-4)
        ("guile-rdf" ,guile-rdf)))
     (inputs
      `(("guile" ,guile-3.0)))

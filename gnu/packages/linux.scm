@@ -157,6 +157,7 @@
   #:use-module (guix store)
   #:use-module (guix monads)
   #:use-module (guix utils)
+  #:use-module (guix deprecation)    ;for libcap/next
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
@@ -351,15 +352,15 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The current "stable" kernel. That is, the most recently released major
 ;; version.
-(define-public linux-libre-5.9-version "5.9.8")
+(define-public linux-libre-5.9-version "5.9.11")
 (define deblob-scripts-5.9
   (linux-libre-deblob-scripts
    linux-libre-5.9-version
    (base32 "1l0iw2lp6alk0a8nvdafklyks83iiyw4b2r5xif84z47qfbydsis")
-   (base32 "0wp0mx5d2qhv7brc595qj34phiaxz9z5gf26w5369nh9mll5cbw6")))
+   (base32 "0yb04a4j2wq3mwvks3cj7kcm2pscmfs29lrz3falkxpbvjxbbgq2")))
 (define-public linux-libre-5.9-pristine-source
   (let ((version linux-libre-5.9-version)
-        (hash (base32 "19l67gzk97higd2cbggipcb0wi21pv0ag0mc4qh6cqk564xp6mkn")))
+        (hash (base32 "0q6jlnigyjjnnxw6l724zv8acgs95s3pafabz4l9jrhhlijhmcjy")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.9)))
@@ -367,7 +368,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
-(define-public linux-libre-5.4-version "5.4.77")
+(define-public linux-libre-5.4-version "5.4.80")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
    linux-libre-5.4-version
@@ -375,12 +376,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "167zcfkw62pm6nv1xdvvhxw0ca724sywcywnv3z00189f8f8p3vg")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "1xyvml0mps7bsa11bgpa4l0w8x6pasdz9yab2z4ds394f1lkxq53")))
+        (hash (base32 "1iv4rsc9mr13xqzayzwz8mpdrdpnc425mn1izz9hylrw3xf45nj9")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.157")
+(define-public linux-libre-4.19-version "4.19.160")
 (define deblob-scripts-4.19
   (linux-libre-deblob-scripts
    linux-libre-4.19-version
@@ -388,12 +389,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1jiaw0as1ippkrjdpd52657w5mz9qczg3y2hlra7m9k0xawwiqlf")))
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "0mgpgv2ny49bb7kgaygy2ay6ckjgw7mg091viivi66jw4mjs7p3n")))
+        (hash (base32 "118maapizgqgrgawnw7xmbcz26c61g5d012jzbd8l7n6z4354d0q")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.206")
+(define-public linux-libre-4.14-version "4.14.209")
 (define deblob-scripts-4.14
   (linux-libre-deblob-scripts
    linux-libre-4.14-version
@@ -401,12 +402,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1qij18inijj6c3ma8hv98yjagnzxdxyn134da9fd23ky8q6hbvky")))
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "1b46f0s15xnlam43cmw8w41rrvcwrhm6km0278lq6f86lpx3w8qw")))
+        (hash (base32 "171b31c4rz9sn95s4s4yqchd4s46kivmvch78z0jr5zir1f4c0nb")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.243")
+(define-public linux-libre-4.9-version "4.9.246")
 (define deblob-scripts-4.9
   (linux-libre-deblob-scripts
    linux-libre-4.9-version
@@ -414,12 +415,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0fxajshb75siq39lj5h8xvhdj8lcmddkslwlyj65rhlwk6g2r4b2")))
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "111rlzx6z4kf8zwxncib96d9wy6qmkbs0cq3dhnybipwlyf1iank")))
+        (hash (base32 "1xd9vgc4yj2vrr5r76cy3fp9a1fc3086lj5aws68wf1dsz3ndqj9")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.243")
+(define-public linux-libre-4.4-version "4.4.246")
 (define deblob-scripts-4.4
   (linux-libre-deblob-scripts
    linux-libre-4.4-version
@@ -427,7 +428,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0hhin1jpfkd6nwrb6xqxjzl3hdxy4pn8a15hy2d3d83yw6pflbsf")))
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "1daqbmj9ka9wdkkym625hqwqaxq5n11y7c4yc9ln3xkjpnv4dplm")))
+        (hash (base32 "15xd1dqw53kwqvsa71nr1ymp0jp22pkl4h2yks4hqbd132zxw2wy")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -1042,39 +1043,45 @@ It has been modified to remove all non-free binary blobs.")
 ;;;
 
 (define-public acpi-call-linux-module
-  (let ((commit "70b9c80bd700e6a4d10797eaac9fd34b7e8cbd4a")
-        (revision "0"))
-    (package
-      (name "acpi-call-linux-module")
-      (version (git-version "3.17" revision commit))
-      (source
-       (origin
-         (method git-fetch)
-         (uri (git-reference
-               (url "https://github.com/teleshoes/acpi_call")
-               (commit commit)))
-         (file-name (git-file-name name version))
-         (sha256
-          (base32 "09c1vw6vcrkqxbwhpgfgpj4d1grzn4qq6ka8pwwzm7cvm405xj7x"))))
-      (build-system linux-module-build-system)
-      (arguments
-       `(#:tests? #f                    ; no tests
-         #:phases
-         (modify-phases %standard-phases
-           (add-after 'install 'install-documentation
-             (lambda* (#:key outputs #:allow-other-keys)
-               (let* ((out (assoc-ref outputs "out"))
-                      (doc (string-append out "/share/doc/" ,name "-" ,version)))
-                 (for-each (lambda (file)
-                             (let ((target (string-append doc "/" file)))
-                               (mkdir-p (dirname target))
-                               (copy-recursively file target)))
-                           (list "README.md" "examples"))
-                 #t))))))
-      (home-page "https://github.com/teleshoes/acpi_call")
-      (synopsis "Linux kernel module to perform ACPI method calls")
-      (description
-       "This simple Linux kernel module allows calls from user space to any
+  (package
+    (name "acpi-call-linux-module")
+    (version "1.2.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/nix-community/acpi_call")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0mr4rjbv6fj4phf038addrgv32940bphghw2v9n1z4awvw7wzkbg"))))
+    (build-system linux-module-build-system)
+    (arguments
+     `(#:tests? #f                      ; no tests
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'install 'patch-shebangs-harder
+           ;; The (only) shebangs in examples/ don't justify a reference.
+           ;; However, do substitute a more portable one than the original.
+           (lambda _
+             (substitute* (find-files "examples" ".")
+               (("^(#! *)/[^ ]*/" _ shebang)
+                (string-append shebang "/usr/bin/env ")))
+             #t))
+         (add-after 'install 'install-documentation
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (doc (string-append out "/share/doc/" ,name "-" ,version)))
+               (for-each (lambda (file)
+                           (let ((target (string-append doc "/" file)))
+                             (mkdir-p (dirname target))
+                             (copy-recursively file target)))
+                         (list "README.md" "examples"))
+               #t))))))
+    (home-page "https://github.com/teleshoes/acpi_call")
+    (synopsis "Linux kernel module to perform ACPI method calls")
+    (description
+     "This simple Linux kernel module allows calls from user space to any
 @acronym{ACPI, Advanced Configuration and Power Interface} method provided by
 your computer's firmware, by writing to @file{/proc/acpi/call}.  You can pass
 any number of parameters of types @code{ACPI_INTEGER}, @code{ACPI_STRING},
@@ -1082,11 +1089,11 @@ and @code{ACPI_BUFFER}.
 
 It grants direct and undocumented access to your hardware that may cause damage
 and should be used with caution, especially on untested models.")
-      (license license:gpl3+))))        ; see README.md (no licence headers)
+    (license license:gpl3+)))           ; see README.md (no licence headers)
 
 (define-public rtl8812au-aircrack-ng-linux-module
-  (let ((commit "df2b8dfd8cb7d9f6cfeb55abaeab8a5372011fc9")
-        (revision "1"))
+  (let ((commit "e9fbf5c051453941bbc029810b893a6c010714e6")
+        (revision "2"))
     (package
       (name "rtl8812au-aircrack-ng-linux-module")
       (version (git-version "5.6.4.2" revision commit))
@@ -1098,7 +1105,7 @@ and should be used with caution, especially on untested models.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "1qcr0j8yhg8l9l0f5y55zcsk1mgf3qd46yh9xfqgg91szxa3yvca"))
+          (base32 "0y71q7ajwz1w38gdmxd4p05hhkqndq504nndy6vfa16fxz6pqxhn"))
          (modules '((guix build utils)))
          (snippet
           '(begin
@@ -1296,7 +1303,7 @@ application by hooking GStreamer into the loopback device.")
 (define-public linux-pam
   (package
     (name "linux-pam")
-    (version "1.3.1")
+    (version "1.4.0")
     (source
      (origin
        (method url-fetch)
@@ -1305,7 +1312,7 @@ application by hooking GStreamer into the loopback device.")
              version "/Linux-PAM-" version ".tar.xz"))
        (sha256
         (base32
-         "1nyh9kdi3knhxcbv5v4snya0g3gff0m671lnvqcbygw3rm77mx7g"))
+         "0d6hvz6lpkac08hw5wnlhfdm0fhqd0n6jf6v7fz3jhg6a6694vfd"))
        (patches (search-patches "linux-pam-no-setfsuid.patch"))))
 
     (build-system gnu-build-system)
@@ -1366,7 +1373,7 @@ at login.  Local and dynamic reconfiguration are its key features.")
         ;; Tests not distributed in pypi release.
         (method git-fetch)
         (uri (git-reference
-               (url "https://github.com/minrk/pamela.git")
+               (url "https://github.com/minrk/pamela")
                (commit version)))
         (file-name (git-file-name name version))
         (sha256
@@ -2048,7 +2055,7 @@ intercept and print the system calls executed by the program.")
 (define-public alsa-lib
   (package
     (name "alsa-lib")
-    (version "1.2.2")
+    (version "1.2.3.2")
     (source (origin
              (method url-fetch)
              (uri (string-append
@@ -2056,7 +2063,7 @@ intercept and print the system calls executed by the program.")
                    version ".tar.bz2"))
              (sha256
               (base32
-               "1v5kb8jyvrpkvvq7dq8hfbmcj68lml97i4s0prxpfx2mh3c57s6q"))))
+               "05dyk856ppvqymazyk1cmpln53g88cq1wjpnsygqrvnamyvwa7z8"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags (list (string-append "LDFLAGS=-Wl,-rpath="
@@ -2072,14 +2079,14 @@ MIDI functionality to the Linux-based operating system.")
 (define-public alsa-utils
   (package
     (name "alsa-utils")
-    (version "1.2.2")
+    (version "1.2.3")
     (source (origin
              (method url-fetch)
              (uri (string-append "ftp://ftp.alsa-project.org/pub/utils/"
                                  name "-" version ".tar.bz2"))
              (sha256
               (base32
-               "1wz460by17rmxrcydn583rd4lhj6wlvqs6x1j5pdzxn5g3app024"))))
+               "1ai1z4kf91b1m3qrpwqkc1af5vm2fkdkknqv95xdwf19q94aw6gz"))))
     (build-system gnu-build-system)
     (arguments
      ;; XXX: Disable man page creation until we have DocBook.
@@ -2411,7 +2418,7 @@ network hardware types (plipconfig, slattach) and advanced aspects of IP
 configuration (iptunnel, ipmaddr).")
       (license license:gpl2+))))
 
-(define-public libcap
+(define-public libcap-2.31
   (package
     (name "libcap")
     (version "2.31")
@@ -2450,12 +2457,13 @@ Linux-based operating systems.")
     ;; License is BSD-3 or GPLv2, at the user's choice.
     (license license:gpl2)))
 
-;; libcap 2.31 causes problems for 'fakeroot', so provide this newer variant.
+;; libcap 2.31 has problems with newer kernels, so provide this newer variant.
+;; Keep the old libcap around to avoid rebuilding 'coreutils' and 'avahi'.
 ;; To be merged with libcap on the next rebuild cycle.
-(define-public libcap/next
+(define-public libcap
   (package
-    (inherit libcap)
-    (version "2.34")
+    (inherit libcap-2.31)
+    (version "2.44")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -2463,7 +2471,22 @@ Linux-based operating systems.")
                     "libcap2/libcap-" version ".tar.xz"))
               (sha256
                (base32
-                "048n1gy2p48vl9hkrr9wymfxxcpwj2aslz2bv79nhl4m2lhd9kdf"))))))
+                "1qf80lifygbnxwvqjf8jz5j24n6fqqx4ixnkbf76xs2vrmcq664j"))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments libcap-2.31)
+       ((#:phases phases)
+        `(modify-phases ,phases
+           (replace 'configure
+             (lambda _
+               ;; Add $libdir to the RUNPATH of executables.
+               (substitute* "Make.Rules"
+                 (("LDFLAGS \\?= #-g")
+                  (string-append "LDFLAGS ?= -Wl,-rpath="
+                                 %output "/lib")))
+               #t))))))))
+
+(define-deprecated libcap/next libcap)
+(export libcap/next)
 
 (define-public bridge-utils
   (package
@@ -3192,7 +3215,7 @@ from the module-init-tools project.")
 (define-public earlyoom
   (package
     (name "earlyoom")
-    (version "1.3.1")
+    (version "1.6.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3201,23 +3224,23 @@ from the module-init-tools project.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "06sd3jpkdrwqbphsf8jrgs5rxfi7j3xjmygjjvj4xjk4gncz7r2i"))))
+                "16iyn51xlrsbshc7p5xl2338yyfzknaqc538sa7mamgccqwgyvvq"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases (modify-phases %standard-phases
-                  (delete 'configure)
-                  (add-before 'check 'set-home
-                    (lambda _
-                      (setenv "HOME" (getcwd))
-                      #t))
-                  (add-after 'build 'install-contribs
-                    ;; Install what seems useful from the contrib directory.
-                    (lambda* (#:key outputs #:allow-other-keys)
-                      (let* ((out (assoc-ref outputs "out"))
-                             (contrib (string-append
-                                       out "/share/earlyoom/contrib")))
-                        (install-file "contrib/notify_all_users.py" contrib)
-                        #t))))
+     `(#:phases
+       (modify-phases %standard-phases
+         (delete 'configure)            ; no configure script
+         (add-before 'check 'set-go-HOME
+           (lambda _
+             (setenv "HOME" (getcwd))
+             #t))
+         (add-before 'check 'disable-failing-test
+           (lambda _
+             ;; This test relies on writing to /proc/%d/oom_score_adj.
+             (substitute* "testsuite_cli_test.go"
+               (("TestI" match)
+                (string-append "skipped" match)))
+             #t)))
        #:make-flags (let* ((prefix (assoc-ref %outputs "out")))
                       (list ,(string-append "CC=" (cc-for-target))
                             (string-append "VERSION=v" ,version)
@@ -4060,14 +4083,14 @@ isolation or root privileges.")
 (define-public hdparm
   (package
     (name "hdparm")
-    (version "9.58")
+    (version "9.60")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/hdparm/hdparm/"
                                   "hdparm-" version ".tar.gz"))
               (sha256
                (base32
-                "03z1qm8zbgpxagk3994lvp24yqsshjibkwg05v9p3q1w7y48xrws"))))
+                "1k1mcv7naiacw1y6bdd1adnjfiq1kkx2ivsadjwmlkg4fff775w3"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -4430,7 +4453,7 @@ arrays when needed.")
 (define-public multipath-tools
   (package
     (name "multipath-tools")
-    (version "0.8.4")
+    (version "0.8.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4439,8 +4462,7 @@ arrays when needed.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "14n8pcgnliicqxzc40xvjxk4cafm4qx7a3rsx5qva74r3ydzx8rn"))
-              (patches (search-patches "multipath-tools-sans-systemd.patch"))
+                "0gipg0z79h76j0f449cx4wcrfsv69ravjlpphsac11h302g3nrvg"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -4497,6 +4519,18 @@ arrays when needed.")
              (substitute* "tests/Makefile"
                (("-lmultipath -lcmocka")
                 "-lmultipath -L$(mpathcmddir) -lmpathcmd -lcmocka"))
+             #t))
+         (add-after 'unpack 'skip-failing-tests
+           (lambda _
+             ;; This test and the module's setup() test an arbitrary block
+             ;; device node name, but the build environment has none.
+             (substitute* "tests/devt.c"
+               (("return get_one_devt.*") "return 0;\n")
+               (("cmocka_unit_test\\(test_devt2devname_devt_good\\),") ""))
+             ;; The above triggers -Werror=unused-function.  Ignore it.
+             (substitute* "tests/Makefile"
+               (("CFLAGS \\+= " match)
+                (string-append match "-Wno-error=unused-function ")))
              #t))
          (delete 'configure))))         ; no configure script
     (native-inputs
@@ -4630,7 +4664,7 @@ Bluetooth audio output devices like headphones or loudspeakers.")
 (define-public bluez
   (package
     (name "bluez")
-    (version "5.54")
+    (version "5.55")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -4638,7 +4672,7 @@ Bluetooth audio output devices like headphones or loudspeakers.")
                     version ".tar.xz"))
               (sha256
                (base32
-                "1p2ncvjz6alr9n3l5wvq2arqgc7xjs6dqyar1l9jp0z8cfgapkb8"))))
+                "124v9s4y1s7s6klx5vlmzpk1jlr4x84ch7r7scm7x2f42dqp2qw8"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -4647,6 +4681,8 @@ Bluetooth audio output devices like headphones or loudspeakers.")
                "--localstatedir=/var"
                "--enable-library"
                "--disable-systemd"
+               ;; TODO: is this needed?  Not installed by default since 5.55.
+               "--enable-hid2hci"
                ;; Install dbus/udev files to the correct location.
                (string-append "--with-dbusconfdir=" out "/etc")
                (string-append "--with-udevdir=" out "/lib/udev")))
@@ -5792,7 +5828,7 @@ of flash storage.")
 (define-public libseccomp
   (package
     (name "libseccomp")
-    (version "2.5.0")
+    (version "2.5.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/seccomp/libseccomp/"
@@ -5800,7 +5836,7 @@ of flash storage.")
                                   "/libseccomp-" version ".tar.gz"))
               (sha256
                (base32
-                "1wql62cg8f95cwpy057cl764nni9g4sdn5lqj68x22kjs8w71yhz"))))
+                "0m8dlg1v7kflcxvajs4p76p275qwsm2abbf5mfapkakp7hw7wc7f"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--disable-static")
@@ -5944,14 +5980,14 @@ running boot option, and more.")
 (define-public sysstat
   (package
     (name "sysstat")
-    (version "12.4.0")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "http://pagesperso-orange.fr/sebastien.godard/"
-                                  "sysstat-" version ".tar.xz"))
-              (sha256
-               (base32
-                "05idnvkhvzaynj9awx7q54x1v42jblzrxq0fn5zd1v4mjwrnqmbq"))))
+    (version "12.4.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://pagesperso-orange.fr/sebastien.godard/"
+                           "sysstat-" version ".tar.xz"))
+       (sha256
+        (base32 "02yf2c9n56c3ic72r4p4kb99zjxr8fldvsnmcy7s262izx78vbr4"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no test suite.
@@ -6026,43 +6062,40 @@ set the screen to be pitch black at a value of 0 (or higher).
     (license license:gpl3+)))
 
 (define-public brightnessctl
-  (let ((commit "6a791e7694aeeb5d027f71c6098e5182cf03371c"))
-    (package
-      (name "brightnessctl")
-      (version (git-version "0.4" "0" commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://github.com/Hummer12007/brightnessctl/")
-                      (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "1n1gb8ldgqv3vs565yhk1w4jfvrviczp94r8wqlkv5q6ab43c8w9"))))
-      (build-system gnu-build-system)
-      (arguments
-       '(#:tests? #f                    ; no tests
-         #:make-flags (list "CC=gcc"
-                            (string-append "PREFIX=" %output)
-                            (string-append "UDEVDIR=" %output "/lib/udev/rules.d/"))
-         #:phases
-         (modify-phases %standard-phases
-           (delete 'configure)
-           (add-after 'unpack 'adjust-udev-rules
-             (lambda _
-               (substitute* "90-brightnessctl.rules"
-                 (("/bin/") "/run/current-system/profile/bin/"))
-               #t)))))
-      (home-page "https://github.com/Hummer12007/brightnessctl")
-      (synopsis "Backlight and LED brightness control")
-      (description
-       "This program allows you read and control device brightness.  Devices
+  (package
+    (name "brightnessctl")
+    (version "0.5.1")
+    (home-page "https://github.com/Hummer12007/brightnessctl")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference (url home-page) (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0immxc7almmpg80n3bdn834p3nrrz7bspl2syhb04s3lawa5y2lq"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ; no tests
+       #:make-flags (list (string-append "CC=" ,(cc-for-target))
+                          (string-append "PREFIX=" %output)
+                          (string-append "UDEVDIR=" %output "/lib/udev/rules.d/"))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (add-after 'unpack 'adjust-udev-rules
+           (lambda _
+             (substitute* "90-brightnessctl.rules"
+               (("/bin/") "/run/current-system/profile/bin/"))
+             #t)))))
+    (synopsis "Backlight and LED brightness control")
+    (description
+     "This program allows you read and control device brightness.  Devices
 include backlight and LEDs.  It can also preserve current brightness before
 applying the operation, such as on lid close.
 
 The appropriate permissions must be set on the backlight or LED control
 interface in sysfs, which can be accomplished with the included udev rules.")
-      (license license:expat))))
+    (license license:expat)))
 
 (define-public tlp
   (package
@@ -7084,7 +7117,7 @@ the superuser to make device nodes.")
        ("xz" ,xz)))
     (inputs
      `(("acl" ,acl)
-       ("libcap" ,libcap/next)
+       ("libcap" ,libcap)
        ("util-linux" ,util-linux)
        ("sed" ,sed)
        ("coreutils" ,coreutils)))
@@ -7496,7 +7529,7 @@ and above.")
 (define-public bpftrace
   (package
     (name "bpftrace")
-    (version "0.10.0")
+    (version "0.11.4")
     (source
      (origin
        (method git-fetch)
@@ -7505,8 +7538,7 @@ and above.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "023ardywbw5w8815j2ny9rrp2xlpxndqaa7v2njjm8109p7ilsdn"))
+        (base32 "0y4qgm2cpccrsm20rnh92hqplddqsc5q5zhw9nqn2igm3h9i0z7h"))
        (patches (search-patches "bpftrace-disable-bfd-disasm.patch"))))
     (build-system cmake-build-system)
     (native-inputs
@@ -7548,7 +7580,7 @@ created by Alastair Robertson.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/eBUS/ttyebus.git")
+               (url "https://github.com/eBUS/ttyebus")
                (commit "fe4332a2281cf79804ef4d8516aa848ca1c58d1f")))
          (file-name (git-file-name name version))
          (sha256
@@ -7568,13 +7600,13 @@ receiving.  It is dedicated to the PL011 UART of the Raspberry Pi.")
 (define-public ipset
   (package
     (name "ipset")
-    (version "7.7")
+    (version "7.9")
     (source (origin
               (method url-fetch)
-              (uri (string-append "http://ipset.netfilter.org/ipset-" version ".tar.bz2"))
+              (uri (string-append "https://ipset.netfilter.org/ipset-" version ".tar.bz2"))
               (sha256
                (base32
-                "0ckc678l1431mb0q5ilfgy0ajjwi8n135c72h606imm43dc0v9a5"))))
+                "02mkp7vmsh609dcp02xi290sxmsgq2fsch3875dxkwfxkrl16p5p"))))
     (build-system gnu-build-system)
     (inputs
      `(("libmnl" ,libmnl)))
@@ -7582,7 +7614,7 @@ receiving.  It is dedicated to the PL011 UART of the Raspberry Pi.")
      `(("pkg-config" ,pkg-config)))
     (arguments
      `(#:configure-flags '("--with-kmod=no")))
-    (home-page "http://ipset.netfilter.org/")
+    (home-page "https://ipset.netfilter.org/")
     (synopsis "Administration tool for IP sets")
     (description "IP sets are a framework inside the Linux 2.4.x and 2.6.x kernel which
 can be administered by the ipset utility.  Depending on the type,

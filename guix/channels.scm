@@ -72,6 +72,7 @@
             openpgp-fingerprint->bytevector
             openpgp-fingerprint
 
+            %default-guix-channel
             %default-channels
             guix-channel?
 
@@ -168,14 +169,22 @@ to the corresponding bytevector."
 
 (define %default-channel-url
   ;; URL of the default 'guix' channel.
-  "https://git.savannah.gnu.org/git/guix.git")
+  "https://rolling:s7T92icU5usys-R2bsM6@git.pantherx.org/development/pantherx.git")
+
+(define %default-guix-channel
+  (channel
+   (name 'guix)
+   (branch "rolling-nonlibre")
+   (url %default-channel-url)
+   ;; FIXME: temporarily bypass channel authentication to find a solution 
+   ;;        for upstream in a later time.
+   ;;        https://git.pantherx.org/development/pantherx/-/issues/23 
+   ;; (introduction %guix-channel-introduction)
+   ))
 
 (define %default-channels
   ;; Default list of channels.
-  (list (channel
-          (name 'guix)
-          (branch "rolling-nonlibre")
-          (url "https://rolling:s7T92icU5usys-R2bsM6@git.pantherx.org/development/pantherx.git"))
+  (list %default-guix-channel
         (channel
           (name 'nongnu)
           (branch "rolling")
@@ -184,13 +193,6 @@ to the corresponding bytevector."
           (name 'pantherx)
           (branch "rolling")
           (url "https://rolling:HPuf8Tdt6RFNFaoi_kVi@git.pantherx.org/development/guix-pantherx.git"))))
-         ;; FIXME: temporarily bypass channel authentication to find a solution 
-         ;;        for upstream in a later time.
-         ;;        https://git.pantherx.org/development/pantherx/-/issues/23 
-         ;(name 'guix)
-         ;(branch "master")
-         ;(url %default-channel-url)
-         ;(introduction %guix-channel-introduction))))
 
 (define (guix-channel? channel)
   "Return true if CHANNEL is the 'guix' channel."

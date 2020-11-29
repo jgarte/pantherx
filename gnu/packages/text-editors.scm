@@ -756,14 +756,14 @@ editors.")
 (define-public texmacs
   (package
     (name "texmacs")
-    (version "1.99.13")
+    (version "1.99.16")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.texmacs.org/Download/ftp/tmftp/"
                            "source/TeXmacs-" version "-src.tar.gz"))
        (sha256
-        (base32 "1d590yyanh2ar88pd0ns4mf616bq1lq4cwg93m863anhir5irb82"))))
+        (base32 "118sk75k0k9pkyfyx000n2ypab8vm1lz5zxkkdmsi5nwyr3rp56s"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -773,7 +773,8 @@ editors.")
        ("guile" ,guile-1.8)
        ("perl" ,perl)
        ("python" ,python-wrapper)
-       ("qt" ,qtbase)))
+       ("qt" ,qtbase)
+       ("qtsvg" ,qtsvg)))
     (arguments
      `(#:tests? #f                      ; no check target
        #:phases

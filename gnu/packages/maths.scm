@@ -41,6 +41,7 @@
 ;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
 ;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2020 Simon Tournier <zimon.toutoune@gmail.com>
+;;; Copyright © 2020 Martin Becze <mjbecze@riseup.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -306,13 +307,13 @@ programming language.")
 (define-public units
   (package
    (name "units")
-   (version "2.19")
+   (version "2.21")
    (source (origin
             (method url-fetch)
             (uri (string-append "mirror://gnu/units/units-" version
                                 ".tar.gz"))
             (sha256 (base32
-                     "0mk562g7dnidjgfgvkxxpvlba66fh1ykmfd9ylzvcln1vxmi6qj2"))))
+                     "1bybhqs4yrly9myb5maz3kdmf8k4fhk2m1d5cbcryn40z6lq0gkc"))))
    (build-system gnu-build-system)
    (inputs
     `(("readline" ,readline)
@@ -2908,14 +2909,14 @@ easy-to-write markup language for mathematics.")
 (define-public superlu
   (package
     (name "superlu")
-    (version "5.2.1")
+    (version "5.2.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://portal.nersc.gov/project/sparse/superlu/"
                            "superlu_" version ".tar.gz"))
        (sha256
-        (base32 "0qzlb7cd608q62kyppd0a8c65l03vrwqql6gsm465rky23b6dyr8"))
+        (base32 "13520vk6fqspyl22cq4ak2jh3rlmhja4czq56j75fdx65fkk80s7"))
        (modules '((guix build utils)))
        (snippet
         ;; Replace the non-free implementation of MC64 with a stub adapted
@@ -4716,7 +4717,7 @@ as equations, scalars, vectors, and matrices.")
 (define-public z3
   (package
     (name "z3")
-    (version "4.8.8")
+    (version "4.8.9")
     (home-page "https://github.com/Z3Prover/z3")
     (source (origin
               (method git-fetch)
@@ -4725,7 +4726,7 @@ as equations, scalars, vectors, and matrices.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1rn538ghqwxq0v8i6578j8mflk6fyv0cp4hjfqynzvinjbps56da"))))
+                "1hnbzq10d23drd7ksm3c1n2611c3kd0q0yxgz8y78zaafwczvwxx"))))
     (build-system gnu-build-system)
     (arguments
      `(#:imported-modules ((guix build python-build-system)

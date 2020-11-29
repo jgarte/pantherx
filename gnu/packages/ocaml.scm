@@ -5797,6 +5797,12 @@ convenience functions for vectors and matrices.")
                     (url "https://github.com/Chris00/ocaml-cairo")
                     (commit version)))
               (file-name (git-file-name name version))
+              (patches
+               (search-patches
+                ;; NOTE: This patch will be obsolete on the
+                ;; next tagged release. Remove it at that
+                ;; point.
+                "ocaml-cairo2-caml_ba_array-fix.patch"))
               (sha256
                (base32
                 "0wzysis9fa850s68qh8vrvqc6svgllhwra3kzll2ibv0wmdqrich"))))
@@ -5820,7 +5826,7 @@ and SVG file output.")
 (define-public lablgtk3
   (package
     (name "lablgtk")
-    (version "3.0.beta8")
+    (version "3.1.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -5829,7 +5835,7 @@ and SVG file output.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "08pgwnia240i2rw1rbgiahg673kwa7b6bvhsg3z4b47xr5sh9pvz"))))
+                "11qfc39cmwfwfpwmjh6wh98zwdv6p73bv8hqwcsss869vs1r7gmn"))))
     (build-system dune-build-system)
     (arguments
      `(#:tests? #t

@@ -141,6 +141,34 @@
   #:use-module (gnu packages xml)
   #:use-module (ice-9 match))
 
+(define-public axel
+  (package
+    (name "axel")
+    (version "2.17.10")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/axel-download-accelerator/axel/"
+                           "releases/download/v" version "/"
+                           "axel-" version ".tar.xz"))
+       (sha256
+        (base32 "0kmlqk04sgkshsll4r9w3k0rvrgz0gpk987618r50khwl484zss6"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("gettext" ,gettext-minimal)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libressl" ,libressl)))
+    (home-page "https://github.com/axel-download-accelerator/axel")
+    (synopsis "Light command line download accelerator")
+    (description
+     "Axel tries to accelerate the download process by using multiple
+connections per file, and can also balance the load between different
+servers.  It tries to be as light as possible, so it might be useful
+on byte-critical systems.  It supports HTTP, HTTPS, FTP and FTPS
+protocols.")
+    (license license:gpl2+)))
+
 ;; This package does not have a release yet.
 ;; But this is required to provide a feature in PipeWire.
 (define-public libcamera
@@ -321,7 +349,7 @@ supported, including rtmp://, rtmpt://, rtmpe://, rtmpte://, and rtmps://.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/Haivision/srt.git")
+         (url "https://github.com/Haivision/srt")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -358,7 +386,7 @@ performance across unpredictable networks, such as the Internet.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/Haivision/srt.git")
+         (url "https://github.com/Haivision/srt")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -374,7 +402,7 @@ performance across unpredictable networks, such as the Internet.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/sctp/lksctp-tools.git")
+         (url "https://github.com/sctp/lksctp-tools")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -430,7 +458,7 @@ at the link-layer level.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/nanomsg/nng.git")
+             (url "https://github.com/nanomsg/nng")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -473,7 +501,7 @@ publish/subscribe, RPC-style request/reply, or service discovery.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/nanomsg/nanomsg.git")
+         (url "https://github.com/nanomsg/nanomsg")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -1239,7 +1267,7 @@ test_parse_format_ipv(4(|_listen_all|_mapped_ipv6)|6)\\);")
        #:test-target "test"))
     (inputs `(("net-tools" ,net-tools)
               ("zlib" ,zlib)))
-    (native-inputs `(("check" ,check)
+    (native-inputs `(("check" ,check-0.14)
                      ("pkg-config" ,pkg-config)))
     (home-page "https://code.kryo.se/iodine/")
     (synopsis "Tunnel IPv4 data through a DNS server")
@@ -1823,7 +1851,7 @@ private (reserved).")
 (define-public perl-net-dns
  (package
   (name "perl-net-dns")
-  (version "1.27")
+  (version "1.28")
   (source
     (origin
       (method url-fetch)
@@ -1834,7 +1862,7 @@ private (reserved).")
         (string-append "mirror://cpan/authors/id/N/NL/NLNETLABS/Net-DNS-"
                        version ".tar.gz")))
       (sha256
-       (base32 "0hdx5ajr34f39rycai090y9w8gq9v0shgziynaaj0rzk21vjfdpk"))))
+       (base32 "0kh2qbhxv005pqb35mdk2bld7cg7xnxl12qvdwv30sgd91aqica7"))))
   (build-system perl-build-system)
   (inputs
     `(("perl-digest-hmac" ,perl-digest-hmac)))
@@ -2142,14 +2170,14 @@ HTTP proxies.")
 (define-public enet
   (package
     (name "enet")
-    (version "1.3.16")
+    (version "1.3.17")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://enet.bespin.org/download/"
                            "enet-" version ".tar.gz"))
        (sha256
-        (base32 "1lggc82rbzscci057dqqyhkbq4j6mr5k01hbrvn06jkzc2xpxdxv"))))
+        (base32 "1p6f9mby86af6cs7pv6h48032ip9g32c05cb7d9mimam8lchz3x3"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))

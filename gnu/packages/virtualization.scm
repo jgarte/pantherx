@@ -16,6 +16,7 @@
 ;;; Copyright © 2020 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2020 Brett Gilio <brettg@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -86,6 +87,7 @@
   #:use-module (gnu packages polkit)
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-check)
   #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
@@ -177,6 +179,13 @@
                                               '("include")
                                               input-directories)
                #t)))
+         (add-after 'unpack 'extend-test-time-outs
+           (lambda _
+             ;; These tests can time out on heavily-loaded and/or slow storage.
+             (substitute* (cons* "tests/qemu-iotests/common.qemu"
+                                 (find-files "tests/qemu-iotests" "^[0-9]+$"))
+               (("QEMU_COMM_TIMEOUT=[0-9]+" match)
+                (string-append match "9")))))
          (add-after 'unpack 'disable-unusable-tests
            (lambda _
              (substitute* "tests/Makefile.include"
@@ -1771,7 +1780,7 @@ DOS or Microsoft Windows.")
 (define-public xen
   (package
     (name "xen")
-    (version "4.13.0")
+    (version "4.14.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1780,7 +1789,7 @@ DOS or Microsoft Windows.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0py50n995gv909i0d1lfdcj9wcp5g1d5z6m2291jqqlfyany138g"))))
+                "1s06zhzmkm7wylrxhas5v0sg2ackmmyw01gvv67r9idml55i0dh5"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -1894,13 +1903,14 @@ override CC = " (assoc-ref inputs "cross-gcc") "/bin/i686-linux-gnu-gcc"))
                                          new-search-path ":")))
                     (setenv env-name new-env-value)))
                 environment-variable-names))
-             (setenv "CROSS_CPATH" (getenv "CPATH"))
+             (setenv "CROSS_C_INCLUDE_PATH" (getenv "C_INCLUDE_PATH"))
+             (setenv "CROSS_CPLUS_INCLUDE_PATH" (getenv "CPLUS_INCLUDE_PATH"))
              (setenv "CROSS_LIBRARY_PATH" (getenv "LIBRARY_PATH"))
              (filter-environment! cross?
-              '("CROSS_CPATH"
+              '("CROSS_C_INCLUDE_PATH" "CROSS_CPLUS_INCLUDE_PATH"
                 "CROSS_LIBRARY_PATH"))
              (filter-environment! (lambda (e) (not (cross? e)))
-              '("CPATH"
+              '("C_INCLUDE_PATH" "CPLUS_INCLUDE_PATH"
                 "LIBRARY_PATH"))
              ;; Guix tries to be helpful and automatically adds
              ;; mini-os-git-checkout/include to the include path,
@@ -1909,7 +1919,7 @@ override CC = " (assoc-ref inputs "cross-gcc") "/bin/i686-linux-gnu-gcc"))
                                     (not
                                      (string-contains e
                                       "mini-os-git-checkout")))
-              '("CPATH"
+              '("C_INCLUDE_PATH" "CPLUS_INCLUDE_PATH"
                 "LIBRARY_PATH"))
             (setenv "EFI_VENDOR" "guix")
              #t))
@@ -2039,3 +2049,48 @@ administrators and developers in managing the database.")
 libosinfo library.  It provides information about guest operating systems for
 use with virtualization provisioning tools")
     (license license:lgpl2.0+)))
+
+(define-public python-transient
+  (package
+    (name "python-transient")
+    (version "0.11")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "transient" version))
+       (sha256
+        (base32
+         "1pcyw8j2l354qa6c8gr58xd7fmxcx1svnfyr2rj5nh04ircx3x7l"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f ; Requires behave
+       #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'fix-dependencies
+                    (lambda _
+                      (substitute* "setup.py"
+                        (("==")
+                         ">="))
+                      #t)))))
+    (propagated-inputs
+     `(("python-beautifultable" ,python-beautifultable)
+       ("python-click" ,python-click)
+       ("python-importlib-resources"
+        ,python-importlib-resources)
+       ("python-lark-parser" ,python-lark-parser)
+       ("python-marshmallow" ,python-marshmallow)
+       ("python-progressbar2" ,python-progressbar2)
+       ("python-requests" ,python-requests)
+       ("python-toml" ,python-toml)))
+    (native-inputs
+     `(("python-black" ,python-black)
+       ("python-mypy" ,python-mypy)
+       ("python-pyhamcrest" ,python-pyhamcrest)
+       ("python-twine" ,python-twine)))
+    (home-page
+     "https://github.com/ALSchwalm/transient")
+    (synopsis
+     "QEMU Wrapper written in Python")
+    (description
+     "@code{transient} is a wrapper for QEMU allowing the creation of virtual
+machines with shared folder, ssh, and disk creation support.")
+    (license license:expat)))

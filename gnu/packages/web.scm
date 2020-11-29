@@ -129,6 +129,7 @@
   #:use-module (gnu packages lisp-xyz)
   #:use-module (gnu packages lsof)
   #:use-module (gnu packages lua)
+  #:use-module (gnu packages mail)
   #:use-module (gnu packages man)
   #:use-module (gnu packages markup)
   #:use-module (gnu packages ncurses)
@@ -234,14 +235,14 @@ Interface} specification.")
     ;; ’stable’ and recommends that “in general you deploy the NGINX mainline
     ;; branch at all times” (https://www.nginx.com/blog/nginx-1-6-1-7-released/)
     ;; Consider updating the nginx-documentation package together with this one.
-    (version "1.19.4")
+    (version "1.19.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nginx.org/download/nginx-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "03h0hhrbfy3asla9gki2cp97zjn7idxbp5lk9xi0snlh4xlm9pv1"))))
+                "173rv8gacd9bakb0r9jmkr4pqgjw9mzpdh3f7x2d8ln4ssplc2jw"))))
     (build-system gnu-build-system)
     (inputs `(("openssl" ,openssl)
               ("pcre" ,pcre)
@@ -324,9 +325,9 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
 
 (define-public nginx-documentation
   ;; This documentation should be relevant for the current nginx package.
-  (let ((version "1.19.3")
-        (revision 2615)
-        (changeset "3cb2736bb74c"))
+  (let ((version "1.19.5")
+        (revision 2622)
+        (changeset "64bbb9163a14"))
     (package
       (name "nginx-documentation")
       (version (simple-format #f "~A-~A-~A" version revision changeset))
@@ -338,7 +339,7 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
                (file-name (string-append name "-" version))
                (sha256
                 (base32
-                 "0dpn5zl8wld0c1l68wzl76wlii2k8bawq0609gnzkahwnsrqnad9"))))
+                 "085f3c00mqsaq95hp1bv9y0b517jv4zzs2q0j1c9m8nvh7k09zaa"))))
       (build-system gnu-build-system)
       (arguments
        '(#:tests? #f                    ; no test suite
@@ -567,7 +568,7 @@ documentation.")
   (package
     (inherit nginx)
     (name "nginx-lua-module")
-    (version "0.10.15")
+    (version "0.10.16")
     (source
      (origin
        (method git-fetch)
@@ -576,8 +577,7 @@ documentation.")
              (commit (string-append "v" version))))
        (file-name (git-file-name "lua-nginx-module" version))
        (sha256
-        (base32
-         "1j216isp0546hycklbr5wi8mlga5hq170hk7f2sm16sfavlkh5gz"))))
+        (base32 "0nwcbqm1visg1dkxav7qa16w0d0n8cgqn4881xiqn88xfkxj0dyg"))))
     (build-system gnu-build-system)
     (inputs
      `(("nginx-sources" ,(package-source nginx-socket-cloexec))
@@ -1348,15 +1348,15 @@ perform the opening handshake in HTTP.")
 (define-public libpsl
   (package
     (name "libpsl")
-    (version "0.21.0")
+    (version "0.21.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/rockdaboot/libpsl/"
-                                  "releases/download/libpsl-" version
+                                  "releases/download/" version
                                   "/libpsl-" version ".tar.gz"))
               (sha256
                (base32
-                "04pfagb7ppq3yibx4lhazd1v9nwkxdfkyy2rgcrmrf3mldsirga1"))))
+                "0k0d46bbh1jj2ll369f134vciplrzbqkg7fv9m62bl6lzghy2v5c"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -1424,7 +1424,7 @@ used to validate and fix HTML data.")
 (define-public esbuild
   (package
     (name "esbuild")
-    (version "0.8.4")
+    (version "0.8.15")
     (source
      (origin
        (method git-fetch)
@@ -1433,8 +1433,7 @@ used to validate and fix HTML data.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "0aaqyfnl4dncrpw8n2sqkkavx7ki7i2r9pdi82pp9syql3b5495y"))
+        (base32 "1b8ibxx1imh7jaspi3b36kpmijc06viv49ms7fml20yc0br2qbwj"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -1457,7 +1456,7 @@ used to validate and fix HTML data.")
      `(("golang.org/x/sys" ,go-golang-org-x-sys)))
     (native-inputs
      `(("github.com/kylelemons/godebug" ,go-github-com-kylelemons-godebug)))
-    (home-page "https://github.com/evanw/esbuild")
+    (home-page "https://esbuild.github.io/")
     (synopsis "Bundler and minifier tool for JavaScript and TypeScript")
     (description
      "The esbuild tool provides a unified bundler, transpiler and
@@ -1622,15 +1621,18 @@ hash/signatures.")
 (define-public libyaml
   (package
     (name "libyaml")
-    (version "0.2.4")
+    (version "0.2.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://pyyaml.org/download/libyaml/yaml-"
                            version ".tar.gz"))
        (sha256
-        (base32 "0mq5wf17ifcwwxq3kbimhi53jn3fg23vcynqpzxjcz3vfjlfs2nq"))))
+        (base32
+         "1x4fcw13r3lqy8ndydr3ili87wicplw2awbcv6r21qgyfndswhn6"))))
     (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
     (home-page "https://pyyaml.org/wiki/LibYAML")
     (synopsis "YAML 1.1 parser and emitter written in C")
     (description
@@ -3789,15 +3791,14 @@ exists it is used instead.")
 (define-public perl-lwp-protocol-https
   (package
     (name "perl-lwp-protocol-https")
-    (version "6.07")
+    (version "6.09")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://cpan/authors/id/O/OA/OALDERS/"
                            "LWP-Protocol-https-" version ".tar.gz"))
        (sha256
-        (base32
-         "1rxrpwylfw1afah0nk96kgkwjbl2p1a7lwx50iipg8c4rx3cjb2j"))))
+        (base32 "14pm785cgyrnppks6ccasb2vkqifh0a8fz36nmnhc2v926jy3kqn"))))
     (build-system perl-build-system)
     (native-inputs
      ;; For tests.
@@ -4423,14 +4424,14 @@ RFC 6570.")
               (uri (string-append
                     "mirror://cpan/authors/id/S/SZ/SZBALINT/WWW-Curl-"
                     version".tar.gz"))
-              (patches (search-patches "perl-www-curl-remove-symbol.patch"))
+              (patches (search-patches "perl-www-curl-fix-struct-void.patch"
+                                       "perl-www-curl-remove-symbol.patch"))
               (sha256
                (base32
                 "1fmp9aib1kaps9vhs4dwxn7b15kgnlz9f714bxvqsd1j1q8spzsj"))))
     (build-system perl-build-system)
     (arguments
      '(#:tests? #f                          ;XXX: tests require network access
-
        #:phases (modify-phases %standard-phases
                    (add-before 'configure 'set-search-path
                      (lambda _
@@ -5103,7 +5104,7 @@ commenting.")
     (native-inputs
      `(("netsurf-buildsystem" ,netsurf-buildsystem)
        ("pkg-config" ,pkg-config)
-       ("check" ,check)))               ;for tests
+       ("check" ,check-0.14)))          ;for tests
     (arguments netsurf-buildsystem-arguments)
     (home-page "https://www.netsurf-browser.org/projects/libwapcaplet/")
     (synopsis "String internment library")
@@ -5152,6 +5153,7 @@ written in C.  It is developed as part of the NetSurf project.")
              (url "https://github.com/tlsa/libcyaml")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
+       (patches (search-patches "libcyaml-libyaml-compat.patch"))
        (sha256
         (base32 "0428p0rwq71nhh5nzcbapsbrjxa0x5l6h6ns32nxv7j624f0zd93"))))
     (build-system gnu-build-system)
@@ -7713,10 +7715,11 @@ solution for any project's interface needs:
     (license license:expat)))
 
 (define-public gmnisrv
-  (let ((commit "a22bec51494a50c044416d469cc33e043480e7fd"))
+  (let ((commit "d484ba0ab0020866535a44be5948c9482b8f2b8d")
+        (revision "1"))
     (package
       (name "gmnisrv")
-      (version (git-version "0" "0" commit))
+      (version (git-version "0" revision commit))
       (home-page "https://git.sr.ht/~sircmpwn/gmnisrv")
       (source (origin
                 (method git-fetch)
@@ -7725,7 +7728,7 @@ solution for any project's interface needs:
                       (commit commit)))
                 (sha256
                  (base32
-                  "1k1n7cqd37jgbhxyh231bagdxdxqwpr6n5pk3gax2516w6xbzlb9"))
+                  "11phipixsxx1jgm42agp76p5s68l0zj65kgb41vzaymgwcq79ivn"))
                 (file-name (git-file-name name version))))
       (build-system gnu-build-system)
       (arguments
@@ -7735,19 +7738,14 @@ solution for any project's interface needs:
              (lambda _
                (setenv "CC" "gcc")
                #t))
-           (delete 'check)
-           (add-after 'install 'install-config
-             (lambda* (#:key outputs #:allow-other-keys)
-               (let ((etc (string-append (assoc-ref outputs "out")
-                                         "/etc")))
-                 (mkdir-p etc)
-                 (copy-file "config.ini" (string-append etc "/gmnisrv.ini"))
-                 #t))))))
+           (delete 'check))))
       (inputs
        `(("openssl" ,openssl)))
       (native-inputs
        `(("pkg-config" ,pkg-config)
          ("scdoc" ,scdoc)))
+      (propagated-inputs
+       `(("mailcap" ,mailcap)))
       (synopsis "Simple Gemini protocol server")
       (description "gmnisrv is a simple Gemini protocol server written in C.")
       (license (list license:gpl3+
