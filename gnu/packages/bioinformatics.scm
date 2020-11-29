@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2016, 2017, 2018 Ben Woodcroft <donttrustben@gmail.com>
-;;; Copyright © 2015, 2016 Pjotr Prins <pjotr.guix@thebird.nl>
+;;; Copyright © 2015, 2016, 2018, 2019, 2020 Pjotr Prins <pjotr.guix@thebird.nl>
 ;;; Copyright © 2015 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2016, 2020 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
@@ -12,12 +12,13 @@
 ;;; Copyright © 2018 Joshua Sierles, Nextjournal <joshua@nextjournal.com>
 ;;; Copyright © 2018 Gábor Boskovits <boskovits@gmail.com>
 ;;; Copyright © 2018, 2019, 2020 Mădălin Ionel Patrașcu <madalinionel.patrascu@mdc-berlin.de>
-;;; Copyright © 2019 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2019, 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2019 Brian Leung <bkleung89@gmail.com>
 ;;; Copyright © 2019 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2020 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2020 Bonface Munyoki Kilyungi <bonfacemunyoki@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -65,6 +66,8 @@
   #:use-module (gnu packages boost)
   #:use-module (gnu packages check)
   #:use-module (gnu packages code)
+  #:use-module (gnu packages commencement)
+  #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages cpio)
   #:use-module (gnu packages cran)
@@ -81,6 +84,7 @@
   #:use-module (gnu packages golang)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages graph)
+  #:use-module (gnu packages graphics)
   #:use-module (gnu packages graphviz)
   #:use-module (gnu packages groff)
   #:use-module (gnu packages gtk)
@@ -90,6 +94,7 @@
   #:use-module (gnu packages haskell-web)
   #:use-module (gnu packages haskell-xyz)
   #:use-module (gnu packages image)
+  #:use-module (gnu packages image-processing)
   #:use-module (gnu packages imagemagick)
   #:use-module (gnu packages java)
   #:use-module (gnu packages java-compression)
@@ -102,6 +107,7 @@
   #:use-module (gnu packages maths)
   #:use-module (gnu packages mpi)
   #:use-module (gnu packages ncurses)
+  #:use-module (gnu packages node)
   #:use-module (gnu packages ocaml)
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages parallel)
@@ -112,10 +118,12 @@
   #:use-module (gnu packages popt)
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-check)
   #:use-module (gnu packages python-compression)
   #:use-module (gnu packages python-science)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages rdf)
   #:use-module (gnu packages readline)
   #:use-module (gnu packages ruby)
   #:use-module (gnu packages serialization)
@@ -2578,6 +2586,132 @@ accessing bigWig files.")
 
 (define-public python2-pybigwig
   (package-with-python2 python-pybigwig))
+
+(define-public python-schema-salad
+  (package
+    (name "python-schema-salad")
+    (version "7.0.20200811075006")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "schema-salad" version))
+        (sha256
+         (base32
+          "0wanbwmqb189x1m0vacnhpivfsr8rwbqknngivzxxs8j46yj80bg"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-cachecontrol" ,python-cachecontrol-0.11)
+       ("python-lockfile" ,python-lockfile)
+       ("python-mistune" ,python-mistune)
+       ("python-rdflib" ,python-rdflib)
+       ("python-rdflib-jsonld" ,python-rdflib-jsonld)
+       ("python-requests" ,python-requests)
+       ("python-ruamel.yaml" ,python-ruamel.yaml)
+       ("python-typing-extensions" ,python-typing-extensions)))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-pytest-runner" ,python-pytest-runner)))
+    (home-page "https://github.com/common-workflow-language/schema_salad")
+    (synopsis "Schema Annotations for Linked Avro Data (SALAD)")
+    (description
+     "Salad is a schema language for describing JSON or YAML structured linked
+data documents.  Salad schema describes rules for preprocessing, structural
+validation, and hyperlink checking for documents described by a Salad schema.
+Salad supports rich data modeling with inheritance, template specialization,
+object identifiers, object references, documentation generation, code
+generation, and transformation to RDF.  Salad provides a bridge between document
+and record oriented data modeling and the Semantic Web.")
+    (license license:asl2.0)))
+
+(define-public cwltool
+  (package
+    (name "cwltool")
+    (version "3.0.20201121085451")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/common-workflow-language/cwltool")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1awf99n7aglxc5zszrlrv6jxp355jp45ws7wpsgjlgcdv7advn0w"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'loosen-version-restrictions
+           (lambda _
+             (substitute* "setup.py"
+               (("== 1.5.1") ">=1.5.1") ; prov
+               ((", < 3.5") ""))        ; shellescape
+             #t))
+         (add-after 'unpack 'dont-use-git
+           (lambda _
+             (substitute* "gittaggers.py"
+               (("self.git_timestamp_tag\\(\\)")
+                (string-append "time.strftime('.%Y%m%d%H%M%S', time.gmtime(int("
+                               (string-drop ,version 4) ")))")))
+             #t))
+         (add-after 'unpack 'modify-tests
+           (lambda _
+             ;; Tries to connect to the internet.
+             (delete-file "tests/test_udocker.py")
+             (delete-file "tests/test_http_input.py")
+             (substitute* "tests/test_load_tool.py"
+               (("def test_load_graph_fragment_from_packed")
+                (string-append "@pytest.mark.skip(reason=\"Disabled by Guix\")\n"
+                               "def test_load_graph_fragment_from_packed")))
+             (substitute* "tests/test_examples.py"
+               (("def test_env_filtering")
+                (string-append "@pytest.mark.skip(reason=\"Disabled by Guix\")\n"
+                               "def test_env_filtering")))
+             ;; Tries to use cwl-runners.
+             (substitute* "tests/test_examples.py"
+               (("def test_v1_0_arg_empty_prefix_separate_false")
+                (string-append "@pytest.mark.skip(reason=\"Disabled by Guix\")\n"
+                               "def test_v1_0_arg_empty_prefix_separate_false")))
+             #t)))))
+    (propagated-inputs
+     `(("python-argcomplete" ,python-argcomplete)
+       ("python-bagit" ,python-bagit)
+       ("python-coloredlogs" ,python-coloredlogs)
+       ("python-mypy-extensions" ,python-mypy-extensions)
+       ("python-prov" ,python-prov)
+       ("python-pydot" ,python-pydot)
+       ("python-psutil" ,python-psutil)
+       ("python-rdflib" ,python-rdflib)
+       ("python-requests" ,python-requests)
+       ("python-ruamel.yaml" ,python-ruamel.yaml)
+       ("python-schema-salad" ,python-schema-salad)
+       ("python-shellescape" ,python-shellescape)
+       ("python-typing-extensions" ,python-typing-extensions)
+       ;; Not listed as needed but still necessary:
+       ("node" ,node)))
+    (native-inputs
+     `(("python-arcp" ,python-arcp)
+       ("python-humanfriendly" ,python-humanfriendly)
+       ("python-mock" ,python-mock)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-pytest-mock" ,python-pytest-mock)
+       ("python-pytest-runner" ,python-pytest-runner)
+       ("python-rdflib-jsonld" ,python-rdflib-jsonld)))
+    (home-page
+     "https://github.com/common-workflow-language/common-workflow-language")
+    (synopsis "Common Workflow Language reference implementation")
+    (description
+     "This is the reference implementation of the @acronym{CWL, Common Workflow
+Language} standards.  The CWL open standards are for describing analysis
+workflows and tools in a way that makes them portable and scalable across a
+variety of software and hardware environments, from workstations to cluster,
+cloud, and high performance computing (HPC) environments.  CWL is designed to
+meet the needs of data-intensive science, such as Bioinformatics, Medical
+Imaging, Astronomy, Physics, and Chemistry.  The @acronym{cwltool, CWL reference
+implementation} is intended to be feature complete and to provide comprehensive
+validation of CWL files as well as provide other tools related to working with
+CWL descriptions.")
+    (license license:asl2.0)))
 
 (define-public python-dendropy
   (package
@@ -11039,23 +11173,44 @@ programs for inferring phylogenies (evolutionary trees).")
          "1z1vcpwbylixk0zywngg5iw0jv083jj1bqphi817jpg3fb9fx2jj"))))
     (build-system cmake-build-system)
     (arguments
-     `(;; FIXME: Some tests fail because they produce warnings, others fail
-       ;; because the PYTHONPATH does not include the modeller's directory.
-       #:tests? #f))
+     `( ;; CMake 3.17 or newer is required for the CMAKE_TEST_ARGUMENTS used
+       ;; below to have an effect.
+       #:cmake ,cmake
+       #:configure-flags
+       (let ((disabled-tests
+              '("expensive"                 ;exclude expensive tests
+                "IMP.modeller"              ;fail to import its own modules
+                "IMP.parallel-test_sge.py"  ;fail in build container
+                ;; The following test fails non-reproducibly on
+                ;; an inexact numbers assertion.
+                "IMP.em-medium_test_local_fitting.py")))
+         (list
+          (string-append
+           "-DCMAKE_CTEST_ARGUMENTS="
+           (string-join
+            (list "-L" "-tests?-"       ;select only tests
+                  "-E" (format #f "'(~a)'" (string-join disabled-tests "|")))
+            ";"))))))
+    (native-inputs
+     `(("python" ,python-wrapper)
+       ("swig" ,swig)))
     (inputs
      `(("boost" ,boost)
+       ("cgal" ,cgal)
        ("gsl" ,gsl)
-       ("swig" ,swig)
        ("hdf5" ,hdf5)
        ("fftw" ,fftw)
        ("eigen" ,eigen)
-       ("python" ,python-2)))
+       ;; Enabling MPI causes the build to use all the available memory and
+       ;; fail (tested on a machine with 32 GiB of RAM).
+       ;;("mpi" ,openmpi)
+       ("opencv" ,opencv)))
     (propagated-inputs
-     `(("python2-numpy" ,python2-numpy)
-       ("python2-scipy" ,python2-scipy)
-       ("python2-pandas" ,python2-pandas)
-       ("python2-scikit-learn" ,python2-scikit-learn)
-       ("python2-networkx" ,python2-networkx)))
+     `(("python-numpy" ,python-numpy)
+       ("python-scipy" ,python-scipy)
+       ("python-pandas" ,python-pandas)
+       ("python-scikit-learn" ,python-scikit-learn)
+       ("python-networkx" ,python-networkx)))
     (home-page "https://integrativemodeling.org")
     (synopsis "Integrative modeling platform")
     (description "IMP's broad goal is to contribute to a comprehensive
@@ -11073,7 +11228,7 @@ applications for tackling some common problems in a user-friendly way.")
 (define-public tadbit
   (package
     (name "tadbit")
-    (version "0.2.0")
+    (version "1.0.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -11082,21 +11237,13 @@ applications for tackling some common problems in a user-friendly way.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "07g3aj648prmsvxp9caz5yl41k0y0647vxh0f5p3w8376mfiljd0"))))
+                "0hqrlymh2a2bimcfdvlssy1x5h1lp3h1c5a7jj11hmcqczzqn3ni"))))
     (build-system python-build-system)
     (arguments
-     `(;; Tests are included and must be run after installation, but
-       ;; they are incomplete and thus cannot be run.
-       #:tests? #f
-       #:python ,python-2
-       #:phases
+     `(#:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'fix-problems-with-setup.py
            (lambda* (#:key outputs #:allow-other-keys)
-             ;; setup.py opens these files for writing
-             (chmod "_pytadbit/_version.py" #o664)
-             (chmod "README.rst" #o664)
-
              ;; Don't attempt to install the bash completions to
              ;; the home directory.
              (rename-file "extras/.bash_completion"
@@ -11108,15 +11255,25 @@ applications for tackling some common problems in a user-friendly way.")
                                "/etc/bash_completion.d\""))
                (("extras/\\.bash_completion")
                 "extras/tadbit"))
+             #t))
+         (replace 'check
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (add-installed-pythonpath inputs outputs)
+             (invoke "python3" "test/test_all.py")
              #t)))))
+    (native-inputs
+     `(("glib" ,glib "bin")             ;for gtester
+       ("pkg-config" ,pkg-config)))
     (inputs
      ;; TODO: add Chimera for visualization
      `(("imp" ,imp)
        ("mcl" ,mcl)
-       ("python2-scipy" ,python2-scipy)
-       ("python2-numpy" ,python2-numpy)
-       ("python2-matplotlib" ,python2-matplotlib)
-       ("python2-pysam" ,python2-pysam)))
+       ("python-future" ,python-future)
+       ("python-h5py" ,python-h5py)
+       ("python-scipy" ,python-scipy)
+       ("python-numpy" ,python-numpy)
+       ("python-matplotlib" ,python-matplotlib)
+       ("python-pysam" ,python-pysam)))
     (home-page "https://3dgenomes.github.io/TADbit/")
     (synopsis "Analyze, model, and explore 3C-based data")
     (description
@@ -11229,7 +11386,6 @@ models.  TADbit is complemented by TADkit for visualizing 3D models.")
        ("tcsh" ,tcsh)
        ("perl" ,perl)
        ("libpng" ,libpng)
-       ("mariadb" ,mariadb "lib")
        ("mariadb-dev" ,mariadb "dev")
        ("openssl" ,openssl-1.0)))
     (home-page "https://genome.cse.ucsc.edu/index.html")
@@ -15437,7 +15593,7 @@ patterns.")
 (define-public methyldackel
   (package
     (name "methyldackel")
-    (version "0.4.0")
+    (version "0.5.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -15446,7 +15602,7 @@ patterns.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "10gh8k0ca92kywnrw5pkacq3g6r8s976s12k8jhp8g3g49q9a97g"))))
+                "1sfhf2ap75qxpnmy1ifgmxqs18rq8mah9mcgkby73vc6h0sw99ws"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -15459,11 +15615,14 @@ patterns.")
          (replace 'configure
            (lambda* (#:key outputs #:allow-other-keys)
              (substitute* "Makefile"
+               (("-lhts ") "-lhts -lBigWig ")
                (("install MethylDackel \\$\\(prefix\\)" match)
                 (string-append "install -d $(prefix); " match)))
              #t)))))
     (inputs
-     `(("htslib" ,htslib)
+     `(("curl" ,curl) ; XXX: needed by libbigwig
+       ("htslib" ,htslib-1.9)
+       ("libbigwig" ,libbigwig)
        ("zlib" ,zlib)))
     ;; Needed for tests
     (native-inputs
@@ -15626,7 +15785,7 @@ than is possible with plain-text methods alone.")
     (propagated-inputs
      `(("libxml2" ,libxml2)))
     (native-inputs
-     `(("check" ,check)
+     `(("check" ,check-0.14)
        ("swig" ,swig)))
     (home-page "http://sbml.org/Software/libSBML")
     (synopsis "Process SBML files and data streams")

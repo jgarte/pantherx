@@ -68,7 +68,7 @@ Copyright @copyright{} 2019 Ivan Petkov@*
 Copyright @copyright{} 2019 Jakob L. Kreuze@*
 Copyright @copyright{} 2019 Kyle Andrews@*
 Copyright @copyright{} 2019 Alex Griffin@*
-Copyright @copyright{} 2019 Guillaume Le Vaillant@*
+Copyright @copyright{} 2019, 2020 Guillaume Le Vaillant@*
 Copyright @copyright{} 2020 Leo Prikler@*
 Copyright @copyright{} 2019, 2020 Simon Tournier@*
 Copyright @copyright{} 2020 Wiktor Żelazny@*
@@ -83,6 +83,7 @@ Copyright @copyright{} 2020 pinoaffe@*
 Copyright @copyright{} 2020 André Batista@*
 Copyright @copyright{} 2020 Alexandru-Sergiu Marton@*
 Copyright @copyright{} 2020 raingloom@*
+Copyright @copyright{} 2020 Daniel Brooks@*
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -405,7 +406,7 @@ using a different distro underneath!}.  @xref{GNU Distribution}.
 @cindex user interfaces
 Guix provides a command-line package management interface
 (@pxref{Package Management}), tools to help with software development
-(@pxref{Development}), command-line utilities for more advanced usage,
+(@pxref{Development}), command-line utilities for more advanced usage
 (@pxref{Utilities}), as well as Scheme programming interfaces
 (@pxref{Programming Interface}).
 @cindex build daemon
@@ -846,11 +847,6 @@ Support for build offloading (@pxref{Daemon Offload Setup}) and
 @command{guix copy} (@pxref{Invoking guix copy}) depends on
 @uref{https://github.com/artyom-poptsov/guile-ssh, Guile-SSH},
 version 0.13.0 or later.
-
-@item
-When @url{https://www.nongnu.org/lzip/lzlib.html, lzlib} is available, lzlib
-substitutes can be used and @command{guix publish} can compress substitutes
-with lzlib.
 
 @item
 When @url{http://www.bzip.org, libbz2} is available,
@@ -1397,6 +1393,11 @@ build a package that provides this executable and convince a user to
 install and run it, which lifts it into the @code{guix_daemon_t} domain.
 At that point SELinux could not prevent it from accessing files that are
 allowed for processes in that domain.
+
+You will need to relabel the store directory after all upgrades to
+@file{guix-daemon}, such as after running @code{guix pull}.  Assuming the
+store is in @file{/gnu}, you can do this with @code{restorecon -vR /gnu},
+or by other means provided by your operating system.
 
 We could generate a much more restrictive policy at installation time,
 so that only the @emph{exact} file name of the currently installed
@@ -1948,9 +1949,6 @@ Nevertheless, before you proceed with the installation, be aware of the
 following noteworthy limitations applicable to version @value{VERSION}:
 
 @itemize
-@item
-Support for the Logical Volume Manager (LVM) is missing.
-
 @item
 More and more system services are provided (@pxref{Services}), but some
 may be missing.
@@ -6835,6 +6833,18 @@ commit:
 @end lisp
 @end deftp
 
+For Mercurial repositories, the module @code{(guix hg-download)} defines
+the @code{hg-fetch} origin method and @code{hg-reference} data type for
+support of the Mercurial version control system.
+
+@deffn {Scheme Procedure} hg-fetch @var{ref} @var{hash-algo} @var{hash} @
+           [name]
+Return a fixed-output derivation that fetches @var{ref}, a
+@code{<hg-reference>} object.  The output is expected to have recursive
+hash @var{hash} of type @var{hash-algo} (a symbol).  Use @var{name} as
+the file name, or a generic name if @code{#false}.
+@end deffn
+
 @node Defining Package Variants
 @section Defining Package Variants
 
@@ -7251,30 +7261,27 @@ Additionally, the corresponding source package should be labeled using
 the same convention as python packages (see @ref{Python Modules}), using
 the @code{cl-} prefix.
 
-For binary packages, each system should be defined as a Guix package.
-If one package @code{origin} contains several systems, package variants
-can be created in order to build all the systems.  Source packages,
-which use @code{asdf-build-system/source}, may contain several systems.
-
 In order to create executable programs and images, the build-side
 procedures @code{build-program} and @code{build-image} can be used.
-They should be called in a build phase after the @code{create-symlinks}
-phase, so that the system which was just built can be used within the
-resulting image.  @code{build-program} requires a list of Common Lisp
-expressions to be passed as the @code{#:entry-program} argument.
+They should be called in a build phase after the
+@code{create-asdf-configuration} phase, so that the system which was
+just built can be used within the resulting image.  @code{build-program}
+requires a list of Common Lisp expressions to be passed as the
+@code{#:entry-program} argument.
 
-If the system is not defined within its own @file{.asd} file of the same
-name, then the @code{#:asd-file} parameter should be used to specify
-which file the system is defined in.  Furthermore, if the package
-defines a system for its tests in a separate file, it will be loaded
-before the tests are run if it is specified by the
+By default, all the @file{.asd} files present in the sources are read to
+find system definitions.  The @code{#:asd-files} parameter can be used
+to specify the list of @file{.asd} files to read.  Furthermore, if the
+package defines a system for its tests in a separate file, it will be
+loaded before the tests are run if it is specified by the
 @code{#:test-asd-file} parameter.  If it is not set, the files
 @code{<system>-tests.asd}, @code{<system>-test.asd}, @code{tests.asd},
 and @code{test.asd} will be tried if they exist.
 
 If for some reason the package must be named in a different way than the
-naming conventions suggest, the @code{#:asd-system-name} parameter can
-be used to specify the name of the system.
+naming conventions suggest, or if several systems must be compiled, the
+@code{#:asd-systems} parameter can be used to specify the list of system
+names.
 
 @end defvr
 
@@ -13740,7 +13747,6 @@ Guix extends this notion by considering any device or set of devices that
 are @dfn{transformed} in some way to create a new device; for instance,
 RAID devices are obtained by @dfn{assembling} several other devices, such
 as hard disks or partitions, into a new one that behaves as one partition.
-Other examples, not yet implemented, are LVM logical volumes.
 
 Mapped devices are declared using the @code{mapped-device} form,
 defined as follows; for examples, see below.
@@ -13753,7 +13759,8 @@ the system boots up.
 @item source
 This is either a string specifying the name of the block device to be mapped,
 such as @code{"/dev/sda3"}, or a list of such strings when several devices
-need to be assembled for creating a new one.
+need to be assembled for creating a new one. In case of LVM this is a
+string specifying name of the volume group to be mapped.
 
 @item target
 This string specifies the name of the resulting mapped device.  For
@@ -13762,6 +13769,12 @@ specifying @code{"my-partition"} leads to the creation of
 the @code{"/dev/mapper/my-partition"} device.
 For RAID devices of type @code{raid-device-mapping}, the full device name
 such as @code{"/dev/md0"} needs to be given.
+LVM logical volumes of type @code{lvm-device-mapping} need to
+be specified as @code{"VGNAME-LVNAME"}.
+
+@item targets
+This list of strings specifies names of the resulting mapped devices in case
+there are several. The format is identical to @var{target}.
 
 @item type
 This must be a @code{mapped-device-kind} object, which specifies how
@@ -13780,6 +13793,14 @@ This defines a RAID device, which is assembled using the @code{mdadm}
 command from the package with the same name.  It requires a Linux kernel
 module for the appropriate RAID level to be loaded, such as @code{raid456}
 for RAID-4, RAID-5 or RAID-6, or @code{raid10} for RAID-10.
+@end defvr
+
+@cindex LVM, logical volume manager
+@defvr {Scheme Variable} lvm-device-mapping
+This defines one or more logical volumes for the Linux
+@uref{https://www.sourceware.org/lvm2/, Logical Volume Manager (LVM)}.
+The volume group is activated by the @command{vgchange} command from the
+@code{lvm2} package.
 @end defvr
 
 @cindex disk encryption
@@ -13839,6 +13860,19 @@ Note that the RAID level need not be given; it is chosen during the
 initial creation and formatting of the RAID device and is determined
 automatically later.
 
+LVM logical volumes ``alpha'' and ``beta'' from volume group ``vg0'' can
+be declared as follows:
+
+@lisp
+(mapped-device
+  (source "vg0")
+  (target (list "vg0-alpha" "vg0-beta"))
+  (type lvm-device-mapping))
+@end lisp
+
+Devices @file{/dev/mapper/vg0-alpha} and @file{/dev/mapper/vg0-beta} can
+then be used as the @code{device} of a @code{file-system} declaration
+(@pxref{File Systems}).
 
 @node User Accounts
 @section User Accounts
@@ -15313,11 +15347,15 @@ gexps to introduce job definitions that are passed to mcron
 
 (operating-system
   ;; @dots{}
-  (services (cons (service mcron-service-type
-                           (mcron-configuration
-                            (jobs (list garbage-collector-job
-                                        updatedb-job
-                                        idutils-job))))
+
+  ;; %BASE-SERVICES already includes an instance of
+  ;; 'mcron-service-type', which we extend with additional
+  ;; jobs using 'simple-service'.
+  (services (cons (simple-service 'my-cron-jobs
+                                   mcron-service-type
+                                   (list garbage-collector-job
+                                         updatedb-job
+                                         idutils-job))
                   %base-services)))
 @end lisp
 
@@ -16700,7 +16738,7 @@ Connection policy.  @var{reject} policy requires to specify @var{known-hosts}.
 List of hosts which allowed for SSH connection from @command{webssh}.
 
 @item @code{log-file} (default: @file{"/var/log/webssh.log"})
-Name of the file where @command{rsync} writes its log file.
+Name of the file where @command{webssh} writes its log file.
 
 @item @code{log-level} (default: @var{#f})
 Logging level.
@@ -17485,16 +17523,17 @@ CUPS service will generate a self-signed certificate if needed, for
 secure connections to the print server.
 
 Suppose you want to enable the Web interface of CUPS and also add
-support for Epson printers @i{via} the @code{escpr} package and for HP
-printers @i{via} the @code{hplip-minimal} package.  You can do that directly,
-like this (you need to use the @code{(gnu packages cups)} module):
+support for Epson printers @i{via} the @code{epson-inkjet-printer-escpr}
+package and for HP printers @i{via} the @code{hplip-minimal} package.
+You can do that directly, like this (you need to use the
+@code{(gnu packages cups)} module):
 
 @lisp
 (service cups-service-type
          (cups-configuration
            (web-interface? #t)
            (extensions
-             (list cups-filters escpr hplip-minimal))))
+             (list cups-filters epson-inkjet-printer-escpr hplip-minimal))))
 @end lisp
 
 Note: If you wish to use the Qt5 based GUI which comes with the hplip
@@ -17523,7 +17562,7 @@ Available @code{cups-configuration} fields are:
 The CUPS package.
 @end deftypevr
 
-@deftypevr {@code{cups-configuration} parameter} package-list extensions
+@deftypevr {@code{cups-configuration} parameter} package-list extensions (default: @code{(list epson-inkjet-printer-escpr hplip-minimal foomatic-filters splix)})
 Drivers and other extensions to the CUPS package.
 @end deftypevr
 
@@ -19079,16 +19118,14 @@ is the key, and the remaining elements are the values.
 
 @subsubheading MariaDB/MySQL
 
-@deffn {Scheme Procedure} mysql-service [#:config (mysql-configuration)]
-Return a service that runs @command{mysqld}, the MySQL or MariaDB
-database server.
-
-The optional @var{config} argument specifies the configuration for
-@command{mysqld}, which should be a @code{<mysql-configuration>} object.
-@end deffn
+@defvr {Scheme Variable} mysql-service-type
+This is the service type for a MySQL or MariaDB database server.  Its value
+is a @code{mysql-configuration} object that specifies which package to use,
+as well as various settings for the @command{mysqld} daemon.
+@end defvr
 
 @deftp {Data Type} mysql-configuration
-Data type representing the configuration of @var{mysql-service}.
+Data type representing the configuration of @var{mysql-service-type}.
 
 @table @asis
 @item @code{mysql} (default: @var{mariadb})
@@ -19098,8 +19135,25 @@ or @var{mysql}.
 For MySQL, a temporary root password will be displayed at activation time.
 For MariaDB, the root password is empty.
 
+@item @code{bind-address} (default: @code{"127.0.0.1"})
+The IP on which to listen for network connections.  Use @code{"0.0.0.0"}
+to bind to all available network interfaces.
+
 @item @code{port} (default: @code{3306})
 TCP port on which the database server listens for incoming connections.
+
+@item @code{socket} (default: @code{"/run/mysqld/mysqld.sock"})
+Socket file to use for local (non-network) connections.
+
+@item @code{extra-content} (default: @code{""})
+Additional settings for the @file{my.cnf} configuration file.
+
+@item @code{auto-upgrade?} (default: @code{#t})
+Whether to automatically run @command{mysql_upgrade} after starting the
+service.  This is necessary to upgrade the @dfn{system schema} after
+``major'' updates (such as switching from MariaDB 10.4 to 10.5), but can
+be disabled if you would rather do that manually.
+
 @end table
 @end deftp
 
@@ -19126,7 +19180,7 @@ The Memcached package to use.
 Network interfaces on which to listen.
 
 @item @code{tcp-port} (default: @code{11211})
-Port on which to accept connections on,
+Port on which to accept connections.
 
 @item @code{udp-port} (default: @code{11211})
 Port on which to accept UDP connections on, a value of 0 will disable
@@ -24891,14 +24945,18 @@ Defaults to @samp{tun}.
 
 @end deftypevr
 
-@deftypevr {@code{openvpn-client-configuration} parameter} string ca
+If you do not have some of these files (eg.@: you use a username and
+password), you can disable any of the following three fields by setting
+it to @code{'disabled}.
+
+@deftypevr {@code{openvpn-client-configuration} parameter} maybe-string ca
 The certificate authority to check connections against.
 
 Defaults to @samp{"/etc/openvpn/ca.crt"}.
 
 @end deftypevr
 
-@deftypevr {@code{openvpn-client-configuration} parameter} string cert
+@deftypevr {@code{openvpn-client-configuration} parameter} maybe-string cert
 The certificate of the machine the daemon is running on.  It should be
 signed by the authority given in @code{ca}.
 
@@ -24906,7 +24964,7 @@ Defaults to @samp{"/etc/openvpn/client.crt"}.
 
 @end deftypevr
 
-@deftypevr {@code{openvpn-client-configuration} parameter} string key
+@deftypevr {@code{openvpn-client-configuration} parameter} maybe-string key
 The key of the machine the daemon is running on.  It must be the key whose
 certificate is @code{cert}.
 
@@ -25042,14 +25100,18 @@ Defaults to @samp{tun}.
 
 @end deftypevr
 
-@deftypevr {@code{openvpn-server-configuration} parameter} string ca
+If you do not have some of these files (eg.@: you use a username and
+password), you can disable any of the following three fields by setting
+it to @code{'disabled}.
+
+@deftypevr {@code{openvpn-server-configuration} parameter} maybe-string ca
 The certificate authority to check connections against.
 
 Defaults to @samp{"/etc/openvpn/ca.crt"}.
 
 @end deftypevr
 
-@deftypevr {@code{openvpn-server-configuration} parameter} string cert
+@deftypevr {@code{openvpn-server-configuration} parameter} maybe-string cert
 The certificate of the machine the daemon is running on.  It should be
 signed by the authority given in @code{ca}.
 
@@ -25057,7 +25119,7 @@ Defaults to @samp{"/etc/openvpn/client.crt"}.
 
 @end deftypevr
 
-@deftypevr {@code{openvpn-server-configuration} parameter} string key
+@deftypevr {@code{openvpn-server-configuration} parameter} maybe-string key
 The key of the machine the daemon is running on.  It must be the key whose
 certificate is @code{cert}.
 
@@ -27903,7 +27965,7 @@ over HTTP.
 @deftp {Data Type} git-http-configuration
 Data type representing the configuration for a future
 @code{git-http-service-type}; can currently be used to configure Nginx
-trough @code{git-http-nginx-location-configuration}.
+through @code{git-http-nginx-location-configuration}.
 
 @table @asis
 @item @code{package} (default: @var{git})
@@ -29226,18 +29288,18 @@ the password from can also be specified, and this is more secure.
 A file containing the password to use when connecting to the
 coordinator.
 
-@item @code{systems} (default: @var{#f})
+@item @code{systems} (default: @code{#f})
 The systems for which this agent should fetch builds.  The agent process
 will use the current system it's running on as the default.
 
 @item @code{max-parallel-builds} (default: @code{1})
 The number of builds to perform in parallel.
 
-@item @code{derivation-substitute-urls} (default: @code{1})
+@item @code{derivation-substitute-urls} (default: @code{#f})
 URLs from which to attempt to fetch substitutes for derivations, if the
 derivations aren't already available.
 
-@item @code{non-derivation-substitute-urls} (default: @code{1})
+@item @code{non-derivation-substitute-urls} (default: @code{#f})
 URLs from which to attempt to fetch substitutes for build inputs, if the
 input store items aren't already available.
 
@@ -31009,11 +31071,27 @@ a value.  Docker images are built to contain exactly what they need, so
 the @option{--image-size} option is ignored in the case of
 @code{docker-image}.
 
+@cindex disk-image, creating disk images
 The @code{disk-image} command can produce various image types.  The
-image type can be selected using the @command{--image-type} option.  It
-defaults to @code{raw}. When its value is @code{iso9660}, the
+image type can be selected using the @option{--image-type} option.  It
+defaults to @code{raw}.  When its value is @code{iso9660}, the
 @option{--label} option can be used to specify a volume ID with
-@code{disk-image}.
+@code{disk-image}.  By default, the root file system of a disk image is
+mounted non-volatile; the @option{--volatile} option can be provided to
+make it volatile instead.  When using @code{disk-image}, the bootloader
+installed on the generated image is taken from the provided
+@code{operating-system} definition.  The following example demonstrates
+how to generate an image that uses the @code{grub-efi-bootloader}
+bootloader and boot it with QEMU:
+
+@example
+image=$(guix system disk-image --image-type=qcow2 \
+             gnu/system/examples/lightweight-desktop.tmpl)
+cp $image /tmp/my-image.qcow2
+chmod +w /tmp/my-image.qcow2
+qemu-system-x86_64 -enable-kvm -hda /tmp/my-image.qcow2 -m 1000 \
+                   -bios $(guix build ovmf)/share/firmware/ovmf_x64.bin
+@end example
 
 When using the @code{raw} image type, a raw disk image is produced; it
 can be copied as is to a USB stick, for instance.  Assuming
@@ -31027,10 +31105,17 @@ the image to it using the following command:
 The @code{--list-image-types} command lists all the available image
 types.
 
+@cindex vm-image, creating virtual machine images
 When using @code{vm-image}, the returned image is in qcow2 format, which
-the QEMU emulator can efficiently use. @xref{Running Guix in a VM},
-for more information on how to run the image in a virtual machine.
+the QEMU emulator can efficiently use. @xref{Running Guix in a VM}, for
+more information on how to run the image in a virtual machine.  The
+@code{grub-bootloader} bootloader is always used independently of what
+is declared in the @code{operating-system} file passed as argument.
+This is to make it easier to work with QEMU, which uses the SeaBIOS BIOS
+by default, expecting a bootloader to be installed in the Master Boot
+Record (MBR).
 
+@cindex docker-image, creating docker images
 When using @code{docker-image}, a Docker image is produced.  Guix builds
 the image from scratch, not from a pre-existing Docker base image.  As a
 result, it contains @emph{exactly} what you define in the operating

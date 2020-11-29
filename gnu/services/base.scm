@@ -62,7 +62,8 @@
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 match)
   #:use-module (ice-9 format)
-  #:re-export (user-processes-service-type)       ;backwards compatibility
+  #:re-export (user-processes-service-type        ;backwards compatibility
+               %default-substitute-urls)
   #:export (fstab-service-type
             root-file-system-service
             file-system-service-type
@@ -106,6 +107,12 @@
             agetty-service-type
 
             mingetty-configuration
+            mingetty-configuration-tty
+            mingetty-configuration-auto-login
+            mingetty-configuration-login-program
+            mingetty-configuration-login-pause?
+            mingetty-configuration-clear-on-logout?
+            mingetty-configuration-mingetty
             mingetty-configuration?
             mingetty-service
             mingetty-service-type
@@ -291,7 +298,8 @@ FILE-SYSTEM."
 (define (mapped-device->shepherd-service-name md)
   "Return the symbol that denotes the shepherd service of MD, a <mapped-device>."
   (symbol-append 'device-mapping-
-                 (string->symbol (mapped-device-target md))))
+                 (string->symbol (string-join
+                                  (mapped-device-targets md) "-"))))
 
 (define dependency->shepherd-service-name
   (match-lambda

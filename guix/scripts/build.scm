@@ -51,7 +51,9 @@
   #:use-module ((guix progress) #:select (current-terminal-columns))
   #:use-module ((guix build syscalls) #:select (terminal-columns))
   #:use-module (guix transformations)
-  #:export (%standard-build-options
+  #:export (log-url
+
+            %standard-build-options
             set-build-options-from-command-line
             set-build-options-from-command-line*
             show-build-options-help
@@ -179,8 +181,6 @@ options handled by 'set-build-options-from-command-line', and listed in
   -c, --cores=N          allow the use of up to N CPU cores for the build"))
   (display (G_ "
   -M, --max-jobs=N       allow at most N build jobs"))
-  (display (G_ "
-      --help-transform   list package transformation options not shown here"))
   (display (G_ "
       --debug=LEVEL      produce debugging output at LEVEL")))
 
@@ -317,14 +317,7 @@ use '--no-offload' instead~%")))
                     (if c
                         (apply values (alist-cons 'max-jobs c result) rest)
                         (leave (G_ "not a number: '~a' option argument: ~a~%")
-                               name arg)))))
-        (option '("help-transform") #f #f
-                (lambda _
-                  (format #t
-                          (G_ "Available package transformation options:~%"))
-                  (show-transformation-options-help)
-                  (newline)
-                  (exit 0)))))
+                               name arg)))))))
 
 
 ;;;
@@ -380,6 +373,8 @@ Build the given PACKAGE-OR-DERIVATION and return their output paths.\n"))
       --log-file         return the log file names for the given derivations"))
   (newline)
   (show-build-options-help)
+  (newline)
+  (show-transformation-options-help)
   (newline)
   (display (G_ "
   -h, --help             display this help and exit"))

@@ -59,11 +59,16 @@
   #:use-module (srfi srfi-37)
   #:use-module (ice-9 match)
   #:export (compressor?
+            compressor-name
+            compressor-extenstion
+            compressor-command
+            %compressors
             lookup-compressor
             self-contained-tarball
             docker-image
             squashfs-image
 
+            %formats
             guix-pack))
 
 ;; Type of a compression tool.
@@ -1061,6 +1066,8 @@ last resort for relocation."
   (display (G_ "Usage: guix pack [OPTION]... PACKAGE...
 Create a bundle of PACKAGE.\n"))
   (show-build-options-help)
+  (newline)
+  (show-transformation-options-help)
   (newline)
   (display (G_ "
   -f, --format=FORMAT    build a pack in the given FORMAT"))

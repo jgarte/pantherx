@@ -130,9 +130,9 @@
   ;; Latest version of Guix, which may or may not correspond to a release.
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
-  (let ((version "1.1.0")
-        (commit "5e7cf66fb35780f930ad0bc5fe21ac330df4411d")
-        (revision 32))
+  (let ((version "1.2.0")
+        (commit "2c11cf1b91b07ed8c00b5525ab6a75e81f5cc289")
+        (revision 2))
     (package
       (name "guix")
 
@@ -148,7 +148,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "15clfjp845gvl0p6qw0b1gdibqfq20zwzr6dbxvq8l9fgzj1kb6b"))
+                  "0w9yrky8qx6zwh97aq6z07mxpjixxg5pp7lzw1r72j3qg3rircj2"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -336,7 +336,13 @@ $(prefix)/etc/init.d\n")))
                             (let ((bash (assoc-ref inputs "bash")))
                               (substitute* (string-append out "/bin/guix")
                                 (("^#!.*/bash") (string-append "#! " bash "/bin/bash")))))
-                          #t))))))
+                          #t)))
+
+                    ;; The 'guix' executable has 'OUT/libexec/guix/guile' as
+                    ;; its shebang; that should remain unchanged, thus remove
+                    ;; the 'patch-shebangs' phase, which would otherwise
+                    ;; change it to 'GUILE/bin/guile'.
+                    (delete 'patch-shebangs))))
       (native-inputs `(("pkg-config" ,pkg-config)
 
                        ;; Guile libraries are needed here for
@@ -566,14 +572,14 @@ out) and returning a package that uses that as its 'source'."
 (define-public nix
   (package
     (name "nix")
-    (version "2.3.8")
+    (version "2.3.9")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://nixos.org/releases/nix/nix-"
                                  version "/nix-" version ".tar.xz"))
              (sha256
               (base32
-               "0amd5nnqslvkfpz042l4ydihw2qsy68nmjbwaagcrggaq4irh4f7"))))
+               "1yi2c1fp33sxv9j0pvxlpxs1dhq3axrwkxdwr867ll90lbdiycvj"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags '("--sysconfdir=/etc" "--enable-gc")
@@ -1009,8 +1015,8 @@ environments.")
     (license (list license:gpl3+ license:agpl3+ license:silofl1.1))))
 
 (define-public guix-build-coordinator
-  (let ((commit "98f50831612b9d1253ae8ca2bceb547fed373f41")
-        (revision "5"))
+  (let ((commit "ed3b2e56655ccf4cd9574f00e72b20e9022d9ab0")
+        (revision "8"))
     (package
       (name "guix-build-coordinator")
       (version (git-version "0" revision commit))
@@ -1021,7 +1027,7 @@ environments.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "08xwb5phh14cxgwv4fxcd2hhpjgqxfknm9zkx9qp26zb56w2xzkz"))
+                  "15c7398km1870w82410jrmcnb4mvkhrsb8qvshr8wa1gjcpb6s6z"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -1070,7 +1076,7 @@ environments.")
          ("gnutls" ,gnutls)
 
          ;; Guile libraries are needed here for cross-compilation.
-         ("guile-json" ,guile-json-3)
+         ("guile-json" ,guile-json-4)
          ("guile-gcrypt" ,guile-gcrypt)
          ("guix" ,guix)
          ("guile-prometheus" ,guile-prometheus)
@@ -1267,7 +1273,7 @@ for packaging and deployment of cross-compiled Windows applications.")
 (define-public libostree
   (package
     (name "libostree")
-    (version "2020.7")
+    (version "2020.8")
     (source
      (origin
        (method url-fetch)
@@ -1275,7 +1281,7 @@ for packaging and deployment of cross-compiled Windows applications.")
              "https://github.com/ostreedev/ostree/releases/download/v"
              (version-major+minor version) "/libostree-" version ".tar.xz"))
        (sha256
-        (base32 "0clriq2ypz1fycd6mpjyrhzid44svzpzw0amnank593h69b216ax"))))
+        (base32 "16v73v63h16ika73kgh2cvgm0v27r2d48m932mbj3xm6s295kapx"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases

@@ -58,6 +58,7 @@
   #:use-module (gnu packages backup)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bison)
+  #:use-module (gnu packages build-tools)
   #:use-module (gnu packages boost)
   #:use-module (gnu packages check)
   #:use-module (gnu packages compression)
@@ -140,7 +141,7 @@
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/KhronosGroup/OpenSL-ES-Registry.git")
+         (url "https://github.com/KhronosGroup/OpenSL-ES-Registry")
          (commit "ea5104bf37bf525c25e6ae2386586048179d0fda")))
        (file-name (git-file-name name version))
        (sha256
@@ -202,7 +203,7 @@ promoting the market for advanced audio.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/Mindwerks/wildmidi.git")
+         (url "https://github.com/Mindwerks/wildmidi")
          (commit (string-append name "-" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -277,7 +278,7 @@ Coding (AAC) encoder.")
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/tinyalsa/tinyalsa.git")
+         (url "https://github.com/tinyalsa/tinyalsa")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -3840,9 +3841,9 @@ use them split WAVE data into multiple files.")
     (build-system gnu-build-system)
     (arguments
      ;; Test files are missing: https://github.com/foo86/dcadec/issues/53
-     '(#:tests? #f
+     `(#:tests? #f
        #:make-flags
-       (list "CC=gcc"
+       (list (string-append "CC=" ,(cc-for-target))
              ;; Build shared library.
              "CONFIG_SHARED=1"
              (string-append "PREFIX=" (assoc-ref %outputs "out"))
@@ -3917,8 +3918,8 @@ loudness of audio and video files to the same level.")
            "0hbb290n3wb23f2k692a6bhc23nnqmxqi9sc9j15pnya8wifw64g"))))
       (build-system gnu-build-system)
       (arguments
-       '(#:make-flags (list (string-append "PREFIX=" %output)
-                            "CC=gcc")
+       `(#:make-flags (list (string-append "PREFIX=" %output)
+                            (string-append "CC=" ,(cc-for-target)))
          #:tests? #f ; No tests
          #:phases
          (modify-phases %standard-phases
@@ -4086,14 +4087,14 @@ on the ALSA software PCM plugin.")
 (define-public snd
   (package
     (name "snd")
-    (version "20.8")
+    (version "20.9")
     (source (origin
               (method url-fetch)
               (uri (string-append "ftp://ccrma-ftp.stanford.edu/pub/Lisp/"
                                   "snd-" version ".tar.gz"))
               (sha256
                (base32
-                "1hw81innyyiwiyb8jkpq9aj7idmcb41yvgd1blac997023h78sss"))))
+                "0jxkycxn6jcbs4gklk9sk3gfr0y26dz1m71nxah9rnx80wnzj6hr"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:tests? #f                      ; no tests
@@ -4713,7 +4714,7 @@ in the package.")
 (define-public libaudec
   (package
     (name "libaudec")
-    (version "0.2.3")
+    (version "0.2.4")
     (source
       (origin
         (method git-fetch)
@@ -4723,11 +4724,13 @@ in the package.")
         (file-name (git-file-name name version))
         (sha256
           (base32
-            "04hw61db8wscj28qjyiaiafx8xl87njgmvqszxyhs4gmg8xgjip7"))))
+            "1570m2dfia17dbkhd2qhx8jjihrpm7g8nnyg6n4wif4vv229s7dz"))))
    (build-system meson-build-system)
    (arguments
-     ;; Compile tests.
-    `(#:configure-flags `("-Dtests=true")))
+    `(#:meson ,meson-0.55
+      #:configure-flags
+      ;; Build the tests.
+      `("-Dtests=true")))
    (inputs
     `(("libsamplerate" ,libsamplerate)
       ("libsndfile" ,libsndfile)))

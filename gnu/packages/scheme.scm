@@ -408,7 +408,7 @@ implementation techniques and as an expository tool.")
                           version "/racket-" version "-src.tgz")))
               (sha256
                (base32
-                "18pz6gjzqy6a62xkcmjanhr7kgxpvpmc0blrk4igz8ldcybz44if"))
+                "0gmp2ahmfd97nn9bwpfx9lznjmjkd042slnrrbdmyh59cqh98y2m"))
               (patches (search-patches
                         "racket-store-checksum-override.patch"))))
     (build-system gnu-build-system)
@@ -540,7 +540,7 @@ of libraries.")
                           version "/racket-minimal-" version "-src.tgz")))
               (sha256
                (base32
-                "0xvnd7afx058sg7j51bmbikqgn4sl0246nkhr8zlqcrbr3nqi6p4"))
+                "0yc5zkpq1bavj64h67pllw6mfjhmdp65fgdpyqcaan3syy6b5cia"))
               (patches (search-patches
                         "racket-store-checksum-override.patch"))))
     (synopsis "Racket without bundled packages such as Dr. Racket")

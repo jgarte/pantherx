@@ -112,7 +112,7 @@
        (method git-fetch)
        (uri
         (git-reference
-         (url "https://github.com/jiuka/memphis.git")
+         (url "https://github.com/jiuka/memphis")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
@@ -788,14 +788,14 @@ utilities for data translation and processing.")
 (define-public postgis
   (package
     (name "postgis")
-    (version "3.0.2")
+    (version "3.0.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.osgeo.org/postgis/source/postgis-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1jmji8i2wjabkrzqil683lypnmimigdmn64a10j3kj3kzlfn98d3"))))
+                "05s8cx1rlysiq7dd44kf7cid0la61a4p895j9g95bvfb8v8dpzh7"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f

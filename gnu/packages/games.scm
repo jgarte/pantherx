@@ -54,6 +54,7 @@
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Trevor Hass <thass@okstate.edu>
 ;;; Copyright © 2020 Leo Prikler <leo.prikler@student.tugraz.at>
+;;; Copyright © 2020 Lu hux <luhux@outlook.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -688,7 +689,7 @@ card, or paper tape, or Morse codes), caesar & rot13 (ciphers and deciphers
 the input), factor (factorizes a number), number (translates numbers into
 text), pig (translates from English to Pig Latin), pom (should print the
 Moon's phase), primes (generates primes), rain & worms (plays an screen-saver
-in terminal), random (prints randomly choosen lines from files, or returns a
+in terminal), random (prints randomly chosen lines from files, or returns a
 random exit-code), and wtf (explains what do some acronyms mean).
 
 Board: backgammon (lead the men out of board faster than the friend do),
@@ -1604,7 +1605,14 @@ such as chess or stockfish.")
     (native-inputs `(("python-2" ,python-2)
                      ("pkg-config" ,pkg-config)))
     (arguments
-     `(#:phases
+     `(#:configure-flags
+       ;; SSE instructions are available on Intel systems only.
+       (list ,@(if (any (cute string-prefix? <> (or (%current-target-system)
+                                                    (%current-system)))
+                        '("x86_64" "i686"))
+                   '("--enable-simd=sse2") ; prevent avx instructions
+                   '()))
+       #:phases
        (modify-phases %standard-phases
          (add-after 'install 'install-desktop-file
            (lambda* (#:key outputs #:allow-other-keys)
@@ -4428,7 +4436,7 @@ is attributed to Albert Einstein.")
 (define-public powwow
   (package
     (name "powwow")
-    (version "1.2.19")
+    (version "1.2.22")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -4436,7 +4444,7 @@ is attributed to Albert Einstein.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "10rjl63hmf62qslyhzqrbw3i2zf09dgxv65avhj0iiz0m4pbc9wy"))))
+                "12i11b8zxg8vdb9d6ims8qy2lmwwr42rcqbwq3vsa1x94s51bcbp"))))
     (inputs
      `(("ncurses" ,ncurses)))
     (build-system gnu-build-system)
@@ -6521,71 +6529,67 @@ at their peak of economic growth and military prowess.
                    license:mpl2.0
                    license:zlib))))
 
-;; There have been no official releases.
 (define-public open-adventure
-  (let* ((commit "d43854f0f6bb8e9eea7fbce80348150e7e7fc34d")
-         (revision "2"))
-    (package
-      (name "open-adventure")
-      (version (string-append "2.5-" revision "." (string-take commit 7)))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://gitlab.com/esr/open-adventure")
-                      (commit commit)))
-                (file-name (string-append name "-" version "-checkout"))
-                (sha256
-                 (base32
-                  "08bwrvf4axb1rsfd6ia1fddsky9pc1p350vjskhaakg2czc6dsk0"))))
-      (build-system gnu-build-system)
-      (arguments
-       `(#:make-flags (list "CC=gcc")
-         #:parallel-build? #f ; not supported
-         #:phases
-         (modify-phases %standard-phases
-           (replace 'configure
-             (lambda* (#:key inputs outputs #:allow-other-keys)
-               ;; Linenoise is meant to be included, so we have to
-               ;; copy it into the working directory.
-               (let* ((linenoise (assoc-ref inputs "linenoise"))
-                      (noisepath (string-append linenoise "/include/linenoise"))
-                      (out (assoc-ref outputs "out")))
-                 (copy-recursively noisepath "linenoise"))
-               #t))
-           (add-before 'build 'use-echo
-             (lambda _
-               (substitute* "tests/Makefile"
-                 (("/bin/echo") (which "echo")))
-               #t))
-           (add-after 'build 'build-manpage
-             (lambda _
-               ;; This target is missing a dependency
-               (substitute* "Makefile"
-                 ((".adoc.6:" line)
-                  (string-append line " advent.adoc")))
-               (invoke "make" ".adoc.6")))
-           ;; There is no install target
-           (replace 'install
-             (lambda* (#:key outputs #:allow-other-keys)
-               (let* ((out (assoc-ref outputs "out"))
-                      (bin (string-append out "/bin"))
-                      (man (string-append out "/share/man/man6")))
-                 (install-file "advent" bin)
-                 (install-file "advent.6" man))
-               #t)))))
-      (native-inputs
-       `(("asciidoc" ,asciidoc)
-         ("linenoise" ,linenoise)
-         ("python" ,python)
-         ("python-pyyaml" ,python-pyyaml)))
-      (home-page "https://gitlab.com/esr/open-adventure")
-      (synopsis "Colossal Cave Adventure")
-      (description "The original Colossal Cave Adventure from 1976 was the
-origin of all text adventures, dungeon-crawl (computer) games, and
-computer-hosted roleplaying games.  This is the last version released by
+  (package
+    (name "open-adventure")
+    (version "1.9")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.com/esr/open-adventure")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "123svzy7xczdklx6plbafp22yv9bcvwfibjk0jv2c9i22dfsr07f"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags (list "CC=gcc")
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)            ;no configure script
+         (add-before 'build 'use-echo
+           (lambda _
+             (substitute* "tests/Makefile"
+               (("/bin/echo") (which "echo")))
+             #t))
+         (add-after 'build 'build-manpage
+           (lambda _
+             ;; This target is missing a dependency
+             (substitute* "Makefile"
+               ((".adoc.6:" line)
+                (string-append line " advent.adoc")))
+             (invoke "make" ".adoc.6")))
+         ;; There is no install target.
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin"))
+                    (man (string-append out "/share/man/man6")))
+               (install-file "advent" bin)
+               (install-file "advent.6" man))
+             #t)))))
+    (native-inputs
+     `(("asciidoc" ,asciidoc)
+       ("libedit" ,libedit)
+       ("pkg-config" ,pkg-config)
+       ("python" ,python-wrapper)
+       ("python-pyyaml" ,python-pyyaml)))
+    (home-page "https://gitlab.com/esr/open-adventure")
+    (synopsis "Colossal Cave Adventure")
+    (description
+     "The original Colossal Cave Adventure from 1976 was the origin of all
+text adventures, dungeon-crawl (computer) games, and computer-hosted
+roleplaying games.  This is a forward port of the last version released by
 Crowther & Woods, its original authors, in 1995.  It has been known as
-\"adventure 2.5\" and \"430-point adventure\".")
-      (license license:bsd-2))))
+``adventure 2.5'' and ``430-point adventure''.")
+    (license license:bsd-2)))
+
+(define-public open-adventure-2.5
+  (package
+    (inherit open-adventure)
+    (version "2.5")
+    (properties `((superseded . ,open-adventure)))))
 
 (define-public tome4
   (package
@@ -6813,15 +6817,14 @@ some graphical niceities, and numerous bug-fixes and other improvements.")
 (define-public yamagi-quake2
   (package
     (name "yamagi-quake2")
-    (version "7.10")
+    (version "7.45")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://deponie.yamagi.org/quake2/quake2-"
                            version ".tar.xz"))
        (sha256
-        (base32
-         "0psinbg25mysd58k99s1n34w31w5hj1vppb39gdjb0zqi6sl6cps"))))
+        (base32 "0rgz8x7lzd0zb0xqd0gvnf2641nr9xpfm6v14mgh99hspxklaln7"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f
@@ -6850,12 +6853,15 @@ some graphical niceities, and numerous bug-fixes and other improvements.")
                         (string-append out "/bin/yamagi-quake2"))
                (symlink (string-append out "/lib/yamagi-quake2/q2ded")
                         (string-append out "/bin/yamagi-q2ded"))))))))
-    (inputs `(("sdl2" ,sdl2)
-              ("mesa" ,mesa)
-              ("libvorbis" ,libvorbis)
-              ("zlib" ,zlib)
-              ("openal" ,openal)))
-    (native-inputs `(("pkg-config" ,pkg-config)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("curl" ,curl-minimal)
+       ("libvorbis" ,libvorbis)
+       ("mesa" ,mesa)
+       ("openal" ,openal)
+       ("sdl2" ,sdl2)
+       ("zlib" ,zlib)))
     (synopsis "First person shooter engine based on quake2")
     (description "Yamagi Quake II is an enhanced client for id Software's Quake II.
 The main focus is an unchanged single player experience like back in 1997,
@@ -6873,17 +6879,23 @@ making Yamagi Quake II one of the most solid Quake II implementations available.
 (define-public nudoku
   (package
     (name "nudoku")
-    (version "1.0.0")
-    (source (origin
-	      (method url-fetch)
-	      (uri (string-append "https://github.com/jubalh/nudoku/"
-                                  "releases/download/" version
-                                  "/nudoku-" version ".tar.xz"))
-	      (sha256
-               (base32
-                "0nr2j2z07nxk70s8xnmmpzccxicf7kn5mbwby2kg6aq8paarjm8k"))))
+    (version "2.1.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/jubalh/nudoku.git")
+             (commit version)))
+       (sha256
+        (base32 "12v00z3p0ymi8f3w4b4bgl4c76irawn3kmd147r0ap6s9ssx2q6m"))))
     (build-system gnu-build-system)
-    (inputs `(("ncurses" ,ncurses)))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("gettext" ,gettext-minimal)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("ncurses" ,ncurses)))
     (home-page "https://jubalh.github.io/nudoku/")
     (synopsis "Sudoku for your terminal")
     (description "Nudoku is a ncurses-based Sudoku game for your terminal.")
@@ -8279,6 +8291,39 @@ and cooperative.")
     ;; released under GPLv2 or later.  It comes with extra exceptions for the
     ;; developers.
     (license (list license:gpl2+ license:lgpl2.1+))))
+
+(define-public slimevolley
+  (package
+    (name "slimevolley")
+    (version "2.4.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://download.tuxfamily.org/slime/"
+                           "slimevolley_" version ".tar.gz"))
+       (sha256
+        (base32 "1pi60zjpx95mfdkrbwf4cbzy5lv4v5qrljvgck46qca78i9g9g46"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f                      ;no test
+       ;; Work around build failure: "error adding symbols: DSO
+       ;; missing from command line".
+       #:configure-flags (list "-DCMAKE_EXE_LINKER_FLAGS=-lm")))
+    (native-inputs
+     `(("gettext" ,gettext-minimal)))
+    (inputs
+     `(("sdl" ,(sdl-union (list sdl sdl-image sdl-net sdl-ttf)))))
+    (home-page "https://slime.tuxfamily.org/")
+    (synopsis "Unrealistic 2D volleyball simulation")
+    (description
+     "Slime Volley is a 2D arcade-oriented volleyball simulation, in
+the spirit of some Java games of the same name.
+
+Two teams, 1-3 players each, try to be the first to get 10 points.
+This happens when the one ball touches the floor on the other side of
+the net.  There can be 1 to 8 balls in game.  Once one ball touches
+the ground, the set ends and all balls are served again.")
+    (license license:gpl3+)))
 
 (define-public slingshot
   (package
@@ -11942,3 +11987,33 @@ inside the Zenith Colony.")
 X11 that won't set your CPU on fire, drain your laptop battery, or lower video
 game FPS.")
       (license license:unlicense))))
+
+(define-public curseofwar
+  (package
+    (name "curseofwar")
+    (version "1.3.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/a-nikolaev/curseofwar")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1wd71wdnj9izg5d95m81yx3684g4zdi7fsy0j5wwnbd9j34ilz1i"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f ; no tests
+       #:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
+    (inputs `(("ncurses" ,ncurses)))
+    (home-page "https://a-nikolaev.github.io/curseofwar/")
+    (synopsis "Fast-paced action strategy game")
+    (description "Curse of War is a fast-paced action strategy game originally
+implemented using ncurses user interface.  An SDL graphical version is also
+available.")
+    (license license:gpl3+)))

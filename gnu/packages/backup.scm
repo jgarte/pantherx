@@ -6,7 +6,7 @@
 ;;; Copyright © 2017 Thomas Danckaert <post@thomasdanckaert.be>
 ;;; Copyright © 2017 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2017 Kei Kebreau <kkebreau@posteo.net>
-;;; Copyright © 2017 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2017, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2017 Christopher Allan Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2017 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2018 Mark H Weaver <mhw@netris.org>
@@ -82,7 +82,7 @@
 (define-public duplicity
   (package
     (name "duplicity")
-    (version "0.8.15")
+    (version "0.8.17")
     (source
      (origin
       (method url-fetch)
@@ -91,7 +91,7 @@
                           "-series/" version "/+download/duplicity-"
                           version ".tar.gz"))
       (sha256
-       (base32 "1kg467mxg5a97v1rlv4shk32krgv8ys4nczq4b11av4bp1lgysdc"))))
+       (base32 "114rwkf9b3h4fcagrx013sb7krc4hafbwl9gawjph2wd9pkv2wx2"))))
     (build-system python-build-system)
     (native-inputs
      `(("gettext" ,gettext-minimal)     ; for msgfmt
@@ -392,7 +392,7 @@ list and implement the backup strategy.")
      `(("librsync" ,librsync-0.9)))
     (arguments
      `(#:make-flags `(,(string-append "PREFIX=" (assoc-ref %outputs "out"))
-                      "CC=gcc")
+                      ,(string-append "CC=" ,(cc-for-target)))
        #:tests? #f                      ;test input not distributed
        #:phases
        ;; no configure phase
@@ -1103,7 +1103,7 @@ interactive mode.")
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
-       ("check" ,check)
+       ("check" ,check-0.14)
        ("pkg-config" ,pkg-config)))
     (home-page "https://burp.grke.org")
     (synopsis "Differential backup and restore")

@@ -4270,7 +4270,7 @@ passwords in the GNOME keyring.")
      `(("graphviz" ,graphviz)))
     (propagated-inputs
      `(("glib" ,glib))) ; required by libvala-0.40.pc
-    (home-page "https://live.gnome.org/Vala/")
+    (home-page "https://wiki.gnome.org/Projects/Vala/")
     (synopsis "Compiler for the GObject type system")
     (description
      "Vala is a programming language that aims to bring modern programming
@@ -4282,7 +4282,7 @@ libraries written in C.")
 (define-public vala-0.50
   (package
     (inherit vala)
-    (version "0.50.1")
+    (version "0.50.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/vala/"
@@ -4290,7 +4290,7 @@ libraries written in C.")
                                   "vala-" version ".tar.xz"))
               (sha256
                (base32
-                "0v4g2gvn7x7cl33h8sj1y2xyyskw5ayaj4jm2jrd3my3r439z3cm"))))))
+                "1nnf0x6vk0a9p2y6z7jwjfvmlxh3qhj581v381r0y1sxsv35s39c"))))))
 
 (define-public vte
   (package
@@ -4438,17 +4438,16 @@ and RDP protocols.")
 (define-public dconf
   (package
     (name "dconf")
-    (version "0.34.0")
+    (version "0.36.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
                     "mirror://gnome/sources/" name "/"
                     (version-major+minor version) "/"
                     name "-" version ".tar.xz"))
-              (patches (search-patches "dconf-meson-0.52.patch"))
               (sha256
                (base32
-                "0lnsl85cp2vpzgp8pkf6l6yd2i3lp02jdvga1icfa78j2smr8fll"))))
+                "0bfs069pjv6lhp7xrzmrhz3876ay2ryqxzc6mlva1hhz34ibprlz"))))
     (build-system meson-build-system)
     (propagated-inputs
      ;; In Requires of dconf.pc.
@@ -4467,10 +4466,17 @@ and RDP protocols.")
        ("pkg-config" ,pkg-config)
        ("vala" ,vala)))
     (arguments
-     `(#:tests? #f ; To contact dbus it needs to load /var/lib/dbus/machine-id
-                   ; or /etc/machine-id.
-       #:glib-or-gtk? #t
-       #:configure-flags '("-Denable-gtk-doc=true")))
+     `(#:glib-or-gtk? #t
+       #:configure-flags '("-Denable-gtk-doc=true")
+       #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'increase-test-timeout
+                    (lambda _
+                      ;; On big-memory systems, the engine test may take
+                      ;; much longer than the default of 30 seconds.
+                      (substitute* "tests/meson.build"
+                        (("test\\(unit_test\\[0\\], exe" all)
+                         (string-append all ", timeout : 90")))
+                      #t)))))
     (home-page "https://developer.gnome.org/dconf/")
     (synopsis "Low-level GNOME configuration system")
     (description "Dconf is a low-level configuration system.  Its main purpose
@@ -6071,6 +6077,14 @@ discovery protocols.")
              (substitute* "meson_post_install.py"
                (("gtk-update-icon-cache") "true"))
              #t))
+         (add-after 'unpack 'patch-failing-test
+           (lambda _
+             ;; Work around test failure with GStreamer 1.18, because the test
+             ;; relies on "und" not being mapped to a particular language:
+             ;; https://gitlab.gnome.org/GNOME/totem/-/issues/450
+            (substitute* "src/test-totem.c"
+              (("und") "nosuchlang"))
+            #t))
          (add-before
           'install 'disable-cache-generation
           (lambda _
@@ -8100,7 +8114,7 @@ libxml2.")
        ("xmllint" ,libxml2)))
     (inputs
      `(("accountsservice" ,accountsservice)
-       ("check" ,check) ; for testing
+       ("check" ,check-0.14)            ;for testing
        ("elogind" ,elogind)
        ("gnome-session" ,gnome-session)
        ("gnome-settings-daemon" ,gnome-settings-daemon)
@@ -9538,19 +9552,21 @@ functionality and behavior.")
 (define-public arc-theme
   (package
     (name "arc-theme")
-    (version "20190917")
+    (version "20201013")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/NicoHood/arc-theme")
+                    (url "https://github.com/jnsh/arc-theme")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1qgpk4p2hi5hd4yy0hj93kq1vs0b32wb8qkaj1wi90c8gwddq5wa"))))
+                "1x2l1mwjx68dwf3jb1i90c1q8nqsl1wf2zggcn8im6590k5yv39s"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:phases
+     '(#:configure-flags
+       (list "--disable-cinnamon")
+       #:phases
        (modify-phases %standard-phases
          ;; autogen.sh calls configure at the end of the script.
          (replace 'bootstrap
@@ -10390,9 +10406,9 @@ photo-booth-like software, such as Cheese.")
     (native-inputs
      `(("docbook-xsl" ,docbook-xsl)
        ("docbook-xml" ,docbook-xml-4.3)
+       ("gettext" ,gettext-minimal)
        ("glib:bin" ,glib "bin")
        ("gtk-doc" ,gtk-doc)
-       ("intltool" ,intltool)
        ("itstool" ,itstool)
        ("libxml2" ,libxml2)
        ("libxslt" ,libxslt)
@@ -10875,7 +10891,7 @@ advanced image management tool")
 (define-public libhandy
   (package
     (name "libhandy")
-    (version "1.0.0")
+    (version "1.0.2")
     (source
      (origin
        (method git-fetch)
@@ -10884,7 +10900,7 @@ advanced image management tool")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "193y09yy0302x8fkyrnq591m805xp68bkd93fl5qggxi52k8pj0v"))))
+        (base32 "1bmmkahshvlvpsnb7zp8bddv7i1h5k4p967n6kxh71g1vnj8x20m"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags
@@ -10913,7 +10929,7 @@ advanced image management tool")
        ;; Test suite dependencies.
        ("xorg-server" ,xorg-server-for-tests)
        ("hicolor-icon-theme" ,hicolor-icon-theme)))
-    (home-page "https://source.puri.sm/Librem5/libhandy")
+    (home-page "https://gitlab.gnome.org/GNOME/libhandy/")
     (synopsis "Library full of GTK+ widgets for mobile phones")
     (description "The aim of the handy library is to help with developing user
 interfaces for mobile devices using GTK+.  It provides responsive GTK+ widgets
@@ -11660,7 +11676,7 @@ provided there is a DBus service present:
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/gkarsay/parlatype.git")
+             (url "https://github.com/gkarsay/parlatype")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -11899,7 +11915,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.21.1")
+    (version "0.23.0")
     (source
      (origin
        (method git-fetch)
@@ -11909,7 +11925,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "17ss5k2hnymk6xyx1dy3q0y2pwcld78cw7d0cs9c0hnhskh5dirh"))))
+         "1xh3qmf2pk80qxj528lajjcwg7mps72s1zz8cj388av58p8l3hyw"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -11966,17 +11982,17 @@ developed with the aim of being used with the Librem 5 phone.")
 (define-public libgda
   (package
     (name "libgda")
-    (version "5.2.9")
+    (version "5.2.10")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://gitlab.gnome.org/GNOME/libgda.git/")
-             (commit "LIBGDA_5_2_9")))
+             (commit (string-append "LIBGDA_" (string-replace-substring
+                                               version "." "_")))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "122anbk15vj2dfxrw7s48b6zwlpp7cyppshxizynvf3zmc0ygw3j"))))
+        (base32 "18rg773gq9v3cdywpmrp12c5xyp97ir9yqjinccpi22sksb1kl8a"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags '("--enable-vala")
@@ -12021,6 +12037,7 @@ developed with the aim of being used with the Librem 5 phone.")
        ("vala" ,vala)))
     (native-inputs
      `(("autoconf" ,autoconf)
+       ("autoconf-archive" ,autoconf-archive)
        ("automake" ,automake)
        ("glib:bin" ,glib "bin")
        ("gnome-common" ,gnome-common)

@@ -550,8 +550,8 @@ from forcing GEXP-PROMISE."
                       #:system system
                       #:guile-for-build guile)))
 
-(define %icecat-version "78.4.1-guix0-preview1")
-(define %icecat-build-id "20201110000000") ;must be of the form YYYYMMDDhhmmss
+(define %icecat-version "78.5.0-guix0-preview1")
+(define %icecat-build-id "20201117000000") ;must be of the form YYYYMMDDhhmmss
 
 ;; 'icecat-source' is a "computed" origin that generates an IceCat tarball
 ;; from the corresponding upstream Firefox ESR tarball, using the 'makeicecat'
@@ -573,11 +573,11 @@ from forcing GEXP-PROMISE."
                   "firefox-" upstream-firefox-version ".source.tar.xz"))
             (sha256
              (base32
-              "0q57b0s6xhps4dzp2cih4ajdj6hdas0j6jx0sidzj72vjzfywy0r"))))
+              "1442yjmwz69hkfcvh8kkb60jf4c9ms0pac04nc3xw2da13v4zxai"))))
 
-         (upstream-icecat-base-version "78.4.1") ; maybe older than base-version
+         (upstream-icecat-base-version "78.5.0") ; maybe older than base-version
          ;;(gnuzilla-commit (string-append "v" upstream-icecat-base-version))
-         (gnuzilla-commit "df2c2e22a0c6ea5b4dcaed52884223bfa6ffacde")
+         (gnuzilla-commit "bcfe407570cae32d00dd33a268de0e0593166f7b")
          (gnuzilla-source
           (origin
             (method git-fetch)
@@ -589,7 +589,7 @@ from forcing GEXP-PROMISE."
                                       (string-take gnuzilla-commit 8)))
             (sha256
              (base32
-              "1y1p2g9xvqsg0im58lhdkrp8z0zlxw6i3qqplqdpbidmjwibmqjz"))))
+              "1pg8fjjg91qyrv7za585ds1xrdvmybbkf2jmkff107fh5y23lxrg"))))
 
          ;; 'search-patch' returns either a valid file name or #f, so wrap it
          ;; in 'assume-valid-file-name' to avoid 'local-file' warnings.
@@ -1161,11 +1161,11 @@ standards of the IceCat project.")
        (cpe-version . ,(first (string-split version #\-)))))))
 
 ;; Update this together with icecat!
-(define %icedove-build-id "20201021000000") ;must be of the form YYYYMMDDhhmmss
+(define %icedove-build-id "20201117000000") ;must be of the form YYYYMMDDhhmmss
 (define-public icedove
   (package
     (name "icedove")
-    (version "78.4.0")
+    (version "78.5.0")
     (source icecat-source)
     (properties
      `((cpe-name . "thunderbird_esr")))
@@ -1430,7 +1430,7 @@ standards of the IceCat project.")
        ("mesa" ,mesa)
        ("mit-krb5" ,mit-krb5)
        ("nspr" ,nspr)
-       ("nss" ,nss-3.57)
+       ("nss" ,nss)
        ("pango" ,pango)
        ("pixman" ,pixman)
        ("pulseaudio" ,pulseaudio)
@@ -1445,7 +1445,7 @@ standards of the IceCat project.")
         ;; in the Thunderbird release tarball.  We don't use the release
         ;; tarball because it duplicates the Icecat sources and only adds the
         ;; "comm" directory, which is provided by this repository.
-        ,(let ((changeset "d5c3faff83924f56859ea4584eb0610c68a0cafa"))
+        ,(let ((changeset "92abc26b9c80383e974fb0234f22e06fea793be2"))
            (origin
              (method hg-fetch)
              (uri (hg-reference
@@ -1454,7 +1454,7 @@ standards of the IceCat project.")
              (file-name (string-append "thunderbird-" version "-checkout"))
              (sha256
               (base32
-               "146vp5048j5drzyvmsj9v34ifqcywr1gikwh4f1z4l9zad7b09rs")))))
+               "0468k3qrqs9w1vva2fdxvwqdsypqpsdy5iixgx58dqivchg4qlf9")))))
        ("autoconf" ,autoconf-2.13)
        ("cargo" ,rust-1.41 "cargo")
        ("clang" ,clang)

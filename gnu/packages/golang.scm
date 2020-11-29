@@ -20,6 +20,7 @@
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020 Nicolas Goaziou <mail@nicolasgoaziou.com>
 ;;; Copyright © 2020 Ryan Prior <rprior@protonmail.com>
+;;; Copyright © 2020 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2020 raingloom <raingloom@riseup.net>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -148,6 +149,11 @@
                   ("net/dial_test.go" "(.+)(TestDialTimeout.+)")
                   ("os/os_test.go" "(.+)(TestHostname.+)")
                   ("time/format_test.go" "(.+)(TestParseInSydney.+)")
+
+                  ;; XXX: This test fails with tzdata 2020b and newer.  Later
+                  ;; Go releases work fine, so just disable this for the
+                  ;; bootstrap Go.
+                  ("time/example_test.go" "(.+)(ExampleParseInLocation.+)")
 
                   ("os/exec/exec_test.go" "(.+)(TestEcho.+)")
                   ("os/exec/exec_test.go" "(.+)(TestCommandRelativeName.+)")
@@ -1139,7 +1145,7 @@ optimized for performance yet simple to use.")
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/tv42/httpunix.git")
+               (url "https://github.com/tv42/httpunix")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
@@ -1708,7 +1714,7 @@ finding resources located relative to the executable file.")
          (method git-fetch)
          (uri (git-reference
                (url
-                "https://github.com/ayufan/golang-kardianos-service.git")
+                "https://github.com/ayufan/golang-kardianos-service")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256

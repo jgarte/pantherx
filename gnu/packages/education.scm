@@ -140,7 +140,7 @@ of categories with some of the activities available in that category.
 (define-public gcompris-qt
   (package
     (name "gcompris-qt")
-    (version "0.98")
+    (version "1.0")
     (source
      (origin
        (method url-fetch)
@@ -148,22 +148,19 @@ of categories with some of the activities available in that category.
              "https://gcompris.net/download/qt/src/gcompris-qt-"
              version ".tar.xz"))
        (sha256
-        (base32 "1jmjykn0lpk0v6hs2flmch8v4da5bgxl891nav7szxw9l7aqnf4y"))))
+        (base32 "08dw1q0h4qz2q0ksa5pbmb9v60hr1zv9skx6z8dlq9b1i7harnds"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'disable-failing-test
-           (lambda _
-             (substitute* "tests/core/CMakeLists.txt"
-               (("DownloadManagerTest\\.cpp") "#"))
-             #t))
          (add-before 'check 'start-xorg-server
            (lambda* (#:key inputs #:allow-other-keys)
              ;; The test suite requires a running X server.
              (system (string-append (assoc-ref inputs "xorg-server")
                                     "/bin/Xvfb :1 &"))
              (setenv "DISPLAY" ":1")
+             ;; The test suite wants to write to /homeless-shelter
+             (setenv "HOME" (getcwd))
              #t))
          (add-after 'install 'wrap-executable
            (lambda* (#:key inputs outputs #:allow-other-keys)
@@ -192,7 +189,7 @@ of categories with some of the activities available in that category.
        ("xorg-server" ,xorg-server-for-tests)))
     (inputs
      `(("openssl" ,openssl)
-       ("python-2" ,python-2)
+       ("python" ,python-wrapper)
        ("qtbase" ,qtbase)
        ("qtdeclarative" ,qtdeclarative)
        ("qtgraphicaleffects" ,qtgraphicaleffects)
@@ -217,7 +214,8 @@ Currently available boards include:
 @item reading practice
 @item small games (memory games, jigsaw puzzles, ...)
 @end enumerate\n")
-    (license license:gpl3+)))
+    (license (list license:silofl1.1    ; bundled fonts
+                   license:gpl3+))))
 
 (define-public tipp10
   (package
@@ -275,7 +273,7 @@ easy.")
 (define-public snap
   (package
     (name "snap")
-    (version "6.3.1")
+    (version "6.3.3")
     (source
      (origin
        (method git-fetch)
@@ -284,7 +282,7 @@ easy.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1109xrvq1vszs74jhzdzhc1isij1hx6brb0w45m0i6sl0xxdrdhb"))))
+        (base32 "0zlyk241s6sh5zaqrvfpg4lx7jdifajsdf6c9qhh77vxxh5gwzrc"))))
     (build-system trivial-build-system)
     (arguments
      `(#:modules ((guix build utils))
@@ -613,14 +611,14 @@ Portuguese, Spanish and Italian.")
 (define-public fet
   (package
     (name "fet")
-    (version "5.47.0")
+    (version "5.48.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.lalescu.ro/liviu/fet/download/"
                            "fet-" version ".tar.bz2"))
        (sha256
-        (base32 "1a4mzzd6qy7hpb3yvmf922dbrqrzacz60ld8dsds78m018jf9gaj"))))
+        (base32 "12bd53r841r8zsn3v1kzws2qar908p6g6mlnm50kmjkxramr63ga"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
