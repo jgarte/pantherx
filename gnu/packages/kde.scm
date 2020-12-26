@@ -11,6 +11,7 @@
 ;;; Copyright © 2020 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Prafulla Giri <pratheblackdiamond@gmail.com>
+;;; Copyright © 2020 Zheng Junjie <873216071@qq.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -46,8 +47,11 @@
   #:use-module (gnu packages cpp)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages curl)
+  #:use-module (gnu packages djvu)
   #:use-module (gnu packages documentation)
+  #:use-module (gnu packages ebook)
   #:use-module (gnu packages flex)
+  #:use-module (gnu packages fontutils)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages ghostscript)
   #:use-module (gnu packages gl)
@@ -59,6 +63,7 @@
   #:use-module (gnu packages kde-plasma)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages llvm)
+  #:use-module (gnu packages markup)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages pdf)
   #:use-module (gnu packages perl)
@@ -130,7 +135,7 @@ This package contains GUI widgets for baloo.")
        ("kiconthemes" ,kiconthemes)
        ("knewstuff" ,knewstuff)
        ("qtbase" ,qtbase)))
-    (home-page "https://cgit.kde.org/grantleetheme.git")
+    (home-page "https://invent.kde.org/pim/grantleetheme")
     (synopsis "Library providing Grantlee theme support")
     (description "This library provides Grantlee theme support.")
     (license ;; LGPL for libraries, FDL for documentation
@@ -180,7 +185,8 @@ This package contains GUI widgets for baloo.")
          ("qtquickcontrols" ,qtquickcontrols)
          ("qtquickcontrols2" ,qtquickcontrols2)
          ("kiconthemes" ,kiconthemes)
-         ("breeze" ,breeze)
+         ("breeze" ,breeze) ; make dark them available easily
+         ("breeze-icons" ,breeze-icons) ; recommended icon set
          ("purpose" ,purpose)
          ("qtwebkit" ,qtwebkit)
          ("qtgraphicaleffects" ,qtgraphicaleffects)
@@ -195,12 +201,14 @@ This package contains GUI widgets for baloo.")
                       (qtbase (assoc-ref inputs "qtbase"))
                       (frei0r (assoc-ref inputs "frei0r-plugins"))
                       (ffmpeg (assoc-ref inputs "ffmpeg"))
-                      (breeze (assoc-ref inputs "breeze")))
+                      (breeze (assoc-ref inputs "breeze"))
+                      (breeze-icons (assoc-ref inputs "breeze-icons")))
                  (wrap-program (string-append out "/bin/kdenlive")
                    `("PATH" ":" prefix
                      ,(list (string-append ffmpeg "/bin")))
                    `("XDG_DATA_DIRS" ":" prefix
-                     ,(list (string-append breeze "/share")))
+                     ,(list (string-append breeze "/share")
+                            (string-append breeze-icons "/share")))
                    `("QT_PLUGIN_PATH" ":" prefix
                      ,(list (getenv "QT_PLUGIN_PATH")))
                    `("FREI0R_PATH" ":" =
@@ -225,7 +233,7 @@ projects.")
 (define-public kdevelop
   (package
     (name "kdevelop")
-    (version "5.5.2")
+    (version "5.6.1")
     (source
       (origin
         (method url-fetch)
@@ -233,7 +241,7 @@ projects.")
                             "/" version "/src/kdevelop-"
                             version ".tar.xz"))
         (sha256
-         (base32 "1nkl3z1n1l7ly2zvmbx2sdhx5q72wcvpwhzsz3qgw1474qd9i3i2"))))
+         (base32 "02ip5r67hjfpywkm3mz86n6wbqcr7996ifzfd2fyzsvm4998hi4y"))))
     (build-system qt-build-system)
     (native-inputs
      `(("extra-cmake-modules" ,extra-cmake-modules)
@@ -362,7 +370,7 @@ for some KDevelop language plugins (Ruby, PHP, CSS...).")
     (inputs
      `(("qtbase" ,qtbase)
        ("qtsvg" ,qtsvg)))
-    (home-page "https://cgit.kde.org/kdiagram.git/")
+    (home-page "https://invent.kde.org/graphics/kdiagram")
     (synopsis "Libraries for creating business diagrams")
     (description "This package provides libraries for integrating business
 diagrams in Qt-based applications.
@@ -518,7 +526,7 @@ used in KDE development tools Kompare and KDevelop.")
 straightforward and cross-platform API for a range of cryptographic features,
 including SSL/TLS, X.509 certificates, SASL, OpenPGP, S/MIME CMS, and smart
 cards.")
-    (license license:lgpl2.1)))
+    (license license:lgpl2.1+)))
 
 (define-public kpmcore
   (package
@@ -764,6 +772,119 @@ Python, PHP, and Perl.")
     (synopsis "Runtime library for kdegames")
     (description "Runtime library for kdegames")
     (license (list license:gpl2+  license:fdl1.2+))))
+
+(define-public okular
+  (package
+    (name "okular")
+    (version "20.12.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://kde/stable/release-service/" version
+                           "/src/" name "-" version ".tar.xz"))
+       (sha256
+        (base32 "1kib8zqfd9qgqn7bz88hay2j3kcvarnlfyr3a417pi6rvaam6b4p"))))
+    (build-system qt-build-system)
+    ;; The tests fail because they can't find the proper mimetype plugins:
+    ;; "org.kde.okular.core: No plugin for mimetype '"image/jpeg"'."
+    ;; The built program seems to work okay, so we skip the tests for now.
+    (arguments
+     `(#:tests? #f
+       #:configure-flags
+       (list "-DBUILD_TESTING=OFF")))
+    (native-inputs
+     `(("extra-cmake-modules" ,extra-cmake-modules)
+       ("kdoctools" ,kdoctools)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("ebook-tools" ,ebook-tools)
+       ("breeze-icons" ,breeze-icons)
+       ("discount" ,discount)
+       ("djvulibre" ,djvulibre)
+       ("kactivities" ,kactivities)
+       ("khtml" ,khtml)
+       ("chmlib" ,chmlib)
+       ("kdegraphics-mobipocket" ,kdegraphics-mobipocket)
+       ("karchive" ,karchive)
+       ("kbookmarks" ,kbookmarks)
+       ("kcompletion" ,kcompletion)
+       ("kconfig" ,kconfig)
+       ("qtbase" ,qtbase)
+       ("libjpeg-turbo" ,libjpeg-turbo)
+       ("libtiff" ,libtiff)
+       ("kirigami" ,kirigami)
+       ("purpose" ,purpose)
+       ("freetype" ,freetype)
+       ("kiconthemes" ,kiconthemes)
+       ("kio" ,kio)
+       ("kparts" ,kparts)
+       ("kpty" ,kpty)
+       ("qtspeech" ,qtspeech)
+       ("kwallet" ,kwallet)
+       ("kwindowsystem" ,kwindowsystem)
+       ("libkexiv2" ,libkexiv2)
+       ("libspectre" ,libspectre)
+       ("libzip" ,libzip)
+       ("phonon" ,phonon)
+       ("poppler-qt5" ,poppler-qt5)
+       ("qca" ,qca)
+       ("qtdeclarative" ,qtdeclarative)
+       ("qtsvg" ,qtsvg)
+       ("threadweaver" ,threadweaver)
+       ("kcrash" ,kcrash)
+       ("kjs" ,kjs)))
+    (home-page "https://kde.org/applications/graphics/okular/")
+    (synopsis "Document viewer")
+    (description
+     "Okular is a document viewer developed for KDE.  It can display files in
+a variety of formats, including PDF, PostScript, DejaVu, and EPub.")
+    (license license:gpl2+)))
+
+(define-public kdegraphics-mobipocket
+  (package
+    (name "kdegraphics-mobipocket")
+    (version "20.12.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://kde/stable/release-service/" version
+                           "/src/" name "-" version ".tar.xz"))
+       (sha256
+        (base32 "0fm880lp9g60zgrkjyh4jxws6x0s77l9ia4f8pza3w8sxcbbswk5"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("extra-cmake-modules" ,extra-cmake-modules)))
+    (inputs
+     `(("kio" ,kio)
+       ("qtbase" ,qtbase)))
+    (home-page "https://apps.kde.org/en/kdegraphics_mobipocket")
+    (synopsis "KDE thumbnailer for Mobipocket files")
+    (description "This package provides a KDE plugin that shows thumbnails of
+Mobipocket e-books in Dolphin and other KDE apps.")
+    (license license:gpl2+)))
+
+(define-public libkexiv2
+  (package
+    (name "libkexiv2")
+    (version "20.12.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://kde/stable/release-service/" version
+                           "/src/" name "-" version ".tar.xz"))
+       (sha256
+        (base32 "0k0iinf7s8qlk3fwvq7iic1b4zn2gm65rfd58q7d3wb1i1j2hjjk"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("extra-cmake-modules" ,extra-cmake-modules)))
+    (inputs
+     `(("exiv2" ,exiv2)
+       ("qtbase" ,qtbase)))
+    (home-page "https://invent.kde.org/graphics/libkexiv2")
+    (synopsis "Manipulate the metadata of images")
+    (description "Libkexiv2 wraps the Exiv2 library, allowing to manipulate
+picture metadata as EXIF/IPTC and XMP.")
+    (license license:gpl2+)))
 
 (define-public zeroconf-ioslave
   (package

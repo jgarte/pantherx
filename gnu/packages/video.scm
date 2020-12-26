@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2013, 2014, 2015, 2016 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2014, 2015, 2016 David Thompson <davet@gnu.org>
-;;; Copyright © 2014, 2015, 2016, 2018 Mark H Weaver <mhw@netris.org>
+;;; Copyright © 2014, 2015, 2016, 2018, 2020 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2015 Andy Patterson <ajpatter@uwaterloo.ca>
@@ -46,6 +46,7 @@
 ;;; Copyright © 2020 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2020 Alexandru-Sergiu Marton <brown121407@posteo.ro>
 ;;; Copyright © 2020 Ivan Kozlov <kanichos@yandex.ru>
+;;; Copyright © 2020 Antoine Côté <antoine.cote@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -64,7 +65,7 @@
 
 (define-module (gnu packages video)
   #:use-module (ice-9 match)
-  #:use-module (srfi srfi-1)
+  #:use-module ((srfi srfi-1) #:hide (zip))
   #:use-module (srfi srfi-26)
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (guix utils)
@@ -153,6 +154,7 @@
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages rdesktop)
+  #:use-module (gnu packages re2c)
   #:use-module (gnu packages ruby)
   #:use-module (gnu packages rust-apps)
   #:use-module (gnu packages samba)
@@ -766,7 +768,7 @@ television and DVD.  It is also known as AC-3.")
 (define-public libaom
   (package
     (name "libaom")
-    (version "2.0.0")
+    (version "2.0.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -775,7 +777,7 @@ television and DVD.  It is also known as AC-3.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1616xjhj6770ykn82ml741h8hx44v507iky3s9h7a5lnk9d4cxzy"))))
+                "1vakwmcwvmmrdw7460m8hzq96y71lxqix8b2g07c6s12br0rrdhl"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("perl" ,perl)
@@ -1007,7 +1009,7 @@ H.264 (MPEG-4 AVC) video streams.")
 (define-public straw-viewer
   (package
     (name "straw-viewer")
-    (version "0.1.1")
+    (version "0.1.2")
     (source
      (origin
        (method git-fetch)
@@ -1016,7 +1018,7 @@ H.264 (MPEG-4 AVC) video streams.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0idp1ayqghi5bg83v9qmvzz9wj05flwrp1fxb4kqa6vwxmprvhyk"))))
+        (base32 "1s6w8m9377ajy21x7lf6mbgp5yk5i70nhzmqscibjnarr3xfg9zs"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-build" ,perl-module-build)
@@ -1030,13 +1032,13 @@ H.264 (MPEG-4 AVC) video streams.")
        ("perl-mozilla-ca" ,perl-mozilla-ca)
        ("perl-term-readline-gnu" ,perl-term-readline-gnu)
        ("perl-unicode-linebreak" ,perl-unicode-linebreak)
-       ("xdg-utils" ,xdg-utils)
-
-       ;; Some videos play without youtube-dl, but others silently fail to.
-       ("youtube-dl" ,youtube-dl)))
-
-       ;; Required only when building the graphical interface (--gtk).
-       ;;("perl-file-sharedir" ,perl-file-sharedir)
+       ("xdg-utils" ,xdg-utils)))
+    ;; Required only when building the graphical interface (--gtk).
+    ;;("perl-file-sharedir" ,perl-file-sharedir)
+    
+    ;; Some videos play without youtube-dl, but others silently fail to.
+    (propagated-inputs
+     `(("youtube-dl" ,youtube-dl)))
     (arguments
      `(#:modules ((guix build perl-build-system)
                   (guix build utils)
@@ -1624,7 +1626,10 @@ audio/video codec library.")
     (arguments
      (substitute-keyword-arguments (package-arguments ffmpeg)
        ((#:configure-flags flags)
-        `(delete "--enable-librav1e" ,flags))))))
+        `(delete "--enable-librav1e" ,flags))))
+    (inputs (fold alist-delete
+                  (package-inputs ffmpeg)
+                  '("rav1e")))))
 
 (define-public ffmpeg-3.4
   (package
@@ -1698,7 +1703,10 @@ audio/video codec library.")
                     (path (string-join (map dirname dso) ":")))
                (format #t "setting LD_LIBRARY_PATH to ~s~%" path)
                (setenv "LD_LIBRARY_PATH" path)
-               #t))))))))
+               #t))))))
+    (inputs (fold alist-delete
+                  (package-inputs ffmpeg)
+                  '("dav1d" "libaom" "rav1e" "srt")))))
 
 (define-public ffmpeg-for-stepmania
   (hidden-package
@@ -2189,14 +2197,25 @@ To load this plugin, specify the following option when starting mpv:
 (define-public youtube-dl
   (package
     (name "youtube-dl")
-    (version "2020.11.26")
+    (version "2020.12.14")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://youtube-dl.org/downloads/latest/"
                                   "youtube-dl-" version ".tar.gz"))
               (sha256
                (base32
-                "0zvgb1b5kzd2y97rvynxf7qvz3narllf1m26xsph1zll1zb6q47v"))))
+                "0ws2nsvn0qlnnyxz9g95ffygscfmg5npzmwbq8iyyi6b2njsb0cn"))
+              (snippet
+               '(begin
+                  ;; Delete the pre-generated files, except for the man page
+                  ;; which requires 'pandoc' to build.
+                  (for-each delete-file '("youtube-dl"
+                                          ;;pandoc is needed to generate
+                                          ;;"youtube-dl.1"
+                                          "youtube-dl.bash-completion"
+                                          "youtube-dl.fish"
+                                          "youtube-dl.zsh"))
+                  #t))))
     (build-system python-build-system)
     (arguments
      ;; The problem here is that the directory for the man page and completion
@@ -2217,6 +2236,16 @@ To load this plugin, specify the following option when starting mpv:
                         (("\\.get\\('ffmpeg_location'\\)" match)
                          (format #f "~a or '~a'" match (which "ffmpeg"))))
                       #t))
+                  (add-before 'build 'build-generated-files
+                    (lambda _
+                      ;; Avoid the make targets that require pandoc.
+                      (invoke "make"
+                              "PYTHON=python"
+                              "youtube-dl"
+                              ;;"youtube-dl.1"   ; needs pandoc
+                              "youtube-dl.bash-completion"
+                              "youtube-dl.zsh"
+                              "youtube-dl.fish")))
                   (add-before 'install 'fix-the-data-directories
                     (lambda* (#:key outputs #:allow-other-keys)
                       (let ((prefix (assoc-ref outputs "out")))
@@ -2240,6 +2269,8 @@ To load this plugin, specify the following option when starting mpv:
                         (copy-file "youtube-dl.zsh"
                                    (string-append zsh "/_youtube-dl"))
                         #t))))))
+    (native-inputs
+     `(("zip" ,zip)))
     (inputs
      `(("ffmpeg" ,ffmpeg)))
     (synopsis "Download videos from YouTube.com and other sites")
@@ -2387,7 +2418,7 @@ audio, images) from the Web.  It can use either mpv or vlc for playback.")
 (define-public youtube-viewer
   (package
     (name "youtube-viewer")
-    (version "3.7.9")
+    (version "3.8.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2396,7 +2427,7 @@ audio, images) from the Web.  It can use either mpv or vlc for playback.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "16p0sa91h0zpqdpqmy348g6b9qj5f6qrbzrljn157vk00cg6mx18"))))
+                "16gskhzkvgzhfb89zqfmvz7kmhjsyc38f2dl86ksal4p69kn8j3g"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-build" ,perl-module-build)))
@@ -2845,14 +2876,14 @@ and custom quantization matrices.")
 (define-public streamlink
   (package
     (name "streamlink")
-    (version "1.4.1")
+    (version "1.7.0")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "streamlink" version))
         (sha256
          (base32
-          "1s458k8z1lv0w8i82sxs8dys66fwm4yr9j1m7fzp7r0piz8phcpd"))))
+          "0ymqxzpwk7mr77w0dnnv7dj63d46q7cl1l4vj9llgn8jfaj64ypq"))))
     (build-system python-build-system)
     (home-page "https://github.com/streamlink/streamlink")
     (native-inputs
@@ -3047,7 +3078,7 @@ be used for realtime video capture via Linux-specific APIs.")
 (define-public obs
   (package
     (name "obs")
-    (version "26.0.2")
+    (version "26.1.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3056,7 +3087,7 @@ be used for realtime video capture via Linux-specific APIs.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1d502f80whh686mvq0yn6zpa5nvmnlzxwp5sjz43vpbbvhpbrdqj"))))
+                "0p8wdzm9imn3s17arr206sz92g4pkacfcpfbwvhvgkrrs4w000bx"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
@@ -3133,19 +3164,29 @@ present in modern GPUs.")
 (define-public vdpauinfo
   (package
     (name "vdpauinfo")
-    (version "1.0")
+    (version "1.4")
     (source
       (origin
-        (method url-fetch)
-        (uri (string-append "https://secure.freedesktop.org/~aplattner/vdpau/"
-                            name "-" version ".tar.gz"))
+        (method git-fetch)
+        (uri (git-reference
+              (url "https://gitlab.freedesktop.org/vdpau/vdpauinfo")
+              (commit version)))
+        (file-name (git-file-name name version))
         (sha256
-         (base32
-          "1i2b0k9h8r0lnxlrkgqzmrjakgaw3f1ygqqwzx8w6676g85rcm20"))))
+         (base32 "0s84bavxr39w0r7zfaac7kpbfsg88hgymqyzcr0yvbj1yry3liz2"))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'bootstrap
+           ;; ./autogen.sh runs ./configure too soon.
+           (lambda _
+             (invoke "autoreconf" "-fiv"))))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("libx11" ,libx11)))
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libx11" ,libx11)
+       ("pkg-config" ,pkg-config)))
     (propagated-inputs
      `(("libvdpau" ,libvdpau)))
     (home-page "https://wiki.freedesktop.org/www/Software/VDPAU/")
@@ -4430,7 +4471,7 @@ video from a Wayland session.")
 (define-public gaupol
   (package
     (name "gaupol")
-    (version "1.7")
+    (version "1.8")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4439,7 +4480,7 @@ video from a Wayland session.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1cp0ka8hzma1dxiisdhl2fznxklj2pl63vkdqcd91lrblghdj6x9"))))
+                "00wxdyja0m6l3yrynjgapa010lkwxpkv1xnnjbmrwi4ayhh5l3gg"))))
     (build-system python-build-system)
     (native-inputs
      `(("gettext" ,gettext-minimal)
@@ -4562,7 +4603,7 @@ transcode or reformat the videos in any way, producing perfect backups.")
 (define-public svt-av1
   (package
     (name "svt-av1")
-    (version "0.8.5")
+    (version "0.8.6")
     (source
      (origin
        (method git-fetch)
@@ -4571,7 +4612,7 @@ transcode or reformat the videos in any way, producing perfect backups.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1gfxdmdql090p7c8ln1z344g467l41p45287lmwy590hv8gw6bfg"))))
+        (base32 "1wzamg89azi1f93wxvdy7silsgklckc754ca066k33drvyacicyw"))))
     (build-system cmake-build-system)
     ;; SVT-AV1 only supports Intel-compatible CPUs.
     (supported-systems '("x86_64-linux" "i686-linux"))
@@ -4627,7 +4668,7 @@ result in several formats:
 (define-public rav1e
   (package
     (name "rav1e")
-    (version "0.3.3")
+    (version "0.3.4")
     (source
       (origin
         (method url-fetch)
@@ -4636,17 +4677,18 @@ result in several formats:
          (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
-          "053bh8hc6jj81ydq4gcak01b0ady59hvkl7d87im3y8nafg7xzb4"))))
+          "1mx6jlx2rdhmyh68h9h34kn9ssa7lv0y97j8fd9qm7qhs2q1n0cj"))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-inputs
-       (("rust-aom-sys" ,rust-aom-sys-0.1)
+       (("rust-aom-sys" ,rust-aom-sys-0.2)
         ("rust-arbitrary" ,rust-arbitrary-0.2)
         ("rust-arg-enum-proc-macro" ,rust-arg-enum-proc-macro-0.3)
         ("rust-arrayvec" ,rust-arrayvec-0.5)
         ("rust-backtrace" ,rust-backtrace-0.3)
         ("rust-bitstream-io" ,rust-bitstream-io-0.8)
         ("rust-byteorder" ,rust-byteorder-1)
+        ("rust-cc" ,rust-cc-1)
         ("rust-cfg-if" ,rust-cfg-if-0.1)
         ("rust-clap" ,rust-clap-2)
         ("rust-console" ,rust-console-0.11)
@@ -4658,6 +4700,7 @@ result in several formats:
         ("rust-ivf" ,rust-ivf-0.1)
         ("rust-libc" ,rust-libc-0.2)
         ("rust-log" ,rust-log-0.4)
+        ("rust-nasm-rs" ,rust-nasm-rs-0.2)
         ("rust-noop-proc-macro" ,rust-noop-proc-macro-0.2)
         ("rust-num-derive" ,rust-num-derive-0.3)
         ("rust-num-traits" ,rust-num-traits-0.2)
@@ -4666,17 +4709,15 @@ result in several formats:
         ("rust-rand-chacha" ,rust-rand-chacha-0.2)
         ("rust-rayon" ,rust-rayon-1)
         ("rust-rust-hawktracer" ,rust-rust-hawktracer-0.7)
+        ("rust-rustc-version" ,rust-rustc-version-0.2)
         ("rust-scan-fmt" ,rust-scan-fmt-0.2)
         ("rust-serde" ,rust-serde-1)
         ("rust-signal-hook" ,rust-signal-hook-0.1)
         ("rust-simd-helpers" ,rust-simd-helpers-0.1)
         ("rust-thiserror" ,rust-thiserror-1)
         ("rust-toml" ,rust-toml-0.5)
-        ("rust-y4m" ,rust-y4m-0.5)
-        ("rust-cc" ,rust-cc-1)
-        ("rust-nasm-rs" ,rust-nasm-rs-0.1)
-        ("rust-rustc-version" ,rust-rustc-version-0.2)
-        ("rust-vergen" ,rust-vergen-3.1))
+        ("rust-vergen" ,rust-vergen-3.1)
+        ("rust-y4m" ,rust-y4m-0.5))
        #:cargo-development-inputs
        (("rust-assert-cmd" ,rust-assert-cmd-1)
         ("rust-criterion" ,rust-criterion-0.3)
@@ -4886,3 +4927,40 @@ BBC iPlayer output.")
 includes @code{dvdxchap} tool for extracting chapter information from DVD.")
     (license license:gpl2)
     (home-page "https://www.bunkus.org/videotools/ogmtools/")))
+
+(define-public libcaption
+  (package
+    (name "libcaption")
+    (version "0.7")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/szatmary/libcaption")
+                     (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "16mhw8wpl7wdjj4n7rd1c294p1r8r322plj7z91crla5aah726rq"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f ; Cannot figure out how to run the unit tests
+       #:configure-flags '("-DENABLE_RE2C=ON")))
+    (native-inputs
+     `(("re2c" ,re2c)))
+    (synopsis "CEA608 / CEA708 closed-caption codec")
+    (description "Libcaption creates and parses closed-caption data,
+providing an encoder / decoder for the EIA608 and CEA708 closed-caption
+standards.
+
+608 support is currently limited to encoding and decoding the necessary control
+and preamble codes as well as support for the Basic North American, Special
+North American and Extended Western European character sets.
+
+708 support is limited to encoding the 608 data in NTSC field 1 user data type
+structure.
+
+In addition, utility functions to create h.264 SEI (Supplementary enhancement
+information) NALUs (Network Abstraction Layer Unit) for inclusion into an h.264
+elementary stream are provided.")
+    (home-page "https://github.com/szatmary/libcaption")
+    (license license:expat)))

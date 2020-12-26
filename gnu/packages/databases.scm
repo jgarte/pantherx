@@ -1206,6 +1206,18 @@ pictures, sounds, or video.")
 
 (define-public postgresql-10 postgresql)
 
+(define-public postgresql-13
+  (package
+    (inherit postgresql)
+    (version "13.1")
+    (source (origin
+              (inherit (package-source postgresql))
+              (uri (string-append "https://ftp.postgresql.org/pub/source/v"
+                                  version "/postgresql-" version ".tar.bz2"))
+              (sha256
+               (base32
+                "07z6zwr58dckaa97yl9ml240z83d1lhgaxw9aq49i8lsp21mqd0j"))))))
+
 (define-public postgresql-11
   (package
     (inherit postgresql)
@@ -2340,7 +2352,25 @@ database.")
              (chdir "libraries/liblmdb")
              (substitute* "Makefile"
                (("/usr/local") (assoc-ref outputs "out")))
-            #t)))))
+            #t))
+         (add-after 'install 'create-pkg-config-file
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (mkdir-p (string-append out "/lib/pkgconfig"))
+               (with-output-to-file (string-append out "/lib/pkgconfig/liblmdb.pc")
+                 (lambda _
+                   (format #t "prefix=~a~@
+                           exec_prefix=~a~@
+                           libdir=~a/lib~@
+                           includedir=~a/include~@
+                           ~@
+                           Name: liblmdb~@
+                           Version: ~a~@
+                           Description: Lightning Memory-Mapped Database library~@
+                           Libs: -L${libdir} -llmdb~@
+                           Cflags: -I${includedir}~%"
+                           out out out out ,version)))
+                 #t))))))
     (home-page "https://symas.com/lmdb/")
     (synopsis "Lightning Memory-Mapped Database library")
     (description

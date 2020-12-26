@@ -42,6 +42,7 @@
 ;;; Copyright © 2020 Gabriel Arazas <foo.dogsquared@gmail.com>
 ;;; Copyright © 2020 James Smith <jsubuntuxp@disroot.org>
 ;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
+;;; Copyright © 2020 Zheng Junjie <873216071@qq.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -508,28 +509,31 @@ following the mouse.")
   (package
     (name "pixman")
     (version "0.38.4")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append
-                    "https://www.cairographics.org/releases/pixman-"
-                    version ".tar.gz"))
-              (sha256
-               (base32
-                "1ryxzdf048x7wsx4dlvrr1p00gzwfs7lybnhgc7ygbj0dvyxcrns"))
-              (patches (search-patches "pixman-CVE-2016-5296.patch"))))
+    (source
+     (origin
+       (method url-fetch)
+       (uri
+        (string-append
+         "https://www.cairographics.org/releases/pixman-"
+         version ".tar.gz"))
+       (sha256
+        (base32 "1ryxzdf048x7wsx4dlvrr1p00gzwfs7lybnhgc7ygbj0dvyxcrns"))
+       (patches
+        (search-patches
+         "pixman-CVE-2016-5296.patch"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--disable-static")))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
     (inputs
      `(("libpng" ,libpng)
        ("zlib" ,zlib)))
-    (native-inputs
-     `(("pkg-config" ,pkg-config)))
-    (home-page "http://www.pixman.org/")
     (synopsis "Low-level pixel manipulation library")
     (description "Pixman is a low-level software library for pixel
 manipulation, providing features such as image compositing and trapezoid
 rasterisation.")
+    (home-page "http://www.pixman.org/")
     (license license:x11)))
 
 (define-public libdrm
@@ -2492,7 +2496,7 @@ create layout indicator widgets.")
 (define-public j4-dmenu-desktop
   (package
     (name "j4-dmenu-desktop")
-    (version "2.17")
+    (version "2.18")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2501,7 +2505,7 @@ create layout indicator widgets.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0v23fimkn83dcm5p53y2ymhklff3kwppxhf75sm8xmswrzkixpgc"))))
+                "1gxpgifzy0hnpd0ymw3r32amzr32z3bgb90ldjzl438p6h1q0i26"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("catch2" ,catch-framework2)))
@@ -2615,3 +2619,43 @@ and execute @file{.desktop} files of the Application type.")
      "@command{sx} is a simple alternative to both @command{xinit} and
 @command{startx} for starting an Xorg server.")
     (license license:x11)))
+
+(define-public hsetroot
+  (package
+    (name "hsetroot")
+    (version "1.0.5")
+    (home-page "https://github.com/himdel/hsetroot")
+    (source (origin
+              (method git-fetch)
+              (file-name (git-file-name name version))
+              (uri (git-reference
+                    (url home-page)
+                    (commit version)))
+              (sha256
+               (base32
+                "1jbk5hlxm48zmjzkaq5946s58rqwg1v1ds2sdyd2ba029hmvr722"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f
+       #:make-flags
+       (list
+        "CC=gcc"
+        (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (add-before 'install 'mkdir-install-path
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (mkdir-p (string-append out "/bin"))))))))
+    (inputs
+     `(("libx11" ,libx11)
+       ("imlib2" ,imlib2)
+       ("libxinerama" ,libxinerama)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (synopsis "Imlib2-based wallpaper changer")
+    (description
+     "The @command{hsetroot} command composes wallpapers for X.
+This package is the fork of hsetroot by Hyriand.")
+    (license license:gpl2+)))
