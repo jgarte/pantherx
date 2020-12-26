@@ -55,6 +55,7 @@
 ;;; Copyright © 2020 Trevor Hass <thass@okstate.edu>
 ;;; Copyright © 2020 Leo Prikler <leo.prikler@student.tugraz.at>
 ;;; Copyright © 2020 Lu hux <luhux@outlook.com>
+;;; Copyright © 2020 Tomás Ortín Fernández <tomasortin@mailbox.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -792,7 +793,7 @@ high a score as possible.")
 (define-public cataclysm-dda
   (package
     (name "cataclysm-dda")
-    (version "0.E-2")
+    (version "0.E-3")
     (source
      (origin
        (method git-fetch)
@@ -800,7 +801,7 @@ high a score as possible.")
              (url "https://github.com/CleverRaven/Cataclysm-DDA")
              (commit version)))
        (sha256
-        (base32 "15l6w6lxays7qmsv0ci2ry53asb9an9dh7l7fc13256k085qcg68"))
+        (base32 "108cs6vp99qmqqfnmczad0xjgcl82bypm5xszwnlfcswdsrfs4da"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -1217,7 +1218,7 @@ effects and music to make a completely free game.")
        ("sdl-image" ,sdl-image)
        ("sdl-mixer" ,sdl-mixer)
        ("zlib" ,zlib)))
-    (home-page "http://www.freedroid.org/")
+    (home-page "https://www.freedroid.org/")
     (synopsis "Isometric role-playing game against killer robots")
     (description
      "Freedroid RPG is an @dfn{RPG} (Role-Playing Game) with isometric graphics.
@@ -3816,7 +3817,7 @@ falling, themeable graphics and sounds, and replays.")
 (define-public wesnoth
   (package
     (name "wesnoth")
-    (version "1.14.14")
+    (version "1.14.15")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/wesnoth/wesnoth-"
@@ -3825,7 +3826,7 @@ falling, themeable graphics and sounds, and replays.")
                                   "wesnoth-" version ".tar.bz2"))
               (sha256
                (base32
-                "1l7mdxn4kw938qz824057rqh99b7y9439a54s64n1xz95w77lp0r"))))
+                "05iapxj3nzaqh10y42yq1jf7spxgm4iwjw4qj1c4lnb25xp4mc2h"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ;no check target
@@ -3956,14 +3957,14 @@ world}, @uref{http://evolonline.org, Evol Online} and
 (define openttd-engine
   (package
     (name "openttd-engine")
-    (version "1.10.0")
+    (version "1.10.3")
     (source
      (origin (method url-fetch)
              (uri (string-append "https://cdn.openttd.org/openttd-releases/"
                                  version "/openttd-" version "-source.tar.xz"))
              (sha256
               (base32
-               "0lz2y2rjc23k0d97y65cqhy2splw9cmrbvhgz0iqps8xkan1m8hv"))))
+               "0fxmfz1mm95a2x0rnzfff9wb8q57w0cvsdd0z7agdcbyakph25n1"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f              ; no "check" target
@@ -5570,7 +5571,7 @@ for Un*x systems with X11.")
 (define-public freeciv
   (package
    (name "freeciv")
-   (version "2.6.2")
+   (version "2.6.2.1")
    (source
     (origin
      (method url-fetch)
@@ -5582,7 +5583,7 @@ for Un*x systems with X11.")
                   (version-major+minor version) "/" version
                   "/freeciv-" version ".tar.bz2")))
      (sha256
-      (base32 "13vc2xg1cf19rhbnr7k38b56b2hdapqymq5vma1l69kn7hyyz0b1"))))
+      (base32 "0pjqnwpxsirhyf5c4f1b9gxkqah0213wqaynklq84mahq41sq15x"))))
    (build-system gnu-build-system)
    (inputs
     `(("curl" ,curl)
@@ -6884,8 +6885,9 @@ making Yamagi Quake II one of the most solid Quake II implementations available.
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/jubalh/nudoku.git")
+             (url "https://github.com/jubalh/nudoku")
              (commit version)))
+       (file-name (git-file-name name version))
        (sha256
         (base32 "12v00z3p0ymi8f3w4b4bgl4c76irawn3kmd147r0ap6s9ssx2q6m"))))
     (build-system gnu-build-system)
@@ -7925,7 +7927,7 @@ their own levels.")
 (define-public libmanette
   (package
     (name "libmanette")
-    (version "0.2.5")
+    (version "0.2.6")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/libmanette/"
@@ -7933,7 +7935,7 @@ their own levels.")
                                   "libmanette-" version ".tar.xz"))
               (sha256
                (base32
-                "0awsl0d34k3w18jdiyh377r7qi00s4kmh5gc97vx9jy0h22f01l0"))))
+                "1b3bcdkk5xd5asq797cch9id8692grsjxrc1ss87vv11m1ck4rb3"))))
     (build-system meson-build-system)
     (native-inputs
      `(("glib" ,glib "bin")             ; for glib-compile-resources
@@ -11955,6 +11957,33 @@ computer opponents or against real players online.")
      "Pilot your ship inside a planet to find and rescue the colonists trapped
 inside the Zenith Colony.")
     (license license:gpl3+)))
+
+(define-public cgoban
+  (package
+    (name "cgoban")
+    (version "1.9.14")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/cgoban1/cgoban1/"
+                           version "/cgoban-" version ".tar.gz"))
+       (sha256
+        (base32 "0qlvkiaglqq0izfph3l04mp4rqqqm9ks6rcsrmzrggw9x706z2iv"))))
+    (build-system gnu-build-system)
+    (inputs
+     `(("libx11" ,libx11)
+       ("libxt" ,libxt)
+       ("xorgproto" ,xorgproto)))
+    (home-page "http://cgoban1.sourceforge.net/")
+    (synopsis "Go client for X11")
+    (description "Provides a large set of Go-related services for X11:
+@itemize
+@item Local games with precise implementation of the Chinese and Japanese rulesets
+@item Edition and visualization of SGF files-Connection to the NNGS or IGS Go servers
+@item Bridge to Go modem protocol, allowing to play against Go modem-capable AIs
+such as GnuGo.
+@end itemize")
+    (license license:gpl2+)))
 
 (define-public paperview
   (let ((commit "9f8538eb6734c76877b878b8f1e52587f2ae19e6")

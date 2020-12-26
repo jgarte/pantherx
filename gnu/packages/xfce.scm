@@ -38,6 +38,7 @@
   #:use-module (gnu packages cdrom)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages freedesktop)
+  #:use-module (gnu packages gettext)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages gstreamer)
@@ -53,7 +54,9 @@
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages polkit)
   #:use-module (gnu packages popt)
+  #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages pulseaudio)
+  #:use-module (gnu packages search)
   #:use-module (gnu packages web)
   #:use-module (gnu packages wm)
   #:use-module (gnu packages xml)
@@ -62,6 +65,7 @@
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
+  #:use-module (guix build-system python)
   #:use-module (guix build-system trivial)
   #:use-module (guix download)
   #:use-module (guix git-download)
@@ -202,6 +206,64 @@ storage system.")
      "Libxfce4ui is the replacement of the old libxfcegui4 library.  It is used
 to share commonly used Xfce widgets among the Xfce applications.")
     (license lgpl2.0+)))
+
+(define-public catfish
+  (package
+    (name "catfish")
+    (version "1.4.13")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://archive.xfce.org/src/apps/"
+                                  "catfish/" (version-major+minor version)
+                                  "/catfish-" version ".tar.bz2"))
+              (sha256
+               (base32
+                "0fg89946z6n8njxn4mv29jksw8yavg8vypsljn9031pjwl3fmh2q"))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-command-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "catfish/CatfishSearchEngine.py"
+               (("'which'") (string-append "'" (which "which") "'")))
+             (substitute* "catfish/CatfishWindow.py"
+               (("xdg-mime") (which "xdg-mime"))
+               (("xdg-open") (which "xdg-open")))))
+         ;; setup.py script does not support one of the Python build
+         ;; system's default flags, "--single-version-externally-managed".
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (invoke "python" "setup.py" "install"
+                     (string-append "--prefix=" (assoc-ref outputs "out"))
+                     "--root=/")))
+         (add-after 'install 'wrap-program
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (wrap-program (string-append out "/bin/catfish")
+                 `("PYTHONPATH" = (,(getenv "PYTHONPATH")))
+                 `("GI_TYPELIB_PATH" = (,(getenv "GI_TYPELIB_PATH"))))))))
+       #:tests? #f))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("python-distutils-extra" ,python-distutils-extra)
+       ("intltool" ,intltool)))
+    (inputs
+     `(("which" ,which)
+       ("xdg-utils" ,xdg-utils)))
+    (propagated-inputs
+     `(("gtk+" ,gtk+)
+       ("python-dbus" ,python-dbus)
+       ("python-pexpect" ,python-pexpect)
+       ("python-pycairo" ,python-pycairo)
+       ("python-pygobject" ,python-pygobject)))
+    (home-page "https://docs.xfce.org/apps/catfish/start")
+    (synopsis "File searching tool for Xfce")
+    (description
+     "Catfish is a file searching tool for Linux and Unix.  The interface is
+intentionally lightweight and simple, using only GTK+ 3.  You can configure
+it to your needs by using several command line options.")
+    (license gpl2+)))
 
 (define-public elementary-xfce-icon-theme
   (package
@@ -531,11 +593,21 @@ keys for controlling the audio volume.")
     (inputs
      `(("xfce4-panel" ,xfce4-panel)
        ("garcon" ,garcon)
+       ("gettext" ,gettext-minimal)
        ("exo" ,exo)
        ("gtk+" ,gtk+)
        ("libxfce4ui" ,libxfce4ui)))
     (arguments
-      `(#:tests? #f)) ; no tests
+     `(#:tests? #f                      ; no tests
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-shell-script
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* (string-append "panel-plugin/xfce4-popup-whiskermenu.in")
+               (("@CMAKE_INSTALL_FULL_BINDIR@")
+                (string-append (assoc-ref inputs "xfce4-panel") "/bin"))
+               (("gettext") (which "gettext")))
+             #t)))))
     (home-page "https://goodies.xfce.org/projects/panel-plugins/xfce4-whiskermenu-plugin")
     (synopsis "Application menu panel plugin for Xfce")
     (description
@@ -853,7 +925,7 @@ devices and folders.")
 (define-public xfce4-terminal
   (package
     (name "xfce4-terminal")
-    (version "0.8.9.2")
+    (version "0.8.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/apps/" name "/"
@@ -861,7 +933,7 @@ devices and folders.")
                                   name "-" version ".tar.bz2"))
               (sha256
                (base32
-                "1szfmvx4gbwcqag7fnlqh96i9cmvs6xm1yrdbnlzh3imdpw3p8lv"))))
+                "1irxyg5vp6vyd9vxdqav6jhchfkmhlqq511386h644p0k30kfcvs"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -1138,7 +1210,7 @@ of data to either CD/DVD/BD.")
 (define-public mousepad
   (package
     (name "mousepad")
-    (version "0.4.2")
+    (version "0.5.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/apps/mousepad/"
@@ -1146,7 +1218,7 @@ of data to either CD/DVD/BD.")
                                   version ".tar.bz2"))
               (sha256
                (base32
-                "1myy7954r1a30dk7inwy7kwki7zvfbnnsc3a8swk72vzrbgjmh44"))))
+                "10m52yrh89j7xbr299m9f0mqrhqz95lp3qi5zbqd0bg839xjfbix"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '(;; Use the GSettings keyfile backend rather than
@@ -1180,7 +1252,7 @@ of data to either CD/DVD/BD.")
 (define-public xfce4-screenshooter
   (package
    (name "xfce4-screenshooter")
-   (version "1.9.7")
+   (version "1.9.8")
    (source (origin
             (method url-fetch)
             (uri (string-append "https://archive.xfce.org/src/apps/"
@@ -1190,7 +1262,7 @@ of data to either CD/DVD/BD.")
                                 version ".tar.bz2"))
             (sha256
              (base32
-              "1lbhl0sh0ayv3zhgzcd9hj9q9m3lnyv7vlglfqrl39i3782n2w8g"))))
+              "0l1cyrb4ym7d95yliyl8gn701wvnr734v622yyy3zdnk99hrs0kg"))))
    (build-system gnu-build-system)
    (native-inputs
     `(("pkg-config" ,pkg-config)
@@ -1405,7 +1477,7 @@ and a calendar appears when you left-click on it.")
 (define-public xfce4-calculator-plugin
   (package
    (name "xfce4-calculator-plugin")
-   (version "0.7.0")
+   (version "0.7.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/panel-plugins/"
@@ -1414,7 +1486,7 @@ and a calendar appears when you left-click on it.")
                                   "/xfce4-calculator-plugin-" version ".tar.bz2"))
               (sha256
                (base32
-                "1scx7z5ijg2fpcqrzv1nxhpj9vrqic7pyghig70f2n5hgaaanl3v"))))
+                "10fsb9pyr2cr9dj1k3n96dq6g02g61g5y4z4jzfvskpgqc1nl0g4"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("intltool" ,intltool)
@@ -1552,7 +1624,7 @@ be clicked to open the chosen mount point.")
 (define-public xfce4-genmon-plugin
   (package
    (name "xfce4-genmon-plugin")
-   (version "4.0.2")
+   (version "4.1.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://archive.xfce.org/src/panel-plugins/"
@@ -1561,7 +1633,7 @@ be clicked to open the chosen mount point.")
                                   "/xfce4-genmon-plugin-" version ".tar.bz2"))
               (sha256
                (base32
-                "1ai3pwgv61nv7i2dyrvncnc63r8kdjbkp40vp51vzak1dx924v15"))))
+                "0zafr1jrw87l7h4z3wp88gj7n5mcygm22aw42vdpnp2l8x5nn9fi"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("intltool" ,intltool)

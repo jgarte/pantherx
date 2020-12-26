@@ -26,6 +26,7 @@
 ;;; Copyright © 2020 Mason Hock <chaosmonk@riseup.net>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
+;;; Copyright © 2020 Robert Karszniewicz <avoidr@posteo.de>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1202,7 +1203,7 @@ messenger protocol.")
 (define-public utox
   (package
    (name "utox")
-   (version "0.17.1")
+   (version "0.18.0")
    (source
     (origin
      (method git-fetch)
@@ -1213,7 +1214,7 @@ messenger protocol.")
      (file-name (string-append name "-" version "-checkout"))
      (sha256
       (base32
-       "17kwqw24iqljp2icih9k6ikx12gzr8zzqr8y5h35bg8m5s8pasq5"))))
+       "0d0mwgxffg4nhai62irf8lyhd1whp9s4k892rsmqz1sra3pbjcg9"))))
    (build-system cmake-build-system)
    (arguments
     `(#:configure-flags '("-DENABLE_TESTS=on")
@@ -1252,9 +1253,9 @@ messenger protocol.")
       ("pkg-config" ,pkg-config)))
    (synopsis "Lightweight Tox client")
    (description
-    "Utox is a lightweight Tox client.  Tox is a distributed and secure
+    "uTox is a lightweight Tox client.  Tox is a distributed and secure
 instant messenger with audio and video chat capabilities.")
-   (home-page "http://utox.org/")
+   (home-page "https://github.com/uTox/uTox")
    (license license:gpl3)))
 
 (define-public qtox
@@ -2287,51 +2288,48 @@ Telegram messenger.")
     (license license:gpl2+)))
 
 (define-public tdlib
-  (let ((commit "f45d80fe16f99d112d545b7cd74ce46342fe3437")
-        (revision "0")
-        (version "1.6.6"))
-    (package
-      (name "tdlib")
-      (version (git-version version revision commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://github.com/tdlib/td")
-                      (commit commit)))
-                (sha256
-                 (base32
-                  "1q8zw26mqhpdzvqbgc7fmn8rzwm5amb8m7s6impin4342wj7h6nr"))
-                (file-name (git-file-name name version))))
-      (build-system cmake-build-system)
-      (arguments
-       `(#:tests? #t
-         #:configure-flags
-         (list "-DCMAKE_BUILD_TYPE=Release"
-               "-DTD_ENABLE_LTO=OFF") ; FIXME: Get LTO to work.
-         #:phases
-         (modify-phases %standard-phases
-           (add-after 'unpack 'remove-failing-tests
-             (lambda _
-               (substitute* "test/CMakeLists.txt"
-                 ;; The test cases are compiled into a distinct binary
-                 ;; which uses mtproto.cpp to attempt to connect to
-                 ;; a remote server. Removing this file from the sources
-                 ;; list disables those specific test cases.
-                 (("\\$\\{CMAKE_CURRENT_SOURCE_DIR\\}/mtproto.cpp") ""))
-               #t)))))
-      (native-inputs
-       `(("gperf" ,gperf)
-         ("openssl" ,openssl)
-         ("zlib" ,zlib)
-         ("php" ,php)
-         ("doxygen" ,doxygen)))
-      (synopsis "Cross-platform library for building Telegram clients")
-      (description "Tdlib is a cross-platform library for creating custom
+  (package
+    (name "tdlib")
+    (version "1.7.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/tdlib/td")
+                    (commit (string-append "v" version))))
+              (sha256
+               (base32
+                "0dfir57ljcn98mkg061c5642qb93wh2lm1n4nngpl3na9vvfk75i"))
+              (file-name (git-file-name name version))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #t
+       #:configure-flags
+       (list "-DCMAKE_BUILD_TYPE=Release"
+             "-DTD_ENABLE_LTO=OFF") ; FIXME: Get LTO to work.
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'remove-failing-tests
+           (lambda _
+             (substitute* "test/CMakeLists.txt"
+               ;; The test cases are compiled into a distinct binary
+               ;; which uses mtproto.cpp to attempt to connect to
+               ;; a remote server. Removing this file from the sources
+               ;; list disables those specific test cases.
+               (("\\$\\{CMAKE_CURRENT_SOURCE_DIR\\}/mtproto.cpp") ""))
+             #t)))))
+    (native-inputs
+     `(("gperf" ,gperf)
+       ("openssl" ,openssl)
+       ("zlib" ,zlib)
+       ("php" ,php)
+       ("doxygen" ,doxygen)))
+    (synopsis "Cross-platform library for building Telegram clients")
+    (description "Tdlib is a cross-platform library for creating custom
 Telegram clients following the official Telegram API.  It can be easily used
 from almost any programming language with a C-FFI and features first-class
 support for high performance Telegram Bot creation.")
-      (home-page "https://core.telegram.org/tdlib")
-      (license license:boost1.0))))
+    (home-page "https://core.telegram.org/tdlib")
+    (license license:boost1.0)))
 
 (define-public purple-mm-sms
   (package

@@ -228,7 +228,7 @@ a focus on simplicity and productivity.")
 (define-public mruby
   (package
     (name "mruby")
-    (version "2.0.0")
+    (version "2.1.2")
     (source
      (origin
        (method git-fetch)
@@ -238,7 +238,7 @@ a focus on simplicity and productivity.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1r6w1asjshff43ymdwa6xmrkggza99mi2kw88k7ic6ag2j81hcj5"))))
+         "0fhfv8pi7i8jn2vgk2n2rjnbnfa12nhj514v8i4k353n7q4pmkh3"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -5130,15 +5130,17 @@ across multiple CPU cores.")
 (define-public ruby-parser
   (package
     (name "ruby-parser")
-    (version "2.7.1.4")
+    (version "2.7.2.0")
     (source
      (origin
        (method url-fetch)
        (uri (rubygems-uri "parser" version))
        (sha256
         (base32
-         "1030znhvhkfn39svwbj6qn4xb6hgl94gnvg57k4d3r76f9bryqmn"))))
+         "1f7gmm60yla325wlnd3qkxs59qm2y0aan8ljpg6k18rwzrrfil6z"))))
     (build-system ruby-build-system)
+    (arguments
+     '(#:tests? #f)) ; tests not included in gem
     (native-inputs
      `(("bundler" ,bundler)
        ("ruby-cliver" ,ruby-cliver)
@@ -6342,14 +6344,14 @@ alternative to Marshal for Object serialization. ")
 (define-public ruby-pg
   (package
     (name "ruby-pg")
-    (version "1.1.4")
+    (version "1.2.3")
     (source
      (origin
        (method url-fetch)
        (uri (rubygems-uri "pg" version))
        (sha256
         (base32
-         "0fmnyxcyrvgdbgq7m09whgn9i8rwfybk0w8aii1nc4g5kqw0k2jy"))))
+         "13mfrysrdrh8cka1d96zm0lnfs59i5x2g6ps49r2kz5p3q81xrzj"))))
     (build-system ruby-build-system)
     (arguments
      '(#:test-target "spec"))
@@ -6978,7 +6980,7 @@ they match.")
 (define-public ruby-regexp-parser
   (package
     (name "ruby-regexp-parser")
-    (version "1.7.1")
+    (version "2.0.0")
     (source
      (origin
        (method git-fetch)               ;bin/test missing from gem
@@ -6988,7 +6990,7 @@ they match.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0dk9d4vpw31cc06s29fqyr1kq0kipym1mydifkcrnppvpl3pd53r"))))
+         "09ddxdwlml30q6j4rqf06bbjj1mwx00rs0bksnyblhv85anrqz3k"))))
     (build-system ruby-build-system)
     (arguments
      '(#:test-target "default"

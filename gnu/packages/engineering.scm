@@ -67,6 +67,7 @@
   #:use-module (gnu packages curl)
   #:use-module (gnu packages dejagnu)
   #:use-module (gnu packages digest)
+  #:use-module (gnu packages docbook)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages flex)
   #:use-module (gnu packages fontutils)
@@ -102,6 +103,7 @@
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
+  #:use-module (gnu packages pretty-print)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
@@ -849,7 +851,6 @@ The viewer can be used interactively with a REPL (for example Geiser in
 Emacs).")
       (license license:gpl3+))))
 
-;; TODO Add doc https://gitlab.com/kicad/services/kicad-doc/-/tree/master
 (define-public kicad
   (package
     (name "kicad")
@@ -899,6 +900,9 @@ Emacs).")
              #t)))))
     (native-search-paths
      (list (search-path-specification
+            (variable "KICAD")          ; to find kicad-doc
+            (files '("")))
+           (search-path-specification
             (variable "KICAD_TEMPLATE_DIR")
             (files '("share/kicad/template")))
            (search-path-specification
@@ -969,6 +973,46 @@ translations for KiCad.")
 
 (define-public kicad-i18l
   (deprecated-package "kicad-i18l" kicad-i18n))
+
+(define-public kicad-doc
+  (package
+    (name "kicad-doc")
+    (version "5.1.6")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://gitlab.com/kicad/services/kicad-doc.git")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "03kvss8a0xrjnfvkwymm0vfd7rn9ix7i926xdzz9jg9iycrjfj3g"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:configure-flags (list "-DBUILD_FORMATS=html")
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'build)
+         (add-before 'install 'set-perl-env
+           (lambda* (#:key inputs #:allow-other-keys)
+             (setenv "PERL5LIB"
+                     (string-append (assoc-ref inputs "perl-unicode-linebreak")
+                                    "/lib/perl5/site_perl" ":"
+                                    (getenv "PERL5LIB")))
+             #t))
+         (delete 'check))))
+    (native-inputs
+     `(("asciidoc" ,asciidoc)
+       ("gettext" ,gettext-minimal)
+       ("git" ,git-minimal)
+       ("perl" ,perl)
+       ("perl-unicode-linebreak" ,perl-unicode-linebreak)
+       ("po4a" ,po4a)
+       ("source-highlight" ,source-highlight)))
+    (home-page "https://kicad.org")
+    (synopsis "KiCad official documentation")
+    (description "This repository contains the official KiCad documentation.")
+    (license license:gpl3+)))
 
 (define-public kicad-symbols
   (package
@@ -1077,7 +1121,7 @@ the 'showing the effect of'-style of operation.")
 (define-public volk
   (package
     (name "volk")
-    (version "2.4.0")
+    (version "2.4.1")
     (source
      (origin
        (method git-fetch)
@@ -1087,7 +1131,7 @@ the 'showing the effect of'-style of operation.")
              (recursive? #t)))          ; for cpu_features git submodule
        (file-name (git-file-name name version))
        (sha256
-        (base32 "14y0988r5qi1h3yvkivx5ihccn8r15910lq30r8iy71ih190r5m9"))))
+        (base32 "1mkqiw0i2fbbsk46zvk8yv5swl7ifhq6y1dlfphq8dsmkvxckqby"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -1133,22 +1177,23 @@ use on a given system.")
 (define-public libredwg
   (package
     (name "libredwg")
-    (version "0.11")
+    (version "0.11.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://gnu/libredwg/libredwg-"
              version ".tar.xz"))
        (sha256
-        (base32 "1vd7ii32k5447z7k4w9s005hv1ffpj6dyf1w40x6c53qksrblny2"))))
+        (base32 "1xx6y6ckm4mzqln8y8lqf5frcn2b32ypc0d0h9dzpz6363zh7pdn"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags '("--disable-bindings")))
     (native-inputs
      `(("libxml2" ,libxml2)
        ("parallel" ,parallel)
+       ("perl" ,perl)
        ("pkg-config" ,pkg-config)
-       ("python" ,python)
+       ("python" ,python-wrapper)
        ("python-libxml2" ,python-libxml2)))
     (inputs
      `(("pcre2" ,pcre2)))
@@ -2434,7 +2479,7 @@ full programmatic control over your models.")
 (define-public freecad
   (package
     (name "freecad")
-    (version "0.18.4")
+    (version "0.18.5")
     (source
      (origin
        (method git-fetch)
@@ -2453,7 +2498,7 @@ full programmatic control over your models.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "170hk1kgrvsddrwykp24wyj0cha78zzmzbf50gn98x7ngqqs395s"))))
+         "0r31jzzkamf76l19fb175hhv48irk06fpi8ldxdlr31w8c1ix4aa"))))
     (build-system qt-build-system)
     (native-inputs
      `(("doxygen" ,doxygen)
@@ -2496,8 +2541,28 @@ full programmatic control over your models.")
        #:configure-flags
        (list
         "-DBUILD_QT5=ON"
-        (string-append "-DCMAKE_INSTALL_LIBDIR="
-                       (assoc-ref %outputs "out") "/lib"))
+        (string-append "-DCMAKE_INSTALL_LIBDIR=" (assoc-ref %outputs "out") "/lib")
+
+        (string-append "-DPYSIDE2UICBINARY="
+                       (assoc-ref %build-inputs "python-pyside-2-tools")
+                       "/bin/uic")
+        (string-append "-DPYSIDE2RCCBINARY="
+                       (assoc-ref %build-inputs "python-pyside-2-tools")
+                       "/bin/rcc")
+
+        "-DPYSIDE_LIBRARY=PySide2::pyside2"
+        (string-append
+         "-DPYSIDE_INCLUDE_DIR="
+         (assoc-ref %build-inputs "python-pyside-2") "/include;"
+         (assoc-ref %build-inputs "python-pyside-2") "/include/PySide2;"
+         (assoc-ref %build-inputs "python-pyside-2") "/include/PySide2/QtCore;"
+         (assoc-ref %build-inputs "python-pyside-2") "/include/PySide2/QtWidgets;"
+         (assoc-ref %build-inputs "python-pyside-2") "/include/PySide2/QtGui;")
+
+        "-DSHIBOKEN_LIBRARY=Shiboken2::libshiboken"
+        (string-append "-DSHIBOKEN_INCLUDE_DIR="
+                       (assoc-ref %build-inputs "python-shiboken-2")
+                       "/include/shiboken2"))
        #:phases
        (modify-phases %standard-phases
          (add-before 'configure 'restore-pythonpath

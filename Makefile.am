@@ -39,6 +39,7 @@ do_subst = $(SED)					\
   -e 's,[@]GUILE[@],$(GUILE),g'				\
   -e 's,[@]guilemoduledir[@],$(guilemoduledir),g'	\
   -e 's,[@]guileobjectdir[@],$(guileobjectdir),g'	\
+  -e 's,[@]abs_top_builddir[@],$(abs_top_builddir),g'	\
   -e 's,[@]localedir[@],$(localedir),g'
 
 scripts/guix: scripts/guix.in Makefile
@@ -126,6 +127,7 @@ MODULES =					\
   guix/build-system/android-ndk.scm		\
   guix/build-system/ant.scm			\
   guix/build-system/cargo.scm			\
+  guix/build-system/chicken.scm			\
   guix/build-system/clojure.scm			\
   guix/build-system/cmake.scm			\
   guix/build-system/dub.scm			\
@@ -175,6 +177,7 @@ MODULES =					\
   guix/build/download-nar.scm			\
   guix/build/cargo-build-system.scm		\
   guix/build/cargo-utils.scm			\
+  guix/build/chicken-build-system.scm		\
   guix/build/cmake-build-system.scm		\
   guix/build/dub-build-system.scm		\
   guix/build/dune-build-system.scm		\
@@ -319,6 +322,14 @@ MODULES +=					\
 
 endif HAVE_GUILE_SSH
 
+if HAVE_GUILE_AVAHI
+
+MODULES += 					\
+  guix/avahi.scm				\
+  guix/scripts/discover.scm
+
+endif HAVE_GUILE_AVAHI
+
 if BUILD_DAEMON_OFFLOAD
 
 MODULES +=					\
@@ -345,10 +356,15 @@ dist_noinst_DATA =				\
 AUX_FILES =						\
   gnu/packages/aux-files/chromium/master-preferences.json		\
   gnu/packages/aux-files/emacs/guix-emacs.el		\
-  gnu/packages/aux-files/linux-libre/5.9-arm.conf       \
-  gnu/packages/aux-files/linux-libre/5.9-arm64.conf     \
-  gnu/packages/aux-files/linux-libre/5.9-i686.conf      \
-  gnu/packages/aux-files/linux-libre/5.9-x86_64.conf    \
+  gnu/packages/aux-files/guix.vim			\
+  gnu/packages/aux-files/linux-libre/5.10-arm.conf	\
+  gnu/packages/aux-files/linux-libre/5.10-arm64.conf	\
+  gnu/packages/aux-files/linux-libre/5.10-i686.conf	\
+  gnu/packages/aux-files/linux-libre/5.10-x86_64.conf	\
+  gnu/packages/aux-files/linux-libre/5.9-arm.conf	\
+  gnu/packages/aux-files/linux-libre/5.9-arm64.conf	\
+  gnu/packages/aux-files/linux-libre/5.9-i686.conf	\
+  gnu/packages/aux-files/linux-libre/5.9-x86_64.conf	\
   gnu/packages/aux-files/linux-libre/5.4-arm.conf	\
   gnu/packages/aux-files/linux-libre/5.4-arm64.conf	\
   gnu/packages/aux-files/linux-libre/5.4-i686.conf	\

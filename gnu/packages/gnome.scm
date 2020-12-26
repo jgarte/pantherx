@@ -4680,6 +4680,14 @@ libxml to ease remote use of the RESTful API.")
        #:configure-flags '("-Dgtk_doc=true")
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'patch-docbook-xml
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((xmldoc (string-append (assoc-ref inputs "docbook-xml")
+                                          "/xml/dtd/docbook")))
+               (substitute* (find-files "docs/reference")
+                 (("http://.*/docbookx\\.dtd")
+                  (string-append xmldoc "/docbookx.dtd")))
+               #t)))
          (add-after 'unpack 'adjust-tests
            (lambda _
              ;; This test fails due to missing /etc/nsswitch.conf
@@ -4751,7 +4759,8 @@ libxml to ease remote use of the RESTful API.")
                (delete-file-recursively (string-append out "/share/gtk-doc"))
                #t))))))
     (native-inputs
-     `(("glib:bin" ,glib "bin")                   ; for glib-mkenums
+     `(("docbook-xml" ,docbook-xml-4.1.2)
+       ("glib:bin" ,glib "bin")                   ; for glib-mkenums
        ("gobject-introspection" ,gobject-introspection)
        ("gtk-doc" ,gtk-doc)
        ("intltool" ,intltool)
@@ -6448,7 +6457,7 @@ USB transfers with your high-level application or system daemon.")
 (define-public simple-scan
   (package
     (name "simple-scan")
-    (version "3.38.1")
+    (version "3.38.2")
     (source
      (origin
        (method url-fetch)
@@ -6456,7 +6465,7 @@ USB transfers with your high-level application or system daemon.")
                            (version-major+minor version) "/"
                            "simple-scan-" version ".tar.xz"))
        (sha256
-        (base32 "0grscz96bwj79ka4qvxh8h75avdx6824k8k38ylmaj6xbl6gi0hy"))))
+        (base32 "02sdkhxgr6i7iy481h4xavgaqd0a5dlsipzwrm4qd242jrr813d8"))))
     (build-system meson-build-system)
     ;; TODO: Fix icons in home screen, About dialogue, and scan menu.
     (arguments
@@ -6692,25 +6701,36 @@ of running programs and invoke methods on those interfaces.")
   (package
     (name "yelp-xsl")
     (version "3.34.2")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://gnome/sources/" name "/"
-                                  (version-major+minor version) "/"
-                                  name "-" version ".tar.xz"))
-              (sha256
-               (base32
-                "1bdpgkzawhqmw52l6zx8czzg1ndfgcf1p44m2bxjdpqkc4afcgqc"))))
+    (source
+     (origin
+       (method url-fetch)
+       (uri
+        (string-append "mirror://gnome/sources/" name "/"
+                       (version-major+minor version) "/"
+                       name "-" version ".tar.xz"))
+       (sha256
+        (base32 "1bdpgkzawhqmw52l6zx8czzg1ndfgcf1p44m2bxjdpqkc4afcgqc"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("gettext-minimal" ,gettext-minimal)
        ("itstool" ,itstool)
        ("xmllint" ,libxml2)))
-    (home-page "https://wiki.gnome.org/Apps/Yelp")
     (synopsis "XSL stylesheets for Yelp")
-    (description
-     "Yelp-xsl contains XSL stylesheets that are used by the yelp help browser
-to format Docbook and Mallard documents.")
-    (license license:gpl2+)))
+    (description "Yelp-XSL is a collection of programs and data files to help
+you build, maintain, and distribute documentation.  It provides XSLT stylesheets
+that can be built upon for help viewers and publishing systems.  These
+stylesheets output JavaScript and CSS content, and reference images
+provided by yelp-xsl. It also redistributes copies of the jQuery and
+jQuery.Syntax JavaScript libraries.")
+    (home-page "https://wiki.gnome.org/Apps/Yelp")
+    (license
+     (list
+      ;; XSLT
+      license:gpl2+
+      ;; Images
+      license:lgpl2.1+
+      ;; JavaScript
+      license:expat))))
 
 (define-public yelp
   (package
@@ -6750,31 +6770,32 @@ freedesktop.org help system specification.")
   (package
     (name "yelp-tools")
     (version "3.32.2")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://gnome/sources/" name "/"
-                                  (version-major+minor version) "/"
-                                  name "-" version ".tar.xz"))
-              (sha256
-               (base32
-                "1yg8f5g5wadhmy4yfd9yjhvd8vll4gq4l86ibp0b42qbxnsmcf0q"))))
+    (source
+     (origin
+       (method url-fetch)
+       (uri
+        (string-append "mirror://gnome/sources/" name "/"
+                       (version-major+minor version) "/"
+                       name "-" version ".tar.xz"))
+       (sha256
+        (base32 "1yg8f5g5wadhmy4yfd9yjhvd8vll4gq4l86ibp0b42qbxnsmcf0q"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("yelp-xsl" ,yelp-xsl)))
     (propagated-inputs
      ;; Needed by `yelp-build', `yelp-check' or 'yelp.m4'.
      `(("itstool" ,itstool)
        ("xmllint" ,libxml2)
        ("xsltproc" ,libxslt)))
-    (inputs
-     `(("yelp-xsl" ,yelp-xsl)))
-    (home-page "https://wiki.gnome.org/Apps/Yelp/Tools")
     (synopsis "Yelp documentation tools")
     (description
      "Yelp-tools is a collection of scripts and build utilities to help create,
 manage, and publish documentation for Yelp and the web.  Most of the heavy
 lifting is done by packages like yelp-xsl and itstool.  This package just
 wraps things up in a developer-friendly way.")
+    (home-page "https://wiki.gnome.org/Apps/Yelp/Tools")
     (license license:gpl2+)))
 
 (define-public libgee
@@ -10272,14 +10293,14 @@ views can be printed as PDF or PostScript files, or exported to HTML.")
 (define-public lollypop
   (package
     (name "lollypop")
-    (version "1.4.2")
+    (version "1.4.6")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://adishatz.org/lollypop/"
                            "lollypop-" version ".tar.xz"))
        (sha256
-        (base32 "1hfl68gkvqy5kxlmrsalz78mw1bs1yvqvy2rhg7pzgwiazsdvwzz"))))
+        (base32 "1hlahr50gsagx1ifcdk4yn43xps6w0vqn0gnd6xckfc7qmg1pgq7"))))
     (build-system meson-build-system)
     (arguments
      `(#:imported-modules
@@ -10309,7 +10330,8 @@ views can be printed as PDF or PostScript files, or exported to HTML.")
        ("gtk+:bin" ,gtk+ "bin")         ; For gtk-update-icon-cache
        ("pkg-config" ,pkg-config)))
     (inputs
-     `(("gobject-introspection" ,gobject-introspection)
+     `(("glib-networking" ,glib-networking)
+       ("gobject-introspection" ,gobject-introspection)
        ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
        ("gst-plugins-base" ,gst-plugins-base)
        ("libnotify" ,libnotify)
@@ -11484,7 +11506,7 @@ and toolbars.")
 (define-public setzer
   (package
     (name "setzer")
-    (version "0.3.6")
+    (version "0.3.8")
     (source
      (origin
        (method git-fetch)
@@ -11493,7 +11515,7 @@ and toolbars.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "118gip6bv4mcsq4nrai7kl0vmqqbyzpsd4ky9vhxb1x2cvg048s8"))))
+        (base32 "1f5qmkz4hzn54sh56z3hw8zrvg93xlz62ggzlzyg7vgsr83kpns9"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -11855,6 +11877,9 @@ libraries.  Applications do not need to be recompiled--or even restarted.")
                                "-Dplugin_clang=false"
                                "-Dplugin_flatpak=false"
                                "-Dplugin_glade=false"
+                               ;; XXX: This one has been shown not to work in
+                               ;;      <https://issues.guix.gnu.org/45272>
+                               "-Dplugin_jedi=false"
                                ;; ... except this one.
                                "-Dplugin_update_manager=false")
        #:phases
@@ -11915,7 +11940,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.23.0")
+    (version "0.24.0")
     (source
      (origin
        (method git-fetch)
@@ -11925,7 +11950,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1xh3qmf2pk80qxj528lajjcwg7mps72s1zz8cj388av58p8l3hyw"))))
+         "010p32zrim245y0l784yp0rasqcqlyr3lrxwl3r1876x83qhs6q3"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -11957,7 +11982,6 @@ integrated profiler via Sysprof, debugging support, and more.")
        ("libnotify" ,libnotify)
        ("libsecret" ,libsecret)
        ("python-beautifulsoup4" ,python-beautifulsoup4)
-       ("python-cloudscraper" ,python-cloudscraper)
        ("python-dateparser" ,python-dateparser)
        ("python-keyring" ,python-keyring)
        ("python-lxml" ,python-lxml)
@@ -11966,6 +11990,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        ("python-pure-protobuf" ,python-pure-protobuf)
        ("python-pycairo" ,python-pycairo)
        ("python-pygobject" ,python-pygobject)
+       ("python-requests" ,python-requests)
        ("python-unidecode" ,python-unidecode)))
     (native-inputs
      `(("desktop-file-utils" ,desktop-file-utils)

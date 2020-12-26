@@ -301,7 +301,7 @@ Linux kernel.")
 (define-public libopenmpt
   (package
     (name "libopenmpt")
-    (version "0.5.3")
+    (version "0.5.4")
     (source
      (origin
        (method url-fetch)
@@ -309,7 +309,7 @@ Linux kernel.")
         (string-append "https://download.openmpt.org/archive/libopenmpt/src/"
                        "libopenmpt-" version "+release.autotools.tar.gz"))
        (sha256
-        (base32 "1f155yf5v57dwhzb7z0kh67lckr3yq4x8040dm54qgbxw582la77"))))
+        (base32 "0h7gpjx1221jwsq3k91p8zhf1h77qaxyasakc88s3g57vawhckgk"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -476,41 +476,15 @@ implementation of Adaptive Multi Rate Narrowband and Wideband
 (define-public alsa-modular-synth
   (package
     (name "alsa-modular-synth")
-    (version "2.1.2")
+    (version "2.2.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/alsamodular/alsamodular"
                                   "/" version "/ams-" version ".tar.bz2"))
               (sha256
                (base32
-                "1azbrhpfk4nnybr7kgmc7w6al6xnzppg853vas8gmkh185kk11l0"))
-              (patches
-               (search-patches "alsa-modular-synth-fix-vocoder.patch"))))
+                "056dn6b9c5nsw2jdww7z1kxrjqqfvxjzxhsd5x9gi4wkwyiv21nz"))))
     (build-system gnu-build-system)
-    (arguments
-     `(#:configure-flags
-       '("--enable-qt5"
-         "CXXFLAGS=-std=gnu++11")
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'set-paths 'hide-default-gcc
-           (lambda* (#:key inputs #:allow-other-keys)
-             (let ((gcc (assoc-ref inputs "gcc")))
-               ;; Remove the default GCC from CPLUS_INCLUDE_PATH to prevent
-               ;; conflicts with the GCC 5 input.
-               (setenv "CPLUS_INCLUDE_PATH"
-                       (string-join
-                        (delete (string-append gcc "/include/c++")
-                                (string-split (getenv "CPLUS_INCLUDE_PATH") #\:))
-                        ":"))
-               #t)))
-         ;; Insert an extra space between linker flags.
-         (add-before 'configure 'add-missing-space
-           (lambda _
-             (substitute* "configure"
-               (("LIBS\\+=\\$LIBSsave") "LIBS+=\" $LIBSsave\"")
-               (("CFLAGS\\+=\\$CFLAGSsave") "CFLAGS+=\" $CFLAGSsave\""))
-             #t)))))
     (inputs
      `(("alsa-lib" ,alsa-lib)
        ;; We cannot use zita-alsa-pcmi (the successor of clalsadrv) due to
@@ -523,8 +497,7 @@ implementation of Adaptive Multi Rate Narrowband and Wideband
        ("qtbase" ,qtbase)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
-       ("qttools" ,qttools)
-       ("gcc@5" ,gcc-5)))
+       ("qttools" ,qttools)))
     (home-page "http://alsamodular.sourceforge.net/")
     (synopsis "Realtime modular synthesizer and effect processor")
     (description
@@ -3015,14 +2988,14 @@ input/output.")
 (define-public sratom
   (package
     (name "sratom")
-    (version "0.6.4")
+    (version "0.6.6")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.drobilla.net/sratom-"
                                   version ".tar.bz2"))
               (sha256
                (base32
-                "0vh0biy3ngpzzgdml309c2mqz8xq9q0hlblczb4c6alhp0a8yv0l"))))
+                "178v90qvsp6lw4sqdmdz0bzyjkgwhv9m75ph1d1z8say5bv0p4gv"))))
     (build-system waf-build-system)
     (arguments `(#:tests? #f))          ;no check target
     (propagated-inputs
@@ -3042,14 +3015,14 @@ the Turtle syntax.")
 (define-public suil
   (package
     (name "suil")
-    (version "0.10.6")
+    (version "0.10.8")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.drobilla.net/suil-"
                                   version ".tar.bz2"))
               (sha256
                (base32
-                "0z4v01pjw4wh65x38w6icn28wdwxz13ayl8hvn4p1g9kmamp1z06"))))
+                "0h0ghk1s0lrj4gh12r7390b0ybaw7awnj0vhchyy9ll0gvhqgkci"))))
     (build-system waf-build-system)
     (arguments
      `(#:tests? #f))                    ;no check target
@@ -4237,7 +4210,7 @@ representations.")
 (define-public cava
   (package
     (name "cava")
-    (version "0.6.1")
+    (version "0.7.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4246,7 +4219,7 @@ representations.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1kvhqgijs29909w3sq9m0bslx2zxxn4b3i07kdz4hb0dqkppxpjy"))))
+                "04j5hb29hivcbk542sfsx9m57dbnj2s6qpvy9fs488zvgjbgxrai"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)

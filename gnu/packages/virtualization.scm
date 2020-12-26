@@ -335,34 +335,34 @@ server and embedded PowerPC, and S390 guests.")
      (substitute-keyword-arguments (package-arguments qemu)
        ((#:configure-flags _ '(list))
         ;; Restrict to the host's architecture.
-        (match (car (string-split (or (%current-target-system)
-                                      (%current-system))
-                                  #\-))
-          ("i686"
-           '(list "--target-list=i386-softmmu"))
-          ("x86_64"
-           '(list "--target-list=i386-softmmu,x86_64-softmmu"))
-          ("mips64"
-           '(list (string-append "--target-list=mips-softmmu,mipsel-softmmu,"
-                                 "mips64-softmmu,mips64el-softmmu")))
-          ("mips"
-           '(list "--target-list=mips-softmmu,mipsel-softmmu"))
-          ("aarch64"
-           '(list "--target-list=arm-softmmu,aarch64-softmmu"))
-          ("arm"
-           '(list "--target-list=arm-softmmu"))
-          ("alpha"
-           '(list "--target-list=alpha-softmmu"))
-          ("powerpc64"
-           '(list "--target-list=ppc-softmmu,ppc64-softmmu"))
-          ("powerpc"
-           '(list "--target-list=ppc-softmmu"))
-          ("s390"
-           '(list "--target-list=s390x-softmmu"))
-          ("riscv"
-           '(list "--target-list=riscv32-softmmu,riscv64-softmmu"))
-          (else   ; An empty list actually builds all the targets.
-            ''())))))
+        (let ((system (or (%current-target-system)
+                          (%current-system))))
+          (cond
+            ((string-prefix? "i686" system)
+             '(list "--target-list=i386-softmmu"))
+            ((string-prefix? "xasdf86_64" system)
+             '(list "--target-list=i386-softmmu,x86_64-softmmu"))
+            ((string-prefix? "mips64" system)
+             '(list (string-append "--target-list=mips-softmmu,mipsel-softmmu,"
+                                   "mips64-softmmu,mips64el-softmmu")))
+            ((string-prefix? "mips" system)
+             '(list "--target-list=mips-softmmu,mipsel-softmmu"))
+            ((string-prefix? "aarch64" system)
+             '(list "--target-list=arm-softmmu,aarch64-softmmu"))
+            ((string-prefix? "arm" system)
+             '(list "--target-list=arm-softmmu"))
+            ((string-prefix? "alpha" system)
+             '(list "--target-list=alpha-softmmu"))
+            ((string-prefix? "powerpc64" system)
+             '(list "--target-list=ppc-softmmu,ppc64-softmmu"))
+            ((string-prefix? "powerpc" system)
+             '(list "--target-list=ppc-softmmu"))
+            ((string-prefix? "s390" system)
+             '(list "--target-list=s390x-softmmu"))
+            ((string-prefix? "riscv" system)
+             '(list "--target-list=riscv32-softmmu,riscv64-softmmu"))
+            (else   ; An empty list actually builds all the targets.
+              ''()))))))
 
     ;; Remove dependencies on optional libraries, notably GUI libraries.
     (native-inputs (fold alist-delete (package-native-inputs qemu)
@@ -952,7 +952,7 @@ all common programming languages.  Vala bindings are also provided.")
 (define-public lxc
   (package
     (name "lxc")
-    (version "3.1.0")
+    (version "4.0.5")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -960,7 +960,7 @@ all common programming languages.  Vala bindings are also provided.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "1igxqgx8q9cp15mcp1y8j564bl85ijw04jcmgb1s5bmfbg1751sd"))))
+                "1976l9308rx1ria1gazasypk5rmmf5jiqdh54dfrws5bslbdcb5g"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -2053,14 +2053,14 @@ use with virtualization provisioning tools")
 (define-public python-transient
   (package
     (name "python-transient")
-    (version "0.11")
+    (version "0.12")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "transient" version))
        (sha256
         (base32
-         "1pcyw8j2l354qa6c8gr58xd7fmxcx1svnfyr2rj5nh04ircx3x7l"))))
+         "148yiqrmcscsi6787y0f27i1y9cf0gcw3mqfv5frhpmsmv62mv5z"))))
     (build-system python-build-system)
     (arguments
      `(#:tests? #f ; Requires behave

@@ -39,6 +39,7 @@
 ;;; Copyright © 2020 Alexandru-Sergiu Marton <brown121407@posteo.ro>
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2020 B. Wilson <elaexuotee@wilsonb.com>
+;;; Copyright © 2020 divoplade <d@divoplade.fr>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -444,7 +445,7 @@ aliasing facilities to work just as they would on normal mail.")
 (define-public mutt
   (package
     (name "mutt")
-    (version "2.0.2")
+    (version "2.0.3")
     (source (origin
              (method url-fetch)
              (uri (list
@@ -454,7 +455,7 @@ aliasing facilities to work just as they would on normal mail.")
                                    version ".tar.gz")))
              (sha256
               (base32
-               "1j0i2jmlk5sc78af9flj3ynj0iiwa8biw7jgf12qm5lppsx1h4j7"))
+               "1vf1ab3mnx7p4s4n4pssajj211s3zr4730bwgsjx9gxcnyppqclw"))
              (patches (search-patches "mutt-store-references.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -491,7 +492,7 @@ operating systems.")
 (define-public neomutt
   (package
     (name "neomutt")
-    (version "20201120")
+    (version "20201127")
     (source
      (origin
        (method git-fetch)
@@ -500,7 +501,7 @@ operating systems.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0z6xavgd0zv9pqvfsdyvhhi1q3y7zxhgg24isbnn9r6mldafqwna"))))
+        (base32 "1yhpz591jhcjpwllgppwf7vl7z2rnaqfphsvqd1sihd9k4lwch06"))))
     (build-system gnu-build-system)
     (inputs
      `(("cyrus-sasl" ,cyrus-sasl)
@@ -666,14 +667,14 @@ Extension (MIME).")
 (define-public altermime
   (package
     (name "altermime")
-    (version "0.3.10")
+    (version "0.3.11")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://pldaniels.com/altermime/altermime-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0vn3vmbcimv0n14khxr1782m76983zz9sf4j2kz5v86lammxld43"))))
+                "15zxg6spcmd35r6xbidq2fgcg2nzyv1sbbqds08lzll70mqx4pj7"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags (list "CC=gcc"
@@ -1144,16 +1145,17 @@ attachments, create new maildirs, and so on.")
     (name "alot")
     (version "0.9.1")
     (source (origin
-              (method url-fetch)
+              (method git-fetch)
               ;; package author intends on distributing via github rather
               ;; than pypi:
               ;; https://github.com/pazz/alot/issues/877#issuecomment-230173331
-              (uri (string-append "https://github.com/pazz/alot/archive/"
-                                  version ".tar.gz"))
-              (file-name (string-append "alot-" version ".tar.gz"))
+              (uri (git-reference
+                     (url "https://github.com/pazz/alot")
+                     (commit version)))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1r0x3n2fxi6sfq3paz8a4vn2mmyqaznj1207wa7jl0ixnjqilb7f"))))
+                "0s94m17yph1gq9f2svipb3bbwbw1s4j3zf2xkg5h91006v8286r6"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -1699,7 +1701,13 @@ delivery.")
                  (("(ZCAT_COMMAND=).*" all var)
                   (string-append var gzip "/bin/zcat\n"))
                  (("# (USE_GNUTLS(|_PC)=.*)" all line)
-                  (string-append line "\n")))
+                  (string-append line "\n"))
+                 (("# (AUTH_CRAM_MD5=yes)" all line) line)
+                 (("# (AUTH_DOVECOT=yes)" all line) line)
+                 (("# (AUTH_EXTERNAL=yes)" all line) line)
+                 (("# (AUTH_PLAINTEXT=yes)" all line) line)
+                 (("# (AUTH_SPA=yes)" all line) line)
+                 (("# (AUTH_TLS=yes)" all line) line))
                ;; This file has hard-coded relative file names for tools despite
                ;; the zcat configuration above.
                (substitute* '("src/exigrep.src")
@@ -1992,7 +2000,7 @@ hashing scheme (such as scrypt) plug-in for @code{Dovecot}.")
     (inputs
      `(("bdb" ,bdb)
        ("cyrus-sasl" ,cyrus-sasl)
-       ("openssl" ,openssl-1.0)
+       ("openssl" ,openssl)
        ("zlib" ,zlib)))
     (home-page "https://isync.sourceforge.io/")
     (synopsis "Mailbox synchronization program")
@@ -2869,14 +2877,14 @@ from the Cyrus IMAP project.")
 (define-public opensmtpd
   (package
     (name "opensmtpd")
-    (version "6.7.1p1")
+    (version "6.8.0p2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.opensmtpd.org/archives/"
                            "opensmtpd-" version ".tar.gz"))
        (sha256
-        (base32 "1jh8vxfajm1mvp1v5yh6llrhjzv0n9fgab88mlwllwqynhcfjy3l"))))
+        (base32 "05sd7bmq29ibnqbl2z53hiyprfxzf0qydfdaixs68rz55wqhbgsi"))))
     (build-system gnu-build-system)
     (inputs
      `(("bdb" ,bdb)
@@ -2903,17 +2911,17 @@ from the Cyrus IMAP project.")
          ;; See: https://github.com/OpenSMTPD/OpenSMTPD/issues/1069.
          (add-after 'unpack 'fix-smtpctl-encrypt-bug
            (lambda _
-             (substitute* "smtpd/smtpctl.c"
+             (substitute* "usr.sbin/smtpd/smtpctl.c"
                (("\"encrypt\", \"--\",")
                 "\"encrypt\","))
              #t))
          ;; Fix some incorrectly hard-coded external tool file names.
          (add-after 'unpack 'patch-FHS-file-names
            (lambda _
-             (substitute* "smtpd/smtpctl.c"
+             (substitute* "usr.sbin/smtpd/smtpctl.c"
                ;; ‘gzcat’ is auto-detected at compile time, but ‘cat’ isn't.
                (("/bin/cat") (which "cat")))
-             (substitute* "smtpd/mda_unpriv.c"
+             (substitute* "usr.sbin/smtpd/mda_unpriv.c"
                (("/bin/sh") (which "sh")))
              #t))
          ;; OpenSMTPD provides a single smtpctl utility to control both the
@@ -3745,7 +3753,7 @@ PGP handling, multiple servers, and secure connections.")
 (define-public imapfilter
   (package
     (name "imapfilter")
-    (version "2.7.4")
+    (version "2.7.5")
     (source
      (origin
        (method git-fetch)
@@ -3754,7 +3762,7 @@ PGP handling, multiple servers, and secure connections.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0nb0ysdp91r6dr3jgx24halbf4f56g4imx9112hkbz1abzgrmxs3"))))
+        (base32 "0a7f85r3axwclzw1s79zl2l8222nj2gklvvq33w9qv0dz5n71dcx"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f
@@ -3828,8 +3836,8 @@ It is a replacement for the @command{urlview} program.")
     (license license:gpl2+)))
 
 (define-public mumi
-  (let ((commit "5a578328199bab51a147fbadbce12c8d06959ed6")
-        (revision "2"))
+  (let ((commit "8c82c8f104ff0013e2bfb3d6b4277280f32446a6")
+        (revision "3"))
     (package
       (name "mumi")
       (version (git-version "0.0.1" revision commit))
@@ -3841,7 +3849,7 @@ It is a replacement for the @command{urlview} program.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0hngv82gd19l4q7nnbf97r120z1yagsmkp0x3lc8haza5q4mc12c"))))
+                  "1gkwagy7qplzq2x2zqsbrwhlilxviqb0dqhrvnnhxd7z8wvyzcsi"))))
       (build-system gnu-build-system)
       (arguments
        `(#:modules ((guix build gnu-build-system)
@@ -3870,7 +3878,7 @@ It is a replacement for the @command{urlview} program.")
                      (,go ,(getenv "GUILE_LOAD_COMPILED_PATH"))))
                  #t))))))
       (inputs
-       `(("guile-email" ,guile-email)
+       `(("guile-email" ,guile-email-latest)
          ("guile-fibers" ,guile-fibers)
          ("guile-gcrypt" ,guile-gcrypt)
          ("guile-json" ,guile-json-3)
