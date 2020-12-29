@@ -352,7 +352,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The current "stable" kernels. That is, the most recently released major
 ;; versions that are still supported upstream.
-(define-public linux-libre-5.10-version "5.10.2")
+(define-public linux-libre-5.10-version "5.10.3")
 (define deblob-scripts-5.10
   (linux-libre-deblob-scripts
    linux-libre-5.10-version
@@ -360,23 +360,10 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0hh27ccqimagr3aij7ygwikxw66y63sqwd0xlf49bhpjd090r9a7")))
 (define-public linux-libre-5.10-pristine-source
   (let ((version linux-libre-5.10-version)
-        (hash (base32 "18l1ywp99inm90434fm74w8rjfl4yl974kfcpizg2sp2p8xf311v")))
+        (hash (base32 "09cml495fnf52lhlkjxjznw34q5s8arvq7shkb6wjq6fwlrk65gr")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.10)))
-
-(define-public linux-libre-5.9-version "5.9.16")
-(define deblob-scripts-5.9
-  (linux-libre-deblob-scripts
-   linux-libre-5.9-version
-   (base32 "1l0iw2lp6alk0a8nvdafklyks83iiyw4b2r5xif84z47qfbydsis")
-   (base32 "1vrv78xwcy32b82plkkbpyfxhpy3br7b18sjah4iqv25fxfcxpak")))
-(define-public linux-libre-5.9-pristine-source
-  (let ((version linux-libre-5.9-version)
-        (hash (base32 "11mbnjvb5d5gwbrwlkqvzpg1ij4m19l5wr3wca9iiyg5i2papmxh")))
-   (make-linux-libre-source version
-                            (%upstream-linux-source version hash)
-                            deblob-scripts-5.9)))
 
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
@@ -476,11 +463,6 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 (define-public linux-libre-5.10-source
   (source-with-patches linux-libre-5.10-pristine-source
-                       (list %boot-logo-patch
-                             %linux-libre-arm-export-__sync_icache_dcache-patch)))
-
-(define-public linux-libre-5.9-source
-  (source-with-patches linux-libre-5.9-pristine-source
                        (list %boot-logo-patch
                              %linux-libre-arm-export-__sync_icache_dcache-patch)))
 
@@ -586,10 +568,6 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 (define-public linux-libre-headers-5.10
   (make-linux-libre-headers* linux-libre-5.10-version
                              linux-libre-5.10-source))
-
-(define-public linux-libre-headers-5.9
-  (make-linux-libre-headers* linux-libre-5.9-version
-                             linux-libre-5.9-source))
 
 (define-public linux-libre-headers-5.4
   (make-linux-libre-headers* linux-libre-5.4-version
@@ -889,12 +867,6 @@ It has been modified to remove all non-free binary blobs.")
 (define-public linux-libre-source          linux-libre-5.10-source)
 (define-public linux-libre                 linux-libre-5.10)
 
-(define-public linux-libre-5.9
-  (make-linux-libre* linux-libre-5.9-version
-                     linux-libre-5.9-source
-                     '("x86_64-linux" "i686-linux" "armhf-linux" "aarch64-linux" "riscv64-linux")
-                     #:configuration-file kernel-config))
-
 (define-public linux-libre-5.4
   (make-linux-libre* linux-libre-5.4-version
                      linux-libre-5.4-source
@@ -930,6 +902,14 @@ It has been modified to remove all non-free binary blobs.")
                         ;; This option was removed upstream in version 4.7.
                         ("CONFIG_DEVPTS_MULTIPLE_INSTANCES" . #t))
                       %default-extra-linux-options)))
+
+;; Linux-Libre-LTS means the *current* long-term support version of Linux-Libre.
+;; Reference: https://jxself.org/linux-libre/
+
+(define-public linux-libre-lts-version         linux-libre-5.10-version)
+(define-public linux-libre-lts-pristine-source linux-libre-5.10-pristine-source)
+(define-public linux-libre-lts-source          linux-libre-5.10-source)
+(define-public linux-libre-lts                 linux-libre-5.10)
 
 
 ;;;
@@ -5119,9 +5099,10 @@ disks and SD cards.  This package provides the userland utilities.")
        (let ((libuuid-static (assoc-ref %build-inputs "libuuid:static"))
              (libuuid (assoc-ref %build-inputs "libuuid")))
          (list
-          (string-append "libuuid_CFLAGS=-I" libuuid "/include")
+          (string-append "libuuid_CFLAGS=-I" libuuid "/include/uuid")
           (string-append "libuuid_LIBS=-L" libuuid-static "/lib -luuid")
-          (string-append "libblkid_CFLAGS=-I" libuuid "/include")
+          (string-append "libblkid_CFLAGS=-I" libuuid "/include/uuid "
+                         "-I" libuuid "/include/blkid")
           (string-append "libblkid_LIBS=-L" libuuid-static "/lib -lblkid")))
        #:disallowed-references (,util-linux)
        #:phases

@@ -14734,7 +14734,9 @@ inbred lines, F2 intercrosses, and association mapping populations.")
     (propagated-inputs
      `(("r-genetics" ,r-genetics)
        ("r-rcpp" ,r-rcpp)
-       ("r-snpstats" ,r-snpstats)))
+       ("r-snpstats" ,(module-ref
+                       (resolve-interface '(gnu packages bioconductor))
+                       'r-snpstats))))
     (home-page "https://stat.sfu.ca/statgen/research/ldheatmap.html")
     (synopsis "Graphical display of pairwise linkage disequilibria between SNPs")
     (description
@@ -25390,3 +25392,132 @@ use on EC2 instances, the package 'aws.ec2metadata' is suggested.")
      "This package provides a simple client package for the Amazon Web
 Services (AWS) Simple Storage Service (S3) REST API.")
     (license license:gpl2+)))
+
+(define-public r-lgr
+  (package
+    (name "r-lgr")
+    (version "0.4.1")
+    (source (origin
+              (method url-fetch)
+              (uri (cran-uri "lgr" version))
+              (sha256
+               (base32
+                "196553hmni1ha9y6494f4g3ds0lwcl81v7k4r8wwap4a6acdrgd9"))))
+    (build-system r-build-system)
+    (propagated-inputs
+     `(("r-r6" ,r-r6)))
+    (home-page "https://s-fleck.github.io/lgr/")
+    (synopsis "Fully featured logging framework")
+    (description "This package offers a flexible, feature-rich yet
+light-weight logging framework based on @code{R6} classes.  It supports
+hierarchical loggers, custom log levels, arbitrary data fields in log events,
+logging to plaintext, JSON, (rotating) files, memory buffers, and databases, as
+well as email and push notifications.")
+    (license license:expat)))
+
+(define-public r-mlr3measures
+  (package
+    (name "r-mlr3measures")
+    (version "0.3.0")
+    (source (origin
+              (method url-fetch)
+              (uri (cran-uri "mlr3measures" version))
+              (sha256
+               (base32
+                "106lfaxphz0kh96ddq14hic7wvxjqp871zdp9kkkfk1kwfg35abw"))))
+    (build-system r-build-system)
+    (propagated-inputs
+     `(("r-checkmate" ,r-checkmate)
+       ("r-prroc" ,r-prroc)))
+    (home-page "https://mlr3measures.mlr-org.com/")
+    (synopsis "Performance measures for mlr3")
+    (description "This package implements multiple performance measures for
+supervised learning.  It includes over 40 measures for regression and
+classification.  Additionally, meta information about the performance measures
+can be queried, e.g. what the best and worst possible performances scores
+are.")
+    (license license:lgpl3)))
+
+(define-public r-mlr3misc
+  (package
+    (name "r-mlr3misc")
+    (version "0.6.0")
+    (source (origin
+              (method url-fetch)
+              (uri (cran-uri "mlr3misc" version))
+              (sha256
+               (base32
+                "1q63i2059bf7cf61kwm0dqnk5vd60i0j4flziswwdk07fjxqh8xr"))))
+    (build-system r-build-system)
+    (propagated-inputs
+     `(("r-backports" ,r-backports)
+       ("r-checkmate" ,r-checkmate)
+       ("r-data-table" ,r-data-table)
+       ("r-r6" ,r-r6)))
+    (home-page "https://mlr3misc.mlr-org.com/")
+    (synopsis "Helper functions for mlr3")
+    (description "@code{mlr3misc} provides frequently used helper functions
+and assertions used in @code{mlr3} and its companion packages.  It comes with
+helper functions for functional programming, for printing, to work with
+@code{data.table}, as well as some generally useful @code{R6} classes.  This
+package also supersedes the package @code{BBmisc}.")
+    (license license:lgpl3)))
+
+(define-public r-paradox
+  (package
+    (name "r-paradox")
+    (version "0.6.0")
+    (source (origin
+              (method url-fetch)
+              (uri (cran-uri "paradox" version))
+              (sha256
+               (base32
+                "1zv0q411wcwigkf4yggs3w2gz48lvv3jhnrddrv40qih8b70ywi3"))))
+    (build-system r-build-system)
+    (propagated-inputs
+     `(("r-backports" ,r-backports)
+       ("r-checkmate" ,r-checkmate)
+       ("r-data-table" ,r-data-table)
+       ("r-mlr3misc" ,r-mlr3misc)
+       ("r-r6" ,r-r6)))
+    (home-page "https://paradox.mlr-org.com/")
+    (synopsis "Define and work with parameter spaces for complex algorithms")
+    (description "With this package it is possible to define parameter spaces,
+constraints and dependencies for arbitrary algorithms, and to program on such
+spaces.  It also includes statistical designs and random samplers.  Objects are
+implemented as @code{R6} classes.")
+    (license license:lgpl3)))
+
+(define-public r-mlr3
+  (package
+    (name "r-mlr3")
+    (version "0.9.0")
+    (source (origin
+              (method url-fetch)
+              (uri (cran-uri "mlr3" version))
+              (sha256
+               (base32
+                "0gg7rrzxwrnpg6sgm0aa6bmfwmqv3d3za0ghnqrnibg33p9ynpgb"))))
+    (build-system r-build-system)
+    (propagated-inputs
+     `(("r-r6" ,r-r6)
+       ("r-backports" ,r-backports)
+       ("r-checkmate" ,r-checkmate)
+       ("r-data-table" ,r-data-table)
+       ("r-digest" ,r-digest)
+       ("r-future-apply" ,r-future-apply)
+       ("r-lgr" ,r-lgr)
+       ("r-mlbench" ,r-mlbench)
+       ("r-mlr3measures" ,r-mlr3measures)
+       ("r-mlr3misc" ,r-mlr3misc)
+       ("r-paradox" ,r-paradox)
+       ("r-uuid" ,r-uuid)))
+    (home-page "https://mlr3.mlr-org.com/")
+    (synopsis "Machine Learning in R - Next Generation")
+    (description "@code{mlr3} enables efficient, object-oriented programming
+on the building blocks of machine learning.  It provides @code{R6} objects for
+tasks, learners, resamplings, and measures.  The package is geared towards
+scalability and larger datasets by supporting parallelization and out-of-memory
+data-backends like databases.  While @code{mlr3} focuses on the core
+computational operations, add-on packages provide additional functionality.")
+    (license license:lgpl3)))

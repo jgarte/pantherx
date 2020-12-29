@@ -3008,6 +3008,28 @@ depicting stroke orders for all Kanji.  The collection is a slightly modified
 and limited version of the images provided by the KanjiVG project.")
       (license license:gpl3+))))
 
+(define-public emacs-keycast
+  (package
+    (name "emacs-keycast")
+    (version "1.0.4")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/tarsius/keycast.git")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1g9arjdhdpvsw47ny9gi5k758ya37yza4mr0rhbf02yvrqyfsrgr"))))
+    (build-system emacs-build-system)
+    (home-page "https://github.com/tarsius/keycast")
+    (synopsis "Show current command and its key in the mode line")
+    (description
+     "This package provides Keycast mode.  Once enabled, that mode shows the
+current command and its key or mouse binding in the mode line, and updates
+them whenever another command is invoked.")
+    (license license:gpl3+)))
+
 (define-public emacs-keyfreq
   (package
     (name "emacs-keyfreq")
@@ -4153,6 +4175,55 @@ boxes, and more.")
 been copied from an Emacs major mode.")
     (license license:gpl2+)))
 
+(define-public emacs-org-fancy-priorities
+  (let ((commit "819bb993b71e7253cefef7047306ab4e0f9d0a86")
+        (revision "1"))
+    (package
+      (name "emacs-org-fancy-priorities")
+      (version (git-version "1.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/harrybournis/org-fancy-priorities.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "13cyzlx0415i953prq6ch7r5iy23c1pz116bdxi5yqags4igh4wv"))))
+      (build-system emacs-build-system)
+      (home-page "https://github.com/harrybournis/org-fancy-priorities")
+      (synopsis "Display org priorities as custom strings")
+      (description
+       "This package provides a minor mode that displays Org priorities as
+custom strings.  This mode does not change your files in any way, it only
+displays the priority part of a heading as your preferred string value.")
+      (license license:expat))))
+
+(define-public emacs-org-fragtog
+  (package
+    (name "emacs-org-fragtog")
+    (version "0.3.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/io12/org-fragtog.git")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1rzi67lb3mxqg3x6d8zx6rxncg7lw14agqwbh7zvgc2iins59j0f"))))
+    (build-system emacs-build-system)
+    (propagated-inputs
+     `(("emacs-org" ,emacs-org)))
+    (home-page "https://github.com/io12/org-fragtog")
+    (synopsis "Toggle Org mode LaTeX fragments preview at cursor")
+    (description
+     "Org mode supports inline image previews of LaTeX fragments.  This
+package automates this, so fragment previews are disabled for editing when
+your cursor steps onto them, and re-enabled when the cursor leaves.")
+    (license license:gpl3+)))
+
 (define-public emacs-ob-erlang
   (let ((revision "1")
         (commit "f1a8c665b8f7d0ab32267a9961de8eed872e6333"))
@@ -4296,6 +4367,42 @@ method and constant name completion.")
       (description "This major mode facilitates editing Robot Framework source
 files with features such as syntax highlighting, comments, finding keywords,
 completing keywords and smart indentation.")
+      (license license:gpl3+))))
+
+(define-public emacs-roguel-ike
+  ;; Tagged branch is outdated.
+  (let ((revision "0")
+        (commit "706dcb0687e8016d7d776f9d9e5ace9fdbbca43c"))
+    (package
+      (name "emacs-roguel-ike")
+      (version (git-version "0.1.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/stevenremot/roguel-ike")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0rgv4y9aa5cc2ddz3y5z8d22xmr8kf5c60h0r3g8h91jmcw3rb4z"))))
+      (build-system emacs-build-system)
+      (propagated-inputs
+       `(("emacs-popup" ,emacs-popup)))
+      (arguments
+       `(#:include (cons* "^roguel-ike/" "^roguel-ike-lib/" %default-include)
+         #:phases
+         (modify-phases %standard-phases
+           (add-before 'check 'set-test-environment
+             (lambda _
+               (setenv "HOME" "/tmp")
+               #t)))))
+      (home-page "https://github.com/stevenremot/roguel-ike.git")
+      (synopsis "Coffee-break roguelike for Emacs")
+      (description
+       "Roguel-ike is an attempt to develop a coffee-break roguelike for
+Emacs.  The complete game would allow the player to create various characters
+and to make them fulfill challenges like arena fight and short dungeon
+explorations.")
       (license license:gpl3+))))
 
 (define-public emacs-rspec
@@ -10271,6 +10378,15 @@ passive voice.")
     (arguments
      `(#:phases
        (modify-phases %standard-phases
+         ;; FIXME: The elpa tarball upstream does not include the version
+         ;; number, remove this phase when this is fixed.
+         ;; https://lists.gnu.org/archive/html/emacs-orgmode/2020-12/msg00729.html
+         (add-after 'unpack 'fix-org-version
+           (lambda _
+             (substitute* "org-version.el"
+               (("org-release \"\"")
+                (string-append "org-release \"" ,version "\"")))
+             #t))
          (add-after 'install 'install-documentation
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((share (string-append (assoc-ref outputs "out") "/share"))
@@ -15083,6 +15199,60 @@ timestamps by providing a @code{ts} struct.")
 according to a parsing expression grammar.")
     (license license:gpl3+)))
 
+(define-public emacs-eldev
+  (package
+    (name "emacs-eldev")
+    (version "0.7.2")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/doublep/eldev")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1xxcxgycn0a03irjcdq2pcb4p1bddhfjspni7lliwpv6zjqgkyhb"))))
+    (build-system emacs-build-system)
+    (arguments
+     `(#:tests? #t
+       #:test-command '("./bin/eldev" "-p" "-dtTC" "test")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'prepare-for-tests
+           (lambda _
+             (setenv "ELDEV_LOCAL" (getcwd))
+             (make-file-writable
+              "test/project-i/project-i-autoloads.el")
+             #t))
+         (add-after 'install 'install-eldev-executable
+           ;; This constructs the eldev executable from templates and
+           ;; installs it in the specified directory.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin"))
+                    (site-lisp (string-append out "/share/emacs/site-lisp")))
+               (mkdir-p bin)
+               (setenv "HOME" (getcwd))
+               (invoke "./install.sh" bin)
+               (substitute* (string-append bin "/eldev")
+                 ;; Point ELDEV_LOCAL to the installation directory so that
+                 ;; eldev doesn't try to bootstrap itself from MELPA when
+                 ;; invoked.
+                 (("export ELDEV_EMACS.*" all)
+                  (string-append "export ELDEV_LOCAL=" site-lisp "\n" all)))
+               #t))))))
+    (native-inputs
+     `(("texinfo" ,texinfo)))           ;for tests
+    (home-page "https://github.com/doublep/eldev/")
+    (synopsis "Emacs-based build tool for Elisp")
+    (description "Eldev (Elisp Development Tool) is an Emacs-based build tool,
+targeted solely at Elisp projects.  It is an alternative to Cask.  Unlike
+Cask, Eldev itself is fully written in Elisp and its configuration files are
+also Elisp programs.  For those familiar with the Java world, Cask can be seen
+as a parallel to Maven — it uses project description, while Eldev is sort of a
+parallel to Gradle — its configuration is a program on its own.")
+    (license license:gpl3+)))
+
 (define-public emacs-with-simulated-input
   (package
     (name "emacs-with-simulated-input")
@@ -15972,6 +16142,30 @@ within Emacs.")
       (description "This package provides a minor mode that replaces keywords
 or expressions with SVG rounded box labels that are fully customizable.")
       (license license:gpl3+))))
+
+(define-public emacs-svg-icon
+  (let ((commit "ebc2b8d0f6c680fd575a90e683cc7b832acd1eb7")
+        (revision "1"))
+    (package
+      (name "emacs-svg-icon")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/rougier/emacs-svg-icon")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1qzqfa8xyw1nkb89kbvw9qcgdwr8g017n8gf3yzwn816qhkfkjrj"))))
+      (build-system emacs-build-system)
+      (home-page "https://github.com/rougier/emacs-svg-icon")
+      (synopsis "Emacs library to create SVG icons on the fly")
+      (description "This library allows to create SVG icons by parsing remote
+collections whose license are compatibles with Emacs.  The default size of an
+icon is exactly 2x1 characters such that it can be inserted inside a text
+without disturbing alignment.")
+      (license (list license:gpl3+)))))
 
 (define-public emacs-sourcemap
   (package
@@ -18794,8 +18988,8 @@ searches with @code{ripgrep}.")
       (license license:gpl3+))))
 
 (define-public emacs-focus
-  (let ((commit "ab42b8779929beeb7878c7fb3d3ccd80d9327c7f")
-        (version "0.1.1")
+  (let ((commit "5f3f20e7f22fb9fd7c48abce8bd38061d97e4bc0")
+        (version "1.0.0")
         (revision "1"))
     (package
       (name "emacs-focus")
@@ -18809,7 +19003,7 @@ searches with @code{ripgrep}.")
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "079v1syid7h2vr2ya6hs6hl0pgj60qdsw60mqw4cj2zllmkrkwj4"))))
+           "0a55i4bychfnnzjg67a9h4j130hchcg44446dwwx1l1h48i692dw"))))
       (build-system emacs-build-system)
       (home-page "https://github.com/larstvei/Focus")
       (synopsis "Minor mode for focusing in on relevant text")
@@ -22145,6 +22339,35 @@ and searching through @code{Ctags} files.")
       (synopsis "Facilitate moving images")
       (description "This package provides utilities for managing image files
 copied into @code{org-mode} buffers.")
+      (license license:gpl3+))))
+
+(define-public emacs-org-drill-table
+  ;; No releases or tags.
+  (let ((commit "096387d929bcf3eb479e0a9d5da9cf32c756a759")
+        (revision "0"))
+    (package
+      (name "emacs-org-drill-table")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/chrisbarrett/org-drill-table.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1a8ygrcag8i9hdpy2vsn0sh8lwhl9b56rv91j3rddy1jv5qx1ipb"))))
+      (build-system emacs-build-system)
+      (propagated-inputs
+       `(("emacs-dash" ,emacs-dash)
+         ("emacs-org" ,emacs-org)
+         ("emacs-s" ,emacs-s)))
+      (home-page "https://github.com/chrisbarrett/org-drill-table")
+      (synopsis "Generate Org drill cards using Org mode tables")
+      (description
+       "This package generates drill cards based on an Org mode table in the
+current subtree.  The cards are inserted under a new ``Cards'' heading in the
+current tree.")
       (license license:gpl3+))))
 
 (define-public emacs-dash-docs
