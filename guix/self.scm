@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2017, 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2020 Martin Becze <mjbecze@riseup.net>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -59,6 +59,7 @@
       ("guile-sqlite3" (ref '(gnu packages guile) 'guile-sqlite3))
       ("guile-zlib" (ref '(gnu packages guile) 'guile-zlib))
       ("guile-lzlib" (ref '(gnu packages guile) 'guile-lzlib))
+      ("guile-zstd" (ref '(gnu packages guile) 'guile-zstd))
       ("guile-gcrypt"  (ref '(gnu packages gnupg) 'guile-gcrypt))
       ("gnutls"     (ref '(gnu packages tls) 'gnutls))
       ("gzip"       (ref '(gnu packages compression) 'gzip))
@@ -794,7 +795,9 @@ itself."
     (((labels packages _ ...) ...)
      (cons package packages))))
 
-(define* (compiled-guix source #:key (version %guix-version)
+(define* (compiled-guix source #:key
+                        (version %guix-version)
+                        (channel-metadata #f)
                         (pull-version 1)
                         (name (string-append "guix-" version))
                         (guile-version (effective-version))
@@ -825,6 +828,9 @@ itself."
   (define guile-lzlib
     (specification->package "guile-lzlib"))
 
+  (define guile-zstd
+    (specification->package "guile-zstd"))
+
   (define guile-gcrypt
     (specification->package "guile-gcrypt"))
 
@@ -838,7 +844,7 @@ itself."
     (append-map transitive-package-dependencies
                 (list guile-gcrypt gnutls guile-git guile-avahi
                       guile-json guile-semver guile-ssh guile-sqlite3
-                      guile-zlib guile-lzlib)))
+                      guile-zlib guile-lzlib guile-zstd)))
 
   (define *core-modules*
     (scheme-node "guix-core"
@@ -882,6 +888,11 @@ itself."
                                (name name))
                              (scheme-modules* source "guix"))
                  (list *core-modules*)
+
+                 #:extra-files
+                 `(("guix/graph.js" ,(local-file "../guix/graph.js"))
+                   ("guix/d3.v3.js" ,(local-file "../guix/d3.v3.js")))
+
                  #:extensions dependencies
                  #:guile-for-build guile-for-build))
 
@@ -970,6 +981,8 @@ itself."
                                          %guix-package-name
                                          #:package-version
                                          version
+                                         #:channel-metadata
+                                         channel-metadata
                                          #:bug-report-address
                                          %guix-bug-report-address
                                          #:home-page-url
@@ -1063,6 +1076,7 @@ itself."
 (define* (make-config.scm #:key gzip xz bzip2
                           (package-name "GNU Guix")
                           (package-version "0")
+                          (channel-metadata #f)
                           (bug-report-address "bug-guix@gnu.org")
                           (home-page-url "https://guix.gnu.org"))
 
@@ -1076,6 +1090,7 @@ itself."
                                %guix-version
                                %guix-bug-report-address
                                %guix-home-page-url
+                               %channel-metadata
                                %system
                                %store-directory
                                %state-directory
@@ -1117,6 +1132,11 @@ itself."
                    (define %guix-version #$package-version)
                    (define %guix-bug-report-address #$bug-report-address)
                    (define %guix-home-page-url #$home-page-url)
+
+                   (define %channel-metadata
+                     ;; Metadata for the 'guix' channel in use.  This
+                     ;; information is used by (guix describe).
+                     '#$channel-metadata)
 
                    (define %gzip
                      #+(and gzip (file-append gzip "/bin/gzip")))
@@ -1242,11 +1262,14 @@ containing MODULE-FILES and possibly other files as well."
 
 (define* (guix-derivation source version
                           #:optional (guile-version (effective-version))
-                          #:key (pull-version 0))
+                          #:key (pull-version 0)
+                          channel-metadata)
   "Return, as a monadic value, the derivation to build the Guix from SOURCE
-for GUILE-VERSION.  Use VERSION as the version string.  PULL-VERSION specifies
-the version of the 'guix pull' protocol.  Return #f if this PULL-VERSION value
-is not supported."
+for GUILE-VERSION.  Use VERSION as the version string.  Use CHANNEL-METADATA
+as the channel metadata sexp to include in (guix config).
+
+PULL-VERSION specifies the version of the 'guix pull' protocol.  Return #f if
+this PULL-VERSION value is not supported."
   (define (shorten version)
     (if (and (string-every char-set:hex-digit version)
              (> (string-length version) 9))
@@ -1271,6 +1294,7 @@ is not supported."
     (set-guile-for-build guile)
     (let ((guix (compiled-guix source
                                #:version version
+                               #:channel-metadata channel-metadata
                                #:name (string-append "guix-"
                                                      (shorten version))
                                #:pull-version pull-version

@@ -235,7 +235,7 @@ also known as DXTn or DXTC) for Mesa.")
 (define-public mesa
   (package
     (name "mesa")
-    (version "20.1.9")
+    (version "20.2.4")
     (source
       (origin
         (method url-fetch)
@@ -247,9 +247,9 @@ also known as DXTn or DXTC) for Mesa.")
                                   version "/mesa-" version ".tar.xz")))
         (sha256
          (base32
-          "10kk8a8k7f4ip8yaiqdyrx162nbw8pw4h3b4hs4ha8mpd43wlldj"))
+          "14m09bk7akj0k02lg8fhvvzbdsashlbdsgl2cw7wbqfj2mhdqwh5"))
         (patches
-         (search-patches "mesa-skip-disk-cache-test.patch"))))
+         (search-patches "mesa-skip-tests.patch"))))
     (build-system meson-build-system)
     (propagated-inputs
       `(;; The following are in the Requires.private field of gl.pc.
@@ -272,7 +272,7 @@ also known as DXTn or DXTC) for Mesa.")
         ,@(match (%current-system)
             ((or "x86_64-linux" "i686-linux")
              ;; Note: update the 'clang' input of mesa-opencl when bumping this.
-             `(("llvm" ,llvm-10)))
+             `(("llvm" ,llvm-11)))
             (_
              `()))
         ("wayland" ,wayland)
@@ -452,7 +452,7 @@ from software emulation to complete hardware acceleration for modern GPUs.")
      `(("libclc" ,libclc)
        ,@(package-inputs mesa)))
     (native-inputs
-     `(("clang" ,clang-10)
+     `(("clang" ,clang-11)
        ,@(package-native-inputs mesa)))))
 
 (define-public mesa-opencl-icd
@@ -770,7 +770,7 @@ OpenGL.")
 (define-public glfw
   (package
     (name "glfw")
-    (version "3.2.1")
+    (version "3.3.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/glfw/glfw"
@@ -778,7 +778,7 @@ OpenGL.")
                                   "/glfw-" version ".zip"))
               (sha256
                (base32
-                "09kk5yc1zhss9add8ryqrngrr16hdmc94rszgng135bhw09mxmdp"))))
+                "1izgc4r0ypxwwklfzj98ab4xqsjpb1wbsfdbivvxpmr95x8km8q8"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f ; no test target
@@ -792,6 +792,7 @@ OpenGL.")
        ;; These are in 'Requires.private' of 'glfw3.pc'.
        ("libx11" ,libx11)
        ("libxrandr" ,libxrandr)
+       ("libxi" ,libxi)
        ("libxinerama" ,libxinerama)
        ("libxcursor" ,libxcursor)
        ("libxxf86vm" ,libxxf86vm)))

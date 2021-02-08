@@ -2,13 +2,13 @@
 ;;; Copyright © 2013, 2014, 2015 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015 Tomáš Čech <sleep_walker@suse.cz>
-;;; Copyright © 2015 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2015, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016, 2017, 2019 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2017, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2017, 2018 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Roel Janssen <roel@gnu.org>
-;;; Copyright © 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2019, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020 Dale Mellor <guix-devel-0brg6b@rdmp.org>
 ;;;
@@ -53,16 +53,15 @@
 (define-public curl
   (package
    (name "curl")
-   (version "7.69.1")
-   (replacement curl-7.74.0)
+   (version "7.74.0")
    (source (origin
-            (method url-fetch)
-            (uri (string-append "https://curl.haxx.se/download/curl-"
-                                version ".tar.xz"))
-            (sha256
-             (base32
-              "0kwxh76iq9fblk7iyv4f75bmcmasarp2bcm1mm07wyvzd7kdbiq3"))
-            (patches (search-patches "curl-use-ssl-cert-env.patch"))))
+             (method url-fetch)
+             (uri (string-append "https://curl.haxx.se/download/curl-"
+                                 version ".tar.xz"))
+             (sha256
+              (base32
+               "12w7gskrglg6qrmp822j37fmbr0icrcxv7rib1fy5xiw80n5z7cr"))
+             (patches (search-patches "curl-use-ssl-cert-env.patch"))))
    (build-system gnu-build-system)
    (outputs '("out"
               "doc"))                             ;1.2 MiB of man3 pages
@@ -126,25 +125,6 @@
            (substitute* "tests/runtests.pl"
              (("/bin/sh") (which "sh")))
 
-           ;; XXX FIXME: Test #1510 seems to work on some machines and not
-           ;; others, possibly based on the kernel version.  It works on Guix System
-           ;; on x86_64 with linux-libre-4.1, but fails on Hydra for both i686
-           ;; and x86_64 with the following error:
-           ;;
-           ;; test 1510...[HTTP GET connection cache limit (CURLOPT_MAXCONNECTS)]
-           ;;
-           ;;  1510: output (log/stderr1510) FAILED:
-           ;; --- log/check-expected    2015-06-27 07:45:53.166720834 +0000
-           ;; +++ log/check-generated   2015-06-27 07:45:53.166720834 +0000
-           ;; @@ -1,5 +1,5 @@
-           ;;  * Connection #0 to host server1.example.com left intact[LF]
-           ;;  * Connection #1 to host server2.example.com left intact[LF]
-           ;;  * Connection #2 to host server3.example.com left intact[LF]
-           ;; -* Closing connection 0[LF]
-           ;; +* Closing connection 1[LF]
-           ;;  * Connection #3 to host server4.example.com left intact[LF]
-           (delete-file "tests/data/test1510")
-
            ;; The top-level "make check" does "make -C tests quiet-test", which
            ;; is too quiet.  Use the "test" target instead, which is more
            ;; verbose.
@@ -170,31 +150,6 @@ tunneling, and so on.")
     curl
     (name "curl-minimal")
     (inputs (alist-delete "openldap" (package-inputs curl))))))
-
-;; Replacement package to fix multiple security vulnerabilities.
-(define curl-7.74.0
-  (package
-    (inherit curl)
-    (version "7.74.0")
-    (source (origin
-              (inherit (package-source curl))
-              (uri (string-append "https://curl.haxx.se/download/curl-"
-                                  version ".tar.xz"))
-              (sha256
-               (base32
-                "12w7gskrglg6qrmp822j37fmbr0icrcxv7rib1fy5xiw80n5z7cr"))))
-    (arguments
-     (substitute-keyword-arguments (package-arguments curl)
-       ((#:phases phases)
-        `(modify-phases ,phases
-           (replace 'check
-             (lambda _
-               ;; Test 1510 is now disabled upstream, and the test runner
-               ;; complains that it can not disable a non-existing test.
-               ;; Thus, override the phase to not delete the test.
-               (substitute* "tests/runtests.pl"
-                 (("/bin/sh") (which "sh")))
-               (invoke "make" "-C" "tests" "test")))))))))
 
 (define-public kurly
   (package
@@ -243,49 +198,82 @@ not offer a replacement for libcurl.")
 (define-public guile-curl
   (package
    (name "guile-curl")
-   (version "0.6")
+   (version "0.7")
    (source (origin
             (method url-fetch)
             (uri (string-append "http://www.lonelycactus.com/tarball/"
                                 "guile_curl-" version ".tar.gz"))
             (sha256
              (base32
-              "1pxdhnk288ky6gkpad8i60m0p6404rdvls43lr1b5d3csrklyc70"))))
+              "1zk0ijx6bj212k0j0ma84cpvpvn0x6raaxnby3wdx3w4wnhnscn7"))))
    (build-system gnu-build-system)
    (arguments
-    `(#:configure-flags (list (string-append
+    `(#:modules (((guix build guile-build-system)
+                  #:select (target-guile-effective-version))
+                 ,@%gnu-build-system-modules)
+      #:imported-modules ((guix build guile-build-system)
+                          ,@%gnu-build-system-modules)
+      #:configure-flags (list (string-append
                                "--with-guilesitedir="
                                (assoc-ref %outputs "out")
-                               "/share/guile/site/2.2")
+                               "/share/guile/site/"
+                               (target-guile-effective-version
+                                (assoc-ref %build-inputs "guile")))
                               (string-append
                                "-with-guileextensiondir="
                                (assoc-ref %outputs "out")
-                               "/lib/guile/2.2/extensions"))
+                               "/lib/guile/"
+                               (target-guile-effective-version
+                                (assoc-ref %build-inputs "guile"))
+                               "/extensions"))
       #:phases
       (modify-phases %standard-phases
+        (add-after 'unpack 'patch-undefined-references
+          (lambda* _
+            (substitute* "src/curl.scm"
+              ;; The following #defines are missing from our curl package
+              ;; and therefore result in the evaluation of undefined symbols.
+              ((",CURLOPT_HAPROXYPROTOCOL") "#f")
+              ((",CURLOPT_DISALLOW_USERNAME_IN_URL") "#f")
+              ((",CURLOPT_TIMEVALUE_LARGE") "#f")
+              ((",CURLOPT_DNS_SHUFFLE_ADDRESSES") "#f")
+              ((",CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS") "#f"))))
         (add-after 'install 'patch-extension-path
           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out      (assoc-ref outputs "out"))
-                    (curl.scm (string-append
-                               out "/share/guile/site/2.2/curl.scm"))
-                    (curl.go  (string-append
-                               out "/lib/guile/2.2/site-ccache/curl.go"))
-                    (ext      (string-append out "/lib/guile/2.2/"
-                                             "extensions/libguile-curl")))
-               (substitute* curl.scm (("libguile-curl") ext))
-               ;; The build system does not actually compile the Scheme module.
-               ;; So we can compile it and put it in the right place in one go.
-               (invoke "guild" "compile" curl.scm "-o" curl.go)))))))
+            (let* ((out      (assoc-ref outputs "out"))
+                   (curl.scm (string-append
+                              out "/share/guile/site/"
+                              (target-guile-effective-version)
+                              "/curl.scm"))
+                   (curl.go  (string-append
+                              out "/lib/guile/"
+                              (target-guile-effective-version)
+                              "/site-ccache/curl.go"))
+                   (ext      (string-append out "/lib/guile/"
+                                            (target-guile-effective-version)
+                                            "/extensions/libguile-curl")))
+              (substitute* curl.scm (("libguile-curl") ext))
+              ;; The build system does not actually compile the Scheme module.
+              ;; So we can compile it and put it in the right place in one go.
+              (invoke "guild" "compile" curl.scm "-o" curl.go)))))))
    (native-inputs `(("pkg-config" ,pkg-config)))
    (inputs
     `(("curl" ,curl)
-      ("guile" ,guile-2.2)))
+      ("guile" ,guile-3.0)))
    (home-page "http://www.lonelycactus.com/guile-curl.html")
    (synopsis "Curl bindings for Guile")
    (description "@code{guile-curl} is a project that has procedures that allow
 Guile to do client-side URL transfers, like requesting documents from HTTP or
 FTP servers.  It is based on the curl library.")
    (license license:gpl3+)))
+
+(define-public guile2.2-curl
+  (package
+    (inherit guile-curl)
+    (name "guile2.2-curl")
+    (inputs
+     `(("curl" ,curl)
+       ("guile" ,guile-2.2)))))
 
 (define-public curlpp
   (package
