@@ -10,7 +10,7 @@
 ;;; Copyright © 2016 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017, 2018, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
-;;; Copyright © 2017, 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2017–2019, 2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2018 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
@@ -164,21 +164,19 @@ living in the same process.")
 (define-public gnutls
   (package
     (name "gnutls")
-    ;; XXX Unversion openconnect's "gnutls" input when ungrafting.
-    (replacement gnutls/fixed)
-    (version "3.6.12")
+    (version "3.6.15")
     (source (origin
-             (method url-fetch)
-             (uri
+              (method url-fetch)
               ;; Note: Releases are no longer on ftp.gnu.org since the
               ;; schism (after version 3.1.5).
-              (string-append "mirror://gnupg/gnutls/v"
-                             (version-major+minor version)
-                             "/gnutls-" version ".tar.xz"))
-             (patches (search-patches "gnutls-skip-trust-store-test.patch"))
-             (sha256
-              (base32
-               "0jvca1qahn9lrwv6f5kfs95icirc15b2a8x9fzczyj996ipg3b5z"))))
+              (uri (string-append "mirror://gnupg/gnutls/v"
+                                  (version-major+minor version)
+                                  "/gnutls-" version ".tar.xz"))
+              (patches (search-patches "gnutls-skip-trust-store-test.patch"
+                                       "gnutls-cross.patch"))
+              (sha256
+               (base32
+                "0n0m93ymzd0q9hbknxc2ycanz49sqlkyyf73g9fk7n787llc7a0f"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? ,(not (or (%current-target-system)
@@ -228,7 +226,11 @@ living in the same process.")
                "debug"
                "doc"))                            ;4.1 MiB of man pages
     (native-inputs
-     `(,@(if (hurd-target?) '()
+     `(,@(if (%current-target-system)             ;for cross-build
+             `(("guile" ,guile-3.0))              ;to create .go files
+             '())
+       ,@(if (hurd-target?)
+             '()
              `(("net-tools" ,net-tools)))
        ("pkg-config" ,pkg-config)
        ("which" ,which)
@@ -254,27 +256,6 @@ required structures.")
     (properties '((ftp-server . "ftp.gnutls.org")
                   (ftp-directory . "/gcrypt/gnutls")))))
 
-;; Replacement package to fix multiple security vulnerabilities.
-(define-public gnutls/fixed
-  (package
-    (inherit gnutls)
-    (version "3.6.15")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://gnupg/gnutls/v"
-                                  (version-major+minor version)
-                                  "/gnutls-" version ".tar.xz"))
-              (patches (search-patches "gnutls-skip-trust-store-test.patch"
-                                       "gnutls-cross.patch"))
-              (sha256
-               (base32
-                "0n0m93ymzd0q9hbknxc2ycanz49sqlkyyf73g9fk7n787llc7a0f"))))
-    (native-inputs
-     `(,@(if (%current-target-system)             ;for cross-build
-             `(("guile" ,guile-3.0))              ;to create .go files
-             '())
-       ,@(package-native-inputs gnutls)))))
-
 (define-public gnutls/guile-2.0
   ;; GnuTLS for Guile 2.0.
   (package/inherit gnutls
@@ -287,7 +268,7 @@ required structures.")
   ;; Authentication of Named Entities.  This is required for GNS functionality
   ;; by GNUnet and gnURL.  This is done in an extra package definition
   ;; to have the choice between GnuTLS with Dane and without Dane.
-  (package/inherit gnutls/fixed
+  (package/inherit gnutls
     (name "gnutls-dane")
     (inputs `(("unbound" ,unbound)
               ,@(package-inputs gnutls)))))
@@ -306,8 +287,7 @@ required structures.")
 (define-public openssl
   (package
    (name "openssl")
-   (version "1.1.1f")
-   (replacement openssl-1.1.1i)
+   (version "1.1.1i")
    (source (origin
              (method url-fetch)
              (uri (list (string-append "https://www.openssl.org/source/openssl-"
@@ -317,10 +297,10 @@ required structures.")
                         (string-append "ftp://ftp.openssl.org/source/old/"
                                        (string-trim-right version char-set:letter)
                                        "/openssl-" version ".tar.gz")))
+             (patches (search-patches "openssl-1.1-c-rehash-in.patch"))
              (sha256
               (base32
-               "0d9zv9srjqivs8nn099fpbjv1wyhfcb8lzy491dpmfngdvz6nv0q"))
-             (patches (search-patches "openssl-1.1-c-rehash-in.patch"))))
+               "0hjj1phcwkz69lx1lrvr9grhpl4y529mwqycqc1hdla1zqsnmgp8"))))
    (build-system gnu-build-system)
    (outputs '("out"
               "doc"         ;6.8 MiB of man3 pages and full HTML documentation
@@ -439,24 +419,6 @@ required structures.")
    (license license:openssl)
    (home-page "https://www.openssl.org/")))
 
-(define openssl-1.1.1i
-  (package
-   (inherit openssl)
-   (version "1.1.1i")
-   (source (origin
-             (method url-fetch)
-             (uri (list (string-append "https://www.openssl.org/source/openssl-"
-                                       version ".tar.gz")
-                        (string-append "ftp://ftp.openssl.org/source/"
-                                       "openssl-" version ".tar.gz")
-                        (string-append "ftp://ftp.openssl.org/source/old/"
-                                       (string-trim-right version char-set:letter)
-                                       "/openssl-" version ".tar.gz")))
-             (patches (search-patches "openssl-1.1-c-rehash-in.patch"))
-             (sha256
-              (base32
-               "0hjj1phcwkz69lx1lrvr9grhpl4y529mwqycqc1hdla1zqsnmgp8"))))))
-
 (define-public openssl-1.0
   (package
     (inherit openssl)
@@ -553,18 +515,18 @@ required structures.")
 (define-public libressl
   (package
     (name "libressl")
-    (version "3.1.4")
+    (version "3.1.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://openbsd/LibreSSL/"
                                   "libressl-" version ".tar.gz"))
               (sha256
                (base32
-                "1dnbbnr43jashxivnafmh9gnn57c7ayva788ba03z633k6f18k21"))))
+                "1504a1sf43frw43j14pij0q1f48rm5q86ggrlxxhw708qp7ds4rc"))))
     (build-system gnu-build-system)
     (arguments
-     ;; Do as if 'getentropy' was missing since older Linux kernels lack it
-     ;; and libc would return ENOSYS, which is not properly handled.
+     ;; Do as if 'getentropy' were missing: Linux kernels before 3.17 lack its
+     ;; underlying 'getrandom' system call and ENOSYS isn't properly handled.
      ;; See <https://lists.gnu.org/archive/html/guix-devel/2017-04/msg00235.html>.
      '(#:configure-flags '("ac_cv_func_getentropy=no"
                            ;; Provide a TLS-enabled netcat.
