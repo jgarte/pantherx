@@ -29,7 +29,7 @@
 ;;; Code:
 
 (define %artwork-repository
-  (let ((commit "b4a452832c546993c6e427792a117528cb0cda8e"))
+  (let ((commit "c7abb113aaaedd7c627a7cdab4a146b854eb8d2d"))
     (origin
       (method git-fetch)
       (uri (git-reference
@@ -39,6 +39,6 @@
                                 "-checkout"))
       (sha256
        (base32
-        "0jbzanwn5fvi6z3km5ja7vx3fhwdjzhg26rvb08mbi099fsp9mxd")))))
+        "11gafacagsb3jsn6w4kk5mmzrp5k666dzvh2bh47ijb6wmzb7shz")))))
 
 ;;; artwork.scm ends here

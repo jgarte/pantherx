@@ -110,7 +110,7 @@ G-expression or other lowerable object denoting a file name."
 ;   (grub-image
 ;    (aspect-ratio 4/3)
 ;    (file (file-append %artwork-repository
-;                       "/grub/PantherX-4-3.svg"))))
+;                       "/grub/PantherX-4-3.png"))))
 
 ; (define %default-theme
 ;   ;; Default theme contributed by Felipe López.
