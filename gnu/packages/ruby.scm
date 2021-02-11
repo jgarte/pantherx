@@ -25,6 +25,7 @@
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Holgr Peters <holger.peters@posteo.de>
 ;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
+;;; Copyright © 2021 EuAndreh <eu@euandre.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -10434,14 +10435,14 @@ features that don't exist yet like variables, nesting, mixins and inheritance.")
 (define-public ruby-sassc
   (package
     (name "ruby-sassc")
-    (version "2.2.1")
+    (version "2.4.0")
     (source
      (origin
        (method url-fetch)
        (uri (rubygems-uri "sassc" version))
        (sha256
         (base32
-         "09bnid7r5z5hcin5hykvpvv8xig27wbbckxwis60z2aaxq4j9siz"))))
+         "0gpqv48xhl8mb8qqhcifcp0pixn206a7imc07g48armklfqa4q2c"))))
     (build-system ruby-build-system)
     (arguments
      '(#:modules ((guix build ruby-build-system)
@@ -10520,13 +10521,13 @@ bindings to the libsass library.  This enables rendering
 (define-public ruby-jekyll-sass-converter
   (package
     (name "ruby-jekyll-sass-converter")
-    (version "1.5.2")
+    (version "2.1.0")
     (source (origin
               (method url-fetch)
               (uri (rubygems-uri "jekyll-sass-converter" version))
               (sha256
                (base32
-                "008ikh5fk0n6ri54mylcl8jn0mq8p2nfyfqif2q3pp0lwilkcxsk"))))
+                "04ncr44wrilz26ayqwlg7379yjnkb29mvx4j04i62b7czmdrc9dv"))))
     (build-system ruby-build-system)
     (propagated-inputs
      `(("ruby-sass" ,ruby-sass)))
@@ -10981,17 +10982,6 @@ is compatible with stylesheets designed for pygments.")
                ;; pygments is licensed under bsd-2
                license:bsd-2))))
 
-(define-public ruby-rouge-2
-  (package
-    (inherit ruby-rouge)
-    (version "2.2.1")
-    (source (origin
-              (method url-fetch)
-              (uri (rubygems-uri "rouge" version))
-              (sha256
-               (base32
-                "02kpahk5nkc33yxnn75649kzxaz073wvazr2zyg491nndykgnvcs"))))))
-
 (define-public ruby-hashie
   (package
     (name "ruby-hashie")
@@ -11078,13 +11068,13 @@ YAML.load suitable for accepting user input in Ruby applications.")
 (define-public ruby-mercenary
   (package
     (name "ruby-mercenary")
-    (version "0.3.6")
+    (version "0.4.0")
     (source (origin
               (method url-fetch)
               (uri (rubygems-uri "mercenary" version))
               (sha256
                (base32
-                "10la0xw82dh5mqab8bl0dk21zld63cqxb1g16fk8cb39ylc4n21a"))))
+                "0f2i827w4lmsizrxixsrv2ssa3gk1b7lmqh8brk8ijmdb551wnmj"))))
     (build-system ruby-build-system)
     (arguments `(#:test-target "spec"))
     (native-inputs
@@ -11156,16 +11146,57 @@ methods for your source as @code{Forwardable::Extended}.")
 Pathname.")
     (license license:expat)))
 
+(define-public ruby-terminal-table
+  (package
+    (name "ruby-terminal-table")
+    (version "2.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (rubygems-uri "terminal-table" version))
+       (sha256
+        (base32
+         "18rbrh464ysqbdv53iwj0r8frshn65566kyj044cp3x9c2754jwh"))))
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (add-before 'check 'remove-gemfile-lock
+           (lambda _
+             (delete-file "Gemfile.lock")))
+         (add-before 'check 'remove-unnecessary-dependencies
+           (lambda _
+             (substitute* "terminal-table.gemspec"
+               (("s.add_runtime_dependency.*") "\n")
+               (("s.add_development_dependency.*") "\n"))
+             (substitute* "Gemfile"
+               ((".*tins.*") "\n"))))
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "rspec")))))))
+    (build-system ruby-build-system)
+    (propagated-inputs
+     `(("ruby-unicode-display-width" ,ruby-unicode-display-width)))
+    (native-inputs
+     `(("ruby-rspec" ,ruby-rspec)))
+    (home-page "https://github.com/tj/terminal-table")
+    (synopsis "Simple, feature rich ASCII table generation library")
+    (description
+     "Terminal Table is a fast and simple, yet feature rich
+table generator written in Ruby.  It supports ASCII and
+Unicode formatted tables.")
+    (license license:expat)))
+
 (define-public jekyll
   (package
     (name "jekyll")
-    (version "3.8.6")
+    (version "4.2.0")
     (source (origin
               (method url-fetch)
               (uri (rubygems-uri "jekyll" version))
               (sha256
                (base32
-                "1ph1jjjl25vmzif7bvxzviq7azjm384pm7ba4k24cah94285bzhz"))))
+                "0cqkh78jw8scrajyx5nla0vwm9fvp2qql3kdcvvplcq9mazy8snq"))))
     (build-system ruby-build-system)
     (arguments
      ;; No rakefile, but a test subdirectory.
@@ -11189,8 +11220,10 @@ Pathname.")
        ("ruby-liquid" ,ruby-liquid)
        ("ruby-mercenary" ,ruby-mercenary)
        ("ruby-pathutil" ,ruby-pathutil)
-       ("ruby-rouge" ,ruby-rouge-2)
-       ("ruby-safe-yaml" ,ruby-safe-yaml)))
+       ("ruby-rouge" ,ruby-rouge)
+       ("ruby-safe-yaml" ,ruby-safe-yaml)
+       ("ruby-sassc" ,ruby-sassc)
+       ("ruby-terminal-table" ,ruby-terminal-table)))
     (home-page "https://jekyllrb.com/")
     (synopsis "Static site generator")
     (description "Jekyll is a simple, blog aware, static site generator.")
