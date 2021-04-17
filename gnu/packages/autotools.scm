@@ -6,7 +6,7 @@
 ;;; Copyright © 2015, 2017, 2018 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2016 David Thompson <davet@gnu.org>
 ;;; Copyright © 2017 Nikita <nikita@n0.is>
-;;; Copyright © 2017, 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2017, 2019, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2018 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2019 Pierre-Moana Levesque <pierre.moana.levesque@gmail.com>
@@ -267,13 +267,15 @@ exec ~a --no-auto-compile \"$0\" \"$@\"
     ;; Do not show it in the UI since it's meant for internal use.
     (properties '((hidden? . #t)))))
 
+;; Only use this package when autoconf is not usable,
+;; see <https://issues.guix.gnu.org/46564#1>.
 (define-public autoconf-wrapper
   (make-autoconf-wrapper autoconf))
 
 (define-public autoconf-archive
   (package
     (name "autoconf-archive")
-    (version "2019.01.06")
+    (version "2021.02.19")
     (source
      (origin
       (method url-fetch)
@@ -281,7 +283,7 @@ exec ~a --no-auto-compile \"$0\" \"$@\"
                           version ".tar.xz"))
       (sha256
        (base32
-        "0gqya7nf4j5k98dkky0c3bnr0paciya91vkqazg7knlq621mq68p"))))
+        "1gcwqspcxiygnyk02smsk8ivzs9r69ji38izxzzsijyx52fyp9p8"))))
     (build-system gnu-build-system)
     (home-page "https://www.gnu.org/software/autoconf-archive/")
     (synopsis "Collection of freely reusable Autoconf macros")
@@ -535,7 +537,7 @@ complexity of working with shared libraries across platforms.")
       (native-inputs
        `(("help2man" ,help2man)))
       (home-page "https://savannah.gnu.org/projects/config")
-      (synopsis "Ubiquitious config.guess and config.sub scripts")
+      (synopsis "Ubiquitous config.guess and config.sub scripts")
       (description "The `config.guess' script tries to guess a canonical system triple,
 and `config.sub' validates and canonicalizes.  These are used as part of
 configuration in nearly all GNU packages (and many others).")

@@ -229,7 +229,7 @@ to list and filter contacts.")
        ("shared-mime-info" ,shared-mime-info)))
     (inputs
      `(("akonadi" ,akonadi)
-       ("boost", boost)
+       ("boost" ,boost)
        ("kcodecs" ,kcodecs)
        ("kconfig" ,kconfig)
        ("kconfigwidgets" ,kconfigwidgets)
@@ -469,7 +469,7 @@ CalDAV server.")
     (native-inputs
      `(("extra-cmake-modules" ,extra-cmake-modules)))
     (inputs
-     `(("akonadi", akonadi)
+     `(("akonadi" ,akonadi)
        ("boost" ,boost)
        ("kcalendarcore" ,kcalendarcore)
        ("kcalutils" ,kcalutils)
@@ -551,7 +551,7 @@ one of the APIs mentioned above.")
        ("akonadi-mime" ,akonadi-mime)
        ("boost" ,boost)
        ("kcalendarcore" ,kcalendarcore)
-       ("kcalutils", kcalutils)
+       ("kcalutils" ,kcalutils)
        ("kcompletion" ,kcompletion)
        ("kdbusaddons" ,kdbusaddons)
        ("kdepim-apps-libs" ,kdepim-apps-libs)
@@ -796,7 +796,7 @@ package.")
        ("kcalendarcore" ,kcalendarcore)
        ("kcalendarsupport" ,kcalendarsupport)
        ("kcalutils" ,kcalutils)
-       ("kcodecs", kcodecs)
+       ("kcodecs" ,kcodecs)
        ("kcompletion" ,kcompletion)
        ("kconfigwidgets" ,kconfigwidgets)
        ("kcontacts" ,kcontacts)
@@ -1112,7 +1112,7 @@ and retrieving certificates from LDAP servers.")
     (synopsis "Full featured graphical email client")
     (description "KMail supports multiple accounts, mail filtering and email
 encryption.  The program let you configure your workflow and it has good
-integration into KDE (Plasma Desktop) but is also useable with other Desktop
+integration into KDE (Plasma Desktop) but is also usable with other Desktop
 Environments.
 
 KMail is the email component of Kontact, the integrated personal information
@@ -1252,7 +1252,7 @@ e-mail client programs into KMail and KDE PIM.")
        ("kdbusaddons" ,kdbusaddons)
        ("kconfigwidgets" ,kconfigwidgets)
        ("ki18n" ,ki18n)
-       ("kitemmodels", kitemmodels)
+       ("kitemmodels" ,kitemmodels)
        ("kio" ,kio)
        ("kmime" ,kmime)
        ("ksmtp" ,ksmtp)
@@ -1737,7 +1737,7 @@ Virtual Contact File}) files to the KPeople contact management library.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("qtbase" ,qtbase)
-       ("qtspeech", qtspeech)
+       ("qtspeech" ,qtspeech)
        ("sonnet" ,sonnet)))
     (arguments
      `(#:tests? #f)) ;; TODO - test suite hangs

@@ -16,7 +16,7 @@
 ;;; Copyright © 2016 Troy Sankey <sankeytms@gmail.com>
 ;;; Copyright © 2016 Lukas Gradl <lgradl@openmailbox.org>
 ;;; Copyright © 2016 Hartmut Goebel <h.goebel@crazy-compilers.com>
-;;; Copyright © 2016, 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2016–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2017 Thomas Danckaert <post@thomasdanckaert.be>
 ;;; Copyright © 2017, 2018 Arun Isaac <arunisaac@systemreboot.net>
@@ -24,11 +24,11 @@
 ;;; Copyright © 2017, 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2017, 2019 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2017 Nikita <nikita@n0.is>
-;;; Copyright © 2015, 2017, 2018, 2020 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2017, 2018, 2020, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017, 2018, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2018 Fis Trivial <ybbs.daans@hotmail.com>
-;;; Copyright © 2019 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2019, 2021 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2019 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2020 Lars-Dominik Braun <ldb@leibniz-psychology.org>
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
@@ -561,7 +561,7 @@ and it supports a very flexible form of test discovery.")
 (define-public doctest
   (package
     (name "doctest")
-    (version "2.4.4")
+    (version "2.4.6")
     (home-page "https://github.com/onqtam/doctest")
     (source (origin
               (method git-fetch)
@@ -569,7 +569,7 @@ and it supports a very flexible form of test discovery.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0xldd6cr1w3bn33rdb7yc6p57w143cgnjb48ig1b99iwvvkw599n"))))
+                "14m3q6d96zg6d99x1152jkly50gdjrn5ylrbhax53pfgfzzc5yqx"))))
     (build-system cmake-build-system)
     (synopsis "C++ test framework")
     (description
@@ -836,7 +836,7 @@ have been used.")
 (define-public python2-mock
   (let ((base (package-with-python2
                (strip-python2-variant python-mock))))
-    (package (inherit base)
+    (package/inherit base
       (propagated-inputs
        `(("python2-functools32" ,python2-functools32)
          ("python2-funcsigs" ,python2-funcsigs)
@@ -1132,6 +1132,37 @@ supports coverage of subprocesses.")
 (define-public python2-pytest-cov
   (package-with-python2 python-pytest-cov))
 
+(define-public python-pytest-httpserver
+  (package
+    (name "python-pytest-httpserver")
+    (version "1.0.0")
+    (source (origin
+              (method url-fetch)
+              (uri (pypi-uri "pytest_httpserver" version))
+              (sha256
+               (base32
+                "0vbls0j570l5my83j4jnk5blmnir44i0w511azlh41nl6k8rac5f"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (propagated-inputs
+     `(("python-werkzeug" ,python-werkzeug)))
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (add-before 'check 'fix-library-loading
+           (lambda _
+             (setenv "PYTHONPATH" (string-append (getenv "PYTHONPATH") ":."))))
+         (replace 'check
+           (lambda _
+             (invoke "pytest" "tests" "-vv")
+             (invoke "pytest" "tests" "-vv" "--ssl"))))))
+    (home-page "https://github.com/csernazs/pytest-httpserver")
+    (synopsis "HTTP server for pytest")
+    (description "Pytest plugin library to test http clients without
+contacting the real http server.")
+    (license license:expat)))
+
 (define-public python-pytest-runner
   (package
     (name "python-pytest-runner")
@@ -1240,7 +1271,7 @@ same arguments.")
 (define-public python2-pytest-mock
   (let ((base (package-with-python2
                 (strip-python2-variant python-pytest-mock))))
-    (package (inherit base)
+    (package/inherit base
       (propagated-inputs
        `(("python2-mock" ,python2-mock)
          ,@(package-propagated-inputs base))))))
@@ -1319,7 +1350,7 @@ result back.")
      `(("python-pytest" ,python-pytest)))
     (native-inputs
      `(("python-pexpect" ,python-pexpect)))
-    (home-page "http://bitbucket.org/pytest-dev/pytest-timeout/")
+    (home-page "https://github.com/pytest-dev/pytest-timeout")
     (synopsis "Plugin for py.test to abort hanging tests")
     (description
      "This package provides a py.test plugin that aborts hanging tests after a
@@ -1738,7 +1769,7 @@ C/C++, R, and more, and uploads it to the @code{codecov.io} service.")
 (define-public python-testpath
   (package
     (name "python-testpath")
-    (version "0.2")
+    (version "0.4.4")
     (source
      (origin
        (method git-fetch)
@@ -1748,7 +1779,7 @@ C/C++, R, and more, and uploads it to the @code{codecov.io} service.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0r4iiizjql6ny1ln7ciw7rrbjadz1s9zrf2hl0xkgnh3ypd8936f"))))
+         "1fwv4d3p54xx1x942s104irr35lszvv6jnr4nn1scsfvc0m1qmbk"))))
     (build-system python-build-system)
     (arguments
      `(#:tests? #f ; this package does not even have a setup.py
@@ -1757,19 +1788,25 @@ C/C++, R, and more, and uploads it to the @code{codecov.io} service.")
                   (srfi srfi-1))
        #:phases
        (modify-phases %standard-phases
-         (delete 'install)
          (replace 'build
+           (lambda _
+             ;; A ZIP archive should be generated, but it fails with "ZIP does
+             ;; not support timestamps before 1980".  Luckily,
+             ;; SOURCE_DATE_EPOCH is respected, which we set to some time in
+             ;; 1980.
+             (setenv "SOURCE_DATE_EPOCH" "315532800")
+             (invoke "flit" "build")))
+         (replace 'install
            (lambda* (#:key inputs outputs #:allow-other-keys)
-             (let* ((version (last
-                              (string-split (assoc-ref inputs "python") #\-)))
-                    (x.y (string-join (take (string-split version #\.) 2)
-                                        "."))
-                    (dir (string-append
-                          (assoc-ref outputs "out")
-                          "/lib/python" x.y "/site-packages/testpath")))
-               (mkdir-p dir)
-               (copy-recursively "testpath" dir))
-             #t)))))
+             (add-installed-pythonpath inputs outputs)
+             (let ((out (assoc-ref outputs "out")))
+               (for-each (lambda (wheel)
+                           (format #true wheel)
+                           (invoke "python" "-m" "pip" "install"
+                                   wheel (string-append "--prefix=" out)))
+                         (find-files "dist" "\\.whl$"))))))))
+    (native-inputs
+     `(("python-flit" ,python-flit)))
     (home-page "https://github.com/takluyver/testpath")
     (synopsis "Test utilities for code working with files and commands")
     (description
@@ -2732,7 +2769,7 @@ provides a simple way to achieve this.")
     (native-inputs
      `(("vala" ,vala)
        ("gobject-introspection" ,gobject-introspection)
-       ("gtk-doc" ,gtk-doc)
+       ("gtk-doc" ,gtk-doc/stable)
        ("pkg-config" ,pkg-config)
 
        ;; For tests.
@@ -2848,15 +2885,27 @@ system.  The code under test requires no modification to work with pyfakefs.")
 (define-public python-aiounittest
   (package
     (name "python-aiounittest")
-    (version "1.3.1")
+    (version "1.4.0")
+    ;; Pypi package lacks tests.
     (source
-     (origin
-       (method url-fetch)
-       (uri (pypi-uri "aiounittest" version))
-       (sha256
-        (base32
-         "1q4bhmi80smaa1lknvdna0sx3915naczlfna1fp435nf6cjyrjl1"))))
+     (origin (method git-fetch)
+             (uri (git-reference
+                   (url "https://github.com/kwarunek/aiounittest.git")
+                   (commit version)))
+             (file-name (git-file-name name version))
+             (sha256
+              (base32
+               "0hql5mw62lclrpblbh7xvinwjfcdcfvhhlvl7xlq2hi9isjq1c8r"))))
     (build-system python-build-system)
+    (arguments
+     '(#:phases (modify-phases %standard-phases
+                  (replace 'check
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (if tests?
+                          (invoke "nosetests" "-v")
+                          (format #t "test suite not run~%"))
+                      #t)))))
+    (propagated-inputs `(("python-wrapt" ,python-wrapt)))
     (native-inputs
      `(("python-coverage" ,python-coverage)
        ("python-nose" ,python-nose)))

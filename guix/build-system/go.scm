@@ -26,9 +26,13 @@
   #:use-module (guix build-system gnu)
   #:use-module (guix packages)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 regex)
   #:export (%go-build-system-modules
             go-build
-            go-build-system))
+            go-build-system
+
+            go-pseudo-version?
+            go-version->git-ref))
 
 ;; Commentary:
 ;;
@@ -36,6 +40,43 @@
 ;; implemented as an extension of 'gnu-build-system'.
 ;;
 ;; Code:
+
+(define %go-pseudo-version-rx
+  ;; Match only the end of the version string; this is so that matching the
+  ;; more complex leading semantic version pattern is not required.
+  (make-regexp (string-append
+                "([0-9]{14}-)"                 ;timestamp
+                "([0-9A-Fa-f]{12})"            ;commit hash
+                "(\\+incompatible)?$")))       ;optional +incompatible tag
+
+(define (go-version->git-ref version)
+  "Parse VERSION, a \"pseudo-version\" as defined at
+<https://golang.org/ref/mod#pseudo-versions>, and extract the commit hash from
+it, defaulting to full VERSION (stripped from the \"+incompatible\" suffix if
+present) if a pseudo-version pattern is not recognized."
+  ;; A module version like v1.2.3 is introduced by tagging a revision in the
+  ;; underlying source repository.  Untagged revisions can be referred to
+  ;; using a "pseudo-version" like v0.0.0-yyyymmddhhmmss-abcdefabcdef, where
+  ;; the time is the commit time in UTC and the final suffix is the prefix of
+  ;; the commit hash (see: https://golang.org/ref/mod#pseudo-versions).
+  (let* ((version
+          ;; If a source code repository has a v2.0.0 or later tag for a file
+          ;; tree with no go.mod, the version is considered to be part of the
+          ;; v1 module's available versions and is given an +incompatible
+          ;; suffix
+          ;; (see:https://golang.org/cmd/go/#hdr-Module_compatibility_and_semantic_versioning).
+          (if (string-suffix? "+incompatible" version)
+              (string-drop-right version 13)
+              version))
+         (match (regexp-exec %go-pseudo-version-rx version)))
+    (if match
+        (match:substring match 2)
+        version)))
+
+(define (go-pseudo-version? version)
+  "True if VERSION is a Go pseudo-version, i.e., a version string made of a
+commit hash and its date rather than a proper release tag."
+  (regexp-exec %go-pseudo-version-rx version))
 
 (define %go-build-system-modules
   ;; Build-side modules imported and used by default.
