@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2016, 2017 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
@@ -73,7 +73,6 @@
   #:export (expression->derivation-in-linux-vm
             qemu-image
             virtualized-operating-system
-            system-qemu-image
 
             system-qemu-image/shared-store
             system-qemu-image/shared-store-script
@@ -88,6 +87,13 @@
 ;;; Tools to evaluate build expressions within virtual machines.
 ;;;
 ;;; Code:
+
+;; By default, the msize value is 8 KiB, which according to QEMU is
+;; insufficient and would degrade performance.  The msize value should roughly
+;; match the bandwidth of the system's IO (see:
+;; https://wiki.qemu.org/Documentation/9psetup#msize).  Use 100 MiB as a
+;; conservative default.
+(define %default-msize-value (* 100 (expt 2 20))) ;100 MiB
 
 (define %linux-vm-file-systems
   ;; File systems mounted for 'derivation-in-linux-vm'.  These are shared with
@@ -104,21 +110,23 @@
           (type "9p")
           (needed-for-boot? #t)
           (flags '(read-only))
-          (options "trans=virtio,cache=loose")
+          (options (format #f "trans=virtio,cache=loose,msize=~a"
+                           %default-msize-value))
           (check? #f))
         (file-system
           (mount-point "/xchg")
           (device "xchg")
           (type "9p")
           (needed-for-boot? #t)
-          (options "trans=virtio")
+          (options (format #f "trans=virtio,msize=~a" %default-msize-value))
           (check? #f))
         (file-system
           (mount-point "/tmp")
           (device "tmp")
           (type "9p")
           (needed-for-boot? #t)
-          (options "trans=virtio,cache=loose")
+          (options (format #f "trans=virtio,cache=loose,msize=~a"
+                           %default-msize-value))
           (check? #f))))
 
 (define not-config?
@@ -460,6 +468,7 @@ system that is passed to 'populate-root-file-system'."
 (define* (system-docker-image os
                               #:key
                               (name "guix-docker-image")
+                              (memory-size 256)
                               (register-closures? (has-guix-service-type? os))
                               shared-network?)
   "Build a docker image.  OS is the desired <operating-system>.  NAME is the
@@ -481,7 +490,7 @@ the operating system."
     (program-file "boot-program"
                   #~(let ((system (cadr (command-line))))
                       (setenv "GUIX_NEW_SYSTEM" system)
-                      (execl #$(file-append guile-2.2 "/bin/guile")
+                      (execl #$(file-append guile-3.0 "/bin/guile")
                              "guile" "--no-auto-compile"
                              (string-append system "/boot")))))
 
@@ -553,71 +562,10 @@ the operating system."
 
     (expression->derivation-in-linux-vm
      name build
+     #:memory-size memory-size
      #:make-disk-image? #f
      #:single-file-output? #t
      #:references-graphs `((,graph ,os)))))
-
-
-;;;
-;;; VM and disk images.
-;;;
-
-(define* (system-qemu-image os
-                            #:key
-                            (file-system-type "ext4")
-                            (disk-image-size (* 900 (expt 2 20))))
-  "Return the derivation of a freestanding QEMU image of DISK-IMAGE-SIZE bytes
-of the GNU system as described by OS."
-  (define file-systems-to-keep
-    ;; Keep only file systems other than root and not normally bound to real
-    ;; devices.
-    (remove (lambda (fs)
-              (let ((target (file-system-mount-point fs))
-                    (source (file-system-device fs)))
-                (or (string=? target "/")
-                    (and (string? source)
-                         (string-prefix? "/dev/" source))
-                    (uuid? source)
-                    (file-system-label? source))))
-            (operating-system-file-systems os)))
-
-  (define root-uuid
-    ;; UUID of the root file system.
-    (operating-system-uuid os
-                           (if (string=? file-system-type "iso9660")
-                               'iso9660
-                               'dce)))
-
-
-  (let* ((os (operating-system
-               (inherit os)
-
-               ;; As in 'virtualized-operating-system', use BIOS-style GRUB.
-               (bootloader (bootloader-configuration
-                            (bootloader grub-bootloader)
-                            (target "/dev/vda")))
-
-               ;; Assume we have an initrd with the whole QEMU shebang.
-
-               ;; Force our own root file system.  Refer to it by UUID so that
-               ;; it works regardless of how the image is used ("qemu -hda",
-               ;; Xen, etc.).
-               (file-systems (cons (file-system
-                                     (mount-point "/")
-                                     (device root-uuid)
-                                     (type file-system-type))
-                                   file-systems-to-keep))))
-         (bootcfg (operating-system-bootcfg os)))
-    (qemu-image  #:os os
-                 #:bootcfg-drv bootcfg
-                 #:bootloader (bootloader-configuration-bootloader
-                               (operating-system-bootloader os))
-                 #:disk-image-size disk-image-size
-                 #:file-system-type file-system-type
-                 #:file-system-uuid root-uuid
-                 #:inputs `(("system" ,os)
-                            ("bootcfg" ,bootcfg))
-                 #:copy-inputs? #t)))
 
 
 ;;;
@@ -644,7 +592,8 @@ of the GNU system as described by OS."
        (type "9p")
        (flags (if writable? '() '(read-only)))
        (options (string-append "trans=virtio"
-                               (if writable? "" ",cache=loose")))
+                               (if writable? "" ",cache=loose")
+                               ",msize=" (number->string %default-msize-value)))
        (check? #f)
        (create-mount-point? #t)))))
 

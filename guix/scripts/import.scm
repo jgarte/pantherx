@@ -77,7 +77,7 @@ rather than \\n."
 ;;;
 
 (define importers '("gnu" "nix" "pypi" "cpan" "hackage" "stackage" "elpa" "gem"
-                    "cran" "crate" "texlive" "json" "opam"))
+                    "go" "cran" "crate" "texlive" "json" "opam"))
 
 (define (resolve-importer name)
   (let ((module (resolve-interface
@@ -119,7 +119,8 @@ Run IMPORTER with ARGS.\n"))
                                             (current-output-port))))))
            (match (apply (resolve-importer importer) args)
              ((and expr (or ('package _ ...)
-                            ('let _ ...)))
+                            ('let _ ...)
+                            ('define-public _ ...)))
               (print expr))
              ((? list? expressions)
               (for-each (lambda (expr)

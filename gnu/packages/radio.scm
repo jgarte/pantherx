@@ -6,6 +6,7 @@
 ;;; Copyright © 2020 Danny Milosavljevic <dannym@scratchpost.org>
 ;;; Copyright © 2020 Charlie Ritter <chewzerita@posteo.net>
 ;;; Copyright © 2020, 2021 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2021 João Pedro Simas <jpsimas@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -28,6 +29,7 @@
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix utils)
+  #:use-module (gnu packages admin)
   #:use-module (gnu packages algebra)
   #:use-module (gnu packages audio)
   #:use-module (gnu packages autotools)
@@ -35,21 +37,31 @@
   #:use-module (gnu packages bash)
   #:use-module (gnu packages boost)
   #:use-module (gnu packages check)
+  #:use-module (gnu packages compression)
+  #:use-module (gnu packages curl)
+  #:use-module (gnu packages databases)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages engineering)
   #:use-module (gnu packages fltk)
   #:use-module (gnu packages gcc)
   #:use-module (gnu packages gd)
+  #:use-module (gnu packages geo)
+  #:use-module (gnu packages gettext)
   #:use-module (gnu packages ghostscript)
   #:use-module (gnu packages glib)
+  #:use-module (gnu packages gnome)
+  #:use-module (gnu packages golang)
+  #:use-module (gnu packages gps)
   #:use-module (gnu packages gstreamer)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages image)
+  #:use-module (gnu packages javascript)
   #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages logging)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages maths)
+  #:use-module (gnu packages mp3)
   #:use-module (gnu packages multiprecision)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages networking)
@@ -61,17 +73,20 @@
   #:use-module (gnu packages qt)
   #:use-module (gnu packages readline)
   #:use-module (gnu packages ruby)
+  #:use-module (gnu packages sdl)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages swig)
   #:use-module (gnu packages tcl)
   #:use-module (gnu packages tex)
   #:use-module (gnu packages texinfo)
   #:use-module (gnu packages video)
+  #:use-module (gnu packages xiph)
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
+  #:use-module (guix build-system go)
   #:use-module (guix build-system python)
   #:use-module (guix build-system qt))
 
@@ -156,6 +171,53 @@ system configuration:
 To install the rtl-sdr udev rules, you must extend 'udev-service-type' with
 this package.  E.g.: @code{(udev-rules-service 'rtl-sdr rtl-sdr)}")
     (license license:gpl2+)))
+
+(define-public airspyhf
+  (package
+    (name "airspyhf")
+    (version "1.6.8")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/airspy/airspyhf")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0n699i5a9fzzhf80fcjlqq6p2a013rzlwmwv4nmwfafy6c8cr924"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libusb" ,libusb)))
+    (arguments
+     '(#:configure-flags '("-DINSTALL_UDEV_RULES=ON")
+       #:tests? #f ; No tests
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "tools/CMakeLists.txt"
+               (("DESTINATION \"/etc/udev/")
+                (string-append "DESTINATION \""
+                               (assoc-ref outputs "out")
+                               "/lib/udev/")))))
+         (add-after 'fix-paths 'fix-udev-rules
+           (lambda _
+             (substitute* "tools/52-airspyhf.rules"
+               ;; The plugdev group does not exist; use dialout as in
+               ;; the hackrf package.
+               (("GROUP=\"plugdev\"")
+                "GROUP=\"dialout\"")))))))
+    (home-page "https://github.com/airspy/airspyhf")
+    (synopsis "Software defined radio driver for Airspy HF+")
+    (description
+     "This package provides the driver and utilities for controlling the Airspy
+HF+ Software Defined Radio (SDR) over USB.
+
+To install the airspyhf udev rules, you must extend @code{udev-service-type}
+with this package.  E.g.: @code{(udev-rules-service 'airspyhf airspyhf)}")
+    (license license:bsd-3)))
 
 (define-public chirp
   (package
@@ -278,32 +340,27 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
 (define-public gnuradio
   (package
     (name "gnuradio")
-    (version "3.8.0.0")
+    (version "3.9.0.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.gnuradio.org/releases/gnuradio/"
                            "gnuradio-" version ".tar.xz"))
        (sha256
-        (base32 "0aw55gf5549b0fz2qdi7vplcmaf92bj34h40s34b2ycnqasv900r"))
-       (modules '((guix build utils)))
-       (snippet
-        '(begin
-           ;; Delete bundled volk to use the shared one.
-           (delete-file-recursively "volk")
-           #t))))
+        (base32 "1jvm9xd0l2pz1fww4zii6hl7ccnvy256nrf70ljb594n7j9j49ha"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("doxygen" ,doxygen)
        ("ghostscript" ,ghostscript)
+       ("js-mathjax" ,js-mathjax)
        ("orc" ,orc)
        ("pkg-config" ,pkg-config)
+       ("pybind11" ,pybind11)
        ("python-cheetah" ,python-cheetah)
        ("python-mako" ,python-mako)
        ("python-pyzmq" ,python-pyzmq)
        ("python-scipy" ,python-scipy)
        ("python-sphinx" ,python-sphinx)
-       ("swig" ,swig)
        ("texlive" ,(texlive-union (list texlive-amsfonts
                                         texlive-latex-amsmath
                                         ;; TODO: Add newunicodechar.
@@ -321,6 +378,7 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
        ("gsm" ,gsm)
        ("gtk+" ,gtk+)
        ("jack" ,jack-1)
+       ("libsndfile" ,libsndfile)
        ("log4cpp" ,log4cpp)
        ("pango" ,pango)
        ("portaudio" ,portaudio)
@@ -335,6 +393,7 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
        ("python-pyyaml" ,python-pyyaml)
        ("qtbase" ,qtbase)
        ("qwt" ,qwt)
+       ("sdl" ,sdl)
        ("volk" ,volk)
        ("zeromq" ,zeromq)))
     (arguments
@@ -347,7 +406,9 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
                            (guix build glib-or-gtk-build-system)
                            (guix build python-build-system))
        #:configure-flags
-       '("-DENABLE_INTERNAL_VOLK=OFF")
+       (list (string-append "-DMATHJAX2_ROOT="
+                            (assoc-ref %build-inputs "js-mathjax")
+                            "/share/javascript/mathjax"))
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'fix-paths
@@ -363,8 +424,7 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
              (substitute* "cmake/Modules/GrPython.cmake"
                (("dist-packages")
                 "site-packages"))
-             (substitute* '("gr-vocoder/swig/vocoder_swig.i"
-                            "gr-vocoder/include/gnuradio/vocoder/codec2.h"
+             (substitute* '("gr-vocoder/include/gnuradio/vocoder/codec2.h"
                             "gr-vocoder/include/gnuradio/vocoder/freedv_api.h")
                (("<codec2/")
                 "<"))
@@ -376,6 +436,19 @@ used by RDS Spy, and audio files containing @dfn{multiplex} signals (MPX).")
                                     "/bin/Xvfb :1 &"))
              (setenv "DISPLAY" ":1")
              #t))
+         (replace 'check
+           (lambda* (#:key tests? parallel-tests? #:allow-other-keys)
+             (invoke "ctest" "-j" (if parallel-tests?
+                                      (number->string (parallel-job-count))
+                                      "1")
+                     "--output-on-failure"
+                     ;;disable broken tests
+                     "-E" (string-join
+                           '(;; https://github.com/gnuradio/gnuradio/issues/3871
+                             "qa_header_payload_demux"
+                             ;; https://github.com/gnuradio/gnuradio/issues/4348
+                             "qa_packet_headerparser_b")
+                           "|"))))
          (add-after 'install 'wrap-python
            (assoc-ref python:%standard-phases 'wrap))
          (add-after 'wrap-python 'wrap-glib-or-gtk
@@ -416,40 +489,45 @@ environment.")
     (license license:gpl3+)))
 
 (define-public gnuradio-osmosdr
-  (package
-    (name "gnuradio-osmosdr")
-    (version "0.2.2")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://git.osmocom.org/gr-osmosdr")
-             (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32 "1aqj5cylipmmjh1x1kb2j8262hxq6mi86dgb2zphj94wvsab2ghx"))))
-    (build-system cmake-build-system)
-    (native-inputs
-     `(("doxygen" ,doxygen)
-       ("pkg-config" ,pkg-config)
-       ("python" ,python)
-       ("python-mako" ,python-mako)
-       ("python-six" ,python-six)
-       ("swig" ,swig)))
-    (inputs
-     `(("boost" ,boost)
-       ("fftwf" ,fftwf)
-       ("gmp" ,gmp)
-       ("gnuradio" ,gnuradio)
-       ("hackrf" ,hackrf)
-       ("log4cpp" ,log4cpp)
-       ("rtl-sdr" ,rtl-sdr)
-       ("volk" ,volk)))
-    (synopsis "GNU Radio block for interfacing with various radio hardware")
-    (description "This is a block for GNU Radio allowing to use a common API
+  ;; No tag for version supporting Gnuradio 3.9; use commit.
+  (let ((commit "a100eb024c0210b95e4738b6efd836d48225bd03")
+        (revision "0"))
+    (package
+      (name "gnuradio-osmosdr")
+      (version (git-version "0.2.3" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://git.osmocom.org/gr-osmosdr")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1pk5gnyznfyy510lbqzg9ijcb1fnhmn547n24aiqyrxd6i6vv1ki"))))
+      (build-system cmake-build-system)
+      (native-inputs
+       `(("doxygen" ,doxygen)
+         ("pkg-config" ,pkg-config)
+         ("pybind11" ,pybind11)
+         ("python" ,python)
+         ("python-mako" ,python-mako)
+         ("python-six" ,python-six)))
+      (inputs
+       `(("airspyhf" ,airspyhf)
+         ("boost" ,boost)
+         ("fftwf" ,fftwf)
+         ("gmp" ,gmp)
+         ("gnuradio" ,gnuradio)
+         ("hackrf" ,hackrf)
+         ("libsndfile" ,libsndfile)
+         ("log4cpp" ,log4cpp)
+         ("rtl-sdr" ,rtl-sdr)
+         ("volk" ,volk)))
+      (synopsis "GNU Radio block for interfacing with various radio hardware")
+      (description "This is a block for GNU Radio allowing to use a common API
 to access different radio hardware.")
-    (home-page "https://osmocom.org/projects/gr-osmosdr/wiki/GrOsmoSDR")
-    (license license:gpl3+)))
+      (home-page "https://osmocom.org/projects/gr-osmosdr/wiki/GrOsmoSDR")
+      (license license:gpl3+))))
 
 (define-public libosmo-dsp
   (package
@@ -496,36 +574,39 @@ primitives for SDR (Software Defined Radio).")
     (license license:gpl2+)))
 
 (define-public gnuradio-iqbalance
-  (package
-    (name "gnuradio-iqbalance")
-    (version "0.38.1")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://git.osmocom.org/gr-iqbal")
-             (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32 "0ksagwz05p3b0702q7ljq7013xmp0ijp30my9z6s3p7ja8dj42s3"))))
-    (build-system cmake-build-system)
-    (native-inputs
-     `(("doxygen" ,doxygen)
-       ("pkg-config" ,pkg-config)
-       ("python" ,python)
-       ("python-numpy" ,python-numpy)
-       ("python-six" ,python-six)
-       ("swig" ,swig)))
-    (inputs
-     `(("boost" ,boost)
-       ("fftwf" ,fftwf)
-       ("gmp" ,gmp)
-       ("gnuradio" ,gnuradio)
-       ("libosmo-dsp" ,libosmo-dsp)
-       ("log4cpp" ,log4cpp)
-       ("volk" ,volk)))
-    (synopsis "GNU Radio block to correct IQ imbalance")
-    (description
+  ;; No tag for version supporting Gnuradio 3.9; use commit.
+  (let ((commit "fbee239a6fb36dd2fb564f6e6a0d393c4bc844db")
+        (revision "0"))
+    (package
+      (name "gnuradio-iqbalance")
+      (version (git-version "0.38.2" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://git.osmocom.org/gr-iqbal")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "12p193ngcs65nd3lynry119nhv40mikamqkw37wdln7lawx3nw7p"))))
+      (build-system cmake-build-system)
+      (native-inputs
+       `(("doxygen" ,doxygen)
+         ("pkg-config" ,pkg-config)
+         ("pybind11" ,pybind11)
+         ("python" ,python)
+         ("python-numpy" ,python-numpy)
+         ("python-six" ,python-six)))
+      (inputs
+       `(("boost" ,boost)
+         ("fftwf" ,fftwf)
+         ("gmp" ,gmp)
+         ("gnuradio" ,gnuradio)
+         ("libosmo-dsp" ,libosmo-dsp)
+         ("log4cpp" ,log4cpp)
+         ("volk" ,volk)))
+      (synopsis "GNU Radio block to correct IQ imbalance")
+      (description
      "This is a GNU Radio block to correct IQ imbalance in quadrature
 receivers.  It's composed of two main block:
 @itemize
@@ -533,8 +614,8 @@ receivers.  It's composed of two main block:
 @item Optimize: Attempts to auto-detect the phase and amplitude error to feed
 to the fix block above.
 @end itemize")
-    (home-page "https://git.osmocom.org/gr-iqbal/")
-    (license license:gpl3+)))
+      (home-page "https://git.osmocom.org/gr-iqbal/")
+      (license license:gpl3+))))
 
 (define-public gqrx
   (package
@@ -561,6 +642,7 @@ to the fix block above.
        ("gnuradio-iqbalance" ,gnuradio-iqbalance)
        ("gnuradio-osmosdr" ,gnuradio-osmosdr)
        ("jack" ,jack-1)
+       ("libsndfile" ,libsndfile)
        ("log4cpp" ,log4cpp)
        ("portaudio" ,portaudio)
        ("pulseaudio" ,pulseaudio)
@@ -578,17 +660,22 @@ using GNU Radio and the Qt GUI toolkit.")
 (define-public fldigi
   (package
     (name "fldigi")
-    (version "4.1.17")
+    (version "4.1.18")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "http://www.w1hkj.com/files/fldigi/fldigi-"
-                           version ".tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://git.code.sf.net/p/fldigi/fldigi")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "1gzff60sn3h05279f9mdi1rkdws52m28shcil16911lvlq6ki13m"))))
+        (base32 "177qnl1bxy46rqwdxizfy2i3mxk5bzz733cp445rfzl7b6yf6zrn"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("gettext" ,gettext-minimal)
+       ("pkg-config" ,pkg-config)))
     (inputs
      `(("alsa-lib" ,alsa-lib)
        ("fltk" ,fltk)
@@ -617,14 +704,18 @@ hardware.")
     (version "1.3.52")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "http://www.w1hkj.com/files/flrig/flrig-"
-                           version ".tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://git.code.sf.net/p/fldigi/flrig")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "18c154080vl25cy4l5amh96abm6kzm7mzld9h58pabc28yqq8zl8"))))
+        (base32 "0vxn1wy5b2zfq20k93rfgq34m1nd3mxd74h8l98f90d85fhcqggy"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("pkg-config" ,pkg-config)))
     (inputs
      `(("fltk" ,fltk)
        ("libx11" ,libx11)
@@ -645,14 +736,18 @@ or USB connection.")
     (version "2.2.05")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "http://www.w1hkj.com/files/flamp/flamp-"
-                           version ".tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://git.code.sf.net/p/fldigi/flamp")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "19z1kghhdf7bq6hi2j0mzlsn2nhpn3gl1a623x3inmsk80yw3ck4"))))
+        (base32 "0ll2wbhyh1sb4iqsypwrd118mrgw3vbsdbz442qhk4r6l8kjzblq"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("pkg-config" ,pkg-config)))
     (inputs
      `(("fltk" ,fltk)
        ("libx11" ,libx11)
@@ -672,14 +767,18 @@ or USB connection.")
     (version "1.3.5")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "http://www.w1hkj.com/files/flwrap/flwrap-"
-                           version ".tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://git.code.sf.net/p/fldigi/flwrap")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "0qqivqkkravcg7j45740xfky2q3k7czqpkj6y364qff424q2pppg"))))
+        (base32 "0xkhr82smfr7wpb9xl05wf7bz3vi2mr4xkcr2s8v6mblhgsdhqwg"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("pkg-config" ,pkg-config)))
     (inputs
      `(("fltk" ,fltk)
        ("libx11" ,libx11)
@@ -755,7 +854,7 @@ you must extend 'udev-service-type' with this package.  E.g.:
 (define-public hamlib
   (package
     (name "hamlib")
-    (version "3.3")
+    (version "4.1")
     (source
      (origin
        (method url-fetch)
@@ -763,7 +862,7 @@ you must extend 'udev-service-type' with this package.  E.g.:
              "https://github.com/Hamlib/Hamlib/releases/download/"
              version "/hamlib-" version ".tar.gz"))
        (sha256
-        (base32 "10788mgrhbc57zpzakcxv5aqnr2819pcshml6fbh8zvnkja562y9"))))
+        (base32 "0hi3nc1k55mxff05amdv5iwryaz6r3205l24q0bg7l84f53bkm5l"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("doxygen" ,doxygen)
@@ -797,7 +896,7 @@ users.")
   (package
     (inherit hamlib)
     (name "wsjtx-hamlib")
-    (version "2.2.2")
+    (version "2.3.1")
     (source
      (origin
        (method git-fetch)
@@ -806,7 +905,7 @@ users.")
              (commit (string-append "wsjtx-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "01h5ps0yq5vi1x9rkw742gx6a5fj02zhbpi89i412qdfbnyk35cv"))))
+        (base32 "0m4yzjcqs7a1w4lghyyckpkiy96jxdjijddxarqr3a37cl2rz23j"))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
@@ -818,20 +917,12 @@ users.")
                            "--with-lua-binding"
                            "--with-python-binding"
                            "--with-tcl-binding"
-                           "--with-xml-support")
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'fix-tests
-           (lambda _
-             (substitute* "tests/testloc.c"
-               (("dmmm2dec\\(deg, mmm, nesw\\);")
-                "dmmm2dec(deg, mmm, 0, nesw);"))
-             #t)))))))
+                           "--with-xml-support")))))
 
 (define-public wsjtx
   (package
     (name "wsjtx")
-    (version "2.2.2")
+    (version "2.3.1")
     (source
      (origin
        (method git-fetch)
@@ -840,13 +931,7 @@ users.")
              (commit (string-append "wsjtx-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0fhws44gg05d9y2al0pcdnxwxwh4bazcfl0g5mq2ks1r7w23wi5x"))
-       (modules '((guix build utils)))
-       (snippet
-        '(begin
-           ;; Delete bundled boost to use the shared one.
-           (delete-file-recursively "boost")
-           #t))))
+        (base32 "0mdr4l7zii08615yn7z91spnvnqm5i9390bra9lz3aqyxrsiim91"))))
     (build-system qt-build-system)
     (native-inputs
      `(("asciidoc" ,asciidoc)
@@ -1227,4 +1312,266 @@ It can perform as:
 @item Internet gateway (IGate)
 @item APRStt gateway
 @end itemize\n")
+    (license license:gpl2+)))
+
+(define-public aldo
+  (package
+    (name "aldo")
+    (version "0.7.7")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://savannah/aldo/aldo-" version ".tar.bz2"))
+       (sha256
+        (base32 "14lzgldqzbbzydsy1cai3wln3hpyj1yhj8ji3wygyzr616fq9f7i"))))
+    (build-system gnu-build-system)
+    (inputs
+     `(("ao" ,ao)))
+    (home-page "https://www.nongnu.org/aldo/")
+    (synopsis "Morse code tutor")
+    (description
+     "Aldo is a morse code learning tool providing four type of training
+methods:
+
+@itemize
+@item Classic exercice,
+@item Koch method,
+@item Read from file,
+@item Callsign exercice.
+@end itemize\n")
+    (license license:gpl3+)))
+
+(define-public unixcw
+  (package
+    (name "unixcw")
+    (version "3.6.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/unixcw/unixcw-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "15wriwv91583kmmyijbzam3dpclzmg4qjyfzjv5f75x9b0gqabxm"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("ncurses" ,ncurses)
+       ("pulseaudio" ,pulseaudio)
+       ("qtbase" ,qtbase)))
+    (arguments
+     `(#:configure-flags '("--disable-static")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* '("configure"
+                            "src/config.h.in"
+                            "src/cwcp/Makefile.am"
+                            "src/cwcp/Makefile.in")
+               (("-lcurses")
+                "-lncurses"))
+             (substitute* "src/libcw/libcw_pa.c"
+               (("libpulse-simple.so" all)
+                (string-append (assoc-ref inputs "pulseaudio")
+                               "/lib/" all))))))))
+    (home-page "http://unixcw.sourceforge.net/")
+    (synopsis "Morse code library and programs")
+    (description
+     "@code{unixcw} is a project providing the libcw library and a set of
+programs using the library: cw, cwgen, cwcp and xcwcp.  The programs are
+intended for people who want to learn receiving and sending morse code.")
+    (license license:gpl2+)))
+
+(define-public gnuais
+  (package
+    (name "gnuais")
+    (version "0.3.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/rubund/gnuais")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1rik5fdfslszdn3yvj769jzmnv9pirzf76ki33bjjzk7nkabbnlm"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("mariadb-dev" ,mariadb "dev")
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("curl" ,curl)
+       ("gtk+" ,gtk+)
+       ("libsoup" ,libsoup-minimal)
+       ("mariadb-lib" ,mariadb "lib")
+       ("osm-gps-map" ,osm-gps-map)
+       ("pulseaudio" ,pulseaudio)))
+    (arguments
+     `(#:tests? #f ; No test suite
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "src/cfgfile.c"
+               (("/usr/share/")
+                (string-append (assoc-ref outputs "out") "/share/"))))))))
+    (home-page "http://gnuais.sourceforge.net/")
+    (synopsis "AIS message demodulator and decoder")
+    (description
+     "This program contains algorithms to demodulate and decode AIS (Automatic
+Identification System) messages sent by ships and coast stations.")
+    (license license:gpl2+)))
+
+(define-public kappanhang
+  (package
+    (name "kappanhang")
+    (version "1.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/nonoo/kappanhang")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1ycy8avq5s7zspfi0d9klqcwwkpmcaz742cigd7pmcnbbhspcicp"))))
+    (build-system go-build-system)
+    (arguments
+     '(#:import-path "github.com/nonoo/kappanhang"
+       #:install-source? #f))
+    (inputs
+     `(("go-github-com-akosmarton-papipes",go-github-com-akosmarton-papipes)
+       ("go-github-com-fatih-color" ,go-github-com-fatih-color)
+       ("go-github-com-google-goterm" ,go-github-com-google-goterm)
+       ("go-github-com-mattn-go-isatty" ,go-github-com-mattn-go-isatty)
+       ("go-github-com-mesilliac-pulse-simple"
+        ,go-github-com-mesilliac-pulse-simple)
+       ("go-github-com-pborman-getopt" ,go-github-com-pborman-getopt)
+       ("go-go-uber-org-multierr" ,go-go-uber-org-multierr)
+       ("go-go-uber-org-zap" ,go-go-uber-org-zap)))
+    (home-page "https://github.com/nonoo/kappanhang")
+    (synopsis "Client for Icom RS-BA1 server")
+    (description
+     "Kappanhang remotely opens audio channels and a serial port to an Icom
+RS-BA1 server.  The application is mainly developed for connecting to the Icom
+IC-705 transceiver, which has built-in WiFi and RS-BA1 server.
+
+Compatible hardware/software:
+@itemize
+@item Icom RS-BA1 server software,
+@item Icom IC-705
+@item Icom IC-9700
+@end itemize\n")
+    (license license:expat)))
+
+(define-public dream
+  (package
+    (name "dream")
+    (version "2.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/drm/dream/" version
+                           "/dream-" version "-svn808.tar.gz"))
+       (sha256
+        (base32 "01dv6gvljz64zrjbr08mybr9aicvpq2c6qskww46lngdjyhk8xs1"))))
+    (build-system qt-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("faad2" ,faad2)
+       ("fftw" ,fftw)
+       ("libsndfile" ,libsndfile)
+       ("libpcap" ,libpcap)
+       ("opus" ,opus)
+       ("pulseaudio" ,pulseaudio)
+       ("qtbase" ,qtbase)
+       ("qtsvg" ,qtsvg)
+       ("qtwebkit" ,qtwebkit)
+       ("qwt" ,qwt)
+       ("speexdsp" ,speexdsp)
+       ("zlib" ,zlib)))
+    (arguments
+     `(#:tests? #f
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-paths
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (substitute* "dream.pro"
+               (("target\\.path = /usr/bin")
+                (string-append "target.path = "
+                               (assoc-ref outputs "out") "/bin"))
+               (("documentation\\.path = /usr/share/man/man1")
+                (string-append "documentation.path = "
+                               (assoc-ref outputs "out")
+                               "/share/man/man1"))
+               (("/usr/include/pulse/")
+                (string-append (assoc-ref inputs "pulseaudio")
+                               "/include/pulse/"))
+               (("/usr/include/sndfile\\.h")
+                (string-append (assoc-ref inputs "libsndfile")
+                               "/include/sndfile.h"))
+               (("/usr/include/opus/")
+                (string-append (assoc-ref inputs "opus")
+                               "/include/opus/"))
+               (("/usr/include/speex/")
+                (string-append (assoc-ref inputs "speexdsp")
+                               "/include/speex/"))
+               (("/usr/include/qwt/")
+                (string-append (assoc-ref inputs "qwt")
+                               "/include/qwt/"))
+               (("\\$\\$OUT_PWD/include/neaacdec\\.h")
+                (string-append (assoc-ref inputs "faad2")
+                               "/include/neaacdec.h")))))
+         (replace 'configure
+           (lambda _
+             (invoke "qmake"))))))
+    (home-page "https://sourceforge.net/projects/drm/")
+    (synopsis "Digital Radio Mondiale receiver")
+    (description
+     "Dream is a software implementation of a Digital Radio Mondiale (DRM)
+receiver.")
+    (license license:gpl2+)))
+
+(define-public welle-io
+  (package
+    (name "welle-io")
+    (version "2.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/albrechtl/welle.io")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "04fpm6sc431dl9i5h53xpd6k85j22sv8aawl7b6wv2fzpfsd9fwa"))))
+    (build-system qt-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("faad2" ,faad2)
+       ("fftwf" ,fftwf)
+       ("lame" ,lame)
+       ("libusb" ,libusb)
+       ("mpg123" ,mpg123)
+       ("rtl-sdr" ,rtl-sdr)
+       ("qtbase" ,qtbase)
+       ("qtcharts" ,qtcharts)
+       ("qtdeclarative" ,qtdeclarative)
+       ("qtgraphicaleffects" ,qtgraphicaleffects)
+       ("qtmultimedia" ,qtmultimedia)
+       ("qtquickcontrols2" ,qtquickcontrols2)))
+    (arguments
+     `(#:configure-flags '("-DRTLSDR=ON")
+       #:tests? #f))
+    (home-page "https://www.welle.io/")
+    (synopsis "DAB and DAB+ software radio")
+    (description
+     "@code{welle.io} is a Digital Audio Broadcasting (DAB and DAB+) software
+defined radio with support for rtl-sdr.")
     (license license:gpl2+)))

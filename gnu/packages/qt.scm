@@ -20,6 +20,7 @@
 ;;; Copyright © 2020 Jonathan Brielmaier <jonathan.brielmaier@web.de>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2021 Brendan Tildesley <mail@brendan.scot>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -88,6 +89,7 @@
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-build)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages regex)
   #:use-module (gnu packages ruby)
@@ -104,6 +106,39 @@
   #:use-module (gnu packages xorg)
   #:use-module (gnu packages xml)
   #:use-module (srfi srfi-1))
+
+(define-public qite
+  (let ((commit "75fb3b6bbd5c6a5a8fc35e08a6efbfb588ed546a")
+        (revision "74"))
+    (package
+      (name "qite")
+      (version (git-version "0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri
+          (git-reference
+           (url "https://github.com/Ri0n/qite")
+           (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0jmmgy9pvk9hwwph1nwy7hxhczy8drhl4ymhnjjn6yx7bckssvsq"))))
+      (build-system qt-build-system)
+      (arguments
+       `(#:tests? #f                    ; no target
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'chdir
+             (lambda _
+               (chdir "libqite")
+               #t)))))
+      (inputs
+       `(("qtbase" ,qtbase)
+         ("qtmultimedia" ,qtmultimedia)))
+      (home-page "https://github.com/Ri0n/qite/")
+      (synopsis "Qt Interactive Text Elements")
+      (description "Qite allows to manage interactive elements on QTextEdit.")
+      (license license:asl2.0))))
 
 (define-public qt5ct
   (package
@@ -161,34 +196,52 @@ window managers, that don't provide Qt integration by themselves.")
     (license license:bsd-2)))
 
 (define-public materialdecoration
-  (package
-    (name "materialdecoration")
-    (version "1.1.0")
-    (source
-     (origin
-       (method git-fetch)
-       (uri
-        (git-reference
-         (url "https://github.com/lirios/materialdecoration.git")
-         (commit "2079487116c6c794af3a15452342a69293039b46")))
-       (file-name
-        (git-file-name name version))
-       (sha256
-        (base32 "1pczmxbmnsgj9s1g6ap55qq2q4ccibcnhsw9b6cl5rzgc48izy06"))))
-    (build-system qt-build-system)
-    (native-inputs
-     `(("cmake-shared" ,cmake-shared)
-       ("extra-cmake-modules" ,extra-cmake-modules)
-       ("pkg-config" ,pkg-config)))
-    (inputs
-     `(("qtbase" ,qtbase)
-       ("qtwayland" ,qtwayland)
-       ("wayland" ,wayland)))
-    (synopsis "Material Decoration for Qt")
-    (description "MaterialDecoration is a client-side decoration for Qt
+  (let ((commit "6a5de23f2e5162fbee39d16f938473ff970a2ec0")
+        (revision "9"))
+    (package
+      (name "materialdecoration")
+      (version
+       (git-version "1.1.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri
+          (git-reference
+           (url "https://github.com/lirios/materialdecoration.git")
+           (commit commit)))
+         (file-name
+          (git-file-name name version))
+         (sha256
+          (base32 "1zdrcb39fhhmn76w8anv1dnspz26pdl6izmj1mlm02aza4y8ffp4"))
+         (modules '((guix build utils)
+                    (ice-9 ftw)
+                    (srfi srfi-1)))
+         (snippet
+          `(begin
+             (delete-file-recursively "cmake/3rdparty")))))
+      (build-system qt-build-system)
+      (arguments
+       `(#:tests? #f                    ; No target
+         #:configure-flags
+         (list
+          (string-append "-DCMAKE_CXX_FLAGS=-I"
+                         (assoc-ref %build-inputs "qtbase")
+                         "/include/qt5/QtXkbCommonSupport/"
+                         ,(package-version qtbase)))))
+      (native-inputs
+       `(("cmake-shared" ,cmake-shared)
+         ("extra-cmake-modules" ,extra-cmake-modules)
+         ("pkg-config" ,pkg-config)))
+      (inputs
+       `(("qtbase" ,qtbase)
+         ("qtwayland" ,qtwayland)
+         ("wayland" ,wayland)
+         ("xkbcommon" ,libxkbcommon)))
+      (synopsis "Material Decoration for Qt")
+      (description "MaterialDecoration is a client-side decoration for Qt
 applications on Wayland.")
-    (home-page "https://github.com/lirios/materialdecoration")
-    (license license:lgpl3+)))
+      (home-page "https://github.com/lirios/materialdecoration")
+      (license license:lgpl3+))))
 
 (define-public grantlee
   (package
@@ -225,210 +278,6 @@ applications on Wayland.")
 other text such as code.  The syntax uses the syntax of the Django template
 system, and the core design of Django is reused in Grantlee.")
     (license license:lgpl2.1+)))
-
-(define-public qt-4
-  (package
-    (name "qt")
-    (version "4.8.7")
-    (source (origin
-             (method url-fetch)
-             (uri (string-append "http://download.qt-project.org/archive/qt/"
-                                 (string-copy version 0 (string-rindex version #\.))
-                                 "/" version
-                                 "/qt-everywhere-opensource-src-"
-                                 version ".tar.gz"))
-             (sha256
-              (base32
-               "183fca7n7439nlhxyg1z7aky0izgbyll3iwakw4gwivy16aj5272"))
-             (patches (search-patches "qt4-ldflags.patch"))
-             (modules '((guix build utils)))
-             (snippet
-              ;; Remove webkit module, which is not built.
-              '(begin (delete-file-recursively "src/3rdparty/webkit")
-                      #t))))
-    (build-system gnu-build-system)
-    (propagated-inputs
-     `(("mesa" ,mesa)))
-    (inputs
-     `(("alsa-lib" ,alsa-lib)
-       ("bluez" ,bluez)
-       ("cups" ,cups)
-       ("dbus" ,dbus)
-       ("double-conversion" ,double-conversion)
-       ("expat" ,expat)
-       ("fontconfig" ,fontconfig)
-       ("freetype" ,freetype)
-       ("glib" ,glib)
-       ("gstreamer" ,gstreamer)
-       ("gst-plugins-base" ,gst-plugins-base)
-       ("icu4c" ,icu4c)
-       ("jasper" ,jasper)
-       ("libinput" ,libinput-minimal)
-       ("libmng" ,libmng)
-       ("libpci" ,pciutils)
-       ("libpng" ,libpng)
-       ("libtiff" ,libtiff)
-       ("libwebp" ,libwebp)
-       ("libx11" ,libx11)
-       ("libxcomposite" ,libxcomposite)
-       ("libxcursor" ,libxcursor)
-       ("libxext" ,libxext)
-       ("libxfixes" ,libxfixes)
-       ("libxi" ,libxi)
-       ("libxinerama" ,libxinerama)
-       ("libxkbcommon" ,libxkbcommon)
-       ("libxml2" ,libxml2)
-       ("libxrandr" ,libxrandr)
-       ("libxrender" ,libxrender)
-       ("libxslt" ,libxslt)
-       ("libxtst" ,libxtst)
-       ("mtdev" ,mtdev)
-       ("mariadb-dev" ,mariadb "dev")
-       ("nss" ,nss)
-       ("postgresql" ,postgresql)
-       ("pulseaudio" ,pulseaudio)
-       ("pcre2" ,pcre2)
-       ("sqlite" ,sqlite)
-       ("udev" ,eudev)
-       ("unixodbc" ,unixodbc)
-       ("wayland" ,wayland)
-       ("xcb-util" ,xcb-util)
-       ("xcb-util-image" ,xcb-util-image)
-       ("xcb-util-keysyms" ,xcb-util-keysyms)
-       ("xcb-util-renderutil" ,xcb-util-renderutil)
-       ("xcb-util-wm" ,xcb-util-wm)
-       ("zlib" ,zlib)
-       ("libjpeg" ,libjpeg-turbo)
-       ("libsm" ,libsm)
-       ("openssl" ,openssl-1.0)))
-    (native-inputs
-     `(;; XXX: The JavaScriptCore engine does not build with the C++11 standard.
-       ;; We could build it with -std=gnu++98, but then we'll get in trouble with
-       ;; ICU later.  Just keep using GCC 5 for now.
-       ("gcc@5" ,gcc-5)
-       ("bison" ,bison)
-       ("flex" ,flex)
-       ("gperf" ,gperf)
-       ("perl" ,perl)
-       ("pkg-config" ,pkg-config)
-       ("python" ,python-2)
-       ("ruby" ,ruby)
-       ("which" ,(@ (gnu packages base) which))))
-    ;; Note: there are 37 MiB of examples and a '-exampledir' configure flags,
-    ;; but we can't make them a separate output because "out" and "examples"
-    ;; would refer to each other.
-    (outputs '("out"                             ;112MiB core + 37MiB examples
-               "doc"))                           ;280MiB of HTML + code
-    (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-after 'set-paths 'hide-default-gcc
-           (lambda* (#:key inputs #:allow-other-keys)
-             (let ((gcc (assoc-ref inputs "gcc")))
-               ;; Remove the default GCC from CPLUS_INCLUDE_PATH to prevent
-               ;; conflicts with the GCC 5 input.
-               (setenv "CPLUS_INCLUDE_PATH"
-                       (string-join
-                        (delete (string-append gcc "/include/c++")
-                                (string-split (getenv "CPLUS_INCLUDE_PATH") #\:))
-                        ":"))
-               #t)))
-         (replace
-          'configure
-          (lambda* (#:key outputs #:allow-other-keys)
-            (let ((out (assoc-ref outputs "out"))
-                  (doc (assoc-ref outputs "doc")))
-              (substitute* '("configure")
-                (("/bin/pwd") (which "pwd")))
-              (substitute* "src/corelib/global/global.pri"
-                (("/bin/ls") (which "ls")))
-
-              (invoke
-                "./configure"
-                "-verbose"
-                "-prefix" out
-                "-nomake" "examples demos"
-                ;; Note: Don't pass '-docdir' since 'qmake' and
-                ;; libQtCore would record its value, thereby defeating
-                ;; the whole point of having a separate output.
-                "-datadir" (string-append out "/share/qt-" ,version
-                                          "/data")
-                "-importdir" (string-append out "/lib/qt-4"
-                                            "/imports")
-                "-plugindir" (string-append out "/lib/qt-4"
-                                            "/plugins")
-                "-translationdir" (string-append out "/share/qt-" ,version
-                                                 "/translations")
-                "-demosdir"    (string-append out "/share/qt-" ,version
-                                              "/demos")
-                "-examplesdir" (string-append out "/share/qt-" ,version
-                                              "/examples")
-                "-opensource"
-                "-confirm-license"
-                ;; explicitly link with dbus instead of dlopening it
-                "-dbus-linked"
-                ;; Skip the webkit module; it fails to build on armhf
-                ;; and, apart from that, may pose security risks.
-                "-no-webkit"
-                ;; don't use the precompiled headers
-                "-no-pch"
-                ;; drop special machine instructions not supported
-                ;; on all instances of the target
-                ,@(if (string-prefix? "x86_64"
-                                      (or (%current-target-system)
-                                          (%current-system)))
-                      '()
-                      '("-no-mmx"
-                        "-no-3dnow"
-                        "-no-sse"
-                        "-no-sse2"))
-                "-no-sse3"
-                "-no-ssse3"
-                "-no-sse4.1"
-                "-no-sse4.2"
-                "-no-avx"))))
-         (add-after
-          'install 'move-doc
-          (lambda* (#:key outputs #:allow-other-keys)
-            ;; Because of qt4-documentation-path.patch, documentation ends up
-            ;; being installed in OUT.  Move it to the right place.
-            (let* ((out    (assoc-ref outputs "out"))
-                   (doc    (assoc-ref outputs "doc"))
-                   (olddoc (string-append out "/doc"))
-                   (docdir (string-append doc "/share/doc/qt-" ,version)))
-              (mkdir-p (dirname docdir))
-
-              ;; Note: We can't use 'rename-file' here because OUT and DOC are
-              ;; different "devices" due to bind-mounts.
-              (copy-recursively olddoc docdir)
-              (delete-file-recursively olddoc)
-              #t))))))
-    (native-search-paths
-     (list (search-path-specification
-            (variable "QMAKEPATH")
-            (files '("lib/qt5")))
-           (search-path-specification
-            (variable "QML2_IMPORT_PATH")
-            (files '("lib/qt5/qml")))
-           (search-path-specification
-            (variable "QT_PLUGIN_PATH")
-            (files '("lib/qt5/plugins")))
-           (search-path-specification
-            (variable "XDG_DATA_DIRS")
-            (files '("share")))
-           (search-path-specification
-            (variable "XDG_CONFIG_DIRS")
-            (files '("etc/xdg")))))
-    (home-page "https://www.qt.io/")
-    (synopsis "Cross-platform GUI library")
-    (description "Qt is a cross-platform application and UI framework for
-developers using C++ or QML, a CSS & JavaScript like language.")
-    (license (list license:lgpl2.1 license:lgpl3))
-
-    ;; Qt 4: 'QBasicAtomicPointer' leads to build failures on MIPS;
-    ;; see <http://hydra.gnu.org/build/112828>.
-    ;; Qt 5: assembler error; see <http://hydra.gnu.org/build/112526>.
-    (supported-systems (delete "mips64el-linux" %supported-systems))))
 
 (define (qt5-urls component version)
   "Return a list of URLs for VERSION of the Qt5 COMPONENT."
@@ -1960,6 +1809,42 @@ and binaries removed, and adds modular support for using system libraries.")
 (define-public python-sip
   (package
     (name "python-sip")
+    (version "5.5.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (list (pypi-uri "sip" version)
+                   (string-append "https://www.riverbankcomputing.com/static/"
+                                  "Downloads/sip/" version
+                                  "/sip-" version ".tar.gz")))
+        (sha256
+         (base32
+          "1idaivamp1jvbbai9yzv471c62xbqxhaawccvskaizihkd0lq0jx"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("python" ,python-wrapper)))
+    (propagated-inputs
+     `(("python-toml" ,python-toml)
+       ("python-packaging" ,python-packaging)))
+    (home-page "https://www.riverbankcomputing.com/software/sip/intro")
+    (synopsis "Python binding creator for C and C++ libraries")
+    (description
+     "SIP is a tool to create Python bindings for C and C++ libraries.  It
+was originally developed to create PyQt, the Python bindings for the Qt
+toolkit, but can be used to create bindings for any C or C++ library.
+
+SIP comprises a code generator and a Python module.  The code generator
+processes a set of specification files and generates C or C++ code, which
+is then compiled to create the bindings extension module.  The SIP Python
+module provides support functions to the automatically generated code.")
+    ;; There is a choice between a python like license, gpl2 and gpl3.
+    ;; For compatibility with pyqt, we need gpl3.
+    (license license:gpl3)))
+
+(define-public python-sip-4
+  (package
+    (inherit python-sip)
+    (name "python-sip")
     (version "4.19.24")
     (source
       (origin
@@ -1974,6 +1859,7 @@ and binaries removed, and adds modular support for using system libraries.")
     (build-system gnu-build-system)
     (native-inputs
      `(("python" ,python-wrapper)))
+    (propagated-inputs `())
     (arguments
      `(#:tests? #f ; no check target
        #:imported-modules ((guix build python-build-system)
@@ -1996,26 +1882,7 @@ and binaries removed, and adds modular support for using system libraries.")
                        "--bindir" bin
                        "--destdir" lib
                        "--incdir" include)))))))
-    (home-page "https://www.riverbankcomputing.com/software/sip/intro")
-    (synopsis "Python binding creator for C and C++ libraries")
-    (description
-     "SIP is a tool to create Python bindings for C and C++ libraries.  It
-was originally developed to create PyQt, the Python bindings for the Qt
-toolkit, but can be used to create bindings for any C or C++ library.
-
-SIP comprises a code generator and a Python module.  The code generator
-processes a set of specification files and generates C or C++ code, which
-is then compiled to create the bindings extension module.  The SIP Python
-module provides support functions to the automatically generated code.")
-    ;; There is a choice between a python like license, gpl2 and gpl3.
-    ;; For compatibility with pyqt, we need gpl3.
     (license license:gpl3)))
-
-(define-public python2-sip
-  (package (inherit python-sip)
-    (name "python2-sip")
-    (native-inputs
-     `(("python" ,python-2)))))
 
 (define-public python-pyqt
   (package
@@ -2030,17 +1897,17 @@ module provides support functions to the automatically generated code.")
                    (string-append "https://www.riverbankcomputing.com/static/"
                                   "Downloads/PyQt5/" version "/PyQt5-"
                                   version ".tar.gz")))
-        (file-name (string-append "PyQt5-"version ".tar.gz"))
+        (file-name (string-append "PyQt5-" version ".tar.gz"))
         (sha256
          (base32
           "1z74295i69cha52llsqffzhb5zz7qnbjc64h8qg21l91jgf0harp"))
-       (patches (search-patches "pyqt-configure.patch"
-                                "pyqt-public-sip.patch"))))
+        (patches (search-patches "pyqt-configure.patch"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("qtbase" ,qtbase))) ; for qmake
     (propagated-inputs
-     `(("python-sip" ,python-sip)))
+     `(("python-sip" ,python-sip)
+       ("python-pyqt5-sip" ,python-pyqt5-sip)))
     (inputs
      `(("python" ,python-wrapper)
        ("qtbase" ,qtbase)
@@ -2108,6 +1975,25 @@ module provides support functions to the automatically generated code.")
 framework.  The bindings are implemented as a set of Python modules and
 contain over 620 classes.")
     (license license:gpl3)))
+
+(define-public python-pyqt5-sip
+  (package
+    (name "python-pyqt5-sip")
+    (version "12.8.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "PyQt5_sip" version))
+       (sha256
+        (base32
+         "1gg032ys4pccwkdzmdryadc9a4lq85nr05pag9swrsdykbdl9s9h"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f)) ;; No test code.
+    (home-page "https://www.riverbankcomputing.com/software/sip/")
+    (synopsis "Sip module support for PyQt5")
+    (description "Sip module support for PyQt5")
+    (license license:lgpl2.1+)))
 
 (define-public python-pyqtwebengine
   (package
@@ -2197,90 +2083,33 @@ itself.")
 ;; Ultimately, it would be nicer to have a more modular set of python-pyqt-*
 ;; packages that could be used together.
 (define-public python-pyqt-without-qtwebkit
-  (package (inherit python-pyqt)
+  (package/inherit python-pyqt
     (name "python-pyqt-without-qtwebkit")
     (inputs
      (alist-delete "qtwebkit" (package-inputs python-pyqt)))))
 
-(define-public python2-pyqt
-  (package (inherit python-pyqt)
-    (name "python2-pyqt")
-    (propagated-inputs
-     `(("python-enum34" ,python2-enum34)
-       ("python-sip" ,python2-sip)))
-    (native-inputs
-     `(("python-sip" ,python2-sip)
-       ("qtbase" ,qtbase)))
-    (inputs
-     `(("python" ,python-2)
-       ("python2-enum34" ,python2-enum34)
-       ,@(alist-delete "python" (package-inputs python-pyqt))))))
-
-(define-public python2-pyqtwebengine
-  (package/inherit
-   python-pyqtwebengine
-   (name "python2-pyqtwebengine")
-   (native-inputs
-    `(("python" ,python-2)
-      ("python-sip" ,python2-sip)
-      ;; qtbase is required for qmake
-      ("qtbase" ,qtbase)))
+(define-public python-pyqt-builder
+  (package
+   (name "python-pyqt-builder")
+   (version "1.9.0")
+   (source
+    (origin
+     (method url-fetch)
+     (uri (pypi-uri "PyQt-builder" version))
+     (sha256
+      (base32
+       "0nh0054c54ji3sm6d268fccf0y5f613spswwgwqd3rnn816hnljl"))))
+   (build-system python-build-system)
    (inputs
-    `(("python" ,python-2)
-      ("python-sip" ,python2-sip)
-      ("python-pyqt" ,python2-pyqt)
-      ("qtbase" ,qtbase)
-      ("qtsvg" ,qtsvg)
-      ("qtdeclarative" ,qtdeclarative)
-      ("qtwebchannel" ,qtwebchannel)
-      ("qtwebengine" ,qtwebengine)))))
-
-(define-public python2-pyqt-4
-  (package (inherit python-pyqt)
-    (name "python2-pyqt")
-    (version "4.12.3")
-    (source
-      (origin
-        (method url-fetch)
-        (uri
-          (string-append "mirror://sourceforge/pyqt/PyQt4/"
-                         "PyQt-" version "/PyQt4_gpl_x11-"
-                         version ".tar.gz"))
-        (sha256
-         (base32
-          "0wnlasg62rm5d39nq1yw4namcx2ivxgzl93r5f2vb9s0yaz5l3x0"))))
-    (native-inputs
-     `(("qt" ,qt-4)))
-    (inputs `(("python" ,python-2)))
-    (propagated-inputs
-     `(("python-sip" ,python2-sip)))
-    (arguments
-     `(#:tests? #f ; no check target
-       #:modules ((srfi srfi-1)
-                  ,@%gnu-build-system-modules)
-       #:phases
-       (modify-phases %standard-phases
-         (replace 'configure
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (bin (string-append out "/bin"))
-                    (sip (string-append out "/share/sip"))
-                    (python (assoc-ref inputs "python"))
-                    (python-version
-                      (last (string-split python #\-)))
-                    (python-major+minor
-                      (string-join
-                        (take (string-split python-version #\.) 2)
-                        "."))
-                    (lib (string-append out "/lib/python"
-                                        python-major+minor
-                                        "/site-packages")))
-               (invoke "python" "configure.py"
-                       "--confirm-license"
-                       "--bindir" bin
-                       "--destdir" lib
-                       "--sipdir" sip)))))))
-    (license (list license:gpl2 license:gpl3)))) ; choice of either license
+    `(("python-sip" ,python-sip)))
+   (home-page "https://www.riverbankcomputing.com/static/Docs/PyQt-builder/")
+   (synopsis "PEP 517 compliant PyQt build system")
+   (description "PyQt-builder is a tool for generating Python bindings for C++
+libraries that use the Qt application framework.  The bindings are built on
+top of the PyQt bindings for Qt.  PyQt-builder is used to build PyQt itself.")
+   ;; Either version 2 or 3, but no other version. See the file
+   ;; 'pyqtbuild/builder.py' in the source distribution for more information.
+   (license (list license:gpl2 license:gpl3))))
 
 (define-public python-qtpy
   (package
@@ -2349,7 +2178,7 @@ indicators, code completion and call tips.")
     (license license:gpl3+)))
 
 (define-public python-qscintilla
-  (package (inherit qscintilla)
+  (package/inherit qscintilla
     (name "python-qscintilla")
     (arguments
      `(#:configure-flags
@@ -2397,7 +2226,7 @@ This package provides the Python bindings.")))
 ;; variables such as PYTHONPATH, so we need to build a union package to make
 ;; it work.
 (define-public python-pyqt+qscintilla
-  (package (inherit python-pyqt)
+  (package/inherit python-pyqt
     (name "python-pyqt+qscintilla")
     (source #f)
     (build-system trivial-build-system)
@@ -2454,6 +2283,117 @@ This package provides the Python bindings.")))
       "QtKeychain is a Qt library to store passwords and other secret data
 securely.  It will not store any data unencrypted unless explicitly requested.")
     (license license:bsd-3)))
+
+(define-public qtsolutions
+  (let ((commit "9568abd142d581b67b86a5f63d823a34b0612702")
+        (revision "53"))
+    (package
+      (name "qtsolutions")
+      (version (git-version "0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/qtproject/qt-solutions")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "17fnmassflm3vxi0krpr6fff368jy38cby31a48rban4nqqmgx7n"))
+         (modules '((guix build utils)
+                    (ice-9 ftw)
+                    (srfi srfi-1)))
+         (snippet
+          ;; Unvendor QtLockFile from QtSingleApplication.
+          '(begin
+             (with-directory-excursion "qtsingleapplication/src"
+               (for-each delete-file
+                         (find-files "." "qtlockedfile.*\\.(h|cpp)"))
+                 (substitute* "qtsingleapplication.pri"
+                   ;; Add include path of LockedFile.
+                   (("INCLUDEPATH \\+=")
+                    "INCLUDEPATH += ../../qtlockedfile/src")
+                   ;; Link library of LockedFile.
+                   (("LIBS \\+=")
+                    "LIBS += -lQtSolutions_LockedFile"))
+                 (substitute* '("qtlocalpeer.h" "qtlocalpeer.cpp")
+                   (("#include \"qtlockedfile.*\\.cpp\"") "")
+                   ;; Unwrap namespace added in the vendoring process.
+                   (("QtLP_Private::QtLockedFile")
+                    "QtLockedFile")))
+             #t))))
+      (build-system gnu-build-system)
+      (arguments
+       `(#:tests? #f                    ; No target
+         #:imported-modules
+         ((guix build copy-build-system)
+          ,@%gnu-build-system-modules)
+         #:modules
+         (((guix build copy-build-system) #:prefix copy:)
+          (guix build gnu-build-system)
+          (guix build utils))
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'patch-source
+             (lambda* (#:key outputs #:allow-other-keys)
+               (substitute* (find-files "." "common.pri")
+                 ;; Remove unnecessary prefixes/suffixes in library names.
+                 (("qt5") "qt")
+                 (("-head") ""))
+               ;; Disable building of examples.
+               (substitute* (find-files "." "\\.pro$")
+                 (("SUBDIRS\\+=examples") ""))
+               ;; Fix deprecated functions.
+               (substitute* "qtsoap/src/qtsoap.cpp"
+                 (("toAscii") "toUtf8"))
+               #t))
+           (replace 'configure
+             (lambda _
+               (for-each (lambda (solution)
+                           (with-directory-excursion solution
+                             (invoke "./configure" "-library")
+                             (invoke "qmake")))
+                         '("qtlockedfile" "qtpropertybrowser" "qtservice"
+                           "qtsingleapplication" "qtsoap"))
+               #t))
+           (replace 'build
+             (lambda _
+               (for-each (lambda (solution)
+                           (with-directory-excursion solution
+                             (invoke "make")))
+                         '("qtlockedfile" "qtpropertybrowser" "qtservice"
+                           "qtsingleapplication" "qtsoap"))
+               #t))
+           (replace 'install
+             (lambda args
+               (for-each (lambda (solution)
+                           (with-directory-excursion solution
+                             (apply
+                              (assoc-ref copy:%standard-phases 'install)
+                              #:install-plan
+                              '(("src" "include" #:include-regexp ("\\.h$"))
+                                ("lib" "lib"))
+                              args)))
+                         '("qtlockedfile" "qtpropertybrowser" "qtservice"
+                           "qtsingleapplication" "qtsoap")))))))
+      (inputs
+       `(("qtbase" ,qtbase)))
+      (synopsis "Collection of Qt extensions")
+      (description "QtSolutions is a set of components extending Qt.
+@itemize
+@item QtLockedFile: A class that extends QFile with advisory locking functions.
+@item QtPropertyBrowser: A framework that enables the user to edit a set of
+properties.
+@item QtService: A helper for writing services such as Unix daemons.
+@item QtSingleApplication: A component that provides support for applications
+that can be only started once per user.
+@item QtSoap: A component that provides basic web service support with version
+1.1 of the SOAP protocol.
+@end itemize\n")
+      (home-page "https://doc.qt.io/archives/qq/qq09-qt-solutions.html")
+      (license (list license:bsd-3
+                     ;; QScriptParser and QScriptGrammar specifically allow
+                     ;; redistribution under GPL3 or LGPL2.1
+                     license:gpl3 license:lgpl2.1)))))
 
 (define-public qwt
   (package

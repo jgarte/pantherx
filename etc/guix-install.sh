@@ -8,6 +8,7 @@
 # Copyright © 2020 Simon Tournier <zimon.toutoune@gmail.com>
 # Copyright © 2020 Daniel Brooks <db48x@db48x.net>
 # Copyright © 2021 Jakub Kądziołka <kuba@kadziolka.net>
+# Copyright © 2021 Chris Marusich <cmmarusich@gmail.com>
 #
 # This file is part of GNU Guix.
 #
@@ -187,6 +188,9 @@ chk_sys_arch()
         armv7l)
             local arch=armhf
             ;;
+        ppc64le | powerpc64le)
+            local arch=powerpc64le
+            ;;
         *)
             _err "${ERR}Unsupported CPU type: ${arch}"
             exit 1
@@ -326,15 +330,20 @@ sys_create_build_user()
         _msg "${PAS}group <guixbuild> created"
     fi
 
+    if [ $(getent group kvm) ]; then
+        _msg "${INF}group kvm exists and build users will be added to it"
+	local KVMGROUP=,kvm
+    fi
+
     for i in $(seq -w 1 10); do
         if id "guixbuilder${i}" &>/dev/null; then
             _msg "${INF}user is already in the system, reset"
-            usermod -g guixbuild -G guixbuild           \
+            usermod -g guixbuild -G guixbuild${KVMGROUP}     \
                     -d /var/empty -s "$(which nologin)" \
                     -c "Guix build user $i"             \
                     "guixbuilder${i}";
         else
-            useradd -g guixbuild -G guixbuild           \
+            useradd -g guixbuild -G guixbuild${KVMGROUP}     \
                     -d /var/empty -s "$(which nologin)" \
                     -c "Guix build user $i" --system    \
                     "guixbuilder${i}";

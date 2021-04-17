@@ -14,6 +14,7 @@
 ;;; Copyright © 2020 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2020 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2020 Edouard Klein <edk@beaver-labs.com>
+;;; Copyright © 2021 Philip McGrath <philip@philipmcgrath.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -43,6 +44,7 @@
   #:use-module (guix build-system trivial)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages bdw-gc)
+  #:use-module (gnu packages bash)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages libevent)
@@ -398,108 +400,133 @@ implementation techniques and as an expository tool.")
 (define-public racket
   (package
     (name "racket")
-    (version "7.9")            ; note: remember to also update racket-minimal!
+    (version "8.0")            ; note: remember to also update racket-minimal!
     (source (origin
               (method url-fetch)
-              (uri (list (string-append "http://mirror.racket-lang.org/installers/"
-                                        version "/racket-" version "-src.tgz")
+              (uri (list (string-append "https://mirror.racket-lang.org/installers/"
+                                        version "/racket-src.tgz")
+                         ;; this mirror seems to have broken HTTPS:
                          (string-append
                           "http://mirror.informatik.uni-tuebingen.de/mirror/racket/"
-                          version "/racket-" version "-src.tgz")))
+                          version "/racket-src.tgz")))
               (sha256
                (base32
-                "0gmp2ahmfd97nn9bwpfx9lznjmjkd042slnrrbdmyh59cqh98y2m"))
+                "047wpjblfzmf1msz7snrp2c2h0zxyzlmbsqr9bwsyvz3frcg0888"))
               (patches (search-patches
+                        "racket-sh-via-rktio.patch"
+                        ;; TODO: If we're no longer patching Racket source
+                        ;; files with store paths, we may also fix the
+                        ;; issue that necessitated the following patch:
                         "racket-store-checksum-override.patch"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:phases
+     `(#:configure-flags
+       `(,(string-append "CPPFLAGS=-DGUIX_RKTIO_PATCH_BIN_SH="
+                         (assoc-ref %build-inputs "sh")
+                         "/bin/sh")
+         "--enable-libz"
+         "--enable-liblz4")
+       #:modules
+       ((guix build gnu-build-system)
+        (guix build utils)
+        (srfi srfi-1))
+       #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'patch-chez-configure
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (substitute* "src/cs/c/Makefile.in"
+               (("/bin/sh") (which "sh")))
+             ;; TODO: Racket CS uses a fork of Chez Scheme.
+             ;; Most of this is copy-pasted from the "chez.scm",
+             ;; but maybe there's a way to reuse more directly.
+             (with-directory-excursion "src/ChezScheme"
+               (substitute* (find-files "mats" "Mf-.*")
+                 (("^[[:space:]]+(cc ) *") "\tgcc "))
+               (substitute*
+                   (find-files "." (string-append
+                                    "("
+                                    "Mf-[a-zA-Z0-9.]+"
+                                    "|Makefile[a-zA-Z0-9.]*"
+                                    "|checkin"
+                                    "|stex\\.stex"
+                                    "|newrelease"
+                                    "|workarea"
+                                    "|unix\\.ms"
+                                    "|^6\\.ms"
+                                    ;;"|[a-zA-Z0-9.]+\\.ms" ; guile can't read
+                                    ")"))
+                 (("/bin/rm") (which "rm"))
+                 (("/bin/ln") (which "ln"))
+                 (("/bin/cp") (which "cp"))
+                 (("/bin/echo") (which "echo")))
+               (substitute* "makefiles/installsh"
+                 (("/bin/true") (which "true"))))
+             #t))
          (add-before 'configure 'pre-configure-minimal
            (lambda* (#:key inputs #:allow-other-keys)
-             ;; Patch dynamically loaded libraries with their absolute paths.
-             (let* ((library-path (search-path-as-string->list
-                                   (getenv "LIBRARY_PATH")))
-                    (find-so (lambda (soname)
-                               (search-path
-                                library-path
-                                (format #f "~a.so" soname)))))
-               (substitute* "collects/db/private/sqlite3/ffi.rkt"
-                 (("ffi-lib sqlite-so")
-                  (format #f "ffi-lib \"~a\"" (find-so "libsqlite3"))))
-               (substitute* "collects/openssl/libssl.rkt"
-                 (("ffi-lib libssl-so")
-                  (format #f "ffi-lib \"~a\"" (find-so "libssl"))))
-               (substitute* "collects/openssl/libcrypto.rkt"
-                 (("ffi-lib libcrypto-so")
-                  (format #f "ffi-lib \"~a\"" (find-so "libcrypto")))))
              (chdir "src")
              #t))
-         (add-before 'pre-configure-minimal 'pre-configure
-           (lambda* (#:key inputs #:allow-other-keys)
-             ;; Patch dynamically loaded libraries with their absolute paths.
-             (let* ((library-path (search-path-as-string->list
-                                   (getenv "LIBRARY_PATH")))
-                    (find-so (lambda (soname)
-                               (search-path
-                                library-path
-                                (format #f "~a.so" soname))))
-                    (patch-ffi-libs (lambda (file libs)
-                                      (for-each
-                                       (lambda (lib)
-                                         (substitute* file
-                                           (((format #f "\"~a\"" lib))
-                                            (format #f "\"~a\"" (find-so lib)))))
-                                       libs))))
-               (substitute* "share/pkgs/math-lib/math/private/bigfloat/gmp.rkt"
-                 (("ffi-lib libgmp-so")
-                  (format #f "ffi-lib \"~a\"" (find-so "libgmp"))))
-               (substitute* "share/pkgs/math-lib/math/private/bigfloat/mpfr.rkt"
-                 (("ffi-lib libmpfr-so")
-                  (format #f "ffi-lib \"~a\"" (find-so "libmpfr"))))
-               (substitute* "share/pkgs/readline-lib/readline/rktrl.rkt"
-                 (("\\(getenv \"PLT_READLINE_LIB\"\\)")
-                  (format #f "\"~a\"" (find-so "libedit"))))
-               (for-each
-                (lambda (x) (apply patch-ffi-libs x))
-                '(("share/pkgs/draw-lib/racket/draw/unsafe/cairo-lib.rkt"
-                   ("libfontconfig" "libcairo"))
-                  ("share/pkgs/draw-lib/racket/draw/unsafe/glib.rkt"
-                   ("libglib-2.0" "libgmodule-2.0" "libgobject-2.0"))
-                  ("share/pkgs/draw-lib/racket/draw/unsafe/jpeg.rkt"
-                   ("libjpeg"))
-                  ("share/pkgs/draw-lib/racket/draw/unsafe/pango.rkt"
-                   ("libpango-1.0" "libpangocairo-1.0"))
-                  ("share/pkgs/draw-lib/racket/draw/unsafe/png.rkt"
-                   ("libpng"))
-                  ("share/pkgs/db-lib/db/private/odbc/ffi.rkt"
-                   ("libodbc"))
-                  ("share/pkgs/gui-lib/mred/private/wx/gtk/x11.rkt"
-                   ("libX11"))
-                  ("share/pkgs/gui-lib/mred/private/wx/gtk/gsettings.rkt"
-                   ("libgio-2.0"))
-                  ("share/pkgs/gui-lib/mred/private/wx/gtk/gtk3.rkt"
-                   ("libgdk-3" "libgtk-3"))
-                  ("share/pkgs/gui-lib/mred/private/wx/gtk/unique.rkt"
-                   ("libunique-1.0"))
-                  ("share/pkgs/gui-lib/mred/private/wx/gtk/utils.rkt"
-                   ("libgdk-x11-2.0" "libgdk_pixbuf-2.0" "libgtk-x11-2.0"))
-                  ("share/pkgs/gui-lib/mred/private/wx/gtk/gl-context.rkt"
-                   ("libGL"))
-                  ("share/pkgs/sgl/gl.rkt"
-                   ("libGL" "libGLU")))))
-             #t))
-         (add-after 'unpack 'patch-/bin/sh
-           (lambda _
-             (substitute* "collects/racket/system.rkt"
-               (("/bin/sh") (which "sh")))
+         (add-after 'build 'patch-config.rktd-lib-search-dirs
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             ;; We do this between the `build` and `install` phases
+             ;; so that we have racket to read and write the hash table,
+             ;; but it comes before `raco setup`, when foreign libraries
+             ;; are needed to build the documentation.
+             (define out (assoc-ref outputs "out"))
+             (apply invoke
+                    "./cs/c/racketcs"
+                    "-e"
+                    ,(format #f
+                             "~s"
+                             '(let* ((args
+                                      (vector->list
+                                       (current-command-line-arguments)))
+                                     (file (car args))
+                                     (extra-lib-search-dirs (cdr args)))
+                                (write-to-file
+                                 (hash-update
+                                  (file->value file)
+                                  'lib-search-dirs
+                                  (lambda (dirs)
+                                    (append dirs extra-lib-search-dirs))
+                                  null)
+                                 #:exists 'truncate/replace
+                                 file)))
+                    "--"
+                    "../etc/config.rktd"
+                    (filter-map (lambda (lib)
+                                  (cond
+                                   ((assoc-ref inputs lib)
+                                    => (lambda (pth)
+                                         (string-append pth "/lib")))
+                                   (else
+                                    #f)))
+                                '("cairo"
+                                  "fontconfig"
+                                  "glib"
+                                  "glu"
+                                  "gmp"
+                                  "gtk+"
+                                  "libjpeg"
+                                  "libpng"
+                                  "libx11"
+                                  "mesa"
+                                  "mpfr"
+                                  "openssl"
+                                  "pango"
+                                  "sqlite"
+                                  "unixodbc"
+                                  "libedit")))
              #t)))
        ;; XXX: how to run them?
        #:tests? #f))
     (inputs
-     `(("libffi" ,libffi)
-       ;; Hardcode dynamically loaded libraries for better functionality.
-       ;; sqlite and libraries for `racket/draw' are needed to build the doc.
+     `(;; sqlite and libraries for `racket/draw' are needed to build the doc.
+       ("sh" ,bash-minimal)
+       ("zlib" ,zlib)
+       ("zlib:static" ,zlib "static")
+       ("lz4" ,lz4)
+       ("lz4:static" ,lz4 "static")
        ("cairo" ,cairo)
        ("fontconfig" ,fontconfig)
        ("glib" ,glib)
@@ -519,10 +546,14 @@ implementation techniques and as an expository tool.")
     (home-page "https://racket-lang.org")
     (synopsis "Implementation of Scheme and related languages")
     (description
-     "Racket is an implementation of the Scheme programming language (R5RS and
-R6RS) and related languages, such as Typed Racket.  It features a compiler and
-a virtual machine with just-in-time native compilation, as well as a large set
-of libraries.")
+     "Racket is a general-purpose programming language in the Scheme family,
+with a large set of libraries and a compiler based on Chez Scheme.  Racket is
+also a platform for language-oriented programming, from small domain-specific
+languages to complete language implementations.
+
+The main Racket distribution comes with many bundled packages, including
+the DrRacket IDE, libraries for GUI and web programming, and implementations
+of languages such as Typed Racket, R5RS and R6RS Scheme, and Datalog.")
     ;; https://download.racket-lang.org/license.html
     (license (list lgpl3+ asl2.0 expat))))
 
@@ -531,38 +562,34 @@ of libraries.")
     (inherit racket)
     (name "racket-minimal")
     (version (package-version racket))
-    (source (origin
-              (method url-fetch)
-              (uri (list (string-append "http://mirror.racket-lang.org/installers/"
-                                        version "/racket-minimal-" version "-src.tgz")
-                         (string-append
-                          "http://mirror.informatik.uni-tuebingen.de/mirror/racket/"
-                          version "/racket-minimal-" version "-src.tgz")))
-              (sha256
-               (base32
-                "0yc5zkpq1bavj64h67pllw6mfjhmdp65fgdpyqcaan3syy6b5cia"))
-              (patches (search-patches
-                        "racket-store-checksum-override.patch"))))
+    (source
+     (origin
+       (inherit (package-source racket))
+       (uri (list (string-append "https://mirror.racket-lang.org/installers/"
+                                 version "/racket-minimal-src.tgz")
+                  ;; this mirror seems to have broken HTTPS:
+                  (string-append
+                   "http://mirror.informatik.uni-tuebingen.de/mirror/racket/"
+                   version "/racket-minimal-src.tgz")))
+       (sha256 "0mwyffw4gcci8wmzxa3j28h03h0gsz55aard8qrk3lri8r2xyg21")))
     (synopsis "Racket without bundled packages such as Dr. Racket")
-    (arguments
-     (substitute-keyword-arguments (package-arguments racket)
-       ((#:phases phases)
-        `(modify-phases ,phases
-           ;; Delete fix that applies to files not included in the minimal package.
-           (delete 'pre-configure)))))
     (inputs
-     `(("libffi" ,libffi)
-       ("openssl" ,openssl)
-       ("sqlite" ,sqlite)))
+     `(("openssl" ,openssl)
+       ("sqlite" ,sqlite)
+       ("sh" ,bash-minimal)
+       ("zlib" ,zlib)
+       ("zlib:static" ,zlib "static")
+       ("lz4" ,lz4)
+       ("lz4:static" ,lz4 "static")))
     (description
-     "Racket is an implementation of the Scheme programming language (R5RS and
-R6RS) and related languages, such as Typed Racket.  It features a compiler and
-a virtual machine with just-in-time native compilation, as well as a large set
-of libraries.
+     "Racket is a general-purpose programming language in the Scheme family,
+with a large set of libraries and a compiler based on Chez Scheme.  Racket is
+also a platform for language-oriented programming, from small domain-specific
+languages to complete language implementations.
 
-In this minimal package, the essential package racket-libs is included, as
-well as libraries that live in collections.  In particular, @command{raco} and
-the @code{pkg} library are still bundled.")))
+The ``minimal Racket'' distribution includes just enough of Racket for you to
+use @command{raco pkg} to install more.  Bundled packages, such as the
+Dr. Racket IDE, are not included.")))
 
 (define-public gambit-c
   (package

@@ -1,5 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2020 Zhu Zihao <all_but_last@163.com>
+;;; Copyright © 2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -51,7 +52,7 @@
 (define-public xcb-imdkit
   (package
     (name "xcb-imdkit")
-    (version "1.0.2")
+    (version "1.0.3")
     (source
      (origin
        (method url-fetch)
@@ -59,7 +60,7 @@
              "https://download.fcitx-im.org/fcitx5/xcb-imdkit/xcb-imdkit-"
              version ".tar.xz"))
        (sha256
-        (base32 "16f7jdnrr8lrll7qvnj0gh3gwzgn5idfsc9rwi1gp1n2mnjrs7w0"))
+        (base32 "1s58vjkdrgr8h183jz4b4mjn7pbvdc9cli01cn66mgczl9p65hh9"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -86,7 +87,7 @@ client.")
 (define-public fcitx5
   (package
     (name "fcitx5")
-    (version "5.0.4")
+    (version "5.0.5")
     (source
      (origin
        (method url-fetch)
@@ -94,7 +95,7 @@ client.")
              "https://download.fcitx-im.org/fcitx5/fcitx5/fcitx5-"
              version "_dict.tar.xz"))
        (sha256
-        (base32 "14pqbjbdc3b5xlycm92gs1rgkmpykfnyls3gfr608902lk2lw5as"))))
+        (base32 "16j716xawbszkb3fxzpdza1a4czh0fvkysikjc9bfyvbwp72p6an"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
@@ -171,14 +172,14 @@ client.")
 (define-public libime
   (package
     (name "libime")
-    (version "1.0.3")
+    (version "1.0.6")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://download.fcitx-im.org/fcitx5/libime/libime-"
                            version "_dict.tar.xz"))
        (sha256
-        (base32 "1gi9ylqha9x3dhjsa2i7x9wh2g9vgqkkfr6s1facs2ky65vgvdrv"))))
+        (base32 "1s8gzpzyn16pg9gm7kw1nhl09drdndi6j4mjam14ymqsrfsdqr1r"))))
     (build-system cmake-build-system)
     (inputs
      `(("fcitx5" ,fcitx5)
@@ -189,7 +190,7 @@ client.")
        ("python" ,python)))             ;needed to run test
     (home-page "https://github.com/fcitx/libime")
     (synopsis "Library for implementing generic input method")
-    (description "Libime is a library for implmenting various input methods
+    (description "Libime is a library for implementing various input methods
 editors.")
     (license license:lgpl2.1+)))
 
@@ -249,7 +250,7 @@ for GTK+2/GTK+3 application.")
 (define-public fcitx5-qt
   (package
     (name "fcitx5-qt")
-    (version "5.0.2")
+    (version "5.0.5")
     (source
      (origin
        (method url-fetch)
@@ -257,7 +258,7 @@ for GTK+2/GTK+3 application.")
                            "/fcitx5-qt/fcitx5-qt-"
                            version ".tar.xz"))
        (sha256
-        (base32 "15rn111mrp6lcgm0ka3vb6a6qwkv6kqkqn563wsm49n16iy1dhqj"))))
+        (base32 "0vsvrfv0b21pfrz5n0v6p458vfr8k7km50h9bhjp1bnssampjfsb"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
