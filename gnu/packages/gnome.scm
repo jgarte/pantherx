@@ -58,6 +58,7 @@
 ;;; Copyright © 2020 Tim Gesthuizen <tim.gesthuizen@yahoo.de>
 ;;; Copyright © 2020, 2021 Andy Tai <atai@atai.org>
 ;;; Copyright © 2020, 2021 Sébastien Lerique <sl@eauchat.org>
+;;; Copyright © 2021 Trevor Hass <thass@okstate.edu>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1330,6 +1331,9 @@ a debugging tool, @command{gssdp-device-sniffer}.")
     `(("gssdp" ,gssdp)
       ("gtk+" ,gtk+)
       ("libsoup" ,libsoup)))
+   (propagated-inputs
+    `(;; For ‘org.gnome.system.proxy’.
+      ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)))
    (synopsis "PnP API for GNOME")
    (description "This package provides GUPnP, an object-oriented framework
 for creating UPnP devices and control points, written in C using
@@ -3221,10 +3225,10 @@ the GNOME desktop environment.")
               (uri (string-append "mirror://gnome/sources/" name "/"
                                   (version-major+minor version)  "/"
                                   name "-" version ".tar.xz"))
+              (patches (search-patches "libcroco-CVE-2020-12825.patch"))
               (sha256
                (base32
                 "1m110rbj5d2raxcdp4iz0qp172284945awrsbdlq99ksmqsc4zkn"))))
-    (replacement libcroco/fixed)
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -3242,21 +3246,6 @@ XML/CSS rendering engine.")
 
     ;; LGPLv2.1-only.
     (license license:lgpl2.1)))
-
-(define libcroco/fixed
-  (package
-    (inherit libcroco)
-    (name "libcroco")
-    (version "0.6.13")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://gnome/sources/" name "/"
-                                  (version-major+minor version)  "/"
-                                  name "-" version ".tar.xz"))
-              (sha256
-               (base32
-                "1m110rbj5d2raxcdp4iz0qp172284945awrsbdlq99ksmqsc4zkn"))
-              (patches (search-patches "libcroco-CVE-2020-12825.patch"))))))
 
 (define-public libgsf
   (package
@@ -4927,17 +4916,18 @@ libxml to ease remote use of the RESTful API.")
        ("gnutls" ,gnutls)                         ;for 'certtool'
        ("httpd" ,httpd)))
     (propagated-inputs
-     ;; libsoup-2.4.pc refers to all these.
+     ;; libsoup-2.4.pc refers to all of these (except where otherwise noted)
      `(("brotli" ,google-brotli)
        ("glib" ,glib)
+       ("glib-networking" ,glib-networking)       ; for GIO runtime modules
        ("libpsl" ,libpsl)
        ("libxml2" ,libxml2)
        ("sqlite" ,sqlite)
        ("zlib" ,zlib)))
     (inputs
-     `(("glib-networking" ,glib-networking)
-       ("mit-krb5" ,mit-krb5)))
-    (home-page "https://live.gnome.org/LibSoup/")
+     `(("mit-krb5" ,mit-krb5)
+       ("ntlm_auth" ,samba))) ; For ntlm_auth support
+    (home-page "https://wiki.gnome.org/Projects/libsoup")
     (synopsis "GLib-based HTTP Library")
     (description
      "LibSoup is an HTTP client/server library for GNOME.  It uses GObjects
@@ -6002,7 +5992,7 @@ queries upon that data.")
 (define-public libgnome-games-support
   (package
     (name "libgnome-games-support")
-    (version "1.4.4")
+    (version "1.7.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/libgnome-games-support/"
@@ -6010,16 +6000,17 @@ queries upon that data.")
                                   "libgnome-games-support-" version ".tar.xz"))
               (sha256
                (base32
-                "1zkbmnrn161p74qg6jhsn9f66yjjzxfm13pl1klv9av8k1bax9pq"))))
-    (build-system gnu-build-system)
+                "11g1r3ppb9v8m3anks9gxf7fv1x38vmjiya3lr7zjjv328pb69d6"))))
+    (build-system meson-build-system)
     (arguments
-     '(#:phases
-       (modify-phases %standard-phases
-         (add-before 'check 'pre-check
-           (lambda _
-             ;; Tests require a writable HOME.
-             (setenv "HOME" (getcwd))
-             #t)))))
+      '(#:glib-or-gtk? #t
+        #:phases
+          (modify-phases %standard-phases
+            (add-before 'check 'pre-check
+              (lambda _
+                ;; Tests require a writable HOME.
+                (setenv "HOME" (getcwd))
+                #t)))))
     (native-inputs
      `(("intltool" ,intltool)
        ("pkg-config" ,pkg-config)
@@ -8705,7 +8696,7 @@ core C library, and bindings for Python (PyGTK).")
 (define-public gnome-autoar
   (package
     (name "gnome-autoar")
-    (version "0.3.1")
+    (version "0.3.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -8713,7 +8704,7 @@ core C library, and bindings for Python (PyGTK).")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "1y6hh5dldhdq7mpbmd571zl0yadfackvifhnxvykkqqddwz72y0f"))))
+                "0wkwix44yg126xn1v4f2j60bv9yiyadfpzf8ifx0bvd9x5f4v354"))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      `(("gobject-introspection" ,gobject-introspection)
@@ -10497,7 +10488,7 @@ apply fancy special effects and lets you share the fun with others.")
 (define-public passwordsafe
   (package
     (name "passwordsafe")
-    (version "3.99.2")
+    (version "5.0")
     (source
      (origin
        (method git-fetch)
@@ -10506,7 +10497,7 @@ apply fancy special effects and lets you share the fun with others.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0pi2l4gwf8paxm858mxrcsk5nr0c0zw5ycax40mghndb6b1qmmhf"))))
+        (base32 "1xh64bbg10gnfzlck5jvqy2zk6hbk9cyqgv85xc9kbdvs8n4lhgh"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -10536,7 +10527,7 @@ apply fancy special effects and lets you share the fun with others.")
      `(("glib" ,glib)
        ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
        ("gtk+" ,gtk+)
-       ("libhandy" ,libhandy-0.0)
+       ("libhandy" ,libhandy)
        ("libpwquality" ,libpwquality)
        ("python-pygobject" ,python-pygobject)
        ("python-pykeepass" ,python-pykeepass)))
@@ -10646,7 +10637,7 @@ configurable file renaming. ")
 (define-public workrave
   (package
     (name "workrave")
-    (version "1.10.42")
+    (version "1.10.43")
     (source
      (origin
        (method git-fetch)
@@ -10657,7 +10648,7 @@ configurable file renaming. ")
                                          version)))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "03i9kk8r1wgrfkkbwikx8wxaw4r4kn62vismr2zdq5g34fkkjh95"))))
+        (base32 "1baa9qjzd4b3q1zy5vhvyrx0hyz17mk237373ca48647897kw4cr"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      ;; The only tests are maintainer tests (in po/), which fail.
@@ -10848,7 +10839,7 @@ functionality.")
 (define-public gthumb
   (package
     (name "gthumb")
-    (version "3.10.2")
+    (version "3.10.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/gthumb/"
@@ -10856,7 +10847,7 @@ functionality.")
                                   "gthumb-" version ".tar.xz"))
               (sha256
                (base32
-                "14sw8d37g1lkp44dwsgyxjjsgh5pnpp4wq00mcy9p3rp30lf9spx"))))
+                "04n2sgasc03kiczyzkq362pjilj12hq2r5qj07lynqr9rivkzdys"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -10970,7 +10961,7 @@ tabs, and it supports drag and drop re-ordering of terminals.")
 (define-public libhandy
   (package
     (name "libhandy")
-    (version "1.2.0")
+    (version "1.2.2")
     (source
      (origin
        (method git-fetch)
@@ -10979,7 +10970,7 @@ tabs, and it supports drag and drop re-ordering of terminals.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1a8wfgm2jd3gcbk1nzhq6f2xq7vkxdc9qky8p9k0za9gqi7xfg4v"))))
+        (base32 "0345x7gif6yjm95y62lww71lj84wfwsr2p32r3iww8shavb8scyk"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags
@@ -11999,7 +11990,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.27.0")
+    (version "0.28.1")
     (source
      (origin
        (method git-fetch)
@@ -12009,7 +12000,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0mj4bsy7jp9wjj1dqz9zdq5aj0ib813wkz5k1481k80jp9dnlqnv"))))
+         "0ifcwp5fw74yypxkq7i0yc3002bsvj3p5c1icspr8s2kyjyllm6i"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t

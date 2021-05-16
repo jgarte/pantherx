@@ -36,6 +36,8 @@
 ;;; Copyright © 2021 Bonface Munyoki Kilyungi <me@bonfacemunyoki.com>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
 ;;; Copyright © 2021 Leo Le Bouter <lle-bout@zaclys.net>
+;;; Copyright © 2021 Zelphir Kaltstahl <zelphirkaltstahl@posteo.de>
+;;; Copyright © 2021 Oleg Pykhalov <go.wigust@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -361,13 +363,13 @@ $(datadir)/guile/site/$(GUILE_EFFECTIVE_VERSION)\n"))
 dictionary and suggesting spelling corrections.")
     (license license:gpl3+)))
 
-(define-public guile-bash
+(define-public guile2.0-bash
   ;; This project is currently retired.  It was initially announced here:
   ;; <https://lists.gnu.org/archive/html/guile-user/2015-02/msg00003.html>.
   (let ((commit "1eabc563ca5692b3e08d84f1f0e6fd2283284469")
         (revision "0"))
     (package
-      (name "guile-bash")
+      (name "guile2.0-bash")
       (version (string-append "0.1.6-" revision "." (string-take commit 7)))
       (home-page
        "https://anonscm.debian.org/cgit/users/kaction-guest/retired/dev.guile-bash.git")
@@ -429,6 +431,25 @@ enable -f ~/.guix-profile/lib/bash/libguile-bash.so scm
 
 and then run @command{scm example.scm}.")
       (license license:gpl3+))))
+
+(define-public guile-bash
+  (package
+    (inherit guile2.0-bash)
+    (name "guile-bash")
+    (inputs
+     `(("guile" ,guile-3.0-latest)
+       ,@(assoc-remove! (package-inputs guile2.0-bash) "guile")))
+    (arguments
+     `(#:tests? #f
+       #:phases (modify-phases %standard-phases
+                  (add-after 'install 'install-guile
+                    (lambda* (#:key inputs outputs #:allow-other-keys)
+                      (copy-recursively
+                       (string-append (assoc-ref outputs "out")
+                                      (assoc-ref inputs "guile") "/share")
+                       (string-append (assoc-ref outputs "out") "/share"))
+                      #t)))
+       ,@(package-arguments guile2.0-bash)))))
 
 (define-public guile-8sync
   (package
@@ -1778,7 +1799,7 @@ user which package sets would they like to install from it.")
 (define-public guile-wisp
   (package
     (name "guile-wisp")
-    (version "1.0.3")
+    (version "1.0.5")
     (source (origin
               (method hg-fetch)
               (uri (hg-reference
@@ -1787,7 +1808,7 @@ user which package sets would they like to install from it.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "10g97jz3ahpb5mg933ajsc3pa9jxlg14f42yf01qwx0dwq1b06d5"))))
+                "00iknn03gf421gg3061g35fbraqrkcqypkrfn10rhlgg6j0lgk67"))))
     (build-system gnu-build-system)
     (arguments
      `(#:modules ((guix build gnu-build-system)
@@ -1854,7 +1875,8 @@ user which package sets would they like to install from it.")
     (description "Wisp is a syntax for Guile which provides a Python-like
 whitespace-significant language.  It may be easier on the eyes for some
 users and in some situations.")
-    (license license:gpl3+)))
+    (license (list license:gpl3+        ; the project as a whole
+                   license:expat))))    ; the language spec (see also SRFI 119)
 
 (define-public guile2.2-wisp
   (package
@@ -2105,6 +2127,38 @@ microAdapton.  Both miniAdapton and microAdapton are designed to be easy to
 understand, extend, and port to host languages other than Scheme.")
       (license license:expat))))
 
+(define-public guile-raw-strings
+  (let ((commit "aa1cf783f2542811b473f797e12490920b779baa")
+        (revision "0"))
+    (package
+      (name "guile-raw-strings")
+      (version (git-version "0.0.0" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/lloda/guile-raw-strings")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "1r2gx86zw5hb6byllra3nap3fw9p7q7rvdmg6qn9myrdxyjpns3l"))))
+      (build-system guile-build-system)
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           (add-after 'build 'check
+             (lambda* (#:key tests? #:allow-other-keys)
+               (when tests?
+                 (invoke "guile" "-L" "." "-s" "test.scm")))))))
+      (native-inputs
+       `(("guile" ,guile-3.0)))
+      (home-page "https://github.com/lloda/guile-raw-strings")
+      (synopsis "Guile reader extension for `raw strings'")
+      (description "This package provides A Guile reader extension for `raw
+strings', it lets you write verbatim strings without having to escape double
+quotes. ")
+      (license license:public-domain))))
+
 (define-public guile-reader
   (package
     (name "guile-reader")
@@ -2204,7 +2258,7 @@ library.")
     (inherit guile-ncurses)
     (name "guile-ncurses-with-gpm")
     (inputs `(("ncurses" ,ncurses/gpm)
-              ("guile" ,guile-2.2)))))
+              ("guile" ,guile-3.0)))))
 
 (define-public guile3.0-ncurses/gpm
   (package
@@ -2742,6 +2796,7 @@ The picture values can directly be displayed in Geiser.")
          ("emacs-doom-modeline" ,emacs-doom-modeline)
          ("emacs-modus-themes" ,emacs-modus-themes)
          ("emacs-geiser" ,emacs-geiser)
+         ("emacs-geiser-guile" ,emacs-geiser-guile)
          ("emacs-company" ,emacs-company)
          ("emacs-ivy" ,emacs-ivy)
          ("emacs-flycheck" ,emacs-flycheck)
@@ -4663,3 +4718,27 @@ properties inspired by ghc-quickcheck.  You can use it to express properties,
 which functions should satisfy, as Scheme code and then check whether they hold
 in a large number of randomly generated test cases.")
     (license license:gpl3+)))
+
+(define-public guile-fslib
+  (package
+    (name "guile-fslib")
+    (version "0.2.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://notabug.org/ZelphirKaltstahl/guile-fslib/")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "118d84p443w7hrslv8hjyhgws631ia08mggiyklkmk0b9plfdsvz"))))
+    (build-system guile-build-system)
+    (inputs
+     `(("guile" ,guile-3.0)))
+    (home-page "https://notabug.org/ZelphirKaltstahl/guile-fslib")
+    (synopsis "Helper functions for working with locations in file systems")
+    (description
+     "This package contains helper functions for working with file system
+locations.")
+    (license license:agpl3+)))

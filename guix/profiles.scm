@@ -4,7 +4,7 @@
 ;;; Copyright © 2014, 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015 Sou Bunnbu <iyzsong@gmail.com>
-;;; Copyright © 2016, 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2016, 2018, 2019, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2017 Huang Ying <huang.ying.caritas@gmail.com>
 ;;; Copyright © 2017 Maxim Cournoyer <maxim.cournoyer@gmail.com>
@@ -1115,6 +1115,46 @@ MANIFEST.  Single-file bundles are required by programs such as Git and Lynx."
                     `((type . profile-hook)
                       (hook . ca-certificate-bundle))))
 
+(define (emacs-subdirs manifest)
+  (define build
+    (with-imported-modules (source-module-closure
+                            '((guix build profiles)
+                              (guix build utils)))
+      #~(begin
+          (use-modules (guix build utils)
+                       (guix build profiles)
+                       (ice-9 ftw) ; scandir
+                       (srfi srfi-1) ; append-map
+                       (srfi srfi-26))
+
+          (let ((destdir (string-append #$output "/share/emacs/site-lisp"))
+                (subdirs
+                 (append-map
+                  (lambda (dir)
+                    (filter
+                     file-is-directory?
+                     (map (cute string-append dir "/" <>)
+                          (scandir dir (negate (cute member <> '("." "..")))))))
+                  (filter file-exists?
+                          (map (cute string-append <> "/share/emacs/site-lisp")
+                               '#$(manifest-inputs manifest))))))
+            (mkdir-p destdir)
+            (with-directory-excursion destdir
+              (call-with-output-file "subdirs.el"
+                (lambda (port)
+                  (write
+                   `(normal-top-level-add-to-load-path
+                     (list ,@subdirs))
+                   port)
+                  (newline port)
+                  #t)))))))
+  (gexp->derivation "emacs-subdirs" build
+                    #:local-build? #t
+                    #:substitutable? #f
+                    #:properties
+                    `((type . profile-hook)
+                      (hook . emacs-subdirs))))
+
 (define (glib-schemas manifest)
   "Return a derivation that unions all schemas from manifest entries and
 creates the Glib 'gschemas.compiled' file."
@@ -1627,12 +1667,22 @@ MANIFEST."
            (cons (gexp-input thing output)
                  (append-map entry->texlive-input deps))
            '()))))
+  (define texlive-bin
+    (module-ref (resolve-interface '(gnu packages tex)) 'texlive-bin))
+  (define coreutils
+    (module-ref (resolve-interface '(gnu packages base)) 'coreutils))
+  (define sed
+    (module-ref (resolve-interface '(gnu packages base)) 'sed))
+  (define updmap.cfg
+    (module-ref (resolve-interface '(gnu packages tex))
+                'texlive-default-updmap.cfg))
   (define build
     (with-imported-modules '((guix build utils)
                              (guix build union))
       #~(begin
           (use-modules (guix build utils)
-                       (guix build union))
+                       (guix build union)
+                       (ice-9 popen))
 
           ;; Build a modifiable union of all texlive inputs.  We do this so
           ;; that TeX live can resolve the parent and grandparent directories
@@ -1650,7 +1700,49 @@ MANIFEST."
                 (("^TEXMFROOT = .*")
                  (string-append "TEXMFROOT = " #$output "/share\n"))
                 (("^TEXMF = .*")
-                 "TEXMF = $TEXMFROOT/share/texmf-dist\n"))))
+                 "TEXMF = $TEXMFROOT/share/texmf-dist\n"))
+
+              ;; XXX: This is annoying, but it's necessary because texlive-bin
+              ;; does not provide wrapped executables.
+              (setenv "PATH"
+                      (string-append #$(file-append coreutils "/bin")
+                                     ":"
+                                     #$(file-append sed "/bin")))
+              (setenv "PERL5LIB" #$(file-append texlive-bin "/share/tlpkg"))
+              (setenv "TEXMF" (string-append #$output "/share/texmf-dist"))
+
+              ;; Remove invalid maps from config file.
+              (let* ((web2c (string-append #$output "/share/texmf-config/web2c/"))
+                     (maproot (string-append #$output "/share/texmf-dist/fonts/map/"))
+                     (updmap.cfg (string-append web2c "updmap.cfg")))
+                (mkdir-p web2c)
+
+                ;; Some profiles may already have this file, which prevents us
+                ;; from copying it.  Since we need to generate it from scratch
+                ;; anyway, we delete it here.
+                (when (file-exists? updmap.cfg)
+                  (delete-file updmap.cfg))
+                (copy-file #$updmap.cfg updmap.cfg)
+                (make-file-writable updmap.cfg)
+                (let* ((port (open-pipe* OPEN_WRITE
+                                         #$(file-append texlive-bin "/bin/updmap-sys")
+                                         "--syncwithtrees"
+                                         "--nohash"
+                                         "--force"
+                                         (string-append "--cnffile=" web2c "updmap.cfg"))))
+                  (display "Y\n" port)
+                  (when (not (zero? (status:exit-val (close-pipe port))))
+                    (error "failed to filter updmap.cfg")))
+
+                ;; Generate font maps.
+                (invoke #$(file-append texlive-bin "/bin/updmap-sys")
+                        (string-append "--cnffile=" web2c "updmap.cfg")
+                        (string-append "--dvipdfmxoutputdir="
+                                       maproot "updmap/dvipdfmx/")
+                        (string-append "--dvipsoutputdir="
+                                       maproot "updmap/dvips/")
+                        (string-append "--pdftexoutputdir="
+                                       maproot "updmap/pdftex/")))))
           #t)))
 
     (with-monad %store-monad
@@ -1672,6 +1764,7 @@ MANIFEST."
         fonts-dir-file
         ghc-package-cache-file
         ca-certificate-bundle
+        emacs-subdirs
         glib-schemas
         gtk-icon-themes
         gtk-im-modules

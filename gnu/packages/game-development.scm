@@ -348,14 +348,14 @@ files) into @file{.grf} and/or @file{.nfo} files.")
 (define-public python-sge
   (package
     (name "python-sge")
-    (version "1.7")
+    (version "2.0.post0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "sge" version))
        (sha256
         (base32
-         "02fn6v6bxk3sngwd4kd3mglrp0jlnhx7x6h8nnkik6wdv150a0wv"))))
+         "0s5d5qzlzfmqb10iyrqi62n36ll94d99xjaznp5ca6dz1b91qkvr"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-pygame" ,python-pygame)
@@ -1766,7 +1766,7 @@ scripted in a Python-like language.")
 (define-public entt
   (package
     (name "entt")
-    (version "3.7.0")
+    (version "3.7.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1775,7 +1775,7 @@ scripted in a Python-like language.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0nzvnhiw3r6nkmxp749zwxc8kzja09nijyxibdbri3g2i7pysf58"))))
+                "151jg3m262xwaywl2rqnc90yr6p48rhmgi5mxyv6bwqvmfli2m5p"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags (list "-DENTT_BUILD_TESTING=ON"
@@ -1856,14 +1856,14 @@ a 2D editor view.")
 (define-public guile-chickadee
   (package
     (name "guile-chickadee")
-    (version "0.6.0")
+    (version "0.7.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://files.dthompson.us/chickadee/"
                                   "chickadee-" version ".tar.gz"))
               (sha256
                (base32
-                "1jv4jkc35b7rizz8iflh74hhk9qy665isn1xa6gqz0qp9grwb019"))))
+                "199y4kc28va6klfs19h998sfh7vx9spnrvjw7p92i47q5a7jdcp6"))))
     (build-system gnu-build-system)
     (arguments
      '(#:make-flags '("GUILE_AUTO_COMPILE=0")))

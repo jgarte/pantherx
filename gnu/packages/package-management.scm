@@ -131,9 +131,9 @@
   ;; Latest version of Guix, which may or may not correspond to a release.
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
-  (let ((version "1.2.0")
-        (commit "a0afc02a859430971c1c21646c9765d1516ad9ed")
-        (revision 21))
+  (let ((version "1.3.0")
+        (commit "771b866c55e5f992df60f6c32f5fdd78b64e17f6")
+        (revision 1))
     (package
       (name "guix")
 
@@ -149,7 +149,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "1ly8krnadjwdv8nw7gzvm24hph3z81m0vsk0xz7zv3b0j627pi8x"))
+                  "0w8w05w6v3lc6478vfw67jzn0hbd9nsncpx9i9ch1lck53r8vs44"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -263,11 +263,9 @@ $(prefix)/etc/openrc\n")))
                           (intern (assoc-ref inputs "boot-guile") #f)
 
                           ;; On x86_64 some tests need the i686 Guile.
-                          ,@(if (and (not (%current-target-system))
-                                     (string=? (%current-system)
-                                               "x86_64-linux"))
-                                '((intern (assoc-ref inputs "boot-guile/i686") #f))
-                                '())
+                          (when (and (not target)
+                                     (string=? system "x86_64-linux"))
+                            (intern (assoc-ref inputs "boot-guile/i686") #f))
 
                           ;; Copy the bootstrap executables.
                           (for-each (lambda (input)
@@ -301,9 +299,8 @@ $(prefix)/etc/openrc\n")))
                         ;; Make sure the 'guix' command finds GnuTLS,
                         ;; Guile-JSON, and Guile-Git automatically.
                         (let* ((out    (assoc-ref outputs "out"))
-                               (guile  ,@(if (%current-target-system)
-                                             '((assoc-ref native-inputs "guile"))
-                                             '((assoc-ref inputs "guile"))))
+                               (guile  (assoc-ref (or native-inputs inputs)
+                                                  "guile"))
                                (avahi  (assoc-ref inputs "guile-avahi"))
                                (gcrypt (assoc-ref inputs "guile-gcrypt"))
                                (guile-lib   (assoc-ref inputs "guile-lib"))
@@ -317,42 +314,49 @@ $(prefix)/etc/openrc\n")))
                                                   "guile-bytestructures"))
                                (ssh    (assoc-ref inputs "guile-ssh"))
                                (gnutls (assoc-ref inputs "gnutls"))
+                               (disarchive (assoc-ref inputs "disarchive"))
                                (locales (assoc-ref inputs "glibc-utf8-locales"))
                                (deps   (list gcrypt json sqlite gnutls git
-                                             bs ssh zlib lzlib zstd))
-                               (deps*  ,@(if (%current-target-system)
-                                             '(deps)
-                                             '((cons avahi deps))))
+                                             bs ssh zlib lzlib zstd guile-lib
+                                             disarchive))
+                               (deps*  (if avahi (cons avahi deps) deps))
                                (effective
                                 (read-line
                                  (open-pipe* OPEN_READ
                                              (string-append guile "/bin/guile")
                                              "-c" "(display (effective-version))")))
-                               (path   (string-join
-                                        (map (cut string-append <>
-                                                  "/share/guile/site/"
-                                                  effective)
-                                             (delete #f deps*))
-                                        ":"))
-                               (gopath (string-join
-                                        (map (cut string-append <>
-                                                  "/lib/guile/" effective
-                                                  "/site-ccache")
-                                             (delete #f deps*))
-                                        ":"))
+                               (path   (map (cut string-append <>
+                                                 "/share/guile/site/"
+                                                 effective)
+                                            (delete #f deps*)))
+                               (gopath (map (cut string-append <>
+                                                 "/lib/guile/" effective
+                                                 "/site-ccache")
+                                            (delete #f deps*)))
                                (locpath (string-append locales "/lib/locale")))
 
-                          (wrap-program (string-append out "/bin/guix")
-                            `("GUILE_LOAD_PATH" ":" prefix (,path))
-                            `("GUILE_LOAD_COMPILED_PATH" ":" prefix (,gopath))
-                            `("GUIX_LOCPATH" ":" suffix (,locpath)))
-
-                          (when target
-                            ;; XXX Touching wrap-program rebuilds world
-                            (let ((bash (assoc-ref inputs "bash")))
-                              (substitute* (string-append out "/bin/guix")
-                                (("^#!.*/bash") (string-append "#! " bash "/bin/bash")))))
-                          #t)))
+                          ;; Modify 'guix' directly instead of using
+                          ;; 'wrap-program'.  This avoids the indirection
+                          ;; through Bash, which in turn avoids getting Bash's
+                          ;; own locale warnings.
+                          (substitute* (string-append out "/bin/guix")
+                            (("!#")
+                             (string-append
+                              "!#\n\n"
+                              (object->string
+                               `(set! %load-path (append ',path %load-path)))
+                              "\n"
+                              (object->string
+                               `(set! %load-compiled-path
+                                  (append ',gopath %load-compiled-path)))
+                              "\n"
+                              (object->string
+                               `(let ((path (getenv "GUIX_LOCPATH")))
+                                  (setenv "GUIX_LOCPATH"
+                                          (if path
+                                              (string-append path ":" ,locpath)
+                                              ,locpath))))
+                              "\n\n"))))))
 
                     ;; The 'guix' executable has 'OUT/libexec/guix/guile' as
                     ;; its shebang; that should remain unchanged, thus remove
@@ -407,8 +411,7 @@ $(prefix)/etc/openrc\n")))
                `(("boot-guile/i686" ,(bootstrap-guile-origin "i686-linux")))
                '())
          ,@(if (%current-target-system)
-               `(("bash" ,bash-minimal)
-                 ("xz" ,xz))
+               `(("xz" ,xz))
                '())
 
          ;; Tests also rely on these bootstrap executables.
@@ -416,6 +419,8 @@ $(prefix)/etc/openrc\n")))
          ("bootstrap/mkdir" ,(bootstrap-executable "mkdir" (%current-system)))
          ("bootstrap/tar" ,(bootstrap-executable "tar" (%current-system)))
          ("bootstrap/xz" ,(bootstrap-executable "xz" (%current-system)))
+
+         ("disarchive" ,disarchive)               ;for 'guix perform-download'
 
          ("glibc-utf8-locales" ,glibc-utf8-locales)))
       (propagated-inputs
@@ -525,12 +530,16 @@ the Nix package manager.")
        ("gnutls" ,guile2.2-gnutls)
        ("guile-gcrypt" ,guile2.2-gcrypt)
        ("guile-json" ,guile2.2-json)
+       ("guile-lib" ,guile2.2-lib)
        ("guile-sqlite3" ,guile2.2-sqlite3)
        ("guile-ssh" ,guile2.2-ssh)
        ("guile-git" ,guile2.2-git)
+       ("guile-zlib" ,guile2.2-zlib)
+       ("guile-lzlib" ,guile2.2-lzlib)
        ,@(fold alist-delete (package-native-inputs guix)
                '("guile" "gnutls" "guile-gcrypt" "guile-json"
-                 "guile-sqlite3" "guile-ssh" "guile-git"))))
+                 "guile-lib" "guile-sqlite3" "guile-ssh" "guile-git"
+                 "guile-zlib" "guile-lzlib"))))
     (inputs
      `(("guile" ,guile-2.2)
        ,@(alist-delete "guile" (package-inputs guix))))
@@ -538,9 +547,12 @@ the Nix package manager.")
      `(("gnutls" ,gnutls)
        ("guile-gcrypt" ,guile2.2-gcrypt)
        ("guile-json" ,guile2.2-json)
+       ("guile-lib" ,guile2.2-lib)
        ("guile-sqlite3" ,guile2.2-sqlite3)
        ("guile-ssh" ,guile2.2-ssh)
-       ("guile-git" ,guile2.2-git)))))
+       ("guile-git" ,guile2.2-git)
+       ("guile-zlib" ,guile2.2-zlib)
+       ("guile-lzlib" ,guile2.2-lzlib)))))
 
 (define-public guile3.0-guix
   (deprecated-package "guile3.0-guix" guix))
@@ -1051,8 +1063,8 @@ environments.")
     (license (list license:gpl3+ license:agpl3+ license:silofl1.1))))
 
 (define-public guix-build-coordinator
-  (let ((commit "6fb5eafc33efa109b220efe71594cfcdb2efe133")
-        (revision "24"))
+  (let ((commit "1305724c7ea3c2bb3e557918d5a1b17d572aa110")
+        (revision "27"))
     (package
       (name "guix-build-coordinator")
       (version (git-version "0" revision commit))
@@ -1063,7 +1075,7 @@ environments.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "1lf7jry18kwglvyakfkmi8bif8ppsdinl0xjgmkgkp4mvmymh2gj"))
+                  "179n33mkhl6f2fv0gyn7sdm3k4hhm1hvca6dgc923d0w7zv4p577"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -1098,6 +1110,7 @@ environments.")
                                          "guile-lib"
                                          "guile-lzlib"
                                          "guile-zlib"
+                                         "guile-sqlite3"
                                          "gnutls"
                                          ,@(if (hurd-target?)
                                                '()
@@ -1332,7 +1345,7 @@ for packaging and deployment of cross-compiled Windows applications.")
 (define-public libostree
   (package
     (name "libostree")
-    (version "2020.8")
+    (version "2021.2")
     (source
      (origin
        (method url-fetch)
@@ -1340,7 +1353,7 @@ for packaging and deployment of cross-compiled Windows applications.")
              "https://github.com/ostreedev/ostree/releases/download/v"
              (version-major+minor version) "/libostree-" version ".tar.xz"))
        (sha256
-        (base32 "16v73v63h16ika73kgh2cvgm0v27r2d48m932mbj3xm6s295kapx"))))
+        (base32 "0z2x9krnd6nblwq0nz99igzhh3yv022rn3hgcyrzci0xqzkhhh45"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases

@@ -6,7 +6,7 @@
 ;;; Copyright © 2017 Carlo Zancanaro <carlo@zancanaro.id.au>
 ;;; Copyright © 2017 Theodoros Foradis <theodoros@foradis.org>
 ;;; Copyright © 2017 Vasile Dumitrascu <va511e@yahoo.com>
-;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2018 Adriano Peluso <catonano@gmail.com>
 ;;; Copyright © 2018, 2019, 2020, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
@@ -114,7 +114,7 @@
 (define-public bitcoin-core-0.21
   (package
     (name "bitcoin-core")
-    (version "0.21.0")
+    (version "0.21.1")
     (source (origin
               (method url-fetch)
               (uri
@@ -122,7 +122,7 @@
                               version "/bitcoin-" version ".tar.gz"))
               (sha256
                (base32
-                "0dszcn4r43w0ffsmgwmyzkzr5lqws3bbhlkssmjgnjgfc8n2148s"))))
+                "1q51nqv64lhng5wh1cqb01jar7iswpnyyb1i7xslbkr0j9227zya"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -400,22 +400,13 @@ in ability, and easy to use.")
        (file-name (git-file-name name version))
        (sha256
         (base32 "1r5rcyxd6d1rqwamzpvqdbkbdf1zbj75aaciqijrklnm59ps244y"))))
-    (build-system cmake-build-system)
+    (build-system emacs-build-system)
     (arguments
-     `(#:modules ((guix build cmake-build-system)
-                  (guix build utils)
-                  (guix build emacs-utils))
-       #:imported-modules (,@%cmake-build-system-modules
-                           (guix build emacs-utils))
+     `(;; ledger-test.el is needed at runtime (but probably not for a good reason).
+       #:exclude '()
        #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'patch-site-dir
-           (lambda _
-             (substitute* "CMakeLists.txt"
-               (("DESTINATION share/emacs/site-lisp/ledger-mode")
-                "DESTINATION share/emacs/site-lisp"))
-             #t))
-         (add-before 'build 'patch-path
+         (add-after 'unpack 'patch-path
            (lambda* (#:key inputs #:allow-other-keys)
              (let ((ledger (assoc-ref inputs "ledger")))
                (make-file-writable "ledger-exec.el")
@@ -430,12 +421,6 @@ in ability, and easy to use.")
                (invoke "makeinfo" "-o" target
                        "../source/doc/ledger-mode.texi"))
              #t))
-         (add-after 'install 'generate-autoload
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((site-dir (string-append (assoc-ref outputs "out")
-                                             "/share/emacs/site-lisp")))
-               (emacs-generate-autoloads ,name site-dir))
-             #t))
          (replace 'check
            (lambda _
              (with-directory-excursion "../source/test"
@@ -443,8 +428,7 @@ in ability, and easy to use.")
     (inputs
      `(("ledger" ,ledger)))
     (native-inputs
-     `(("emacs-minimal" ,emacs-minimal)
-       ("texinfo" ,texinfo)))
+     `(("texinfo" ,texinfo)))
     (home-page "https://ledger-cli.org/")
     (synopsis "Command-line double-entry accounting program")
     (description
@@ -763,7 +747,7 @@ the Monero command line client and daemon.")
 (define-public monero-gui
   (package
     (name "monero-gui")
-    (version "0.17.2.0")
+    (version "0.17.2.2")
     (source
      (origin
        (method git-fetch)
@@ -780,7 +764,7 @@ the Monero command line client and daemon.")
            (delete-file-recursively "monero")
            #t))
        (sha256
-        (base32 "17il26gh0g69x7lqkyb461x1712959wajg3iadx0p08djr3m13mf"))))
+        (base32 "0n7gfhm13y18ffqsqdajl4knd4h8m772fz6lh1lpkh198pwmw8f9"))))
     (build-system qt-build-system)
     (native-inputs
      `(,@(package-native-inputs monero)
@@ -819,7 +803,12 @@ the Monero command line client and daemon.")
                (("@VERSION_TAG_GUI@")
                 ,version))
              (substitute* "src/zxcvbn-c/makefile"
-               (("\\?=") "="))))
+               (("\\?=") "="))
+             (substitute* "external/CMakeLists.txt"
+               (("add_library\\(quirc" all)
+                (string-append
+                 "set(CMAKE_C_FLAGS \"${CMAKE_C_FLAGS} -fPIC\")\n"
+                 all)))))
          (add-before 'configure 'generate-zxcvbn-c-header
            (lambda _
              (invoke "make" "-C" "src/zxcvbn-c" "dict-src.h")))
@@ -1406,7 +1395,7 @@ following three utilities are included with the library:
 (define-public bitcoin-unlimited
   (package
     (name "bitcoin-unlimited")
-    (version "1.9.1.1")
+    (version "1.9.2.0")
     (source
      (origin
        (method git-fetch)
@@ -1415,7 +1404,7 @@ following three utilities are included with the library:
              (commit (string-append "BCHunlimited" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0vyvfawss40v9jaic9zq0z3cjvxiq04d4wgq4rnkha7ilm9zqyd7"))))
+        (base32 "1cmrvh7azz0g89rsx6i8apd1li6r1lb3jrmbbf8fic1918lwv62m"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)

@@ -1101,13 +1101,13 @@ the PDF pages.")
 (define-public img2pdf
   (package
     (name "img2pdf")
-    (version "0.4.0")
+    (version "0.4.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "img2pdf" version))
        (sha256
-        (base32 "1jdhmpzgj8815bhargb3xp3ydlqxwkz0mcadrflx2ga0p056kvpa"))))
+        (base32 "0ljmxp7myxccfdy4kxpn4jzq35qs4pbmmmnih9vis8abm2f2589q"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-pikepdf" ,python-pikepdf)
@@ -1135,7 +1135,7 @@ information for every pixel as the input.")
                 "0f242mix20rgsqz1llibhsz4r2pbvx6k32rmky0zjvnbaqaw1dwm"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:phases
+     `(#:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'patch-FHS-file-names
            (lambda _
@@ -1144,7 +1144,7 @@ information for every pixel as the input.")
                (("/sbin/ldconfig -p") "echo lib")) #t))
          (delete 'configure))
         #:tests? #f
-        #:make-flags (list "CC=gcc"
+        #:make-flags (list ,(string-append "CC=" (cc-for-target))
                            (string-append "prefix=" (assoc-ref %outputs "out")))))
     (inputs `(("libjpeg" ,libjpeg-turbo)
               ("curl" ,curl)

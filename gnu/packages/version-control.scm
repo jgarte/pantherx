@@ -29,15 +29,16 @@
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2020 John D. Boy <jboy@bius.moe>
 ;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
-;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
+;;; Copyright © 2020, 2021 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2020 Tanguy Le Carrour <tanguy@bioneland.org>
-;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
+;;; Copyright © 2020, 2021 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2021 Greg Hogan <code@greghogan.com>
 ;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2021 Léo Le Bouter <lle-bout@zaclys.net>
 ;;; Copyright © 2021 LibreMiami <packaging-guix@libremiami.org>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
+;;; Copyright © 2021 François J. <francois-oss@avalenn.eu>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -188,6 +189,9 @@ as well as the classic centralized workflow.")
       ("bash" ,bash-minimal)
       ("bash-for-tests" ,bash)
       ("gettext" ,gettext-minimal)
+      ;; To build the man pages from the git sources, we would need a dependency
+      ;; on a full XML tool chain, and building it actually takes ages.  So we
+      ;; use this lazy approach and use released tarball.
       ("git-manpages"
        ,(origin
           (method url-fetch)
@@ -1264,7 +1268,7 @@ lot easier.")
 (define-public stgit
   (package
     (name "stgit")
-    (version "1.0")
+    (version "1.1")
     (source
      (origin
        (method git-fetch)
@@ -1273,7 +1277,7 @@ lot easier.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0dixgvjlsk3xisj8blzdhh0nphm5zqkjbj081wgsba52z4zq1y0q"))))
+        (base32 "1jp74qsgw3f9c8xgaaqvmhfh4ar3n1ns5ncm8glvqyywlxldxi0n"))))
     (build-system python-build-system)
     (native-inputs
      `(("perl" ,perl)))
@@ -1316,7 +1320,7 @@ manipulate them in various ways.")
 (define-public vcsh
   (package
     (name "vcsh")
-    (version "1.20151229")
+    (version "1.20190621")
     (source
      (origin
        (method git-fetch)
@@ -1325,7 +1329,7 @@ manipulate them in various ways.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1grpj45nbpv4j60vd2kg4rj53zrm0bc0h9l4pfd3c2mwbvywm6ab"))))
+        (base32 "1s9l47wm9r7sndcgc778mq60wkzkhvfv7rkrwci5kjvw8vsddvcc"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("which" ,which)))
@@ -1336,9 +1340,18 @@ manipulate them in various ways.")
        ("perl-shell-command" ,perl-shell-command)
        ("perl-test-most" ,perl-test-most)))
     (arguments
-     '(#:phases (modify-phases %standard-phases
-                  (delete 'configure)
-                  (delete 'build))
+     '(#:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (delete 'build)
+         (add-after 'install 'install-bash-completion
+           ;; As of 1.20190621, zsh completion is installed by default but bash
+           ;; completion is not.  Do so manually.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out         (assoc-ref outputs "out"))
+                    (completions (string-append out "/etc/bash_completion.d")))
+               (mkdir-p completions)
+               (copy-file "_vcsh_bash" (string-append completions "/vcsh"))))))
        #:make-flags (list (string-append "PREFIX="
                                          (assoc-ref %outputs "out")))
        #:test-target "test"))
@@ -1505,7 +1518,7 @@ control to Git repositories.")
 (define-public pre-commit
   (package
     (name "pre-commit")
-    (version "2.8.1")
+    (version "2.12.1")
     (source
      (origin
        ;; No tests in the PyPI tarball.
@@ -1515,12 +1528,12 @@ control to Git repositories.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0b3ks6viccq3n4p8i8zgfd40vp1k5nkhmmlz7p4nxcdizw8zxgn8"))))
+        (base32 "0gwy5bnjnlj6yjcmghsibrcijvz9isxcygln7ihvi728p04rgymf"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         (add-before 'check 'set-up-git
+         (add-before 'check 'prepare-check-env
            (lambda _
              ;; Change from /homeless-shelter to /tmp for write permission.
              (setenv "HOME" "/tmp")
@@ -1529,72 +1542,36 @@ control to Git repositories.")
              (setenv "GIT_COMMITTER_NAME" "Your Name")
              (setenv "GIT_AUTHOR_EMAIL" "you@example.com")
              (setenv "GIT_COMMITTER_EMAIL" "you@example.com")
+             ;; Some tests still fail with PermissionError.  Make the source
+             ;; tree writable.
+             (for-each make-file-writable (find-files "."))
+             ;; Some tests will need a working git repository.
+             (invoke "git" "init")
              (invoke "git" "config" "--global" "user.name" "Your Name")
              (invoke "git" "config" "--global" "user.email" "you@example.com")
-           #t))
+             #t))
          (replace 'check
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (add-installed-pythonpath inputs outputs)
-             (invoke "pytest" "tests" "-k"
+             ;; The file below contains about 30 tests that fail because they
+             ;; depend on tools from multiple languages (cargo, npm, cpan,
+             ;; Rscript, etc).  There are other tests that pass, but it's more
+             ;; convenient to skip the whole file than list 30 tests to skip.
+             (invoke "pytest" "--ignore=tests/repository_test.py"
+                     ;; Ruby and Node tests require node and gem.
+                     "--ignore=tests/languages/node_test.py"
+                     "--ignore=tests/languages/ruby_test.py"
+                     ;; FIXME: Python tests fail because of distlib version
+                     ;; mismatch.  Even with python-distlib/next it is
+                     ;; pulling version 0.3.0, while 0.3.1 is required.
+                     "--ignore=tests/languages/python_test.py" "-k"
                      (string-append
-                     ;; Disable conda tests.
-                      "not test_conda_hook"
-                      " and not test_conda_with_additional_dependencies_hook"
-                      " and not test_local_conda_additional_dependencies"
-                      ;; Disable cpan tests.
-                      " and not test_local_perl_additional_dependencies"
-                      " and not test_perl_hook"
-                      ;; Disable Ruby tests.
-                      " and not test_additional_ruby_dependencies_installed"
-                      " and not test_install_rbenv"
-                      " and not test_install_rbenv_with_version"
-                      " and not test_run_a_ruby_hook"
-                      " and not test_run_ruby_hook_with_disable_shared_gems"
-                      " and not test_run_versioned_ruby_hook"
-                      ;; Disable Cargo tests.
-                      " and not test_additional_rust_cli_dependencies_installed"
-                      " and not test_additional_rust_lib_dependencies_installed"
-                      " and not test_local_rust_additional_dependencies"
-                      " and not test_rust_hook"
-                      ;; Disable dotnet tests.
-                      " and not test_dotnet_hook"
-                      ;; Disable nodejs tests.
-                      " and not test_unhealthy_if_system_node_goes_missing"
-                      " and not test_installs_without_links_outside_env"
-                      " and not test_healthy_system_node"
-                      ;; Disable python2 test.
-                      " and not test_switch_language_versions_doesnt_clobber"
-                      ;; These tests try to open a network socket.
-                      " and not test_additional_golang_dependencies_installed"
-                      " and not test_additional_node_dependencies_installed"
-                      " and not test_golang_hook"
-                      " and not test_golang_hook_still_works_when_gobin_is_set"
-                      " and not test_local_golang_additional_dependencies"
-                      " and not test_main"
-                      " and not test_node_hook_with_npm_userconfig_set"
-                      " and not test_run_a_node_hook"
-                      " and not test_run_versioned_node_hook"
-                      ;; Tests failing with a permission error.
-                      ;; They try to write to the filesystem.
-                      " and not test_autoupdate_hook_disappearing_repo"
-                      " and not test_hook_disppearing_repo_raises"
-                      " and not test_img_conflict"
-                      " and not test_img_something_unstaged"
-                      " and not test_installed_from_venv"
-                      " and not test_too_new_version"
-                      " and not test_try_repo_uncommitted_changes"
-                      " and not test_versions_ok"
-                      ;; This test tries to activate a virtualenv.
-                      " and not test_healthy_venv_creator"
-                      ;; Fatal error: Not a Git repository.
-                      " and not test_all_cmds"
-                      " and not test_try_repo"
-                      ;; No module named 'pip._internal.cli.main'.
-                      " and not test_additional_dependencies_roll_forward"
-                      ;; Assertion errors.
-                      " and not test_install_existing_hooks_no_overwrite"
-                      " and not test_uninstall_restores_legacy_hooks"))))
-         (add-before 'reset-gzip-timestamps 'make-files-writable
+                      ;; TODO: these tests fail with AssertionError.  It may
+                      ;; be possible to fix them.
+                      "not test_install_existing_hooks_no_overwrite"
+                      " and not test_uninstall_restores_legacy_hooks"
+                      " and not test_installed_from_venv"))))
+         (add-before 'reset-gzip-timestamps 'make-gz-writable
            (lambda* (#:key outputs #:allow-other-keys)
              ;; Make sure .gz files are writable so that the
              ;; 'reset-gzip-timestamps' phase can do its work.
@@ -1604,8 +1581,13 @@ control to Git repositories.")
                #t))))))
     (native-inputs
      `(("git" ,git-minimal)
+       ("python-covdefaults" ,python-covdefaults)
+       ("python-coverage" ,python-coverage)
+       ("python-distlib" ,python-distlib/next)
        ("python-pytest" ,python-pytest)
-       ("python-re-assert" ,python-re-assert)))
+       ("python-pytest-env" ,python-pytest-env)
+       ("python-re-assert" ,python-re-assert)
+       ("which" ,which)))
     ;; Propagate because pre-commit is also used as a module.
     (propagated-inputs
      `(("python-cfgv" ,python-cfgv)
@@ -1625,18 +1607,21 @@ execution of any hook written in any language before every commit.")
 (define-public mercurial
   (package
     (name "mercurial")
-    (version "5.6.1")
+    (version "5.8")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://www.mercurial-scm.org/"
                                  "release/mercurial-" version ".tar.gz"))
              (sha256
               (base32
-               "1bgz8f1a7lnmh6lzcvwg6q1yx6i7yibhwy06l4k55i04957jap75"))))
-    (build-system python-build-system)
+               "17rhlmmkqz5ll3k68jfzpcifg3nndbcbc2nx7kw8xn3qcj7nlpgw"))))
+    (build-system gnu-build-system)
     (arguments
-     `(#:phases
+     `(#:make-flags
+       (list (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:phases
        (modify-phases %standard-phases
+         (delete 'configure)
          (add-after 'unpack 'patch-tests
            (lambda _
              (substitute* '("tests/test-extdiff.t"
@@ -1689,17 +1674,20 @@ execution of any hook written in any language before every commit.")
                          ;; The test suite takes a long time and produces little
                          ;; output by default.  Prevent timeouts due to silence.
                          "-v"))))))))
-    ;; The following inputs are only needed to run the tests.
     (native-inputs
-     `(("python-nose" ,python-nose)
+     `(("python-docutils", python-docutils)
+       ;; The following inputs are only needed to run the tests.
+       ("python-nose" ,python-nose)
        ("unzip" ,unzip)
        ("which" ,which)))
+    (inputs
+     `(("python" ,python)))
     (home-page "https://www.mercurial-scm.org/")
     (synopsis "Decentralized version control system")
     (description
-     "Mercurial is a free, distributed source control management tool.
-It efficiently handles projects of any size
-and offers an easy and intuitive interface.")
+     "Mercurial is a free, distributed source control management tool.  It
+efficiently handles projects of any size and offers an easy and intuitive
+interface.")
     (license license:gpl2+)))
 
 (define-public python-hg-evolve
@@ -1919,14 +1907,14 @@ RCS, PRCS, and Aegis packages.")
 (define-public cvs-fast-export
   (package
     (name "cvs-fast-export")
-    (version "1.55")
+    (version "1.56")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://www.catb.org/~esr/cvs-fast-export/"
                                   "cvs-fast-export-" version ".tar.gz"))
               (sha256
                (base32
-                "06y2myhhv2ap08bq7d7shq0b7lq6wgznwrpz6622xq66cxkf2n5g"))))
+                "058bzp3npng48ascls943m16kgvrl0h197a10brf7mvx8zpfc7sc"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -3071,3 +3059,36 @@ If several repos are related, it helps to see their status together.")
 makes a directory under a specific root directory (by default @file{~/ghq})
 using the remote repository URL's host and path.")
     (license license:expat)))
+
+(define-public git-filter-repo
+  (package
+    (name "git-filter-repo")
+    (version "2.29.0")
+    (source
+     (origin
+       ;; Use a release tarball instead of 'git-fetch' because it contains
+       ;; pre-compiled man-pages which are too hard to build in this context
+       ;; as it depends on Git's Makefile.
+       (method url-fetch)
+       (uri (string-append "https://github.com/newren/git-filter-repo/releases/"
+                           "download/v" version
+                           "/git-filter-repo-" version ".tar.xz"))
+       (sha256
+        (base32
+         "00nn7k9jqrybb762486fmigsnbcn9lbvimgpfvvarz4ikdp9y9pb"))))
+    (build-system copy-build-system)
+    (arguments
+     `(#:install-plan
+       '(("git-filter-repo" "libexec/git-core/")
+         ("Documentation/man1/" "share/man/man1")
+         ("/" "" #:include ()))))
+    (inputs `(("python" ,python)))                ;for the shebang
+    (home-page "https://github.com/newren/git-filter-repo")
+    (synopsis "Quickly rewrite Git repository history")
+    (description
+     "@command{git filter-repo} is a versatile tool for rewriting history,
+which roughly falls into the same space of tool like git filter-branch but
+with more capabilities.  @command{git filter-repo} is now recommended by the
+Git project instead of @command{git filter-branch}.")
+    (license (list license:expat ;; Main license.
+                   license:gpl2)))) ;; For test harness.

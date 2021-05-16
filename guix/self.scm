@@ -50,7 +50,7 @@
   (let ((ref (lambda (module variable)
                (module-ref (resolve-interface module) variable))))
     (match-lambda
-      ("guile"      (ref '(gnu packages guile) 'guile-3.0/libgc-7))
+      ("guile"      (ref '(gnu packages guile) 'guile-3.0-latest))
       ("guile-avahi" (ref '(gnu packages guile-xyz) 'guile-avahi))
       ("guile-json" (ref '(gnu packages guile) 'guile-json-4))
       ("guile-ssh"  (ref '(gnu packages ssh)   'guile-ssh))
@@ -63,6 +63,7 @@
       ("guile-zstd" (ref '(gnu packages guile) 'guile-zstd))
       ("guile-gcrypt"  (ref '(gnu packages gnupg) 'guile-gcrypt))
       ("gnutls"     (ref '(gnu packages tls) 'gnutls))
+      ("disarchive" (ref '(gnu packages backup) 'disarchive))
       ("gzip"       (ref '(gnu packages compression) 'gzip))
       ("bzip2"      (ref '(gnu packages compression) 'bzip2))
       ("xz"         (ref '(gnu packages compression) 'xz))
@@ -844,6 +845,9 @@ itself."
   (define gnutls
     (specification->package "gnutls"))
 
+  (define disarchive
+    (specification->package "disarchive"))
+
   (define dependencies
     (append-map transitive-package-dependencies
                 (list guile-gcrypt gnutls guile-git guile-avahi
@@ -880,7 +884,8 @@ itself."
                    ("guix/store/schema.sql"
                     ,(local-file "../guix/store/schema.sql")))
 
-                 #:extensions (list guile-gcrypt)
+                 #:extensions (list guile-gcrypt
+                                    guile-json)   ;for (guix swh)
                  #:guile-for-build guile-for-build))
 
   (define *extra-modules*
@@ -1027,7 +1032,8 @@ itself."
          (let* ((modules  (built-modules (compose list node-source+compiled)))
                 (command  (guix-command modules
                                         #:source source
-                                        #:dependencies dependencies
+                                        #:dependencies
+                                        (cons disarchive dependencies)
                                         #:guile guile-for-build
                                         #:guile-version guile-version)))
            (whole-package name modules dependencies

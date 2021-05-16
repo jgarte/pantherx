@@ -484,16 +484,15 @@ should only be used as part of the Guix cups-pk-helper service.")
 (define-public hplip
   (package
     (name "hplip")
-    (version "3.21.2")
+    (version "3.21.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/hplip/hplip/" version
                                   "/hplip-" version ".tar.gz"))
               (sha256
                (base32
-                "0hbwx9d4c8177vi0gavz9pxi7rc97jciacndp90ms8327shj2121"))
+                "1lsa0g8lafnmfyia0vy9x1j9q2l80xjjm7clkrawrbg53y3x7ixx"))
               (modules '((guix build utils)))
-              (patches (search-patches "hplip-remove-imageprocessor.patch"))
               (snippet
                '(begin
                   ;; Delete non-free blobs: .so files, pre-compiled
@@ -502,7 +501,14 @@ should only be used as part of the Guix cups-pk-helper service.")
                             (find-files "."
                                         (lambda (file stat)
                                           (elf-file? file))))
+
+                  ;; Now remove some broken references to them.
                   (delete-file "prnt/hpcups/ImageProcessor.h")
+                  (substitute* "Makefile.in"
+                    ((" -lImageProcessor ") " ")
+                    (("(\\@HPLIP_BUILD_TRUE\\@[[:blank:]]*).*libImageProcessor.*"
+                      _ prefix)
+                     (string-append prefix ":; \\\n")))
 
                   ;; Install binaries under libexec/hplip instead of
                   ;; share/hplip; that'll at least ensure they get stripped.
@@ -528,7 +534,8 @@ should only be used as part of the Guix cups-pk-helper service.")
     ;; TODO install apparmor profile files eventually.
     (arguments
      `(#:configure-flags
-       `("--disable-network-build"
+       `("--disable-imageProcessor-build"
+         "--disable-network-build"
          ,(string-append "--prefix=" (assoc-ref %outputs "out"))
          ,(string-append "--sysconfdir=" (assoc-ref %outputs "out") "/etc")
          ,(string-append "LDFLAGS=-Wl,-rpath="
@@ -855,7 +862,7 @@ HP@tie{}LaserJet, and possibly other printers.  See @file{README} for details.")
 (define-public epson-inkjet-printer-escpr
   (package
     (name "epson-inkjet-printer-escpr")
-    (version "1.7.9")
+    (version "1.7.10")
     ;; XXX: This currently works.  But it will break as soon as a newer
     ;; version is available since the URLs for older versions are not
     ;; preserved.  An alternative source will be added as soon as
@@ -863,11 +870,11 @@ HP@tie{}LaserJet, and possibly other printers.  See @file{README} for details.")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "https://download3.ebz.epson.net/dsc/f/03/00/12/50/95/"
-                           "322b8d6b915ab85add33d41f04ba5130866aadbe/"
-                           "epson-inkjet-printer-escpr-1.7.9-1lsb3.2.tar.gz"))
+       (uri (string-append "https://download3.ebz.epson.net/dsc/f/03/00/12/68/"
+                           "34/82ca3e84f17410b5ec6818e5698524b1f42862cb/"
+                           "epson-inkjet-printer-escpr-1.7.10-1lsb3.2.tar.gz"))
        (sha256
-        (base32 "136hhvhimxfnrdn3ksbiswjxgsifrwlp3zz8h0v63w4k1vkzpgc0"))))
+        (base32 "0j31w85gbi2g3ad316vw7azns382m2di6wazdbiyv9vix5gvb60g"))))
     (build-system gnu-build-system)
     (arguments
      `(#:modules
