@@ -12,7 +12,7 @@
 ;;; Copyright © 2017, 2018, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017, 2018, 2019 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2017, 2020 Brendan Tildesley <mail@brendan.scot>
-;;; Copyright © 2018, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2018, 2020, 2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2018 Stefan Stefanović <stefanx2ovic@gmail.com>
 ;;; Copyright © 2019 Reza Alizadeh Majd <r.majd@pantherx.org>
@@ -23,6 +23,7 @@
 ;;; Copyright © 2020 Anders Thuné <asse.97@gmail.com>
 ;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
 ;;; Copyright © 2021 Brendan Tildesley <mail@brendan.scot>
+;;; Copyright © 2021 pineapples <guixuser6392@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -95,6 +96,7 @@
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages samba)
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages valgrind)
   #:use-module (gnu packages video)
@@ -524,7 +526,7 @@ other applications that need to directly deal with input devices.")
 (define-public libxdg-basedir
   (package
     (name "libxdg-basedir")
-    (version "1.2.0")
+    (version "1.2.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -533,10 +535,12 @@ other applications that need to directly deal with input devices.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "12yz53ny5bi2dii3zwcr6b9ay0yy1g1xv13jg097k7gjligcq11m"))))
+                "0j8fgp41kxipzdnqsdy83d7w6kadbc45n98qyr84zsj46wl582vv"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:phases
+     '(#:configure-flags
+       (list "--disable-static")
+       #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'patch-autogen
            (lambda _
@@ -824,6 +828,36 @@ and keyboard mapping from user programs.  It is used among other things by the
 GNOME Shell.  The @command{localectl} command-line tool allows you to interact
 with localed.  This package is extracted from the broader systemd package.")
     (license license:lgpl2.1+)))
+
+(define-public seatd
+  (package
+    (name "seatd")
+    (version "0.5.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://git.sr.ht/~kennylevinsen/seatd")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1kglq8v4rnr3415mfaghyv2s2f8mxsy5s881gmm2908ig4n4j297"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:configure-flags '("-Dlogind=enabled")))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("scdoc" ,scdoc)))
+    (inputs
+     `(("elogind" ,elogind)))
+    (home-page "https://sr.ht/~kennylevinsen/seatd")
+    (synopsis "Seat management daemon and library")
+    (description
+     "This package provides a minimal seat management daemon whose task is to
+mediate access to shared devices, such as graphics and input, for applications
+that require it.  It also provides a universal seat management library that
+allows applications to use whatever seat management is available.")
+    (license license:expat)))
 
 (define-public packagekit
   (package
@@ -2328,3 +2362,35 @@ which uses GTK+ and various pieces of GNOME infrastructure, such as the
 @code{org.gnome.Shell.Screenshot} or @code{org.gnome.SessionManager} D-Bus
 interfaces.")
     (license license:lgpl2.1+)))
+
+(define-public xdg-desktop-portal-wlr
+  (package
+    (name "xdg-desktop-portal-wlr")
+    (version "0.3.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/emersion/xdg-desktop-portal-wlr")
+                     (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "18nlkqqxgxh7k0r2nk867wnp2nmaiinl6z67lrfv7rmiym0x82p8"))))
+    (build-system meson-build-system)
+    (native-inputs
+     `(("cmake" ,cmake)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("elogind" ,elogind)
+       ("iniparser" ,iniparser)
+       ("pipewire" ,pipewire-0.3)
+       ("wayland" ,wayland)
+       ("wayland-protocols" ,wayland-protocols)))
+    (home-page "https://github.com/emersion/xdg-desktop-portal-wlr")
+    (synopsis "@code{xdg-desktop-portal} backend for wlroots")
+    (description
+     "This package provides @code{xdg-desktop-portal-wlr}.  This project
+seeks to add support for the screenshot, screencast, and possibly
+remote-desktop @code{xdg-desktop-portal} interfaces for wlroots based
+compositors.")
+    (license license:expat)))

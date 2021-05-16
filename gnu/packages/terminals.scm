@@ -23,6 +23,8 @@
 ;;; Copyright © 2020, 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2020, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2020 Leo Famulari <leo@famulari.name>
+;;; Copyright © 2021 Ekaitz Zarraga <ekaitz@elenq.tech>
+;;; Copyright © 2021 Raphaël Mélotte <raphael.melotte@mind.be>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1029,7 +1031,7 @@ tmux.")
 (define-public kitty
   (package
     (name "kitty")
-    (version "0.19.3")
+    (version "0.20.3")
     (home-page "https://sw.kovidgoyal.net/kitty/")
     (source
      (origin
@@ -1039,7 +1041,7 @@ tmux.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0r49bybqy6c0n1lz6yc85py80wb40w757m60f5rszjf200wnyl6s"))
+        (base32 "13qv4469q9q2xdrb77lbyw4dz491zf1qvqx4adp0dd9annnlir5c"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -1240,10 +1242,30 @@ an st fork using wld. st is a simple terminal emulator for X originally
 made by suckless.")
     (license license:x11)))
 
+(define-public tio
+  (package
+    (name "tio")
+    (version "1.32")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://github.com/tio/tio/releases/download/v"
+             version "/tio-" version ".tar.xz"))
+       (sha256
+        (base32 "0i5fhi4xdk4yznj8wahniizddmx6wlcnnhda1dw9djyajilyvxd8"))))
+    (build-system gnu-build-system)
+    (home-page "https://tio.github.io/")
+    (synopsis "Simple TTY terminal I/O application")
+    (description "tio is a simple TTY terminal application which features a
+straightforward commandline interface to easily connect to TTY devices for
+basic input/output.")
+    (license license:gpl2+)))
+
 (define-public alacritty
   (package
     (name "alacritty")
-    (version "0.7.1")
+    (version "0.7.2")
     (source
      (origin
        ;; XXX: The crate at "crates.io" has limited contents.  In particular,
@@ -1254,14 +1276,14 @@ made by suckless.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1b9hy3ya72hhpl8nkayc7dy4f97xp75np48dm5na5pgyv8b45agi"))))
+        (base32 "1isa61rivqchzfms8aakr4nks4kflwnfr9f2pik91157hg1plxam"))))
     (build-system cargo-build-system)
     (arguments
      `(#:install-source? #f     ; virtual manifest
        #:cargo-test-flags '("--release" "--" "--skip=config_read_eof")
        #:cargo-inputs
        (("rust-alacritty-config-derive" ,rust-alacritty-config-derive-0.1)
-        ("rust-alacritty-terminal" ,rust-alacritty-terminal-0.12)
+        ("rust-alacritty-terminal" ,rust-alacritty-terminal-0.13)
         ("rust-clap" ,rust-clap-2)
         ("rust-cocoa" ,rust-cocoa-0.24)
         ("rust-copypasta" ,rust-copypasta-0.7)

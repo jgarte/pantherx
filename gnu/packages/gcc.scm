@@ -554,14 +554,14 @@ It also includes runtime support libraries for these languages.")))
 (define-public gcc-8
   (package
     (inherit gcc-7)
-    (version "8.4.0")
+    (version "8.5.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/gcc/gcc-"
                                   version "/gcc-" version ".tar.xz"))
               (sha256
                (base32
-                "1m1d3gfix56w4aq8myazzfffkl8bqcrx4jhhapnjf7qfs596w2p3"))
+                "0l7d4m9jx124xsk6xardchgy2k5j5l2b15q322k31f0va4d8826k"))
               (patches (search-patches "gcc-8-strmov-store-file-names.patch"
                                        "gcc-5.0-libvtv-runpath.patch"))))))
 
@@ -591,6 +591,20 @@ It also includes runtime support libraries for these languages.")))
             (sha256
              (base32
               "0i6378ig6h397zkhd7m4ccwjx5alvzrf2hm27p1pzwjhlv0h9x34"))
+            (patches (search-patches "gcc-9-strmov-store-file-names.patch"
+                                     "gcc-5.0-libvtv-runpath.patch"))))))
+
+(define-public gcc-11
+  (package
+   (inherit gcc-8)
+   (version "11.1.0")
+   (source (origin
+            (method url-fetch)
+            (uri (string-append "mirror://gnu/gcc/gcc-"
+                                version "/gcc-" version ".tar.xz"))
+            (sha256
+             (base32
+              "1pwxrjhsymv90xzh0x42cxfnmhjinf2lnrrf3hj5jq1rm2w6yjjc"))
             (patches (search-patches "gcc-9-strmov-store-file-names.patch"
                                      "gcc-5.0-libvtv-runpath.patch"))))))
 
@@ -756,6 +770,11 @@ as the 'native-search-paths' field."
 (define-public gdc-10
   (hidden-package
    (custom-gcc gcc-10 "gdc" '("d")
+               %generic-search-paths)))
+
+(define-public gdc-11
+  (hidden-package
+   (custom-gcc gcc-11 "gdc" '("d")
                %generic-search-paths)))
 
 (define-public libgccjit

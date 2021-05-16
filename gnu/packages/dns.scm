@@ -320,7 +320,7 @@ and BOOTP/TFTP for network booting of diskless machines.")
     ;; When updating, check whether isc-dhcp's bundled copy should be as well.
     ;; The BIND release notes are available here:
     ;; https://www.isc.org/bind/
-    (version "9.16.13")
+    (version "9.16.15")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -328,7 +328,7 @@ and BOOTP/TFTP for network booting of diskless machines.")
                     "/bind-" version ".tar.xz"))
               (sha256
                (base32
-                "026cliyj570wxvvij96mrzsxyf421xv9a80gc5gv6savza9wfk55"))))
+                "0fbqisrh84f8wszm94cqp7v8q9r7pql3qyzbay7vz9vqv0rg9dlq"))))
     (build-system gnu-build-system)
     (outputs `("out" "utils"))
     (inputs
@@ -813,7 +813,7 @@ Extensions} (DNSSEC).")
 (define-public knot
   (package
     (name "knot")
-    (version "3.0.5")
+    (version "3.0.6")
     (source
      (origin
        (method git-fetch)
@@ -822,7 +822,7 @@ Extensions} (DNSSEC).")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "16rgcmgj21w2niyz45d3zjlci9i22gxcvfzqw7g5zwsjdy9610nx"))
+        (base32 "0mjgjx43yb3w688jw16g5m1724wb0wnv4y7di2rslrp0s11wl2a9"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -943,14 +943,14 @@ synthesis, and on-the-fly re-configuration.")
 (define-public knot-resolver
   (package
     (name "knot-resolver")
-    (version "5.3.1")
+    (version "5.3.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://secure.nic.cz/files/knot-resolver/"
                                   "knot-resolver-" version ".tar.xz"))
               (sha256
                (base32
-                "1j99sz6r1hdvvd8rffx1917r9cyb7z46ivp5934sq57irmxnnkcx"))))
+                "0dhlq25lig8wmn72ambfmb1njwwp980d98i9q7a24d79bxyl8vwb"))))
     (build-system meson-build-system)
     (outputs '("out" "doc"))
     (arguments

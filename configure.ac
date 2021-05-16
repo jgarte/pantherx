@@ -21,7 +21,7 @@ dnl For the C++ code.  This must be used early.
 AC_USE_SYSTEM_EXTENSIONS
 
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.18.1])
+AM_GNU_GETTEXT_VERSION([0.19.1])
 
 GUIX_SYSTEM_TYPE
 GUIX_ASSERT_SUPPORTED_SYSTEM
@@ -150,6 +150,13 @@ if test "x$guix_cv_have_recent_guile_git" != "xyes"; then
   AC_MSG_ERROR([A recent Guile-Git could not be found; please install it.])
 fi
 
+dnl Check for the optional Guile-Lib.
+GUILE_MODULE_EXPORTS([have_guile_lib], [(htmlprag)], [%strict-tokenizer?])
+AM_CONDITIONAL([HAVE_GUILE_LIB], [test "x$have_guile_lib" = "xyes"])
+AM_COND_IF(HAVE_GUILE_LIB,,
+  [AC_MSG_WARN([The Guile-Lib requirement was not satisfied (>= 0.2.7);
+Some features such as the Go importer will not be usable.])])
+
 dnl Check for Guile-zlib.
 GUIX_CHECK_GUILE_ZLIB
 if test "x$guix_cv_have_recent_guile_zlib" != "xyes"; then
@@ -194,23 +201,6 @@ AC_PATH_PROG([XZ], [xz])
 AC_SUBST([GZIP])
 AC_SUBST([BZIP2])
 AC_SUBST([XZ])
-
-AC_ARG_WITH([nixpkgs],
-  [AS_HELP_STRING([--with-nixpkgs=DIR],
-    [search for Nixpkgs in DIR (for testing purposes only)])],
-  [case "$withval" in
-    yes|no) AC_MSG_ERROR([Please use `--with-nixpkgs=DIR'.]);;
-    *)      NIXPKGS="$withval";;
-   esac],
-  [])
-
-AC_MSG_CHECKING([for Nixpkgs source tree])
-if test -f "$NIXPKGS/default.nix"; then
-   AC_MSG_RESULT([$NIXPKGS])
-   AC_SUBST([NIXPKGS])
-else
-   AC_MSG_RESULT([not found])
-fi
 
 LIBGCRYPT_LIBDIR="no"
 LIBGCRYPT_PREFIX="no"

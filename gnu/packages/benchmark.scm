@@ -10,6 +10,7 @@
 ;;; Copyright © 2020 malte Frank Gerdes <malte.f.gerdes@gmail.com>
 ;;; Copyright © 2020, 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2020 Greg Hogan <code@greghogan.com>
+;;; Copyright © 2021 Arun Isaac <arunisaac@systemreboot.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -227,7 +228,7 @@ This can give a much better understanding of the command's performance.")
 (define-public benchmark
   (package
     (name "benchmark")
-    (version "1.5.2")
+    (version "1.5.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -236,7 +237,7 @@ This can give a much better understanding of the command's performance.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "13rxagpzw6bal6ajlmrxlh9kgfvcixn6j734b2bvfqz7lch8n0pa"))))
+                "1hls0aqqj5cfldn9jfpvzjhpxkhrydrz9crp477rwllwjsybdxw7"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("googletest-source" ,(package-source googletest))
@@ -353,3 +354,41 @@ Note: Locust will complain if the available open file descriptors limit for
 the user is too low.  To raise such limit on a Guix System, refer to
 @samp{info guix --index-search=pam-limits-service}.")
     (license license:expat)))
+
+(define-public interbench
+  (package
+    (name "interbench")
+    (version "0.31")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/ckolivas/interbench")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0ifnw8vnkcgrksx7g5d9ii4kjppqnk32lvrybdybmibyvag6zfdc"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ; no tests
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-broken-makefile
+           (lambda _
+             ;; Remove erroneous "-lm" target
+             (substitute* "Makefile"
+               (("hackbench.o -lm") "hackbench.o"))))
+         (delete 'configure)
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (install-file "interbench" (string-append out "/bin"))
+               (install-file "interbench.8" (string-append out "/share/man/man8"))))))))
+    (home-page "http://users.on.net/~ckolivas/interbench/")
+    (synopsis "Interactivity benchmark")
+    (description "interbench is designed to benchmark interactivity on Linux.
+It is designed to measure the effect of changes in Linux kernel design or
+system configuration changes such as CPU, I/O scheduler and filesystem changes
+and options.  With careful benchmarking, different hardware can be compared.")
+    (license license:gpl2+)))

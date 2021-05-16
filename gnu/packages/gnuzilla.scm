@@ -3,7 +3,7 @@
 ;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015 Sou Bunnbu <iyzsong@gmail.com>
-;;; Copyright © 2016, 2017, 2018, 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2017, 2018, 2019, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2017 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2017, 2018 Nikita <nikita@n0.is>
@@ -694,8 +694,8 @@ from forcing GEXP-PROMISE."
                       #:system system
                       #:guile-for-build guile)))
 
-(define %icecat-version "78.9.0-guix0-preview1")
-(define %icecat-build-id "20210323000000") ;must be of the form YYYYMMDDhhmmss
+(define %icecat-version "78.10.0-guix0-preview1")
+(define %icecat-build-id "20210419000000") ;must be of the form YYYYMMDDhhmmss
 
 ;; 'icecat-source' is a "computed" origin that generates an IceCat tarball
 ;; from the corresponding upstream Firefox ESR tarball, using the 'makeicecat'
@@ -717,7 +717,7 @@ from forcing GEXP-PROMISE."
                   "firefox-" upstream-firefox-version ".source.tar.xz"))
             (sha256
              (base32
-              "0r28wrsk2k6pc922zfs5wljh8ziqm4a98lisn7409j2szhfsq0wf"))))
+              "0h6zl87czbhyhy3597bxqzwy4p1vsaqimkg92lw31gjbv6k434cp"))))
 
          (upstream-icecat-base-version "78.7.0") ; maybe older than base-version
          ;;(gnuzilla-commit (string-append "v" upstream-icecat-base-version))
@@ -947,12 +947,6 @@ from forcing GEXP-PROMISE."
     (arguments
      `(#:tests? #f          ; no check target
        #:out-of-source? #t  ; must be built outside of the source directory
-
-       ;; XXX: There are RUNPATH issues such as
-       ;; $prefix/lib/icecat-31.6.0/plugin-container NEEDing libmozalloc.so,
-       ;; which is not in its RUNPATH, but they appear to be harmless in
-       ;; practice somehow.  See <http://hydra.gnu.org/build/378133>.
-       #:validate-runpath? #f
 
        #:configure-flags `("--enable-default-toolkit=cairo-gtk3-wayland"
 
@@ -1201,6 +1195,9 @@ from forcing GEXP-PROMISE."
                (setenv "AUTOCONF" (which "autoconf")) ; must be autoconf-2.13
                (setenv "CC" "gcc")  ; apparently needed when Stylo is enabled
                (setenv "MOZ_BUILD_DATE" ,%icecat-build-id) ; avoid timestamp
+               (setenv "LDFLAGS" (string-append "-Wl,-rpath="
+                                                (assoc-ref outputs "out")
+                                                "/lib/icecat"))
                (mkdir "../build")
                (chdir "../build")
                (format #t "build directory: ~s~%" (getcwd))
@@ -1305,11 +1302,11 @@ standards of the IceCat project.")
        (cpe-version . ,(first (string-split version #\-)))))))
 
 ;; Update this together with icecat!
-(define %icedove-build-id "20210323000000") ;must be of the form YYYYMMDDhhmmss
+(define %icedove-build-id "20210504000000") ;must be of the form YYYYMMDDhhmmss
 (define-public icedove
   (package
     (name "icedove")
-    (version "78.9.0")
+    (version "78.10.1")
     (source icecat-source)
     (properties
      `((cpe-name . "thunderbird_esr")))
@@ -1589,7 +1586,7 @@ standards of the IceCat project.")
         ;; in the Thunderbird release tarball.  We don't use the release
         ;; tarball because it duplicates the Icecat sources and only adds the
         ;; "comm" directory, which is provided by this repository.
-        ,(let ((changeset "1a5cd2aa11de609116f258b413afcf113ed72f3a"))
+        ,(let ((changeset "14a9afcfb6cc0c466e0d0b8222e85de5b2d8078d"))
            (origin
              (method hg-fetch)
              (uri (hg-reference
@@ -1598,7 +1595,7 @@ standards of the IceCat project.")
              (file-name (string-append "thunderbird-" version "-checkout"))
              (sha256
               (base32
-               "0qgz9qj8gbn2ccmhvk3259ahs9p435ipvkzsysn3xj8a6klbz02w")))))
+               "18658r4b1f5p8jcz68l31z29ny73lic0br7gc827m72nfc85wqz3")))))
        ("autoconf" ,autoconf-2.13)
        ("cargo" ,rust-1.41 "cargo")
        ("clang" ,clang)

@@ -37,6 +37,7 @@
 ;;; Copyright © 2021 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2021 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2021 Bonface Munyoki Kilyungi <me@bonfacemunyoki.com>
+;;; Copyright © 2021 Frank Pursel <frank.pursel@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -453,7 +454,7 @@ playing your music.")
 (define-public strawberry
   (package
     (name "strawberry")
-    (version "0.9.2")
+    (version "0.9.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -462,7 +463,7 @@ playing your music.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0d9asg21j9ai23sb35cimws8bd8fsnpha777rgscraa7i09q0rx2"))
+                "0lby5zi66i08s0mcygja8l3rbd97inhaxqbhahj8lfxs52r4grrq"))
               (modules '((guix build utils)
                          (ice-9 regex)))
               (snippet
@@ -5100,7 +5101,7 @@ the electronic or dubstep genre.")
 (define-public sonivox-eas
   (package
     (name "sonivox-eas")
-    (version "1.1.0")
+    (version "1.3.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -5109,7 +5110,7 @@ the electronic or dubstep genre.")
               (file-name (string-append name "-" version "-checkout"))
               (sha256
                (base32
-                "0l9gs00p5g4k4qy6i7nv1mfi2n2wnsycwjrgrh9hxzam4irf2mw2"))))
+                "1ygmlrsdzxii2dvj6id2ai3xv3klw2x67ip5rcp823jzczl0wpjd"))))
     (build-system cmake-build-system)
     (arguments '(#:tests? #f)) ; there are no tests
     (inputs
@@ -5997,7 +5998,7 @@ It can also play and mix samples.")
       #:make-flags
       (list (string-append "PREFIX="
                            (assoc-ref %outputs "out"))
-            "CC=gcc")
+            (string-append "CC=" ,(cc-for-target)))
       #:phases
       (modify-phases %standard-phases
         (delete 'configure))))

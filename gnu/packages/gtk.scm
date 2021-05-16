@@ -15,7 +15,7 @@
 ;;; Copyright © 2016 Patrick Hetu <patrick.hetu@auf.org>
 ;;; Copyright © 2016 Nikita <nikita@n0.is>
 ;;; Copyright © 2017 Roel Janssen <roel@gnu.org>
-;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2018 Alex Vong <alexvong1995@gmail.com>
 ;;; Copyright © 2018, 2020 Arun Isaac <arunisaac@systemreboot.net>
@@ -26,6 +26,7 @@
 ;;; Copyright © 2020 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Leo Famulari <leo@famulari.name>
+;;; Copyright © 2021 Simon Streit <simon@netpanic.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -90,6 +91,7 @@
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
   #:use-module (gnu packages xdisorg)
+  #:use-module (gnu packages pulseaudio)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 match))
@@ -125,11 +127,12 @@ tools have full access to view and control running applications.")
   (package
    (name "cairo")
    (version "1.16.0")
-   (replacement cairo/fixed)
    (source (origin
             (method url-fetch)
             (uri (string-append "https://cairographics.org/releases/cairo-"
                                 version ".tar.xz"))
+            (patches (search-patches "cairo-CVE-2018-19876.patch"
+                                     "cairo-CVE-2020-35492.patch"))
             (sha256
              (base32
               "0c930mk5xr2bshbdljv005j3j8zr47gqmkry3q6qgvqky6rjjysy"))))
@@ -175,15 +178,6 @@ antialiased text rendering.  All drawing operations can be transformed by any
 affine transformation (scale, rotation, shear, etc.).")
    (license license:lgpl2.1) ; or Mozilla Public License 1.1
    (home-page "https://cairographics.org/")))
-
-(define cairo/fixed
-  (package
-    (inherit cairo)
-    (source (origin
-              (inherit (package-source cairo))
-              (patches (append (search-patches "cairo-CVE-2018-19876.patch"
-                                               "cairo-CVE-2020-35492.patch")
-                               (origin-patches (package-source cairo))))))))
 
 (define-public cairo-sans-poppler
   ;; Variant used to break the dependency cycle between Poppler and Cairo.
@@ -567,12 +561,12 @@ highlighting and other features typical of a source code editor.")
   (package
    (name "gdk-pixbuf")
    (version "2.40.0")
-   (replacement gdk-pixbuf/fixed)
    (source (origin
             (method url-fetch)
             (uri (string-append "mirror://gnome/sources/" name "/"
                                 (version-major+minor version)  "/"
                                 name "-" version ".tar.xz"))
+            (patches (search-patches "gdk-pixbuf-CVE-2020-29385.patch"))
             (sha256
              (base32
               "1rnlx9yfw970maxi2x6niaxmih5la11q1ilr7gzshz2kk585k0hm"))))
@@ -623,15 +617,6 @@ highlighting and other features typical of a source code editor.")
 in the GNOME project.")
    (license license:lgpl2.0+)
    (home-page "https://developer.gnome.org/gdk-pixbuf/")))
-
-(define gdk-pixbuf/fixed
-  (package
-    (inherit gdk-pixbuf)
-    (source (origin
-              (inherit (package-source gdk-pixbuf))
-              (patches
-               (append (search-patches "gdk-pixbuf-CVE-2020-29385.patch")
-                       (origin-patches (package-source gdk-pixbuf))))))))
 
 ;; To build gdk-pixbuf with SVG support, we need librsvg, and librsvg depends
 ;; on gdk-pixbuf, so this new varibale.  Also, librsvg adds 90MiB to the
@@ -2351,19 +2336,19 @@ foreground and background colors, text justification and more.")
 (define-public gtkdatabox
   (package
     (name "gtkdatabox")
-    (version "0.9.3.1")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://sourceforge/gtkdatabox/gtkdatabox/"
-                                  version "/gtkdatabox-" version ".tar.gz"))
-              (sha256
-               (base32
-                "1rdxnjgh6v3yjqgsfmamyzpfxckzchps4kqvvz88nifmd7ckhjfh"))))
+    (version "1.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/gtkdatabox/gtkdatabox-1/"
+                           "gtkdatabox-" version ".tar.gz"))
+       (sha256
+        (base32 "1qykm551bx8j8pfgxs60l2vhpi8lv4r8va69zvn2594lchh71vlb"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
-     `(("gtk+-2" ,gtk+-2)))
+     `(("gtk+" ,gtk+)))
     (synopsis "Display widget for dynamic data")
     (description "GtkDatabox is a widget for live display of large amounts of
 fluctuating numerical data.  It enables data presentation (for example, on
@@ -2371,3 +2356,50 @@ linear or logarithmic scales, as dots or lines, with markers/labels) as well as
 user interaction (e.g.  measuring distances).")
     (home-page "https://sourceforge.net/projects/gtkdatabox/")
     (license license:lgpl2.1+)))
+
+(define-public volctl
+  (package
+    (name "volctl")
+    (version "0.8.2")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference (url "https://github.com/buzz/volctl")
+                                  (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1cx27j83pz2qffnzb85fbl1x6pp3irv1kbw7g1hri7kaw6ky4xiz"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-path
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((pulse (assoc-ref inputs "pulseaudio"))
+                   (xfixes (assoc-ref inputs "libxfixes")))
+               (substitute* "volctl/lib/xwrappers.py"
+                 (("libXfixes.so")
+                  (string-append xfixes "/lib/libXfixes.so")))
+               (substitute* "volctl/lib/pulseaudio.py"
+                 (("libpulse.so.0")
+                  (string-append pulse "/lib/libpulse.so.0")))
+               #t))))))
+    (inputs
+     `(("gtk+" ,gtk+)
+       ("libxfixes" ,libxfixes)
+       ("pulseaudio" ,pulseaudio)))
+    (propagated-inputs
+     `(("python-click" ,python-click)
+       ("python-pycairo" ,python-pycairo)
+       ("python-pygobject" ,python-pygobject)
+       ("python-pyyaml" ,python-pyyaml)))
+    (home-page "https://buzz.github.io/volctl/")
+    (synopsis "Per-application volume control and on-screen display (OSD) for graphical desktops")
+    (description "Volctl is a PulseAudio-enabled tray icon volume control and
+OSD applet for graphical desktops.  It's not meant to be an replacement for a
+full-featured mixer application.  If you're looking for that check out the
+excellent pavucontrol.")
+
+    ;; XXX: 'setup.py' says "GPLv2" but nothing says "version 2 only".  Is
+    ;; GPLv2+ intended?
+    (license license:gpl2)))
