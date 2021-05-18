@@ -138,6 +138,8 @@
    "7238 7123 8EAC EB63 4548  5857 167F 8EA5 001A FA9C"
    (name "wigust"))
   ;; PantherX team public keys
+  ("B7A3 5CA6 1FC1 D66F 27E1  7D59 888F E29E 9E86 74CC"
+   (name "fakhri"))
   ("3DB7 67B6 6472 2B22 A71A  05F8 4F5F 3736 9F9B 44DF"
    (name "franz"))
   ("1D3D BDEA 1901 34B0 6EA4  F1A3 7455 810B 3197 AD3D"
