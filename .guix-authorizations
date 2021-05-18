@@ -136,4 +136,7 @@
    (name "vagrantc"))
   (;; primary: "C955 CC5D C048 7FB1 7966  40A9 199A F6A3 67E9 4ABB"
    "7238 7123 8EAC EB63 4548  5857 167F 8EA5 001A FA9C"
-   (name "wigust"))))
+   (name "wigust"))
+  ;; PantherX team public keys
+  ("2C9B 882C 7E22 0B10 145B  9E50 0831 3F33 9213 9E68"
+   (name "ramajd"))))
