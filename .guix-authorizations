@@ -140,5 +140,7 @@
   ;; PantherX team public keys
   ("3DB7 67B6 6472 2B22 A71A  05F8 4F5F 3736 9F9B 44DF"
    (name "franz"))
+  ("1D3D BDEA 1901 34B0 6EA4  F1A3 7455 810B 3197 AD3D"
+   (name "hamzeh"))
   ("2C9B 882C 7E22 0B10 145B  9E50 0831 3F33 9213 9E68"
    (name "ramajd"))))
