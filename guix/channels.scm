@@ -168,9 +168,9 @@ to the corresponding bytevector."
   ;; before that commit cannot be merged or it will be rejected by 'guix pull'
   ;; & co.
   (make-channel-introduction
-   "9edb3f66fd807b096b48283debdcddccfea34bad"     ;2020-05-26
-   (openpgp-fingerprint                           ;mbakke
-    "BBB0 2DDF 2CEA F6A8 0D1D  E643 A2A0 6DF2 A33A 54FA")))
+   "2cd230b55f3164bf51b33c657fe3e10efcf57df5"     ;2021-05-18
+   (openpgp-fingerprint                           ;ramajd
+    "2C9B 882C 7E22 0B10 145B  9E50 0831 3F33 9213 9E68")))
 
 (define %default-channel-url
   ;; URL of the default 'guix' channel.
@@ -181,11 +181,7 @@ to the corresponding bytevector."
    (name 'guix)
    (branch "rolling-nonlibre")
    (url %default-channel-url)
-   ;; FIXME: temporarily bypass channel authentication to find a solution 
-   ;;        for upstream in a later time.
-   ;;        https://git.pantherx.org/development/pantherx/-/issues/23 
-   ;; (introduction %guix-channel-introduction)
-   ))
+   (introduction %guix-channel-introduction)))
 
 (define %default-channels
   ;; Default list of channels.
