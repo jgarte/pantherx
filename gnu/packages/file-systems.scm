@@ -8,6 +8,7 @@
 ;;; Copyright © 2020 Morgan Smith <Morgan.J.Smith@outlook.com>
 ;;; Copyright © 2021 raid5atemyhomework <raid5atemyhomework@protonmail.com>
 ;;; Copyright © 2021 Stefan Reichör <stefan@xsteve.at>
+;;; Copyright © 2021 Noisytoot <noisytoot@disroot.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -43,6 +44,7 @@
   #:use-module (gnu packages attr)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages base)
+  #:use-module (gnu packages bash)
   #:use-module (gnu packages bison)
   #:use-module (gnu packages check)
   #:use-module (gnu packages compression)
@@ -64,6 +66,7 @@
   #:use-module (gnu packages nfs)
   #:use-module (gnu packages onc-rpc)
   #:use-module (gnu packages openldap)
+  #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages photo)
   #:use-module (gnu packages pkg-config)
@@ -199,6 +202,53 @@ another location, similar to @command{mount --bind}.  It can be used for:
 @end itemize ")
     (license license:gpl2+)))
 
+(define-public cachefilesd-inotify
+  (package
+    (name "cachefilesd-inotify")
+    (version "0.11.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.com/tomalok/cachefilesd-inotify")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0qkrpz69ql6fb3fwh0l35hhf9znnqyxhgv5fzd1gl2a2kz13rq5a"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             ;; The Makefile doesn't support prefix= or similar.
+             (string-append "DESTDIR=" (assoc-ref %outputs "out"))
+             "MANDIR=/share/man")
+       #:tests? #f                      ; no test suite
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))         ; no configure script
+    (home-page "https://gitlab.com/tomalok/cachefilesd-inotify")
+    (synopsis
+     "CacheFiles file system cache management daemon (using @code{inotify})")
+    (description
+     "This package provides the user space component of CacheFiles, a caching
+back end that uses a directory on a locally mounted file system (such as ext4)
+as a cache to speed up (by reducing) access to a slower file system and make it
+appear more reliable.
+
+The cached file system is often a network file system such as NFS or CIFS, but
+can also be a local file system like ISO 9660 on a slow optical drive.
+
+CacheFiles itself is part of the kernel but relies on this user space
+@command{cachefilesd} daemon to perform maintenance tasks like culling and
+reaping stale nodes.  Only one such daemon can be running at a time, and
+communicates with the kernel through the @file{/dev/cachefiles} character
+device.
+
+This version modifies David Howells original cachefilesd---which appears
+unmaintained---to use the @code{inotify} API instead of the deprecated
+@code{dnotify} to monitor file changes.")
+    (license license:gpl2+)))
+
 (define-public davfs2
   (package
     (name "davfs2")
@@ -272,6 +322,27 @@ always possible.")
     (license (list license:bsd-2        ; src/fuse_kernel.h
                    license:gpl3+))))    ; everything else
 
+(define-public exfat-utils
+  (package
+    (name "exfat-utils")
+    (version "1.3.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://github.com/relan/exfat/releases/download/v"
+             version "/exfat-utils-" version ".tar.gz"))
+       (sha256
+        (base32 "0da8f8mm1sbwqp7prh78qk33xm0b8kk2d5is7mh2szlhgdxd1syz"))))
+    (build-system gnu-build-system)
+    (home-page "https://github.com/relan/exfat")
+    (synopsis "Utilities to manipulate exFAT file systems")
+    (description
+     "This package provides an implementation of the exFAT file system,
+including command-line tools to validate exFAT file systems and to create new
+ones.")
+    (license license:gpl2+)))
+
 (define-public fsarchiver
   (package
     (name "fsarchiver")
@@ -344,8 +415,8 @@ from a mounted file system.")
     (license license:gpl2+)))
 
 (define-public bcachefs-tools
-  (let ((commit "7942d5cab4f02bd4db12ee26a792a6012b4d7b07")
-        (revision "7"))
+  (let ((commit "fe1bb39aa52d9140981ba1e96f3c95ddf14006ce")
+        (revision "8"))
     (package
       (name "bcachefs-tools")
       (version (git-version "0.1" revision commit))
@@ -357,7 +428,7 @@ from a mounted file system.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "0k8cnkjm0v9xs7w02sj5151y6h8bj0gxmc3fq8js1wzx6wip9w96"))))
+          (base32 "1ks6w2v76pfpp70cv1d6znxaw1g5alz1v6hf8z9gvj15r94vgpwz"))))
       (build-system gnu-build-system)
       (arguments
        `(#:make-flags
@@ -477,7 +548,7 @@ from the bcachefs-tools package.  It is meant to be used in initrds.")
 (define-public exfatprogs
   (package
     (name "exfatprogs")
-    (version "1.1.1")
+    (version "1.1.2")
     (source
      (origin
        (method git-fetch)
@@ -486,7 +557,7 @@ from the bcachefs-tools package.  It is meant to be used in initrds.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1zl3w5w2mzyggizc4dsiln0pa013f8sf5dxmm5wflplpfm6k4brk"))))
+        (base32 "19pbybgbfnvjb3n944ihrn1r8ch4dm8dr0d44d6w7p63dcp372xy"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -575,6 +646,7 @@ single file can be mounted.")
        (sha256
         (base32 "0kbsy2sk1jv4m82rxyl25gwrlkzvl3hzdga9gshkxkhm83v1aji4"))
        (patches (search-patches "jfsutils-add-sysmacros.patch"
+                                "jfsutils-gcc-compat.patch"
                                 "jfsutils-include-systypes.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -773,10 +845,93 @@ All of this is accomplished without a centralized metadata server.")
      "This is a file system client based on the FTP File Transfer Protocol.")
     (license license:gpl2+)))
 
+(define-public libeatmydata
+  (package
+    (name "libeatmydata")
+    (version "129")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://www.flamingspork.com/projects/libeatmydata/"
+                           "libeatmydata-" version ".tar.gz"))
+       (sha256
+        (base32 "1qycv1cvy6fr3v5rxilnsqxllwyfbqlcairlh31x2dnjsx28jnqf"))))
+    (build-system gnu-build-system)
+    (arguments
+     ;; All tests pass---but only if the host kernel allows PTRACE_TRACEME.
+     `(#:tests? #f
+       #:configure-flags
+       (list "--disable-static")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-file-names
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* (list "eatmydata.in" "eatmydata.sh.in")
+               (("basename|readlink|uname" command)
+                (string-append (assoc-ref inputs "coreutils") "/bin/" command)))))
+         (add-before 'patch-file-names 'tighten-symlink-mode
+           ;; When the ‘eatmydata’ helper detects that it's a symlink, it will
+           ;; transparently invoke the command of the same name.  However, it's
+           ;; *always* a link in Guix profiles and doesn't handle that well.
+           ;; Patch it to treat its own $name specially.
+           (lambda _
+             (substitute* "eatmydata.in"
+               (("-L \"\\$0\"" match)
+                (string-append match " ] && [ "
+                               "\"x$(basename \"$0\")\" != \"x$name\"")))))
+         (add-after 'install 'install-debian-files
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((debian (assoc-ref inputs "debian-files"))
+                    (out    (assoc-ref outputs "out"))
+                    (share  (string-append out "/share")))
+               (invoke "tar" "xvf" debian)
+               (with-directory-excursion "debian"
+                 (install-file "eatmydata.1" (string-append share "/man/man1"))
+                 (install-file "eatmydata.bash-completion"
+                               (string-append share "/bash-completion"
+                                              "/completions")))))))))
+    (native-inputs
+     `(("debian-files"                  ; for the man page
+        ,(origin
+           (method url-fetch)
+           (uri (string-append "https://deb.debian.org/debian/pool/main/"
+                               "libe/libeatmydata/libeatmydata_" version
+                               "-1.debian.tar.xz"))
+           (sha256
+            (base32 "0q6kx1bf870jj52a2vm5p5xlrr89g2zs8wyhlpn80pys9p28nikx"))))
+       ;; For the test suite.
+       ("strace" ,strace)
+       ("which" ,which)))
+    (inputs
+     `(("coreutils" ,coreutils)))
+    (home-page "https://www.flamingspork.com/projects/libeatmydata/")
+    (synopsis "Transparently ignore calls to synchronize data safely to disk")
+    (description
+     "Libeatmydata transparently disables most ways a program might force data
+to be written to the file system, such as @code{fsync()} or @code{open(O_SYNC)}.
+
+Such synchronisation calls provide important data integrity guarantees but are
+expensive to perform and can significantly slow down software that (over)uses
+them.
+
+This price is worth paying if you care about the files being modified---which is
+typically the case---or when manipulating important components of your system.
+Please, @emph{do not} use something called ``eat my data'' in such cases!
+
+However, it does not make sense to accept this performance hit if the data is
+unimportant and you can afford to lose all of it in the event of a crash, for
+example when running a software test suite.  Adding @code{}libeatmydata.so} to
+the @env{LD_PRELOAD} environment of such tasks will override all C library data
+synchronisation functions with custom @i{no-op} ones that do nothing and
+immediately return success.
+
+A simple @command{eatmydata} script is included that does this for you.")
+    (license license:gpl3+)))
+
 (define-public libnfs
   (package
     (name "libnfs")
-    (version "3.0.0")
+    (version "4.0.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -785,7 +940,7 @@ All of this is accomplished without a centralized metadata server.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "115p55y2cbs92z5lmcnjx1v29lwinpgq4sha9v1kq1vd8674h404"))))
+                "0i27wd4zvhjz7620q043p4d4mkx8zv2yz9adm1byin47dynahyda"))))
     (build-system gnu-build-system)
     (home-page "https://github.com/sahlberg/libnfs")
     (native-inputs
@@ -1016,7 +1171,7 @@ with the included @command{xfstests-check} helper.")
 (define-public zfs
   (package
     (name "zfs")
-    (version "2.0.4")
+    (version "2.0.5")
     (outputs '("out" "module" "src"))
     (source
       (origin
@@ -1025,7 +1180,7 @@ with the included @command{xfstests-check} helper.")
                               "/download/zfs-" version
                               "/zfs-" version ".tar.gz"))
           (sha256
-           (base32 "0v2zshimz5miyj8mbskb52pnzyl1s4rhpr6208zq549v8g2l84vx"))))
+           (base32 "1jbfm18hh9x4a9s5d7si8lapmq2aniphyriif9flrgsff26lj5rs"))))
     (build-system linux-module-build-system)
     (arguments
      `(;; The ZFS kernel module should not be downloaded since the license
@@ -1223,41 +1378,44 @@ On Guix System, you will need to invoke the included shell scripts as
 (define-public mergerfs
   (package
     (name "mergerfs")
-    (version "2.32.4")
+    (version "2.32.6")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "https://github.com/trapexit/mergerfs/releases/download/"
-                           version "/mergerfs-" version ".tar.gz"))
+       (uri (string-append "https://github.com/trapexit/mergerfs/"
+                           "releases/download/" version "/"
+                           "mergerfs-" version ".tar.gz"))
        (sha256
-        (base32
-         "0yz7nljx6axcj6hb09sgc0waspgfhp535228rjqvqgyd8y74jc3s"))))
+        (base32 "08gwi094ll0b7nf2i44fyjxiyvr45rp766npbdyw0yzyigas8a2f"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:tests? #f                      ; No tests exist.
+     `(#:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             (string-append "CXX=" ,(cxx-for-target))
+             (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:tests? #f                     ; all require a kernel with FUSE loaded
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure)
-         (add-after 'unpack 'fix-paths
+         (delete 'configure)            ; no configure script
+         (add-after 'unpack 'set-file-names
            (lambda* (#:key inputs outputs #:allow-other-keys)
-             (setenv "CC" "gcc")
-             ;; These were copied from the package libfuse.
-             (substitute* '("libfuse/lib/mount_util.c" "libfuse/util/mount_util.c")
+             (substitute* "libfuse/Makefile"
+               (("/sbin") "$(EXEC_PREFIX)/sbin")
+               (("chown") "true")  ; disallowed in the build environment
+               (("strip") "true")) ; breaks cross-compilation
+             ;; These were copied from the fuse package.
+             (substitute* '("libfuse/lib/mount_util.c"
+                            "libfuse/util/mount_util.c")
                (("/bin/(u?)mount" _ maybe-u)
                 (string-append (assoc-ref inputs "util-linux")
                                "/bin/" maybe-u "mount")))
              (substitute* '("libfuse/util/mount.mergerfs.c")
-               (("/bin/sh")
-                (which "sh")))
-             ;; The Makefile does not allow overriding PREFIX via make variables.
-             (substitute* '("Makefile" "libfuse/Makefile")
-               (("= /usr/local") (string-append "= " (assoc-ref outputs "out")))
-               (("= /sbin") "= $(EXEC_PREFIX)/sbin")
-               ;; cannot chown as build user
-               (("chown root(:root)?") "true"))
-             #t)))))
-    ;; mergerfs bundles a heavily modified copy of libfuse.
-    (inputs `(("util-linux" ,util-linux)))
+               (("/bin/sh" command)
+                (string-append (assoc-ref inputs "bash-minimal") command))))))))
+    ;; Mergerfs bundles a heavily modified copy of fuse.
+    (inputs
+     `(("bash-minimal" ,bash-minimal)
+       ("util-linux" ,util-linux)))
     (home-page "https://github.com/trapexit/mergerfs")
     (synopsis "Featureful union file system")
     (description "mergerfs is a union file system geared towards simplifying
@@ -1269,12 +1427,12 @@ is similar to mhddfs, unionfs, and aufs.")
               ))))
 
 (define-public mergerfs-tools
-  (let ((commit "480296ed03d1c3c7909697d7ef96d35840ee26b8")
-        (revision "2"))
+  (let ((commit "3b6fe008517aeda715c306eaf4914f6f537da88d")
+        (revision "3"))
     (package
       (name "mergerfs-tools")
       ;; No released version exists.
-      (version (git-version "0.0" revision commit))
+      (version (git-version "0.0.0" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -1283,8 +1441,7 @@ is similar to mhddfs, unionfs, and aufs.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32
-           "0xr06gi4xcr832rzy0hkp5c1n231s7w5iq1nkjvx9kvm0dl7chpq"))))
+          (base32 "15pgym6c4viy57ccgp28dnqwh12f3gr02axg86y578aqa2yaa0ad"))))
       (build-system copy-build-system)
       (inputs
        `(("python" ,python)
@@ -1402,6 +1559,56 @@ local file system using FUSE.")
      "This package provides Go native bindings for the FUSE kernel module.")
     (license license:bsd-3)))
 
+(define-public rewritefs
+  (let ((revision "0")
+        ;; This is the last commit supporting our fuse@2.
+        (commit "31e2810b596028a12e49a08664567755f4b387b2"))
+    (package
+      (name "rewritefs")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/sloonz/rewritefs")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0k1aas2bdq2l3a6q3fvmngpakcxiws8qny2w6z7ffngyqxh33fv7"))))
+      (build-system gnu-build-system)
+      (arguments
+       `(#:modules ((srfi srfi-26)
+                    ,@%gnu-build-system-modules)
+         #:make-flags
+         (list (string-append "PREFIX=" (assoc-ref %outputs "out")))
+         #:test-target "test"
+         #:tests? #f                   ; all require a kernel with FUSE loaded
+         #:phases
+         (modify-phases %standard-phases
+           (delete 'configure)          ; no configure script
+           (add-after 'install 'install-examples
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let* ((out (assoc-ref outputs "out"))
+                      (doc (string-append out "/share/doc/" ,name "-" ,version)))
+                 (for-each (cut install-file <> (string-append doc "/examples"))
+                           (find-files "." "^config\\."))))))))
+      (native-inputs
+       `(("pkg-config" ,pkg-config)))
+      (inputs
+       `(("fuse" ,fuse)
+         ("pcre" ,pcre)))
+      (home-page "https://github.com/sloonz/rewritefs")
+      (synopsis "FUSE file system that changes particular file names")
+      (description
+       "RewriteFS is a @acronym{FUSE, File system in USEr space} to change the
+name of accessed files on the fly based on any number of regular expressions.
+It's like the @code{rewrite} action of many Web servers, but for your file
+system.  For example, it can help keep your home directory tidy by transparently
+rewriting the location of configuration files of software that doesn't follow
+the XDG directory specification from @file{~/.@var{name}} to
+@file{~/.config/@var{name}}.")
+      (license license:gpl2+))))
+
 (define-public tmsu
   (package
     (name "tmsu")
@@ -1443,3 +1650,35 @@ your put them.  TMSU maintains its own database and you simply gain an
 additional view, which you can mount where you like, based upon the tags you
 set up.")
     (license license:gpl3+)))
+
+(define-public udftools
+  (package
+    (name "udftools")
+    (version "2.3")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/pali/udftools")
+                    (commit version)))
+              (sha256
+               (base32
+                "1nl2s61znyzaap23zhbdg3znj6l6akr313fchn5wwvjzj8k70is9"))
+              (file-name (git-file-name name version))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list (string-append "--docdir=" (assoc-ref %outputs "out")
+                            "/share/doc/" ,name "-" ,version))))
+    (native-inputs
+     `(("automake" ,automake)
+       ("autoconf" ,autoconf)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
+    (home-page "https://github.com/pali/udftools")
+    (synopsis "Tools to manage UDF file systems and DVD/CD-R(W) drives")
+    (description "@code{udftools} is a set of programs for reading
+and modifying @acronym{UDF, Universal Disk Format} file systems.
+@acronym{UDF, Universal Disk Format} is a file system mostly used for DVDs
+and other optical media.  It supports read-only media (DVD/CD-R)
+and rewritable media that wears out (DVD/CD-RW).")
+    (license license:gpl2+)))

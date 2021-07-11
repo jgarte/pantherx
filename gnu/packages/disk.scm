@@ -20,6 +20,7 @@
 ;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
 ;;; Copyright © 2021 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2021 Mathieu Othacehe <othacehe@gnu.org>
+;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -46,6 +47,7 @@
   #:use-module (gnu packages compression)
   #:use-module (gnu packages crypto)
   #:use-module (gnu packages cryptsetup)
+  #:use-module (gnu packages databases)
   #:use-module (gnu packages docbook)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages elf)
@@ -358,14 +360,14 @@ output without any plausibility checks.")
 (define-public gptfdisk
   (package
     (name "gptfdisk")
-    (version "1.0.7")
+    (version "1.0.8")
     (source
      (origin
       (method url-fetch)
       (uri (string-append "mirror://sourceforge/gptfdisk/gptfdisk/"
                           version "/gptfdisk-" version ".tar.gz"))
       (sha256
-       (base32 "1h1871gwlq05gdc2wym98ghfmq6pn5lh8g5cqy3r49svz2vh8h3m"))))
+       (base32 "1py6klp1b7rni1qjj110snyyxafhx092carlii5vrnh4y1b9ilcm"))))
     (build-system gnu-build-system)
     (inputs
      `(("gettext" ,gettext-minimal)
@@ -552,14 +554,14 @@ and can dramatically shorten the lifespan of the drive if left unchecked.")
 (define-public gparted
   (package
     (name "gparted")
-    (version "1.2.0")
+    (version "1.3.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/gparted/gparted/gparted-"
                            version "/gparted-" version ".tar.gz"))
        (sha256
-        (base32 "06f72hqx5jf2irzsmi7lgpxxj38ncixh0acb4307wyjd4mfp343c"))))
+        (base32 "0amx3hb4rc504nl9i73rgyz0hzhq5x8nkg7lwbk4bsnrblj81hcd"))))
     (build-system glib-or-gtk-build-system)
     (arguments
       ;; Tests require access to paths outside the build container, such
@@ -925,6 +927,7 @@ to create devices with respective mappings for the ATARAID sets discovered.")
               (uri (string-append "https://github.com/storaged-project/"
                                   "libblockdev/releases/download/"
                                   version "-1/libblockdev-" version ".tar.gz"))
+              (patches (search-patches "libblockdev-glib-compat.patch"))
               (sha256
                (base32
                 "0s0nazkpzpn4an00qghjkk9n7gdm5a8dqfr5hfnlk5mk5lma8njm"))))
@@ -1143,15 +1146,18 @@ of choice for all light thinking Unix addicts!")
 (define-public hddtemp
   (package
     (name "hddtemp")
-    (version "0.3-beta15")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://savannah/hddtemp/hddtemp-"
-                                  version
-                                  ".tar.bz2"))
-              (sha256
-               (base32
-                "0nzgg4nl8zm9023wp4dg007z6x3ir60rwbcapr9ks2al81c431b1"))))
+    ;; <https://savannah.nongnu.org/projects/hddtemp/> advertises the project as
+    ;; ‘orphaned/unmaintained’.  Use a maintained fork/continuation.
+    (version "0.4.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/vitlav/hddtemp")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "04kylb2ka0jimi238zpfq1yii2caidpmj3ck51rvxz03y5lpq8fw"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags (list (string-append
@@ -1160,19 +1166,20 @@ of choice for all light thinking Unix addicts!")
                                 "/share/hddtemp/hddtemp.db"))
        #:phases
        (modify-phases %standard-phases
+         (add-before 'bootstrap 'delete-autogen.sh
+           (lambda _
+             ;; The default 'bootstrap phase works better.
+             (delete-file "autogen.sh")))
          (add-after 'install 'install-db
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (let ((target (string-append (assoc-ref outputs "out")
-                                          "/share/hddtemp/hddtemp.db")))
-               (mkdir-p (dirname target))
-               (copy-file (assoc-ref inputs "db") target)))))))
-    (inputs
-     `(("db" ,(origin
-                (method url-fetch)
-                (uri "mirror://savannah/hddtemp/hddtemp.db")
-                (sha256
-                 (base32 "1fr6qgns6qv7cr40lic5yqwkkc7yjmmgx8j0z6d93csg3smzhhya"))))))
-    (home-page "https://savannah.nongnu.org/projects/hddtemp/")
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (install-file "data/hddtemp.db"
+                             (string-append out "/share/hddtemp"))))))))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("gettext" ,gettext-minimal)))
+    (home-page "https://github.com/vitlav/hddtemp")
     (synopsis "Report the temperature of hard drives from S.M.A.R.T. information")
     (description "@command{hddtemp} is a small utility that gives you the
 temperature of your hard drive by reading S.M.A.R.T. information (for drives
@@ -1298,3 +1305,53 @@ like raw system image files, can be copied or flashed a lot faster and more
 reliably with @code{bmaptool} than with traditional tools, like @code{dd} or
 @code{cp}.")
     (license license:gpl2)))
+
+(define-public duc
+  (package
+    (name "duc")
+    (version "1.4.4")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/zevv/duc")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1i7ry25xzy027g6ysv6qlf09ax04q4vy0kikl8h0aq5jbxsl9q52"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out")))
+               (substitute* "src/duc/cmd-ui.c"
+                 (("ncursesw/ncurses.h") "ncurses.h"))
+               (substitute* "examples/index.cgi"
+                 (("/usr/local/bin/duc")
+                  (string-append out "/bin/duc"))))))
+         (add-after 'install 'install-examples
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (doc (string-append out "/share/doc/" ,name "-" ,version)))
+               (copy-recursively "examples" (string-append doc "/examples"))))))))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("cairo" ,cairo)
+       ("pango" ,pango)
+       ("tokyocabinet" ,tokyocabinet)
+       ("ncurses" ,ncurses)))
+    (home-page "http://duc.zevv.nl")
+    (synopsis "Library and suite of tools for inspecting disk usage")
+    (description "Duc maintains a database of accumulated sizes of
+directories of the file system, and allows you to query this database with
+some tools, or create fancy graphs showing you where your bytes are.
+
+Duc comes with console utilities, ncurses and X11 user interfaces and a CGI
+wrapper for disk usage querying and visualisation.")
+    (license license:lgpl3+)))

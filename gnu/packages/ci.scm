@@ -73,11 +73,11 @@
                 (file-name (string-append name "-" version "-checkout")))))))
 
 (define-public cuirass
-  (let ((commit "31fd4d4fe107d86f5e202510e177726a1f49e828")
-        (revision "17"))
+  (let ((commit "f9a5dbd54eaa7fa8ac173fd5e68209f937840d90")
+        (revision "1"))
     (package
       (name "cuirass")
-      (version (git-version "1.0.0" revision commit))
+      (version (git-version "1.1.0" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -87,7 +87,7 @@
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "08phqr0sfi6hkzrqhqsh9ri9434sd41qg1b5vijbadgsj1ql33rw"))))
+           "0wrx2bf1gdnbkfgmmqr46s1fhvv3568yi7hxb24plf4xx5jq5yg8"))))
       (build-system gnu-build-system)
       (arguments
        `(#:modules ((guix build utils)
@@ -141,7 +141,7 @@
                       (guix   (assoc-ref inputs "guix"))
                       (deps   (list avahi gcrypt json zmq squee git bytes
                                     fibers zlib matd tls mail guix))
-                      (guile  (assoc-ref %build-inputs "guile"))
+                      (guile  (assoc-ref inputs "guile"))
                       (effective
                        (read-line
                         (open-pipe* OPEN_READ

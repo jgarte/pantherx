@@ -19,6 +19,7 @@
 ;;; Copyright © 2020 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2021 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2021 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2021 Dion Mendel <guix@dm9.info>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -37,6 +38,7 @@
 
 (define-module (gnu packages virtualization)
   #:use-module (gnu packages)
+  #:use-module (gnu packages acl)
   #:use-module (gnu packages admin)
   #:use-module (gnu packages assembly)
   #:use-module (gnu packages attr)
@@ -141,7 +143,7 @@
 (define-public qemu
   (package
     (name "qemu")
-    (version "5.2.0")
+    (version "6.0.0")
     (source
      (origin
        (method url-fetch)
@@ -149,24 +151,14 @@
                            version ".tar.xz"))
        (sha256
         (base32
-         "1g0pvx4qbirpcn9mni704y03n3lvkmw2c0rbcwvydyr8ns4xh66b"))
+         "1f9hz8rf12jm8baa7kda34yl4hyl0xh0c4ap03krfjx23i3img47"))
        (patches (search-patches "qemu-CVE-2021-20203.patch"
+                                "qemu-meson-compat.patch"
+                                "qemu-sphinx-compat.patch"
                                 "qemu-build-info-manual.patch"))
        (modules '((guix build utils)))
        (snippet
         '(begin
-           ;; Fix a bug in the do_ioctl_ifconf() function of qemu to
-           ;; make ioctl(…, SIOCGIFCONF, …) work for emulated 64 bit
-           ;; architectures.  The size of struct ifreq is handled
-           ;; incorrectly.
-           ;; https://lists.nongnu.org/archive/html/qemu-devel/2021-01/msg01545.html
-           (substitute* '("linux-user/syscall.c")
-             (("^([[:blank:]]*)const argtype ifreq_arg_type.*$" line indent)
-              (string-append line indent "const argtype ifreq_max_type[] = "
-                             "{ MK_STRUCT(STRUCT_ifmap_ifreq) };\n"))
-             (("^([[:blank:]]*)target_ifreq_size[[:blank:]]=.*$" _ indent)
-              (string-append indent "target_ifreq_size = "
-                             "thunk_type_size(ifreq_max_type, 0);")))
            ;; Delete the bundled meson copy.
            (delete-file-recursively "meson")))))
     (outputs '("out" "static" "doc"))   ;5.3 MiB of HTML docs
@@ -197,22 +189,6 @@
                   ,@%gnu-build-system-modules)
        #:phases
        (modify-phases %standard-phases
-         (add-after 'set-paths 'hide-glibc
-           (lambda* (#:key inputs #:allow-other-keys)
-             ;; Work around https://issues.guix.info/issue/36882.  We need to
-             ;; remove glibc from C_INCLUDE_PATH so that the one hardcoded in GCC,
-             ;; at the bottom of GCC include search-path is used.
-             (let* ((filters '("libc"))
-                    (input-directories
-                     (filter-map (lambda (input)
-                                   (match input
-                                     ((name . dir)
-                                      (and (not (member name filters))
-                                           dir))))
-                                 inputs)))
-               (set-path-environment-variable "C_INCLUDE_PATH"
-                                              '("include")
-                                              input-directories))))
          (add-after 'unpack 'extend-test-time-outs
            (lambda _
              ;; These tests can time out on heavily-loaded and/or slow storage.
@@ -222,14 +198,14 @@
                 (string-append match "9")))))
          (add-after 'unpack 'disable-unusable-tests
            (lambda _
-             (substitute* "tests/meson.build"
+             (substitute* "tests/unit/meson.build"
                ;; Comment out the test-qga test, which needs /sys and
                ;; fails within the build environment.
                (("tests.*test-qga.*$" all)
                 (string-append "# " all))
                ;; Comment out the test-char test, which needs networking and
                ;; fails within the build environment.
-               (("check-unit-.* tests/test-char" all)
+               ((".*'test-char':.*" all)
                 (string-append "# " all)))))
          (add-after 'patch-source-shebangs 'patch-embedded-shebangs
            (lambda _
@@ -1065,17 +1041,46 @@ Through a powerful API and simple tools, it lets Linux users easily create and
 manage system or application containers.")
     (license license:lgpl2.1+)))
 
+(define-public lxcfs
+  (package
+    (name "lxcfs")
+    (version "4.0.8")
+    (home-page "https://github.com/lxc/lxcfs")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference (url home-page)
+                                  (commit (string-append "lxcfs-" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1f74wy88si2ia035pcvciq5821kc8jcb75w1f8vhbp0cd29rqdpi"))))
+    (arguments
+     '(#:configure-flags '("--localstatedir=/var")))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("fuse" ,fuse)))
+    (build-system gnu-build-system)
+    (synopsis "FUSE-based file system for LXC")
+    (description "LXCFS is a small FUSE file system written with the intention
+of making Linux containers feel more like a virtual machine.
+It started as a side project of LXC but can be used by any run-time.")
+    (license license:lgpl2.1+)))
+
 (define-public libvirt
   (package
     (name "libvirt")
-    (version "7.2.0")
+    (version "7.5.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://libvirt.org/sources/libvirt-"
                            version ".tar.xz"))
        (sha256
-        (base32 "1l6i1rz1v9rnp61sgzlrlbsfh03208dbm3b259i0jl5sqz85kx01"))
+        (base32 "15987ihnsjvcgi11dzcf1k3zp1si2d4wcxj0r0i30brc0d4pn44h"))
        (patches (search-patches "libvirt-add-install-prefix.patch"))))
     (build-system meson-build-system)
     (arguments
@@ -1086,6 +1091,9 @@ manage system or application containers.")
              "-Dstorage_disk=enabled"
              "-Dstorage_dir=enabled"
              "-Dpolkit=enabled"
+             ;; XXX The default, but required to make -Dsasl ‘stick’.
+             ;; See <https://gitlab.com/libvirt/libvirt/-/issues/185>
+             "-Ddriver_remote=enabled"
              "-Dnls=enabled"            ;translations
              (string-append "-Ddocdir=" (assoc-ref %outputs "out") "/share/doc/"
                             ,name "-" ,version)
@@ -1096,6 +1104,12 @@ manage system or application containers.")
        #:meson ,meson-0.55
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'skip-directory-confusion
+           (lambda _
+             ;; Don't try to install an (unused) /var outside of the store.
+             (substitute* "scripts/meson-install-dirs.py"
+               (("destdir = .*")
+                "destdir = '/tmp'"))))
          (add-before 'configure 'disable-broken-tests
            (lambda _
              (let ((tests (list "commandtest"           ; hangs idly
@@ -1103,15 +1117,12 @@ manage system or application containers.")
                                 "virnetsockettest")))   ; tries to network
                (substitute* "tests/meson.build"
                  (((format #f ".*'name': '(~a)'.*" (string-join tests "|")))
-                  ""))
-               #t)))
-         (add-before 'install 'no-polkit-magic
-           ;; Meson ‘magically’ invokes pkexec, which fails (not setuid).
-           (lambda _
-             (setenv "PKEXEC_UID" "something")
-             #t)))))
+                  ""))))))))
     (inputs
-     `(("libxml2" ,libxml2)
+     `(("acl" ,acl)
+       ("attr" ,attr)
+       ("fuse" ,fuse)
+       ("libxml2" ,libxml2)
        ("eudev" ,eudev)
        ("libpciaccess" ,libpciaccess)
        ("gnutls" ,gnutls)
@@ -1197,41 +1208,39 @@ three libraries:
 (define-public python-libvirt
   (package
     (name "python-libvirt")
-    (version "7.2.0")
+    (version "7.3.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://libvirt.org/sources/python/libvirt-python-"
                            version ".tar.gz"))
        (sha256
-        (base32 "1ryfimhf47s9k4n0gys233bh15l68fccs2bvj8bjwqjm9k2vmhy0"))))
+        (base32 "15pn8610ybf03xff3vbz3apz2ph42k2kh6k19r020l9nvc6jcv37"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'patch-nosetests-path
-           (lambda* (#:key inputs #:allow-other-keys)
-             (substitute* "setup.py"
-               (("\"/usr/bin/nosetests\"")
-                (string-append "\"" (which "nosetests") "\""))
-               (("self\\.spawn\\(\\[sys\\.executable, nose\\]\\)")
-                (format #f "self.spawn([\"~a\", nose])" (which "bash"))))
-             #t)))))
+         (replace 'check
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               ;; No reason to explicity invoke Python on a wrapped pytest.
+               (substitute* "setup.py"
+                 (("sys\\.executable, pytest") "pytest"))
+               (add-installed-pythonpath inputs outputs)
+               (setenv "LIBVIRT_API_COVERAGE" "whynot")
+               (invoke "python" "setup.py" "test")))))))
     (inputs
      `(("libvirt" ,libvirt)))
     (propagated-inputs
      `(("python-lxml" ,python-lxml)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
-       ("python-nose" ,python-nose)))
+       ("python-pytest" ,python-pytest)))
     (home-page "https://libvirt.org")
     (synopsis "Python bindings to libvirt")
     (description "This package provides Python bindings to the libvirt
 virtualization library.")
     (license license:lgpl2.1+)))
-
-(define-public python2-libvirt
-  (package-with-python2 python-libvirt))
 
 (define-public virt-manager
   (package

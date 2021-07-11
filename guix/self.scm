@@ -407,9 +407,8 @@ a list of extra files, such as '(\"contributing\")."
                                     "\\.[a-z]{2}(_[A-Z]{2})?\\.po$")))
 
           (define parallel-jobs
-            ;; Limit thread creation by 'n-par-for-each'.  Going beyond can
-            ;; lead libgc 8.0.4 to abort with:
-            ;; mmap(PROT_NONE) failed
+            ;; Limit thread creation by 'n-par-for-each', mostly to put an
+            ;; upper bound on memory usage.
             (min (parallel-job-count) 4))
 
           (mkdir #$output)
@@ -720,6 +719,8 @@ load path."
                    ,(file-append* source "/etc/substitutes/berlin.guix.gnu.org.pub"))
                   ("share/guix/ci.guix.info.pub"  ;alias
                    ,(file-append* source "/etc/substitutes/berlin.guix.gnu.org.pub"))
+                  ("share/guix/bordeaux.guix.gnu.org.pub"
+                   ,(file-append* source "/etc/substitutes/bordeaux.guix.gnu.org.pub"))
                   ("share/guix/build.pantherx.org.pub"  ;alias
                    ,(file-append* source "/etc/substitutes/build.pantherx.org.pub")))))
 

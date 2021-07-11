@@ -77,6 +77,7 @@
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages popt)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-check)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages serialization)
@@ -132,8 +133,8 @@
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
   (let ((version "1.3.0")
-        (commit "e57b29636a8b043554e31cc23ace119e1943fd9c")
-        (revision 1))
+        (commit "6243ad3812f8c689599a19f0e8b9719ba14461f2")
+        (revision 5))
     (package
       (name "guix")
 
@@ -149,7 +150,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "0bqxdv80r7frgras6npp5mbdqv5rbgahahwdzzrxx2cnp9b3yhpi"))
+                  "0i3sgk2w2yjy9ip47vk0h17afk16yl5ih3p3q75083kgjzyjdm3d"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -520,40 +521,6 @@ the Nix package manager.")
                (invoke "make" "install-binPROGRAMS")))
            (delete 'wrap-program)))))))
 
-
-(define-public guile2.2-guix
-  (package
-    (inherit guix)
-    (name "guile2.2-guix")
-    (native-inputs
-     `(("guile" ,guile-2.2)
-       ("gnutls" ,guile2.2-gnutls)
-       ("guile-gcrypt" ,guile2.2-gcrypt)
-       ("guile-json" ,guile2.2-json)
-       ("guile-lib" ,guile2.2-lib)
-       ("guile-sqlite3" ,guile2.2-sqlite3)
-       ("guile-ssh" ,guile2.2-ssh)
-       ("guile-git" ,guile2.2-git)
-       ("guile-zlib" ,guile2.2-zlib)
-       ("guile-lzlib" ,guile2.2-lzlib)
-       ,@(fold alist-delete (package-native-inputs guix)
-               '("guile" "gnutls" "guile-gcrypt" "guile-json"
-                 "guile-lib" "guile-sqlite3" "guile-ssh" "guile-git"
-                 "guile-zlib" "guile-lzlib"))))
-    (inputs
-     `(("guile" ,guile-2.2)
-       ,@(alist-delete "guile" (package-inputs guix))))
-    (propagated-inputs
-     `(("gnutls" ,gnutls)
-       ("guile-gcrypt" ,guile2.2-gcrypt)
-       ("guile-json" ,guile2.2-json)
-       ("guile-lib" ,guile2.2-lib)
-       ("guile-sqlite3" ,guile2.2-sqlite3)
-       ("guile-ssh" ,guile2.2-ssh)
-       ("guile-git" ,guile2.2-git)
-       ("guile-zlib" ,guile2.2-zlib)
-       ("guile-lzlib" ,guile2.2-lzlib)))))
-
 (define-public guile3.0-guix
   (deprecated-package "guile3.0-guix" guix))
 
@@ -622,14 +589,14 @@ out) and returning a package that uses that as its 'source'."
 (define-public nix
   (package
     (name "nix")
-    (version "2.3.10")
+    (version "2.3.13")
     (source (origin
              (method url-fetch)
-             (uri (string-append "https://nixos.org/releases/nix/nix-"
+             (uri (string-append "https://releases.nixos.org/nix/nix-"
                                  version "/nix-" version ".tar.xz"))
              (sha256
               (base32
-               "1axphwkx270c10bjyn4icq9wlx46npgnw0qkpymigl23vramxa58"))))
+               "0631qk2lgd76y6g2z45wy6lcpv647r2a08jd2dagzzpwniy68d3h"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags '("--sysconfdir=/etc" "--enable-gc")
@@ -772,7 +739,7 @@ transactions from C or Python.")
 (define-public python-anaconda-client
   (package
     (name "python-anaconda-client")
-    (version "1.6.3")
+    (version "1.8.0")
     (source
      (origin
        (method git-fetch)
@@ -782,18 +749,20 @@ transactions from C or Python.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0w1bfxnydjl9qp53r2gcvr6vlpdqqilcrzqxrll9sgg6vwdyiyyp"))))
+         "1vyk0g0gci4z9psisb8h50zi3j1nwfdg1jw3j76cxv0brln0v3fw"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("python-pyyaml" ,python-pyyaml)
-       ("python-requests" ,python-requests)
-       ("python-clyent" ,python-clyent)))
+     `(("python-clyent" ,python-clyent)
+       ("python-nbformat" ,python-nbformat)
+       ("python-pyyaml" ,python-pyyaml)
+       ("python-requests" ,python-requests)))
     (native-inputs
-     `(("python-pytz" ,python-pytz)
+     `(("python-coverage" ,python-coverage)
        ("python-dateutil" ,python-dateutil)
+       ("python-freezegun" ,python-freezegun)
        ("python-mock" ,python-mock)
-       ("python-coverage" ,python-coverage)
-       ("python-pillow" ,python-pillow)))
+       ("python-pillow" ,python-pillow)
+       ("python-pytz" ,python-pytz)))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -822,13 +791,10 @@ Anaconda Cloud.  Anaconda Cloud is useful for sharing packages, notebooks and
 environments.")
     (license license:bsd-3)))
 
-(define-public python2-anaconda-client
-  (package-with-python2 python-anaconda-client))
-
 (define-public python-conda-package-handling
   (package
     (name "python-conda-package-handling")
-    (version "1.6.0")
+    (version "1.7.3")
     (source
      (origin
        (method git-fetch)
@@ -838,7 +804,7 @@ environments.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0bqbs6a8jbjmbn47n5n1p529cx7pf4vgfnhqca9mflgidfb5i0jf"))))
+         "1dq6f5ks3cinb355x712bls9bvv6bli6x3c43sdkqvawdw8xgv9j"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -846,22 +812,11 @@ environments.")
          (add-after 'unpack 'use-unmodified-libarchive
            (lambda _
              (substitute* "setup.py"
-               (("archive_and_deps") "archive"))
-             #t))
+               (("archive_and_deps") "archive"))))
          (replace 'check
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (add-installed-pythonpath inputs outputs)
-             (invoke "pytest" "-vv" "tests"
-                     "-k"
-                     (string-append
-                      ;; TODO: these three fail because the mocker fixture
-                      ;; cannot be found
-                      "not test_rename_to_trash"
-                      " and not test_api_extract_tarball_with_libarchive_import_error"
-                      " and not test_delete_trash"
-                      ;; TODO: this one does not raise an exception when it
-                      ;; should.
-                      " and not test_secure_refusal_to_extract_abs_paths")))))))
+             (invoke "pytest" "-vv" "tests"))))))
     (propagated-inputs
      `(("python-six" ,python-six)
        ("python-tqdm" ,python-tqdm)))
@@ -871,6 +826,7 @@ environments.")
      `(("python-cython" ,python-cython)
        ("python-pytest" ,python-pytest)
        ("python-pytest-cov" ,python-pytest-cov)
+       ("python-pytest-mock" ,python-pytest-mock)
        ("python-mock" ,python-mock)))
     (home-page "https://conda.io")
     (synopsis "Create and extract conda packages of various formats")
@@ -882,7 +838,7 @@ extracting, creating, and converting between formats.")
 (define-public conda
   (package
     (name "conda")
-    (version "4.8.3")
+    (version "4.10.3")
     (source
      (origin
        (method git-fetch)
@@ -892,7 +848,7 @@ extracting, creating, and converting between formats.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0iv1qzk21jsk6vdp3106xvpvl68zgfdqb3kyzpya87jhkl204l7r"))))
+         "1w4yy62bsvkybjvcm5fspck4ns5j16nplzpbx6bxv7zhx69pcp4n"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -902,8 +858,11 @@ extracting, creating, and converting between formats.")
              ;; This file is no longer writable after downloading with
              ;; 'git-fetch'
              (make-file-writable
-              "tests/conda_env/support/saved-env/environment.yml")
-             #t))
+              "tests/conda_env/support/saved-env/environment.yml")))
+         (add-after 'unpack 'fix-ruamel-yaml-dependency
+           (lambda _
+             (substitute* "setup.py"
+               (("ruamel_yaml_conda") "ruamel.yaml"))))
          (add-after 'unpack 'correct-python-executable-name
            (lambda* (#:key inputs #:allow-other-keys)
              (let ((python (assoc-ref inputs "python-wrapper")))
@@ -961,6 +920,14 @@ extracting, creating, and converting between formats.")
                       ;; This fails because we patched the default root
                       ;; prefix.
                       " and not test_default_target_is_root_prefix"
+
+                      ;; These fail because ...
+                      ;; TODO: conda patches its own shebang to
+                      ;; $conda-prefix/bin/python, which is obviously wrong.
+                      " and not test_run_returns_int"
+                      " and not test_run_returns_zero_errorlevel"
+                      " and not test_run_returns_nonzero_errorlevel"
+
                       ;; TODO: I don't understand what this failure means
                       " and not test_PrefixData_return_value_contract"
                       ;; TODO: same here
@@ -976,16 +943,6 @@ extracting, creating, and converting between formats.")
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (add-installed-pythonpath inputs outputs)
              (setenv "HOME" "/tmp")
-
-             ;; "conda init" insists on using sudo, because it is hell-bent on
-             ;; modifying system files.
-             (mkdir-p "/tmp/fake-sudo")
-             (with-output-to-file "/tmp/fake-sudo/sudo"
-               (lambda () (format #t "#!~/bin/sh~%exec $@" (which "sh"))))
-             (chmod "/tmp/fake-sudo/sudo" #o700)
-             (setenv "PATH" (string-append "/tmp/fake-sudo:"
-                                           (getenv "PATH")))
-
              (invoke (string-append (assoc-ref outputs "out")
                                     "/bin/conda")
                      "init"))))))
@@ -1004,6 +961,8 @@ extracting, creating, and converting between formats.")
        ("python-tqdm" ,python-tqdm)
        ;; XXX: This is dragged in by libarchive and is needed at runtime.
        ("zstd" ,zstd)))
+    (native-inputs
+     `(("python-pytest-timeout" ,python-pytest-timeout)))
     (home-page "https://github.com/conda/conda")
     (synopsis "Cross-platform, OS-agnostic, system-level binary package manager")
     (description
@@ -1063,8 +1022,8 @@ environments.")
     (license (list license:gpl3+ license:agpl3+ license:silofl1.1))))
 
 (define-public guix-build-coordinator
-  (let ((commit "1305724c7ea3c2bb3e557918d5a1b17d572aa110")
-        (revision "27"))
+  (let ((commit "c2f0c5b36f8294bb4c699806f9e8c576ae9b9f90")
+        (revision "33"))
     (package
       (name "guix-build-coordinator")
       (version (git-version "0" revision commit))
@@ -1075,7 +1034,7 @@ environments.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "179n33mkhl6f2fv0gyn7sdm3k4hhm1hvca6dgc923d0w7zv4p577"))
+                  "0nlh1cyvpbsfy9pk22xmgx0vb625j7qgv79y527q91c9fjn7g37v"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments

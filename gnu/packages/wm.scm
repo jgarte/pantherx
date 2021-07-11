@@ -82,6 +82,7 @@
   #:use-module (gnu packages bison)
   #:use-module (gnu packages build-tools) ;for meson-0.55
   #:use-module (gnu packages calendar)
+  #:use-module (gnu packages datastructures)
   #:use-module (gnu packages docbook)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages fontutils)
@@ -163,14 +164,14 @@ the leaves of a full binary tree.")
 (define-public herbstluftwm
   (package
     (name "herbstluftwm")
-    (version "0.9.2")
+    (version "0.9.3")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://herbstluftwm.org/tarballs/herbstluftwm-"
                            version ".tar.gz"))
        (sha256
-        (base32 "0avfhr68f6fjnafjdcyxcx7dkg38f2nadmhpj971qyqzfq2f6i38"))
+        (base32 "01f1bv9axjhw1l2gwhdwahljssj0h8q7a1bqwbpnwvln0ayv39qb"))
        (file-name (string-append "herbstluftwm-" version ".tar.gz"))))
     (build-system cmake-build-system)
     (inputs
@@ -334,7 +335,7 @@ commands would.")
      `(("which" ,which)
        ("perl" ,perl)
        ("pkg-config" ,pkg-config)
-       ("asciidoc-py3" ,asciidoc-py3)
+       ("asciidoc" ,asciidoc)
        ;; For building the documentation.
        ("libxml2" ,libxml2)
        ("docbook-xsl" ,docbook-xsl)))
@@ -906,6 +907,41 @@ drags, snap-to-border support, and virtual desktops.")
 and easy to handle yet full of features to make an easy and fast desktop
 experience.")
     (home-page "http://fluxbox.org/")
+    (license license:expat)))
+
+(define-public fnott
+  (package
+    (name "fnott")
+    (version "1.1.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://codeberg.org/dnkl/fnott")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1xaz13iry3fdjhqk9xzg29kbv7hqj8dzzqxr5mhrj8f2m013jdc3"))))
+    (build-system meson-build-system)
+    (arguments
+     `( #:meson ,meson-0.55
+        #:build-type "release"))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("wayland-protocols" ,wayland-protocols)
+       ("tllist" ,tllist)
+       ("gcc" ,gcc-10)     ;TODO: Remove when the default compiler is > GCC 7.
+       ("scdoc" ,scdoc)))
+    (inputs
+     `(("wlroots" ,wlroots)
+       ("wayland" ,wayland)
+       ("fcft" ,fcft)
+       ("dbus" ,dbus)
+       ("libpng" ,libpng)))
+    (home-page "https://codeberg.org/dnkl/fnott")
+    (synopsis "Keyboard driven and lightweight Wayland notification daemon")
+    (description "Fnott is a keyboard driven and lightweight notification daemon
+for wlroots-based Wayland compositors.")
     (license license:expat)))
 
 (define-public awesome

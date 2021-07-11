@@ -1044,6 +1044,17 @@ processed, #f otherwise."
 
       (warn-about-old-distro)
 
+      (when (and (null? files) (manifest-transaction-null? trans)
+                 (not (any (match-lambda
+                             ((key . _) (assoc-ref %actions key)))
+                           opts)))
+        ;; We can reach this point because the user did not specify any action
+        ;; (as in "guix package"), did not specify any package (as in "guix
+        ;; install"), or because there's nothing to upgrade (as when running
+        ;; "guix upgrade" on an up-to-date profile).  We cannot distinguish
+        ;; among these here; all we can say is that there's nothing to do.
+        (warning (G_ "nothing to do~%")))
+
       (unless (manifest-transaction-null? trans)
         ;; When '--manifest' is used, display information about TRANS as if we
         ;; were starting from an empty profile.

@@ -14,6 +14,7 @@
 ;;; Copyright © 2020 Mark Meyer <mark@ofosos.org>
 ;;; Copyright © 2020 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2021 aecepoglu <aecepoglu@fastmail.fm>
+;;; Copyright © 2021 Leo Famulari <leo@famulari.name>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -396,6 +397,38 @@ features are implemented in the editor.  Leafpad is simple to use, is easily
 compiled, requires few libraries, and starts up quickly. ")
     (license license:gpl2+)))
 
+(define-public l3afpad
+  (let ((commit "5235c9e13bbf0d31a902c6776918c2d7cdbb61ff")
+        (revision "0"))
+    (package
+      (name "l3afpad")
+      (version (git-version "0.8.18.1.11" revision commit))
+      (source (origin
+                (method git-fetch)
+                (file-name (git-file-name name version))
+                (uri (git-reference
+                       (url "https://github.com/stevenhoneyman/l3afpad")
+                       (commit commit)))
+                (sha256
+                 (base32
+                  "1alyghm2wpakzdfag0g4g8gb1h9l4wdg7mnhq8bk0iq5ryqia16a"))))
+      (build-system glib-or-gtk-build-system)
+      (native-inputs
+       `(("intltool" ,intltool)
+         ("autoconf" ,autoconf)
+         ("automake" ,automake)
+         ("pkg-config" ,pkg-config)))
+      (inputs
+       `(("gtk+" ,gtk+)))
+      (home-page "http://tarot.freeshell.org/leafpad/")
+      (synopsis "GTK+ 3 based text editor")
+      (description "L3afpad is a GTK+ 3 text editor that emphasizes simplicity.  As
+  development focuses on keeping weight down to a minimum, only the most essential
+  features are implemented in the editor.  L3afpad is simple to use, is easily
+  compiled, requires few libraries, and starts up quickly.  L3afpad is a
+  fork of Leafpad that uses GTK+ 3 instead of GTK+ 2.")
+      (license license:gpl2+))))
+
 (define-public e3
   (package
     (name "e3")
@@ -524,13 +557,14 @@ OpenBSD team.")
                #t)))
          (add-after 'install 'install-extra-documentation
            ;; Install sample configuration file, Info, and HTML manual.
-           (lambda* (#:key outputs #:allow-other-keys)
+           (lambda* (#:key native-inputs inputs outputs #:allow-other-keys)
              (let* ((share (string-append (assoc-ref outputs "out") "/share"))
                     (doc (string-append share "/doc/" ,name "-" ,version))
                     (html (string-append share "/html"))
                     (info (string-append share "/info"))
-                    (makeinfo (string-append (assoc-ref %build-inputs "texinfo")
-                                             "/bin/makeinfo")))
+                    (makeinfo (string-append
+                               (assoc-ref (or native-inputs inputs) "texinfo")
+                               "/bin/makeinfo")))
                ;; First fix Texinfo documentation, create appropriate
                ;; directories, then generate Info and HTML files there.
                (substitute* "qe-doc.texi"
@@ -600,8 +634,7 @@ scripts/input/X11/C/Shell/HTML/Dired): 49KB.
 (define-public ghostwriter
   (package
     (name "ghostwriter")
-    ;; XXX We use a release candidate to fix incompatibility with Qt 5.15.
-    (version "2.0.0-rc4")
+    (version "2.0.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -610,14 +643,14 @@ scripts/input/X11/C/Shell/HTML/Dired): 49KB.
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "07547503a209hc0fcg902w3x0s1m899c10nj3gqz3hak0cmrasi3"))))
+                "19cf55b86yj2b5hdazbyw4iyp6xq155243aiyg4m0vhwh0h79nwh"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("qttools" ,qttools)))           ; for lrelease
     (inputs
      `(("hunspell" ,hunspell)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtmultimedia" ,qtmultimedia)
        ("qtquickcontrols" ,qtquickcontrols)
@@ -755,7 +788,7 @@ in plain text file format.")
 (define-public editorconfig-core-c
   (package
     (name "editorconfig-core-c")
-    (version "0.12.4")
+    (version "0.12.5")
     (source
       (origin
         (method git-fetch)
@@ -764,7 +797,7 @@ in plain text file format.")
                (commit (string-append "v" version))))
         (file-name (git-file-name name version))
         (sha256
-         (base32 "1311fhh2jfsja2hhk3nwb6nijlq03jw8dk35cwbrac0p9jvy03jx"))))
+         (base32 "073sh18y0v8wm10iphaia54pkdmwylalccpn1k5i9dwyfjzgj7yg"))))
     (build-system cmake-build-system)
     (arguments
      '(#:phases
@@ -806,14 +839,14 @@ editors.")
 (define-public texmacs
   (package
     (name "texmacs")
-    (version "1.99.20")
+    (version "2.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.texmacs.org/Download/ftp/tmftp/"
                            "source/TeXmacs-" version "-src.tar.gz"))
        (sha256
-        (base32 "0wny36qsgzpp084h2i85rd3l8fq1q69sglc266prb06ygcb0iyia"))))
+        (base32 "1gl6k1bwrk1y7hjyl4xvlqvmk5crl4jvsk8wrfp7ynbdin6n2i48"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -823,7 +856,7 @@ editors.")
        ("guile" ,guile-1.8)
        ("perl" ,perl)
        ("python" ,python-wrapper)
-       ("qt" ,qtbase)
+       ("qt" ,qtbase-5)
        ("qtsvg" ,qtsvg)))
     (arguments
      `(#:tests? #f                      ; no check target
@@ -834,16 +867,14 @@ editors.")
              (let ((out (assoc-ref outputs "out")))
                (substitute* "packages/linux/icons.sh"
                  (("/usr/share")
-                  (string-append out "/share")))
-               #t)))
+                  (string-append out "/share"))))))
          (add-after 'install 'install-desktop-file
            (lambda* (#:key outputs #:allow-other-keys)
              ;; Install desktop file.
              (let* ((out (assoc-ref outputs "out"))
                     (apps (string-append out "/share/applications"))
                     (source "TeXmacs/misc/mime/texmacs.desktop"))
-               (install-file source apps)
-               #t)))
+               (install-file source apps))))
          (add-before 'configure 'gzip-flags
            (lambda _
              (substitute* "Makefile.in"
@@ -861,14 +892,14 @@ Octave.  TeXmacs is completely extensible via Guile.")
 (define-public scintilla
   (package
     (name "scintilla")
-    (version "5.0.1")
+    (version "5.1.0")
     (source
      (origin
        (method url-fetch)
        (uri (let ((v (apply string-append (string-split version #\.))))
               (string-append "https://www.scintilla.org/scintilla" v ".tgz")))
        (sha256
-        (base32 "0w5550fijkhmzvdydd8770qq9dgnbq1sd0a8rn4g6mwyfpcyhbfy"))))
+        (base32 "0figd543inpi00yr6han73qd2fzx99r099vzcbg9mhpzsgxfwz4f"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags (list "GTK3=1" "CC=gcc" "-Cgtk")
@@ -885,8 +916,7 @@ Octave.  TeXmacs is completely extensible via Guile.")
                (for-each (lambda (f) (install-file f lib))
                          (find-files "bin/" "\\.so$"))
                (for-each (lambda (f) (install-file f include))
-                         (find-files "include/" "."))
-               #t))))))
+                         (find-files "include/" "."))))))))
     (native-inputs
      `(("gcc" ,gcc-9)                   ;Code has C++17 requirements
        ("pkg-config" ,pkg-config)

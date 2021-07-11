@@ -85,7 +85,7 @@
 (define-public duplicity
   (package
     (name "duplicity")
-    (version "0.8.19")
+    (version "0.8.20")
     (source
      (origin
       (method url-fetch)
@@ -94,7 +94,7 @@
                           "-series/" version "/+download/duplicity-"
                           version ".tar.gz"))
       (sha256
-       (base32 "1c03rp4gw97gz3dzrbrray3dh4q5an3gdq0cmxbhw3qa1nw8ni4c"))))
+       (base32 "0d125mxknpn44xwgqzzak9y5ydigscrpjv9d63126mfc6yfngr5v"))))
     (build-system python-build-system)
     (native-inputs
      `(("gettext" ,gettext-minimal)     ; for msgfmt
@@ -451,7 +451,7 @@ rdiff-backup is easy to use and settings have sensible defaults.")
 (define-public rsnapshot
   (package
     (name "rsnapshot")
-    (version "1.4.3")
+    (version "1.4.4")
     (source
      (origin
        (method url-fetch)
@@ -459,7 +459,7 @@ rdiff-backup is easy to use and settings have sensible defaults.")
              "https://github.com/rsnapshot/rsnapshot/releases/download/"
              version "/rsnapshot-" version ".tar.gz"))
        (sha256
-        (base32 "1lavqmmsf53pim0nvming7fkng6p0nk2a51k2c2jdq0l7snpl31b"))))
+        (base32 "0yc5k2fhm54ypxgm1fsaf8vrg5b7qbvbsqk371n6baf592vprjy1"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -1103,12 +1103,20 @@ backup.")
                                   "disarchive-" version ".tar.gz"))
               (sha256
                (base32
-                "1jypk0gdwxqbqxiblww863nzq0kwnc676q68j32sprqd7ilnq02s"))))
+                "1jypk0gdwxqbqxiblww863nzq0kwnc676q68j32sprqd7ilnq02s"))
+              (patches (search-patches "disarchive-cross-compilation.patch"))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'delete-configure
+                    (lambda _
+                      (delete-file "configure"))))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
        ("pkg-config" ,pkg-config)
+       ("guile" ,guile-3.0)             ;for cross-compilation
+       ("guile-gcrypt" ,guile-gcrypt)
        ("guile-quickcheck" ,guile-quickcheck)))
     (inputs
      `(("guile" ,guile-3.0)

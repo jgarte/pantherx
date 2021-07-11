@@ -4,7 +4,7 @@
 ;;; Copyright © 2014, 2015, 2018 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015, 2016 Eric Bavier <bavier@member.fsf.org>
-;;; Copyright © 2015, 2016, 2017, 2018, 2020 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2016, 2017, 2018, 2020, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2017, 2018 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2015 Jeff Mickey <j@codemac.net>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
@@ -13,7 +13,7 @@
 ;;; Copyright © 2016–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2016 David Craven <david@craven.ch>
 ;;; Copyright © 2016, 2019, 2020 Kei Kebreau <kkebreau@posteo.net>
-;;; Copyright © 2016, 2018, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2016, 2018, 2019, 2020, 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017 Manolis Fragkiskos Ragkousis <manolis837@gmail.com>
 ;;; Copyright © 2017 Theodoros Foradis <theodoros@foradis.org>
@@ -77,12 +77,14 @@
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages gnupg)
   #:use-module (gnu packages gtk)
+  #:use-module (gnu packages llvm)
   #:use-module (gnu packages man)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
   #:use-module (gnu packages qt)
+  #:use-module (gnu packages selinux)
   #:use-module (gnu packages tls)
   #:use-module (gnu packages valgrind)
   #:use-module (gnu packages version-control)
@@ -672,6 +674,7 @@ decompressors when faced with corrupted input.")
       (modules '((guix build utils)))
       (snippet
        '(begin
+          ;; Adjust for newer libc versions.
           (substitute* (find-files "lib" "\\.c$")
             (("#if defined _IO_ftrylockfile")
              "#if defined _IO_EOF_SEEN"))
@@ -681,9 +684,15 @@ decompressors when faced with corrupted input.")
                             "# define _IO_IN_BACKUP 0x100\n"
                             "#endif\n\n"
                             "/* BSD stdio derived implementations")))
-          #t))))
+          ;; ... and for newer GCC with -fno-common.
+          (substitute* '("src/shar-opts.h"
+                         "src/unshar-opts.h"
+                         "src/uudecode-opts.h"
+                         "src/uuencode-opts.h")
+            (("char const \\* const program_name" all)
+             (string-append "extern " all)))))))
     (build-system gnu-build-system)
-    (inputs
+    (native-inputs
      `(("which" ,which)))
     (arguments
      `(#:phases
@@ -693,8 +702,7 @@ decompressors when faced with corrupted input.")
            ;; in fact test data
            (lambda _
              (substitute* "tests/shar-1.ok"
-               (((which "sh")) "/bin/sh"))
-             #t)))))
+               (((which "sh")) "/bin/sh")))))))
     (home-page "https://www.gnu.org/software/sharutils/")
     (synopsis "Archives in shell scripts, uuencode/uudecode")
     (description
@@ -849,15 +857,16 @@ time for compression ratio.")
 (define-public squashfs-tools
   (package
     (name "squashfs-tools")
-    (version "4.4")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://sourceforge/squashfs/squashfs/"
-                                  "squashfs" version "/"
-                                  "squashfs" version ".tar.gz"))
-              (sha256
-               (base32
-                "0zmhvczscqz0mzh4b9m8m42asq14db0a6lc8clp5ljq5ybrv70d9"))))
+    (version "4.4-git.1")               ; ‘A point release of […] 4.4’
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/plougher/squashfs-tools")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1hb95iy445hs2p3f7hg51jkrpkfi3bphddk60p2la0qmcdjkgbbm"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no check target
@@ -866,28 +875,108 @@ time for compression ratio.")
              "XZ_SUPPORT=1"
              "LZO_SUPPORT=1"
              "LZ4_SUPPORT=1"
+             "ZSTD_SUPPORT=1"
              (string-append "INSTALL_DIR=" %output "/bin"))
        #:phases
        (modify-phases %standard-phases
          (replace 'configure
            (lambda _
-             (chdir "squashfs-tools")
-             #t)))))
+             (chdir "squashfs-tools")))
+         (add-after 'install 'install-documentation
+           ;; Install what very little usage documentation is provided.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (doc (string-append out "/share/doc/" ,name)))
+               (install-file "../USAGE" doc)))))))
     (inputs
      `(("lz4" ,lz4)
        ("lzo" ,lzo)
        ("xz" ,xz)
-       ("zlib" ,zlib)))
+       ("zlib" ,zlib)
+       ("zstd:lib" ,zstd "lib")))
     (home-page "https://github.com/plougher/squashfs-tools")
     (synopsis "Tools to create and extract squashfs file systems")
     (description
-     "Squashfs is a highly compressed read-only file system for Linux.  It uses
-zlib to compress files, inodes, and directories.  All blocks are packed to
-minimize the data overhead, and block sizes of between 4K and 1M are supported.
-It is intended to be used for archival use, for live CDs, and for embedded
-systems where low overhead is needed.  This package allows you to create and
-extract such file systems.")
+     "Squashfs is a highly compressed read-only file system for Linux.  It
+compresses files, inodes, and directories with one of several compressors.
+All blocks are packed to minimize the data overhead, and block sizes of
+between 4K and 1M are supported.  It is intended to be used for archival use,
+for live media, and for embedded systems where low overhead is needed.
+This package allows you to create and extract such file systems.")
     (license license:gpl2+)))
+
+(define-public squashfs-tools-ng
+  (package
+    (name "squashfs-tools-ng")
+    (version "1.1.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/AgentD/squashfs-tools-ng")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "13gx6mc57wjjnrpnkb74zi2wiqazz2q715y1zz7rff02wh1vb5k9"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Delete bundled third-party libraries.
+           (for-each (lambda (directory)
+                       (substitute* "Makefile.am"
+                         (((format #f "^include ~a.*" directory)) ""))
+                       (delete-file-recursively directory))
+                     (list "lib/lz4"
+                           "lib/zlib"))))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list "--disable-static")))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libselinux" ,libselinux)
+
+       ;; Compression algorithms.
+       ("bzip2" ,bzip2)
+       ("lz4" ,lz4)
+       ("lzo" ,lzo)
+       ("xz" ,xz)
+       ("zlib" ,zlib)
+       ("zstd:lib" ,zstd "lib")))
+    (home-page "https://github.com/AgentD/squashfs-tools-ng")
+    (synopsis "Tools to create and extract squashfs file systems")
+    (description
+     "Squashfs is a highly compressed read-only file system for Linux.  It
+compresses files, inodes, and directories with one of several compressors.
+All blocks are packed to minimize the data overhead, and block sizes of
+between 4K and 1M are supported.  It is intended to be used for archival use,
+for live media, and for embedded systems where low overhead is needed.
+
+The squashfs-tools-ng package offers alternative tooling to create and extract
+such file systems.  It is not based on the older squashfs-tools package and
+its tools have different names:
+
+@enumerate
+@item @command{gensquashfs} produces SquashFS images from a directory or
+@command{gen_init_cpio}-like file listings and can generate SELinux labels.
+@item @command{rdsquashfs} inspects and unpacks SquashFS images.
+@item @command{sqfs2tar} and @command{tar2sqfs} convert between SquashFS and
+tarballs.
+@item @command{sqfsdiff} compares the contents of two SquashFS images.
+@end enumerate
+
+These commands are largely command-line wrappers around the included
+@code{libsquashfs} library that intends to make SquashFS available to other
+applications as an embeddable, extensible archive format.
+
+Both the library and tools operate deterministically: same input will produce
+byte-for-byte identical output.")
+    ;; Upstream goes to some lengths to ensure that libsquashfs is LGPL3+.
+    (license license:gpl3+)))
 
 (define-public pigz
   (package
@@ -1001,7 +1090,7 @@ tarballs.")
 (define-public libjcat
   (package
     (name "libjcat")
-    (version "0.1.7")
+    (version "0.1.8")
     (source
      (origin
        (method git-fetch)
@@ -1011,7 +1100,7 @@ tarballs.")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "110c8h3p7m4ibrfvgja592z7j5h88qqanllxsvmxkjz3b129i02r"))))
+        (base32 "18qkyg19r7fxzv93kar5n808n3582ygjmqwa7rnyg5y4b6hnwihl"))))
     (build-system meson-build-system)
     (native-inputs
      `(("gobject-introspection" ,gobject-introspection)
@@ -1156,6 +1245,54 @@ compared to the fastest mode of zlib, Snappy is an order of magnitude faster
 for most inputs, but the resulting compressed files are anywhere from 20% to
 100% bigger.")
     (license license:asl2.0)))
+
+;; We need this for irods.
+(define-public snappy-with-clang6
+  (package
+    (inherit snappy)
+    (name "snappy-with-clang")
+    ;; XXX 1.1.9 fails to build with clang with
+    ;; error: invalid output constraint '=@ccz' in asm
+    (version "1.1.8")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/google/snappy")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1j0kslq2dvxgkcxl1gakhvsa731yrcvcaipcp5k8k7ayicvkv9jv"))))
+    (arguments
+     `(#:configure-flags
+       '("-DBUILD_SHARED_LIBS=ON"
+         "-DCMAKE_CXX_COMPILER=clang++"
+         "-DCMAKE_CXX_FLAGS=-stdlib=libc++"
+         "-DCMAKE_EXE_LINKER_FLAGS=-lc++abi")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'set-paths 'adjust-CPLUS_INCLUDE_PATH
+           (lambda* (#:key native-inputs inputs #:allow-other-keys)
+             (let ((gcc (assoc-ref (or native-inputs inputs) "gcc")))
+               (setenv "CPLUS_INCLUDE_PATH"
+                       (string-join
+                        (cons* (string-append (assoc-ref inputs "libcxx+libcxxabi")
+                                              "/include/c++/v1")
+                               ;; Hide GCC's C++ headers so that they do not interfere with
+                               ;; the Clang headers.
+                               (delete (string-append gcc "/include/c++")
+                                       (string-split (getenv "CPLUS_INCLUDE_PATH")
+                                                     #\:)))
+                        ":"))
+               (format #true
+                       "environment variable `CPLUS_INCLUDE_PATH' changed to ~a~%"
+                       (getenv "CPLUS_INCLUDE_PATH"))))))))
+    (properties `((hidden? . #true)))
+    (native-inputs
+     `(("clang" ,clang-toolchain-6)))
+    (inputs
+     `(("libcxx+libcxxabi" ,libcxx+libcxxabi-6)
+       ("libcxxabi" ,libcxxabi-6)))))
 
 (define-public p7zip
   (package
@@ -1834,21 +1971,23 @@ timestamps in the file header with a fixed time (1 January 2008).
 (define-public libzip
   (package
     (name "libzip")
-    (version "1.7.3")
+    (version "1.8.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
                     "https://libzip.org/download/libzip-" version ".tar.xz"))
               (sha256
                (base32
-                "0ck1dk7zn5qzpgxklg0r26nfsf04xb6c46gsig060hkvvgzp6156"))))
+                "0zn9vaiwy2izj8cnm8i7c2mbdn38n328grqb8f07x55s4kd3nxph"))))
     (native-inputs
-     `(("perl" ,perl)))
+     `(("perl" ,perl)
+       ("pkg-config" ,pkg-config)))
     (inputs
      `(("gnutls" ,gnutls)
        ("liblzma" ,xz)
        ("openssl" ,openssl)
-       ("zlib" ,zlib)))
+       ("zlib" ,zlib)
+       ("zstd:lib" ,zstd "lib")))
     (build-system cmake-build-system)
     (home-page "https://libzip.org")
     (synopsis "C library for reading, creating, and modifying zip archives")
@@ -2189,7 +2328,7 @@ download times, and other distribution and storage costs.")
     (native-inputs
      `(("doxygen" ,doxygen)))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("zlib" ,zlib)))
     (home-page "https://stachenov.github.io/quazip/index.html")
     (synopsis "Qt/C++ wrapper for Minizip")
@@ -2462,14 +2601,14 @@ to their original, binary CD format.")
 (define-public tarlz
   (package
     (name "tarlz")
-    (version "0.19")
+    (version "0.21")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://savannah/lzip/tarlz/"
                            "tarlz-" version ".tar.lz"))
        (sha256
-        (base32 "09xal55973ivzpaja93jcc1pfla8gb3vrk8dx7pj9qvvz5aynf9n"))))
+        (base32 "1x5dw03lcwfigcv97cg70gkbkfycjmv1012s9lwnl4izvl9235qg"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("lzip" ,lzip)))

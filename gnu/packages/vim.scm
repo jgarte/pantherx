@@ -8,7 +8,7 @@
 ;;; Copyright © 2019 HiPhish <hiphish@posteo.de>
 ;;; Copyright © 2019 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2019, 2020 Jakub Kądziołka <kuba@kadziolka.net>
-;;; Copyright © 2020 Jack Hill <jackhill@jackhill.us>
+;;; Copyright © 2020, 2021 Jack Hill <jackhill@jackhill.us>
 ;;; Copyright © 2021 Simon Tournier <zimon.toutoune@gmail.com>
 ;;; Copyright © 2021 Tissevert <tissevert+guix@marvid.fr>
 ;;;
@@ -43,6 +43,7 @@
   #:use-module (gnu packages attr)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages base)
+  #:use-module (gnu packages enlightenment)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages gawk)
   #:use-module (gnu packages gettext)
@@ -140,6 +141,11 @@
                ((".*Test_popup_drag_termwin.*" line)
                 (string-append line "return\n")))
              #t))
+         (add-before 'install 'fix-installman.sh
+           (lambda _
+             (substitute* "src/installman.sh"
+               (("/bin/sh")
+                (which "sh")))))
          (add-after 'install 'install-guix.vim
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (let ((vimdir (string-append (assoc-ref outputs "out") "/share/vim")))
@@ -695,7 +701,7 @@ are detected, the user is notified.")))
                      (lambda (prefix)
                        (let ((path (string-append prefix "/share/lua/" lua-version)))
                          (string-append path "/?.lua;" path "/?/?.lua"))))
-                    (lua-inputs (map (cute assoc-ref %build-inputs <>)
+                    (lua-inputs (map (cute assoc-ref inputs <>)
                                      '("lua"
                                        "lua-luv"
                                        "lua-lpeg"
@@ -745,6 +751,48 @@ refactor Vim in order to:
     ;; Neovim is licensed under the terms of the Apache 2.0 license,
     ;; except for parts that were contributed under the Vim license.
     (license (list license:asl2.0 license:vim))))
+
+(define-public eovim
+  (package
+    (name "eovim")
+    (version "0.2.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/jeanguyomarch/eovim/")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "06b7crmz3wvvq15ncl0jk20s8j1pmna2jin0k5y5n5qxpafbgp3k"))))
+    (build-system cmake-build-system)
+    (arguments
+     '(#:tests? #false ;no tests
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'configure 'reference-nvim
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((nvim (string-append (assoc-ref inputs "neovim")
+                                        "/bin/nvim")))
+               ;; This substitution should change one line, and replaces the default
+               ;; value in the struct of options with an absolute store reference.
+               (substitute* "../source/src/main.c"
+                 (("(^[[:blank:]]+\\.nvim = \")nvim" _ start)
+                  (string-append start nvim))))))
+         (add-before 'build 'set-home
+           (lambda _ (setenv "HOME" "/tmp"))))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("efl" ,efl)
+       ("msgpack" ,msgpack)
+       ("neovim" ,neovim)))
+    (home-page "https://github.com/jeanguyomarch/eovim/")
+    (synopsis "EFL GUI for Neovim")
+    (description "Graphical Neovim interface based on the @acronym{EFL, Enlightenment
+Foundation Libraries} toolkit.  Its features include customizable appearance
+and support for fonts with ligatures.")
+    (license license:expat)))
 
 (define-public vifm
   (package
@@ -853,7 +901,7 @@ through its msgpack-rpc API.")
 (define-public vim-guix-vim
   (package
     (name "vim-guix-vim")
-    (version "0.1.1")
+    (version "0.2.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -862,15 +910,17 @@ through its msgpack-rpc API.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "10bfy0dgwizxr56b4272b7sqajpr6lnz332pzx055dis2zzjap8z"))))
+                "1fyfwsvv787al88lqjgqcgykav8pcf4xgj5d4i0j7wjcfb3mh1vw"))))
     (build-system copy-build-system)
     (arguments
      '(#:install-plan
-       '(("compiler" "share/vim/vimfiles/")
+       '(("autoload" "share/vim/vimfiles/")
+         ("compiler" "share/vim/vimfiles/")
          ("doc" "share/vim/vimfiles/")
          ("indent" "share/vim/vimfiles/")
          ("ftdetect" "share/vim/vimfiles/")
          ("ftplugin" "share/vim/vimfiles/")
+         ("plugin" "share/vim/vimfiles/")
          ("syntax" "share/vim/vimfiles/"))))
     (home-page "https://gitlab.com/Efraim/guix.vim")
     (synopsis "Guix integration in Vim")

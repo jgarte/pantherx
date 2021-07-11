@@ -162,6 +162,7 @@
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
   #:use-module (guix build-system guile)
+  #:use-module (guix build-system meson)
   #:use-module (guix build-system perl)
   #:use-module (guix build-system python)
   #:use-module (guix build-system trivial)
@@ -207,10 +208,10 @@
      `(("ncurses" ,ncurses)
        ("readline" ,readline)))
     (home-page "https://abook.sourceforge.io/")
-    (synopsis "Text-based addressbook")
+    (synopsis "Text-based address book")
     (description
-     "Abook is a text-based addressbook program designed to use with Mutt mail
-client.")
+     "Abook is a text-based address book program designed to use with the Mutt
+mail client.")
     (license license:gpl2)))
 
 (define-public anubis
@@ -528,7 +529,7 @@ aliasing facilities to work just as they would on normal mail.")
 (define-public mutt
   (package
     (name "mutt")
-    (version "2.0.7")
+    (version "2.1.0")
     (source (origin
              (method url-fetch)
              (uri (list
@@ -538,7 +539,7 @@ aliasing facilities to work just as they would on normal mail.")
                                    version ".tar.gz")))
              (sha256
               (base32
-               "14fc4vfsfx74q1hn0b04q33cffdjzvwprwpjsj91jmi1lp38hxlm"))
+               "0dqd6gg1wwhxjgdfl8j0kf93mw43kvd6wrwrzkscq2wjrsy5p0w0"))
              (patches (search-patches "mutt-store-references.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -1331,14 +1332,14 @@ invoking @command{notifymuch} from the post-new hook.")
 (define-public notmuch
   (package
     (name "notmuch")
-    (version "0.31.4")
+    (version "0.32.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://notmuchmail.org/releases/notmuch-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "0magnyjjhhv11nwcm2596hdxszrj61y69i0hmwqdc3v6cxjvcqc6"))))
+                "1myylb19hj5nb1vriqng252vfjwwkgbi3gxj93pi2q1fzyw7w2lf"))))
     (build-system gnu-build-system)
     (arguments
      `(#:modules ((guix build gnu-build-system)
@@ -1354,8 +1355,7 @@ invoking @command{notifymuch} from the post-new hook.")
                   (add-after 'unpack 'patch-notmuch-lib.el
                     (lambda _
                       (substitute* "emacs/notmuch-lib.el"
-                        (("/bin/sh") (which "sh")))
-                      #t))
+                        (("/bin/sh") (which "sh")))))
                   (replace 'configure
                     (lambda* (#:key outputs #:allow-other-keys)
                       (setenv "CC" "gcc")
@@ -1372,15 +1372,13 @@ invoking @command{notifymuch} from the post-new hook.")
                     ;; and try removing this for notmuch versions > 0.31.
                     (lambda _
                       (substitute* "test/T356-protected-headers.sh"
-                        (("\\$NOTMUCH_GMIME_X509_CERT_VALIDITY") "0"))
-                      #t))
+                        (("\\$NOTMUCH_GMIME_X509_CERT_VALIDITY") "0"))))
                   (add-before 'check 'prepare-test-environment
                     (lambda _
                       (setenv "TEST_CC" "gcc")
                       ;; Patch various inline shell invocations.
                       (substitute* (find-files "test" "\\.sh$")
-                        (("/bin/sh") (which "sh")))
-                      #t))
+                        (("/bin/sh") (which "sh")))))
                   (add-after 'install 'make-autoloads
                     (assoc-ref emacs:%standard-phases 'make-autoloads)))))
     (native-inputs
@@ -1835,7 +1833,7 @@ facilities for checking incoming mail.")
   (package
     (name "dovecot")
     ;; Also update dovecot-pigeonhole when updating to a new minor version.
-    (version "2.3.14")
+    (version "2.3.15")
     (source
      (origin
        (method url-fetch)
@@ -1843,7 +1841,7 @@ facilities for checking incoming mail.")
                            (version-major+minor version) "/"
                            "dovecot-" version ".tar.gz"))
        (sha256
-        (base32 "0jm3p52z619v7ajh533g2g7d790k82fk0w7ry0zqlm8ymzrxgcy8"))))
+        (base32 "141manrh54cy8xizr7f8fsa3vdzc2ccfgdz87l9rjylm8mfxvfr1"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -1904,7 +1902,7 @@ It supports mbox/Maildir and its own dbox/mdbox formats.")
   (let ((dovecot-version (version-major+minor (package-version dovecot))))
     (package
       (name "dovecot-pigeonhole")
-      (version "0.5.14")
+      (version "0.5.15")
       (source
        (origin
          (method url-fetch)
@@ -1912,7 +1910,7 @@ It supports mbox/Maildir and its own dbox/mdbox formats.")
                "https://pigeonhole.dovecot.org/releases/" dovecot-version "/"
                "dovecot-" dovecot-version "-pigeonhole-" version ".tar.gz"))
          (sha256
-          (base32 "1lmjzz4kd90wbdslacybizd1dks4bhwmrx39lj8b19naldw0zjk8"))
+          (base32 "1l2h0p8ddsl3ja2lnwk0mfqplqh8n0iw8k27awd3ak7prr88yjg1"))
          (modules '((guix build utils)))
          (snippet
           '(begin
@@ -2067,14 +2065,14 @@ hashing scheme (such as scrypt) plug-in for @code{Dovecot}.")
 (define-public isync
   (package
     (name "isync")
-    (version "1.4.1")
+    (version "1.4.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/isync/isync/"
                            version "/isync-" version ".tar.gz"))
        (sha256 (base32
-                "0l01880fcyqn6xq9n8236ha5n2a3wl5g8rmv22z8nv5hgfsxndhd"))))
+                "0hskfpj4r4q3959k3npyqli353daj3r5d9mfia9bbmig87nyfd8r"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("perl" ,perl)))
@@ -2093,15 +2091,14 @@ mailboxes.  Currently Maildir and IMAP are supported types.")
 (define-public perl-email-abstract
   (package
     (name "perl-email-abstract")
-    (version "3.008")
+    (version "3.009")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://cpan/authors/id/R/RJ/RJBS/"
                            "Email-Abstract-" version ".tar.gz"))
        (sha256
-        (base32
-         "0h42rhvp769wb421cpbbg6v6xjp8iv86mvz70pqgfgf4nsn6jwgw"))))
+        (base32 "1z01wbflg49nbgzl81x260cp8x6qr7xdpz3dkrg82m1fwa9742q4"))))
     (build-system perl-build-system)
     (propagated-inputs
      `(("perl-email-simple" ,perl-email-simple)
@@ -2317,31 +2314,35 @@ format and headers.")
 (define-public libesmtp
   (package
     (name "libesmtp")
-    (version "1.0.6")
+    (version "1.1.0")
     (source
      (origin
-       (method url-fetch)
-       (uri (list (string-append "https://pkgs.fedoraproject.org/repo/pkgs/"
-                                 "libesmtp/libesmtp-" version ".tar.bz2/"
-                                 "bf3915e627fd8f35524a8fdfeed979c8/libesmtp-"
-                                 version ".tar.bz2")
-                  ;; XXX This site is offline, so we fetch Fedora's cached copy
-                  ;; of the source tarball.
-                  (string-append "http://www.stafford.uklinux.net/libesmtp/libesmtp-"
-                                 version ".tar.bz2")))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/libesmtp/libESMTP")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32
-         "02zbniyz7qys1jmx3ghx21kxmns1wc3hmv80gp7ag7yra9f1m9nh"))))
-    (build-system gnu-build-system)
+        (base32 "1bhh8hlsl9597x0bnfl563k2c09b61qnkb9mfyqcmzlq63m1zw5y"))))
+    (build-system meson-build-system)
     (propagated-inputs
      `(("openssl" ,openssl)))
     (home-page "http://www.stafford.uklinux.net/libesmtp/")
     (synopsis "Library for sending mail via remote hosts using SMTP")
-    (description "libESMTP is an SMTP client which manages posting (or
-submission of) electronic mail via a preconfigured Mail Transport Agent (MTA).
-It may be used as part of a Mail User Agent (MUA) or other program that must
-be able to post electronic mail where mail functionality may not be that
-program's primary purpose.")
+    (description
+     "libESMTP is an @acronym{SMTP, Simple Mail Transfer Protocol} client that
+manages posting (or submission of) electronic mail via a preconfigured
+@acronym{MTA, Mail Transport Agent}.
+
+It may be used as part of a @acronym{MUA, Mail User Agent}, or other program
+that must be able to post electronic mail where mail functionality may not be
+that program's primary purpose.
+
+libESMTP's high-level API shields developers from the complexity of SMTP.  It
+transparently handles many SMTP extensions including authentication,
+@acronym{TLS, Transport-Level Security}, and PIPELINING for performance.  Even
+without a pipelining server, libESMTP offers much better performance than would
+be expected from a simple client.")
     (license (list license:lgpl2.1+ license:gpl2+))))
 
 (define-public esmtp
@@ -2560,7 +2561,7 @@ Authentication-Results header seen in the wild.")
 (define-public perl-mail-dkim
   (package
     (name "perl-mail-dkim")
-    (version "0.58")
+    (version "1.20200907")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -2569,7 +2570,7 @@ Authentication-Results header seen in the wild.")
                      ".tar.gz"))
               (sha256
                (base32
-                "0cgkal65qqcy57b21lgij90ba36wl66byw9i76g5yhwaa8ms8hqa"))))
+                "1x8v4pa0447c1xqri1jn96i8vlyjpl6jmz63nb1vifbp16yi3zxb"))))
     (build-system perl-build-system)
     (propagated-inputs
      `(("perl-crypt-openssl-rsa" ,perl-crypt-openssl-rsa)
@@ -3095,118 +3096,83 @@ for OpenSMTPD to extend its functionality.")
     (license (list license:bsd-2 license:bsd-3 ; openbsd-compat
                    license:isc))))             ; everything else
 
-(define libopensmtpd
+(define-public libopensmtpd
   ;; Private source dependency of opensmtpd-filter-dkimsign (by the same
   ;; author), until any project actually uses it in its compiled form.
-  (let ((revision 48))
-    (package
-      (name "libopensmtpd")
-      (version (format #f "0.0.0-~a" revision))
-      (source
-       (origin
-         (method svn-fetch)
-         (uri (svn-reference
-               (url "http://imperialat.at/dev/libopensmtpd/")
-               (revision revision)))
-         (sha256
-          (base32 "04fgibpi6q0c3468ww3z7gsvraz0gyfps0c2dj8mdyri636c0x0s"))
-         (file-name (git-file-name name version))))
-      (build-system gnu-build-system)
-      (arguments
-       `(#:make-flags
-         (list "-f" "Makefile.gnu"
-               (string-append "CC=" ,(cc-for-target))
-               (string-append "LOCALBASE=" (assoc-ref %outputs "out")))
-         #:tests? #f                    ; no test suite
-         #:phases
-         (modify-phases %standard-phases
-           (add-after 'unpack 'inherit-ownership
-             (lambda _
-               (substitute* "Makefile.gnu"
-                 (("-o \\$\\{BINOWN\\} -g \\$\\{BINGRP\\}") ""))
-               #t))
-           (delete 'configure)          ; no configure script
-           (add-before 'install 'create-output-directories
-             (lambda* (#:key outputs #:allow-other-keys)
-               (let ((out (assoc-ref outputs "out")))
-                 (mkdir-p (string-append out "/lib"))
-                 #t)))
-           (add-after 'install 'install-header-file
-             (lambda* (#:key make-flags outputs #:allow-other-keys)
-               (let ((out (assoc-ref outputs "out")))
-                 (mkdir-p (string-append out "/include"))
-                 (apply invoke "make" "includes" make-flags))))
-           (add-after 'install 'install-man-page
-             (lambda* (#:key outputs #:allow-other-keys)
-               (let* ((out (assoc-ref outputs "out"))
-                      (man3 (string-append out "/share/man/man3")))
-                 ;; There is no make target for this.
-                 (install-file "osmtpd_run.3" man3)
-                 #t))))))
-      (inputs
-       `(("libevent" ,libevent)))
-      (home-page "http://imperialat.at/dev/libopensmtpd/")
-      (synopsis "OpenSMTPd filter C API")
-      (description
-       "The @code{osmtpd} API is an event-based C programming interface for
+  (package
+    (name "libopensmtpd")
+    (version "0.7")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (list (string-append "https://imperialat.at/releases/"
+                                 "libopensmtpd-" version ".tar.gz")
+                  (string-append "https://distfiles.sigtrap.nl/"
+                                 "libopensmtpd-" version ".tar.gz")))
+       (sha256
+        (base32 "04x610mvwba7m0n9h0wbnsw58rb4khq44fm4blkgjqvh3bhxbmnd"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags
+       (list "-f" "Makefile.gnu"
+             (string-append "CC=" ,(cc-for-target))
+             (string-append "LOCALBASE=" (assoc-ref %outputs "out")))
+       #:tests? #f                      ; no test suite
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'inherit-ownership
+           (lambda _
+             (substitute* "Makefile.gnu"
+               (("-o \\$\\{...OWN\\} -g \\$\\{...GRP\\}") ""))))
+         (delete 'configure))))         ; no configure script
+    (native-inputs
+     `(("mandoc" ,mandoc)))           ; silently installs empty man page without
+    (inputs
+     `(("libevent" ,libevent)))
+    (home-page "https://imperialat.at/dev/libopensmtpd/")
+    (synopsis "OpenSMTPd filter C API")
+    (description
+     "The @code{osmtpd} API is an event-based C programming interface for
 writing OpenSMTPd filters.")
-      (license license:expat))))
+    (license license:expat)))
 
 (define-public opensmtpd-filter-dkimsign
   (package
     (name "opensmtpd-filter-dkimsign")
-    ;; The .arch repackaging provides not only a usable Makefile, but patches
-    ;; the source to actually build on GNU, e.g., by making pledge() optional.
-    ;; It's effectively the portable branch that upstream lacks at this time.
-    (version "0.2.arch2")               ; also update both native-inputs
+    (version "0.5")
     (source
      (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/de-vri-es/filter-dkimsign")
-             (commit (string-append "v" version))))
+       (method url-fetch)
+       (uri (list (string-append "https://imperialat.at/releases/"
+                                 "filter-dkimsign-" version ".tar.gz")
+                  (string-append "https://distfiles.sigtrap.nl/"
+                                 "filter-dkimsign-" version ".tar.gz")))
        (sha256
-        (base32 "1dv6184h0gq2safnc7ln4za3arbafzc1xwkgwmiihqcjvdyxig0c"))
-       (file-name (git-file-name name version))))
+        (base32 "0jwp47ixibnz8rghn193bk2hxh1j1zfrnidml18j7d7cylxfrd55"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
-       (list (string-append "CC=" ,(cc-for-target)))
+       (list "-f" "Makefile.gnu"
+             (string-append "CC=" ,(cc-for-target))
+             "HAVE_ED25519=yep-but-is-openssl-only"
+             (string-append "LOCALBASE=" (assoc-ref %outputs "out")))
        #:tests? #f                      ; no test suite
        #:phases
        (modify-phases %standard-phases
-         (replace 'unpack
-           (lambda* (#:key source inputs #:allow-other-keys)
-             (copy-recursively source "filter-dkimsign")
-             (copy-recursively (assoc-ref inputs "libopensmtpd-source")
-                               "libopensmtpd")
-             (copy-file (assoc-ref inputs "Makefile") "Makefile")
-             #t))
-         (delete 'configure)            ; no configure script
-         (replace 'install
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out     (assoc-ref outputs "out"))
-                    (libexec (string-append out "/libexec/opensmtpd"))
-                    (man8    (string-append out "/share/man/man8")))
-               (chdir "filter-dkimsign")
-               (install-file "filter-dkimsign" libexec)
-               (install-file "filter-dkimsign.8" man8)
-               #t))))))
+         (add-after 'unpack 'patch-Makefile.gnu
+           (lambda _
+             (substitute* "Makefile.gnu"
+               (("pkg-config") ,(pkg-config-for-target))
+               (("-o \\$\\{...OWN\\} -g \\$\\{...GRP\\}") ""))))
+         (delete 'configure))))         ; no configure script
     (native-inputs
-     `(("Makefile"
-        ,(origin
-           (method url-fetch)
-           (uri (string-append
-                 "https://aur.archlinux.org/cgit/aur.git/plain/Makefile"
-                 "?h=opensmtpd-filter-dkimsign"
-                 "&id=58393470477a2ff2a58f9d72f5d851698067539f"))
-           (sha256
-            (base32 "0da5qr9hfjkf07ybvfva967njmf2x0b82z020r6v5f93jzsbqx92"))
-           (file-name (string-append name "-" version "-Makefile"))))
-       ("libopensmtpd-source" ,(package-source libopensmtpd))))
+     `(("mandoc" ,mandoc)))           ; silently installs empty man page without
     (inputs
      `(("libevent" ,libevent)
-       ("libressl" ,libressl)))         ; openssl works too but follow opensmtpd
+       ("libopensmtpd" ,libopensmtpd)
+       ;; XXX Our OpenSMTPd package uses libressl, but this package currently
+       ;; supports HAVE_ED25519 only with openssl.  Switch back when possible.
+       ("openssl" ,openssl)))
     (home-page "http://imperialat.at/dev/filter-dkimsign/")
     (synopsis "OpenSMTPd filter for signing mail with DKIM")
     (description
@@ -3658,7 +3624,7 @@ operators and scripters.")
 (define-public alpine
   (package
     (name "alpine")
-    (version "2.24.1")
+    (version "2.24.2")
     (source
      (origin
        (method git-fetch)
@@ -3671,7 +3637,7 @@ operators and scripters.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0dvp6m9xdxycc2lh4cbp6wvq0bkqmmkzs4c4aqsa321p7y03vs9q"))
+        (base32 "0ibwss04j4qbhpd3jcw3d4xjf8jnmb9fi3sz58a99xw3awkfjabd"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -4380,6 +4346,24 @@ black lists.  Each message is analysed by Rspamd and given a spam
 score.")
     (home-page "https://www.rspamd.com/")
     (license license:asl2.0)))
+
+(define-public undbx
+  (package
+    (name "undbx")
+    (version "0.21")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://sourceforge/undbx/undbx-"
+                                  version ".tar.gz"))
+              (sha256
+               (base32
+                "0ncs1dzhrn9nlaxpyap2ipf61fc7k9bkkqacp3w6bngfj2c0p6yj"))))
+    (build-system gnu-build-system)
+    (home-page "https://undbx.sourceforge.io/")
+    (synopsis "Extract email messages from Outlook Express .dbx files")
+    (description "This package provides a tool to extract, recover and
+undelete email messages from Outlook Express .dbx files.")
+    (license license:gpl3+)))
 
 (define-public crm114
   (package

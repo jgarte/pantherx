@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2021 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2014 Ian Denhardt <ian@zenhack.net>
 ;;; Copyright © 2013, 2015 Andreas Enge <andreas@enge.fr>
@@ -9,12 +9,15 @@
 ;;; Copyright © 2016, 2017, 2018 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
-;;; Copyright © 2017, 2018, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2017, 2018, 2019, 2020, 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2017–2019, 2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2018 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2021 Solene Rapenne <solene@perso.pw>
+;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
+;;; Copyright © 2021 Matthew James Kraai <kraai@ftbfs.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -165,6 +168,7 @@ living in the same process.")
   (package
     (name "gnutls")
     (version "3.6.15")
+    (replacement gnutls-3.6.16)
     (source (origin
               (method url-fetch)
               ;; Note: Releases are no longer on ftp.gnu.org since the
@@ -258,6 +262,68 @@ required structures.")
     (properties '((ftp-server . "ftp.gnutls.org")
                   (ftp-directory . "/gcrypt/gnutls")))))
 
+;; Replacement package to fix CVE-2021-20305.
+(define gnutls-3.6.16
+  (package
+    (inherit gnutls)
+    (version "3.6.16")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://gnupg/gnutls/v"
+                                  (version-major+minor version)
+                                  "/gnutls-" version ".tar.xz"))
+              (patches (search-patches "gnutls-skip-trust-store-test.patch"
+                                       "gnutls-cross.patch"))
+              (sha256
+               (base32
+                "1czk511pslz367shf32f2jvvkp7y1323bcv88c2qng98mj0v6y8v"))))
+    (arguments
+     (if (%current-target-system)
+         (substitute-keyword-arguments (package-arguments gnutls)
+           ((#:phases phases '%standard-phases)
+            `(modify-phases ,phases
+               (add-before 'configure 'build-eccdata-headers
+                 (lambda* (#:key configure-flags #:allow-other-keys)
+                   ;; Build the 'ecc/eccdata' program using the native
+                   ;; compiler, not the cross-compiler as happens by default,
+                   ;; and use it to build lib/nettle/ecc/ecc-*.h.  In GnuTLS
+                   ;; 3.6.15, this was not necessary because the tarball
+                   ;; contained pre-generated lib/nettle/ecc/ecc-*.h files as
+                   ;; well as 'ecc/eccdata.stamp'.
+                   (let ((jobs  (number->string (parallel-job-count)))
+                         (patch (assoc-ref %standard-phases
+                                           'patch-generated-file-shebangs)))
+                     (mkdir "+native-build")
+                     (with-directory-excursion "+native-build"
+                       ;; Build natively, with the native compiler, GMP, etc.
+                       (invoke "../configure"
+                               (string-append "SHELL=" (which "sh"))
+                               (string-append "CONFIG_SHELL=" (which "sh"))
+                               "NETTLE_CFLAGS=   " "NETTLE_LIBS=   "
+                               "HOGWEED_CFLAGS=   " "HOGWEED_LIBS=   "
+                               "LIBTASN1_CFLAGS=   " "LIBTASN1_LIBS=   "
+                               "ac_cv_func_nettle_rsa_sec_decrypt=yes"
+                               "--without-p11-kit" "--disable-guile")
+                       (patch)
+                       (invoke "make" "-C" "gl" "-j" jobs)
+                       (invoke "make" "-C" "lib/nettle" "V=1" "-j" jobs))
+
+                     ;; Copy the files we obtained during native build.
+                     (for-each (lambda (file)
+                                 (install-file file "lib/nettle/ecc"))
+                               (find-files
+                                "+native-build/lib/nettle/ecc"
+                                "^(eccdata\\.stamp|ecc-.*\\.h)$"))))))))
+         (package-arguments gnutls)))
+    (native-inputs
+     (if (%current-target-system)
+         `(("libtasn1" ,libtasn1)                 ;for 'ecc/eccdata'
+           ("libidn2" ,libidn2)
+           ("nettle" ,nettle)
+           ("zlib" ,zlib)
+           ,@(package-native-inputs gnutls))
+         (package-native-inputs gnutls)))))
+
 (define-public gnutls/guile-2.0
   ;; GnuTLS for Guile 2.0.
   (package/inherit gnutls
@@ -289,6 +355,7 @@ required structures.")
   (package
    (name "openssl")
    (version "1.1.1j")
+   (replacement openssl-1.1.1k)
    (source (origin
              (method url-fetch)
              (uri (list (string-append "https://www.openssl.org/source/openssl-"
@@ -422,6 +489,25 @@ required structures.")
    (license license:openssl)
    (home-page "https://www.openssl.org/")))
 
+;; Replacement package to fix CVE-2021-3449 and CVE-2021-3450.
+(define openssl-1.1.1k
+  (package
+    (inherit openssl)
+    (version "1.1.1k")
+    (source (origin
+              (method url-fetch)
+              (uri (list (string-append "https://www.openssl.org/source/openssl-"
+                                        version ".tar.gz")
+                         (string-append "ftp://ftp.openssl.org/source/"
+                                        "openssl-" version ".tar.gz")
+                         (string-append "ftp://ftp.openssl.org/source/old/"
+                                        (string-trim-right version char-set:letter)
+                                        "/openssl-" version ".tar.gz")))
+              (patches (search-patches "openssl-1.1-c-rehash-in.patch"))
+              (sha256
+               (base32
+                "1rdfzcrxy9y38wqdw5942vmdax9hjhgrprzxm42csal7p5shhal9"))))))
+
 (define-public openssl-1.0
   (package
     (inherit openssl)
@@ -518,31 +604,29 @@ required structures.")
 (define-public libressl
   (package
     (name "libressl")
-    (version "3.1.5")
+    (version "3.3.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://openbsd/LibreSSL/"
                                   "libressl-" version ".tar.gz"))
               (sha256
                (base32
-                "1504a1sf43frw43j14pij0q1f48rm5q86ggrlxxhw708qp7ds4rc"))))
+                "0rihprcgxsydsbcqgd1952k2cfn4jmp7rlyp1c6sglfc6rdmcwd4"))))
     (build-system gnu-build-system)
     (arguments
-     ;; Do as if 'getentropy' were missing: Linux kernels before 3.17 lack its
-     ;; underlying 'getrandom' system call and ENOSYS isn't properly handled.
-     ;; See <https://lists.gnu.org/archive/html/guix-devel/2017-04/msg00235.html>.
-     '(#:configure-flags '("ac_cv_func_getentropy=no"
-                           ;; Provide a TLS-enabled netcat.
-                           "--enable-nc")))
-    (native-search-paths
-     (list (search-path-specification
-            (variable "SSL_CERT_DIR")
-            (separator #f)              ;single entry
-            (files '("etc/ssl/certs")))
-           (search-path-specification
-            (variable "SSL_CERT_FILE")
-            (separator #f)              ;single entry
-            (files '("etc/ssl/certs/ca-certificates.crt")))))
+     `(#:configure-flags
+       (list
+        ;; Do as if 'getentropy' were missing: Linux kernels before 3.17 lack its
+        ;; underlying 'getrandom' system call and ENOSYS isn't properly handled.
+        ;; See <https://lists.gnu.org/archive/html/guix-devel/2017-04/msg00235.html>.
+        "ac_cv_func_getentropy=no"
+        ;; FIXME It's using it's own bundled certificate, instead it should
+        ;; behave like OpenSSL by using environment variables.
+        (string-append "--with-openssldir=" %output
+                       "/share/libressl-"
+                       ,(package-version this-package))
+        ;; Provide a TLS-enabled netcat.
+        "--enable-nc")))
     (home-page "https://www.libressl.org/")
     (synopsis "SSL/TLS implementation")
     (description "LibreSSL is a version of the TLS/crypto stack, forked from
@@ -560,13 +644,13 @@ netcat implementation that supports TLS.")
   (package
     (name "python-acme")
     ;; Remember to update the hash of certbot when updating python-acme.
-    (version "1.15.0")
+    (version "1.16.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "acme" version))
               (sha256
                (base32
-                "0kgf1d3gl7dg1rz3q4093kf8g0p2d0m40c7qmn96ihz2224wa307"))))
+                "0mvqc8z30sxgr1m4p3yi3rm76sndnvl5khv4ybwx6zyq42403y51"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -614,7 +698,7 @@ netcat implementation that supports TLS.")
               (uri (pypi-uri "certbot" version))
               (sha256
                (base32
-                "1qcznszgqdgx1nhk4vdi896gknvx8rg4w8iw15lwqg6byhiyazyv"))))
+                "0z90pcndbks8f62f47m5nkqcmkabb8r526by29lp30x4gjc0xs04"))))
     (build-system python-build-system)
     (arguments
      `(,@(substitute-keyword-arguments (package-arguments python-acme)
@@ -862,7 +946,7 @@ then ported to the GNU / Linux environment.")
     (name "mbedtls-apache")
     ;; XXX Check whether ‘-Wformat-signedness’ still breaks mbedtls-for-hiawatha
     ;; when updating.
-    (version "2.23.0")
+    (version "2.26.0")
     (source
      (origin
        (method git-fetch)
@@ -870,8 +954,17 @@ then ported to the GNU / Linux environment.")
              (url "https://github.com/ARMmbed/mbedtls")
              (commit (string-append "mbedtls-" version))))
        (sha256
-        (base32 "13fa9h2i989cbf8n8c0j019mshv6wg213va18my1s787lhcq2d62"))
-       (file-name (git-file-name name version))))
+        (base32 "0scwpmrgvg6q7rvqkc352d2fqlsx0aylcbyibcp1f1rsn8iiif2m"))
+       (file-name (git-file-name name version))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Can be removed with the next version.
+           ;; Reduce level of format truncation warnings due to false positives.
+           ;; https://github.com/ARMmbed/mbedtls/commit/2065a8d8af27c6cb1e40c9462b5933336dca7434
+           (substitute* "CMakeLists.txt"
+             (("Wformat-truncation=2") "Wformat-truncation"))
+           #t))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
@@ -892,7 +985,7 @@ then ported to the GNU / Linux environment.")
 for developers to include cryptographic and SSL/TLS capabilities in their
 (embedded) products, facilitating this functionality with a minimal
 coding footprint.")
-    (home-page "https://tls.mbed.org")
+    (home-page "https://www.trustedfirmware.org/projects/mbed-tls/")
     (license license:asl2.0)))
 
 ;; The Hiawatha Web server requires some specific features to be enabled.
@@ -1026,7 +1119,7 @@ derived from Mozilla's collection.")
 (define-public s2n
   (package
     (name "s2n")
-    (version "1.0.0")
+    (version "1.0.10")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1035,7 +1128,7 @@ derived from Mozilla's collection.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1q6kmgwb8jxmc4ijzk9pkqzz8lsbfsv9hyzqvy944w7306zx1r5h"))))
+                "0ampvh2n235hhd9nabgjjvja7d5r5kj45q56ass1k8g52a6xg0jq"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f                      ; tests fail to build for static library
@@ -1045,7 +1138,15 @@ derived from Mozilla's collection.")
     (propagated-inputs
      `(("openssl" ,openssl)
        ("openssl:static" ,openssl "static")))
-    (synopsis "SSL/TLS implementation")
-    (description "This library provides a C99 implementation of SSL/TLS.")
+    (synopsis "SSL/TLS implementation in C99")
+    (description
+     "This library provides a C99 implementation of SSL/TLS.  It is designed to
+be familiar to users of the widely-used POSIX I/O APIs.  It supports blocking,
+non-blocking, and full-duplex I/O.  There are no locks or mutexes.
+
+As it can be difficult to keep track of which encryption algorithms and
+protocols are best to use, s2n-tls features a simple API to use the latest
+default set of preferences.  Remaining on a specific version for backwards
+compatibility is also supported.")
     (home-page "https://github.com/awslabs/s2n")
     (license license:asl2.0)))

@@ -5,7 +5,7 @@
 ;;; Copyright © 2015 Sou Bunnbu <iyzsong@gmail.com>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2016, 2017 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2015, 2016, 2017, 2018 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2015, 2016, 2017, 2018, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2015 Raimon Grau <raimonster@gmail.com>
 ;;; Copyright © 2016 Mathieu Lirzin <mthl@gnu.org>
 ;;; Copyright © 2016, 2017 Leo Famulari <leo@famulari.name>
@@ -13,7 +13,7 @@
 ;;; Copyright © 2016 Jan Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016–2021 Tobias Geerinckx-Rice <me@tobias.gr>
-;;; Copyright © 2016, 2017, 2018, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2017 Adriano Peluso <catonano@gmail.com>
 ;;; Copyright © 2017 Gregor Giesen <giesen@zaehlwerk.net>
 ;;; Copyright © 2017 Alex Vong <alexvong1995@gmail.com>
@@ -31,6 +31,8 @@
 ;;; Copyright © 2021 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2021 Felix Gruber <felgru@posteo.net>
 ;;; Copyright © 2021 Guillaume Le Vaillant <glv@posteo.net>
+;;; Copyright © 2021 David Larsson <david.larsson@selfhosted.xyz>
+;;; Copyright © 2021 Matthew James Kraai <kraai@ftbfs.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -120,6 +122,7 @@ the entire document.")
   (package
     (name "expat")
     (version "2.2.9")
+    (replacement expat-2.4.1)
     (source (let ((dot->underscore (lambda (c) (if (char=? #\. c) #\_ c))))
               (origin
                 (method url-fetch)
@@ -142,6 +145,24 @@ the entire document.")
 stream-oriented parser in which an application registers handlers for
 things the parser might find in the XML document (like start tags).")
     (license license:expat)))
+
+;; Replacement package to fix CVE-2013-0340.
+(define expat-2.4.1
+  (package
+    (inherit expat)
+    (version "2.4.1")
+    (source (let ((dot->underscore (lambda (c) (if (char=? #\. c) #\_ c))))
+              (origin
+                (method url-fetch)
+                (uri (list (string-append "mirror://sourceforge/expat/expat/"
+                                          version "/expat-" version ".tar.xz")
+                           (string-append
+                            "https://github.com/libexpat/libexpat/releases/download/R_"
+                            (string-map dot->underscore version)
+                            "/expat-" version ".tar.xz")))
+                (sha256
+                 (base32
+                  "0spvyb9d3hijs4ys3x64cfmilsynl8kv6clfahv8d4lvp86js0yg")))))))
 
 (define-public libebml
   (package
@@ -217,6 +238,19 @@ hierarchical form with variable field lengths.")
      "Libxml2 is the XML C parser and toolkit developed for the Gnome
 project (but it is usable outside of the Gnome platform).")
     (license license:x11)))
+
+(define-public libxml2-xpath0
+  (package/inherit libxml2
+    (name "libxml2-xpath0")
+    (source (origin
+              (inherit (package-source libxml2))
+              (patches (append (search-patches
+                                "libxml2-xpath0-Add-option-xpath0.patch")
+                               (origin-patches (package-source libxml2))))))
+    (description
+     "Libxml2-xpath0 is like libxml2 but with a patch applied that
+provides an @code{--xpath0} option to @command{xmllint} that enables it
+to output XPath results with a null delimiter.")))
 
 (define-public libxlsxwriter
   (package
@@ -522,14 +556,14 @@ the @code{Graph} class and write it out in a specific file format.")
 (define-public perl-xml-atom
   (package
     (name "perl-xml-atom")
-    (version "0.42")
+    (version "0.43")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://cpan/authors/id/M/MI/MIYAGAWA/"
                                   "XML-Atom-" version ".tar.gz"))
               (sha256
                (base32
-                "1wa8kfy1w4mg7kzxim4whyprkn48a2il6fap0b947zywknw4c6y6"))))
+                "0b8bpdnvz9sqwjhjkydbzy4karb7nn6i15b8g4mczrznlsb3hnaf"))))
     (build-system perl-build-system)
     (arguments
      `(#:phases
@@ -696,14 +730,14 @@ XML parser and the high performance DOM implementation.")
 (define-public perl-xml-libxml-simple
   (package
     (name "perl-xml-libxml-simple")
-    (version "0.99")
+    (version "1.01")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://cpan/authors/id/M/MA/MARKOV/"
                                   "XML-LibXML-Simple-" version ".tar.gz"))
               (sha256
                (base32
-                "0i4ybiqdnvnbfxqslw2y392kvy7i752dl8n99bqiqv5kzk4lbzhl"))))
+                "19k50d80i9dipsl6ln0f4awv9wmdg0xm3d16z8mngmvh9c8ci66d"))))
     (build-system perl-build-system)
     (propagated-inputs
      `(("perl-file-slurp-tiny" ,perl-file-slurp-tiny)
@@ -762,14 +796,14 @@ checks.")
 (define-public perl-xml-rss
   (package
     (name "perl-xml-rss")
-    (version "1.61")
+    (version "1.62")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://cpan/authors/id/S/SH/SHLOMIF/"
                                   "XML-RSS-" version ".tar.gz"))
               (sha256
                (base32
-                "03f983l2dnkvcw6iyg1s0xmv5wn793d3kvqlshmhm01ibp7ffvzs"))))
+                "0klb8ghd405pdkmn25lp3i4j2lfydz8w581sk51p3zy788s0c9yk"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-build" ,perl-module-build)
@@ -844,7 +878,7 @@ building Perl SAX2 XML parsers, filters, and drivers.")
     (home-page "https://metacpan.org/release/XML-SAX-Base")
     (synopsis "Base class for SAX Drivers and Filters")
     (description "This module has a very simple task - to be a base class for
-PerlSAX drivers and filters.  It's default behaviour is to pass the input
+PerlSAX drivers and filters.  Its default behaviour is to pass the input
 directly to the output unchanged.  It can be useful to use this module as a
 base class so you don't have to, for example, implement the characters()
 callback.")
@@ -962,8 +996,7 @@ This module provide functions which simplify writing tests for
                 "0psr5pwsk2biz2bfkigmx04v2rfhs6ybwcfmcrrg7gvh9bpp222b"))))
     (build-system perl-build-system)
     (propagated-inputs
-     `(("perl-carp" ,perl-carp)
-       ("perl-log-report" ,perl-log-report)
+     `(("perl-log-report" ,perl-log-report)
        ("perl-xml-compile-tester" ,perl-xml-compile-tester)
        ("perl-xml-libxml" ,perl-xml-libxml)
        ("perl-scalar-list-utils" ,perl-scalar-list-utils)
@@ -1057,14 +1090,14 @@ server, collect the answer, and finally decoding the XML to Perl.")
 (define-public perl-xml-feed
   (package
     (name "perl-xml-feed")
-    (version "0.59")
+    (version "0.63")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://cpan/authors/id/D/DA/DAVECROSS/"
                                   "XML-Feed-" version ".tar.gz"))
               (sha256
                (base32
-                "1z1a88bpy64j42bbyl8acbfl3dn9iaz47gx6clkgy5sbn4kr0kgk"))))
+                "04frqhikmyq0i9ldraisbvppyjhqg6gz83l2rqpmp4f2h9n9k2lw"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-build" ,perl-module-build)
@@ -2554,7 +2587,7 @@ for Python's ElementTree XML data structures, both for the standard
 ElementTree library and for the @uref{http://lxml.de, lxml.etree} library.
 
 For lxml.etree this package can be useful for providing XPath 2.0 selectors,
-because lxml.etree already has it's own implementation of XPath 1.0.")
+because lxml.etree already has its own implementation of XPath 1.0.")
     (license license:expat)))
 
 (define-public python-lxml

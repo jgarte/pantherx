@@ -9,6 +9,7 @@
 ;;; Copyright © 2020 Guy Fleury Iteriteka <gfleury@disroot.org>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020 Prafulla Giri <pratheblackdiamond@gmail.com>
+;;; Copyright © 2021 Nicolò Balzarotti <nicolo@nixo.xyz>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -190,7 +191,7 @@ of categories with some of the activities available in that category.
     (inputs
      `(("openssl" ,openssl)
        ("python" ,python-wrapper)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtgraphicaleffects" ,qtgraphicaleffects)
        ("qtmultimedia" ,qtmultimedia)
@@ -216,6 +217,61 @@ Currently available boards include:
 @end enumerate\n")
     (license (list license:silofl1.1    ; bundled fonts
                    license:gpl3+))))
+
+(define-public gotypist
+  (let ((revision "0")
+        (commit "03f8618f8e23acdaa94cda3bcf197da520db8dd4"))
+    (package
+      (name "gotypist")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/KappaDistributive/gotypist")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0sjndaspqfzffjxz388m384wqz5lzbiw4cwpi688k5aq7n05jh0f"))))
+      (build-system go-build-system)
+      (arguments
+       `(#:unpack-path "github.com/KappaDistributive/gotypist"
+         #:import-path "github.com/KappaDistributive/gotypist/v1"
+         #:install-source? #f
+         #:phases
+         (modify-phases %standard-phases
+           (add-before 'build 'install-data
+             (lambda* (#:key import-path unpack-path outputs #:allow-other-keys)
+               (let* ((out  (assoc-ref outputs "out"))
+                      (data (string-append out "/share/gotypist/data")))
+                 (with-directory-excursion "src"
+                   (with-directory-excursion import-path
+                     (substitute* "lesson.go"
+                       (("\"data/")
+                        (format #f "\"~a/" data))))
+                   (with-directory-excursion unpack-path
+                     (mkdir-p data)
+                     (copy-recursively "data" data))))))
+           (add-after 'install 'rename-executable
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let* ((out (assoc-ref outputs "out"))
+                      (bin (string-append out "/bin")))
+                 (with-directory-excursion bin
+                   (rename-file "v1" "gotypist"))))))))
+      (native-inputs
+       `(("go-github-com-gizak-termui" ,go-github-com-gizak-termui)
+         ("go-github-com-stretchr-testify" ,go-github-com-stretchr-testify)))
+      (home-page "https://github.com/KappaDistributive/gotypist")
+      (synopsis "Simple typing trainer for text terminals")
+      (description
+       "Gotypist is a simple typing tutor for text terminals, similar to
+gtypist but with no instruction.  Hence it's best suited for people who already
+know how to touch type and wish to improve their typing accuracy and/or speed.
+
+You can provide your own lesson text, choose from the included samples, or ask
+@command{gotypist} to construct a random lesson from a fixed list of the most
+frequently used words in American English.")
+      (license license:expat))))
 
 (define-public tipp10
   (package
@@ -259,7 +315,7 @@ Currently available boards include:
                ;; Recreate Makefile
                (invoke "qmake")))))))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)))
     (home-page "https://www.tipp10.com/")
     (synopsis "Touch typing tutor")
@@ -614,14 +670,14 @@ Portuguese, Spanish and Italian.")
 (define-public fet
   (package
     (name "fet")
-    (version "6.0.2")
+    (version "6.0.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.lalescu.ro/liviu/fet/download/"
                            "fet-" version ".tar.bz2"))
        (sha256
-        (base32 "08q265i43bnj9syh3xlp11fr47xmzb0nma3nnwm76xq314102f0f"))))
+        (base32 "16yajwbvm2ain1p2h81qfm8pbrdp70zljck67j9yijwyr6xqdj2a"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -653,14 +709,14 @@ hours.")
 (define-public klavaro
   (package
     (name "klavaro")
-    (version "3.12")
+    (version "3.13")
     (source
       (origin
         (method url-fetch)
         (uri (string-append "mirror://sourceforge/klavaro/klavaro-"
                             version ".tar.bz2"))
         (sha256
-         (base32 "0ymrmgllyjk9wp1f1ayw51xc3myar8ld9a5531wdbrym0xzy4l64"))))
+         (base32 "0z6c3lqikk50mkz3ipm93l48qj7b98lxyip8y6ndg9y9k0z0n878"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("intltool" ,intltool)
@@ -711,7 +767,7 @@ language and very flexible regarding to new or unknown keyboard layouts.")
        ("kxmlgui" ,kxmlgui)
        ("libxcb" ,libxcb)
        ("libxkbfile" ,libxkbfile)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtgraphicaleffects" ,qtgraphicaleffects)
        ("qtquickcontrols2" ,qtquickcontrols2)
@@ -726,6 +782,43 @@ each key.  A collection of lessons are included for a wide range of different
 languages and keyboard layouts, and typing statistics are used to dynamically
 adjust the level of difficulty.")
     (license license:gpl2)))
+
+(define-public kanatest
+  ;; Latest release tarball is 0.4.8, which is really old and does not build
+  ;; commit on sourceforge are not tagged, we take the latest
+  (let ((commit "860e790a35f547cc96669f805d371a5ba3d8daff")
+        (revision "0"))
+    (package
+      (name "kanatest")
+      (version (git-version "0.4.10" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://git.code.sf.net/p/kanatest/code")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0dz63m9p4ggzw0yb309qmgnl664qb5q268vaa3i9v0i8qsl66d78"))))
+      (build-system gnu-build-system)
+      (native-inputs
+       `(("gettext" ,gettext-minimal)   ; for msgfmt
+         ("pkg-config" ,pkg-config)))
+      (inputs
+       `(("libxml2" ,libxml2)
+         ("gtk+" ,gtk+)))
+      (home-page "https://kanatest.sourceforge.io/")
+      (synopsis "Hiragana and Katakana simple flashcard tool")
+      (description "Kanatest is a Japanese kana (Hiragana and Katakana) simple
+flashcard tool.
+
+During test the Kanatest displays randomly selected kana char (respecting mode
+and lesson) and waits for user answer expected as romaji equivalent.  This
+process continues until all questions will be answered or all questions will
+be answered correctly (depends on options).  At the end of test a short info
+about drilling time and correctness ratio is displayed.  The results are
+stored and user can review his performance in any time.")
+      (license license:gpl2+))))
 
 (define-public anki
   (package

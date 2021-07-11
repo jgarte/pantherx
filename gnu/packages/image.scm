@@ -1408,7 +1408,7 @@ convert, manipulate, filter and display a wide variety of image formats.")
 (define-public jasper
   (package
     (name "jasper")
-    (version "2.0.27")
+    (version "2.0.32")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1417,7 +1417,7 @@ convert, manipulate, filter and display a wide variety of image formats.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0mrnazk8qla7nn59xad86gmrf5fzqcv74j5xhcdrxbgfw67l17zd"))))
+                "0hhggh2jxp1wn7nwzvbx2z1vi1ih8wmz4av17bljyn0c3mxjs22k"))))
     (build-system cmake-build-system)
     (inputs
      `(("libjpeg" ,libjpeg-turbo)))
@@ -1824,7 +1824,7 @@ parsing, viewing, modifying, and saving this metadata.")
     (native-inputs
      `(("qttools" ,qttools)))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)))
     (arguments
      `(#:tests? #f))                    ;no tests
@@ -1875,14 +1875,14 @@ stdout.")
 (define-public gifsicle
   (package
    (name "gifsicle")
-   (version "1.92")
+   (version "1.93")
    (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.lcdf.org/gifsicle/gifsicle-"
                            version ".tar.gz"))
        (sha256
-        (base32 "0rffpzxcak19k6cngpxn73khvm3z1gswrqs90ycdzzb53p05ddas"))))
+        (base32 "0irljjm76anicsm5rfkpqxd6x105aa8f0sky13dc3x1bfdwp1xlj"))))
    (build-system gnu-build-system)
    (arguments
     '(#:phases
@@ -2126,7 +2126,7 @@ This package can be used to create @code{favicon.ico} files for web sites.")
 (define-public libavif
   (package
     (name "libavif")
-    (version "0.9.0")
+    (version "0.9.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2135,7 +2135,7 @@ This package can be used to create @code{favicon.ico} files for web sites.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1aw41m8ddrckq375w0lv2zd4ybhccsy1hw4f9kipppwxhgvk17gf"))))
+                "1yxmgjlxm1srm98zyj79bj8r8vmg67daqnq0ggcvxknq54plkznk"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags '("-DAVIF_CODEC_AOM=ON" "-DAVIF_CODEC_DAV1D=ON"
@@ -2167,7 +2167,7 @@ by AOM, including with alpha.")
 (define-public libheif
   (package
     (name "libheif")
-    (version "1.11.0")
+    (version "1.12.0")
     (source
      (origin
        (method git-fetch)
@@ -2176,7 +2176,7 @@ by AOM, including with alpha.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "036n63vlk4sk7y25q2kzyvvw4r5vv323ysbmbrcaprg9hdyjqgf5"))))
+        (base32 "0cp2d216hp7gw3n56x3g5q5n8jb9ganyanrlibxw8fw16il8nca6"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f)) ;no test target although there is a tests folder

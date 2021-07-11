@@ -7,7 +7,7 @@
 ;;; Copyright © 2017 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
-;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
+;;; Copyright © 2020, 2021 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2021 WinterHound <winterhound@yandex.com>
@@ -35,8 +35,8 @@
   #:use-module (guix packages)
   #:use-module (guix utils)
   #:use-module (guix build-system cmake)
-  #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
+  #:use-module (guix build-system meson)
   #:use-module (guix build-system python)
   #:use-module (guix build-system qt)
   #:use-module (gnu packages)
@@ -74,6 +74,7 @@
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages regex)
   #:use-module (gnu packages ruby)
+  #:use-module (gnu packages sphinx)
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages tcl)
@@ -130,7 +131,7 @@
      `(("inxi" ,inxi-minimal)
        ("libdbusmenu-qt" ,libdbusmenu-qt)
        ("qca" ,qca)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)
        ("qtscript" ,qtscript)
        ("qtsvg" ,qtsvg)
@@ -189,14 +190,14 @@ SILC and ICB protocols via plugins.")
 (define-public weechat
   (package
     (name "weechat")
-    (version "3.1")
+    (version "3.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://weechat.org/files/src/weechat-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "1xx4fx7785yw3ml3k1z08h3qvrizvcypwl0j6jc7d7qim9sjjnm5"))))
+                "1a47knznlm9f2f83d71s3c4fm50m6iq6iq1bvp4m61p8fkrsva1r"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("gettext" ,gettext-minimal)
@@ -241,7 +242,7 @@ using a mouse.  It is customizable and extensible with plugins and scripts.")
 (define-public srain
   (package
     (name "srain")
-    (version "1.1.3")
+    (version "1.2.3")
     (source
      (origin
        (method git-fetch)
@@ -250,22 +251,17 @@ using a mouse.  It is customizable and extensible with plugins and scripts.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1vqjjsxzc4601dpc8lf9k25rp2c7sjab7l5a6cbfygpr8dqvm6vq"))))
+        (base32 "0rlpygcpacgcfjxw3brw99ad3rc7zs96p5c6rg6j79p6sy38lrfs"))))
+    (build-system meson-build-system)
     (arguments
      `(#:tests? #f ;there are no tests
-       #:phases
-       (modify-phases %standard-phases
-         (add-before 'install 'fix-permissions
-           ;; Make po folder writable for gettext to install translations.
-           (lambda _
-             (for-each make-file-writable
-                       (find-files "po" "." #:directories? #t)))))))
-    (build-system glib-or-gtk-build-system)
+       #:glib-or-gtk? #t))
     (native-inputs
      `(("gettext" ,gettext-minimal)
        ("glib:bin" ,glib "bin")
        ("pkg-config" ,pkg-config)
-       ("python" ,python-wrapper)))
+       ("python" ,python-wrapper)
+       ("python-sphinx" ,python-sphinx)))
     (inputs
      `(("glib-networking" ,glib-networking)
        ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
@@ -382,7 +378,7 @@ for the IRCv3 protocol.")
 (define-public kirc
   (package
     (name "kirc")
-    (version "0.2.6")
+    (version "0.2.7")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -390,7 +386,7 @@ for the IRCv3 protocol.")
                      (commit version)))
               (file-name (git-file-name name version))
               (sha256
-               (base32 "11pwbil44q7sm3mp1khgw8wmwln2n03f1qawlgmg168jzyxqrs16"))))
+               (base32 "0phx00lr7ya8rx1hskv1wdwbq2vlihiqhnplqdvk1r3m23is7al9"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no tests

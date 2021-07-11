@@ -252,6 +252,7 @@ filters for the PDF-centric printing workflow introduced by OpenPrinting.")
   (package
     (name "cups-minimal")
     (version "2.3.3")
+    (replacement cups-minimal/fixed)
     (source
      (origin
        (method url-fetch)
@@ -311,6 +312,11 @@ describe printer capabilities and features, and a wide variety of generic and
 device-specific programs to convert and print many types of files.")
     ;; CUPS is Apache 2.0 with exceptions, see the NOTICE file.
     (license license:asl2.0)))
+
+(define cups-minimal/fixed
+  (package-with-extra-patches
+   cups-minimal
+   (search-patches "cups-CVE-2020-10001.patch")))
 
 (define-public cups
   (package/inherit cups-minimal
@@ -862,7 +868,7 @@ HP@tie{}LaserJet, and possibly other printers.  See @file{README} for details.")
 (define-public epson-inkjet-printer-escpr
   (package
     (name "epson-inkjet-printer-escpr")
-    (version "1.7.10")
+    (version "1.7.12")
     ;; XXX: This currently works.  But it will break as soon as a newer
     ;; version is available since the URLs for older versions are not
     ;; preserved.  An alternative source will be added as soon as
@@ -870,11 +876,11 @@ HP@tie{}LaserJet, and possibly other printers.  See @file{README} for details.")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "https://download3.ebz.epson.net/dsc/f/03/00/12/68/"
-                           "34/82ca3e84f17410b5ec6818e5698524b1f42862cb/"
-                           "epson-inkjet-printer-escpr-1.7.10-1lsb3.2.tar.gz"))
+       (uri (string-append "https://download3.ebz.epson.net/dsc/f/03/00/12/87/"
+                           "86/a97f36f9db998e7d0d25fc963568f207073b85ad/"
+                           "epson-inkjet-printer-escpr-1.7.12-1lsb3.2.tar.gz"))
        (sha256
-        (base32 "0j31w85gbi2g3ad316vw7azns382m2di6wazdbiyv9vix5gvb60g"))))
+        (base32 "11di33dhi8s0qf8dc3gai478ji4jszy4jmi5z5gfdkxmpljdlrq2"))))
     (build-system gnu-build-system)
     (arguments
      `(#:modules

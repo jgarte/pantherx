@@ -38,6 +38,7 @@
 ;;; Copyright © 2021 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2021 Bonface Munyoki Kilyungi <me@bonfacemunyoki.com>
 ;;; Copyright © 2021 Frank Pursel <frank.pursel@gmail.com>
+;;; Copyright © 2021 Rovanion Luckey <rovanion.luckey@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -68,9 +69,11 @@
   #:use-module (guix build-system python)
   #:use-module (guix build-system scons)
   #:use-module (guix build-system glib-or-gtk)
+  #:use-module (guix build-system qt)
   #:use-module (guix build-system waf)
   #:use-module (guix build-system trivial)
   #:use-module (guix build-system go)
+  #:use-module (guix build-system qt)
   #:use-module (gnu packages)
   #:use-module (gnu packages admin)
   #:use-module (gnu packages algebra)
@@ -228,7 +231,7 @@
        ("pkg-config" ,pkg-config)))
     (inputs
      `(("dbus" ,dbus)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)
        ;; Plugin dependencies
        ("alsa-lib" ,alsa-lib)
@@ -431,7 +434,7 @@ score, keyboard, guitar, drum and controller views.")
        ("libxml2" ,libxml2)
        ("protobuf" ,protobuf)
        ("pulseaudio" ,pulseaudio)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtx11extras" ,qtx11extras)
        ("sqlite" ,sqlite)
        ("sparsehash" ,sparsehash)
@@ -524,7 +527,7 @@ playing your music.")
        ("libmtp" ,libmtp)
        ("protobuf" ,protobuf)
        ("pulseaudio" ,pulseaudio)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtx11extras" ,qtx11extras)
        ("sqlite" ,sqlite)
        ("taglib" ,taglib)))
@@ -756,7 +759,7 @@ settings (aliasing, linear interpolation and cubic interpolation).")
        ("libsndfile" ,libsndfile)
        ("lrdf" ,lrdf)
        ("pulseaudio" ,pulseaudio)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtxmlpatterns" ,qtxmlpatterns)
        ("zlib" ,zlib)))
     (home-page "http://www.hydrogen-music.org")
@@ -1338,6 +1341,47 @@ Sega Master System/Mark III, Sega Genesis/Mega Drive, BBC Micro
     (license (list license:lgpl2.1+
                    ;; demo and player directories are under the Expat license
                    license:expat))))
+
+(define-public lingot
+  (package
+    (name "lingot")
+    (version "1.1.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/ibancg/lingot")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "04lcjzfhddbyskxr2068z609y6x0s2gjx1wl78w0dkxdi459zrn9"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("cunit" ,cunit)
+       ("glib" ,glib "bin")             ; for glib-compile-resources
+       ("intltool" ,intltool)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("fftw" ,fftw)
+       ("gtk+" ,gtk+)
+       ("jack" ,jack-2)
+       ("json-c" ,json-c)
+       ("pulseaudio" ,pulseaudio)))
+    (home-page "http://lingot.nongnu.org/")
+    (synopsis "Accurate & configurable musical instrument tuner")
+    (description
+     "LINGOT is a musical instrument tuner.  It's accurate, easy to use, and
+highly configurable.  Originally conceived to tune electric guitars, it can now
+be used to tune other instruments.
+
+It looks like an analogue tuner, with a gauge indicating the relative shift to a
+certain note, determined automatically as the closest note to the estimated
+frequency.")
+    (license license:gpl2+)))
 
 (define-public ninjas2
   (package
@@ -1955,7 +1999,7 @@ your own lessons.")
        ("boost" ,boost)
        ("minizip" ,minizip)
        ("pugixml" ,pugixml)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("rapidjson" ,rapidjson)
        ("rtmidi" ,rtmidi)
        ("timidity" ,timidity++)
@@ -2020,7 +2064,7 @@ users to select LV2 plugins and run them with jalv.")
 (define-public synthv1
   (package
     (name "synthv1")
-    (version "0.9.21")
+    (version "0.9.22")
     (source (origin
               (method url-fetch)
               (uri
@@ -2028,7 +2072,7 @@ users to select LV2 plugins and run them with jalv.")
                               "/synthv1-" version ".tar.gz"))
               (sha256
                (base32
-                "0wg4ywkqf307vln0y923p083xacb5ahr2ghzvb9gmqyszd7k2v15"))))
+                "0cmxbsfhkkyqn97rc47cb7d3bv6bd9r71xp4z85mi2kl3q4k569i"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -2038,7 +2082,7 @@ users to select LV2 plugins and run them with jalv.")
        ("alsa-lib" ,alsa-lib)
        ("non-session-manager" ,non-session-manager)
        ("liblo" ,liblo)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("qttools" ,qttools)))
@@ -2052,7 +2096,7 @@ oscillators and stereo effects.")
 (define-public drumkv1
   (package
     (name "drumkv1")
-    (version "0.9.21")
+    (version "0.9.22")
     (source (origin
               (method url-fetch)
               (uri
@@ -2060,7 +2104,7 @@ oscillators and stereo effects.")
                               "/drumkv1-" version ".tar.gz"))
               (sha256
                (base32
-                "1ym7kns7hfgxdwm2nzvpdm5vjxpkwb9dssjiic6rrpicv1p2v59m"))))
+                "0c13l814f5rhbmpmd4w0a07j1ki5wc092xcgy6p6zj5s03zvcrzy"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -2071,7 +2115,7 @@ oscillators and stereo effects.")
        ("alsa-lib" ,alsa-lib)
        ("non-session-manager" ,non-session-manager)
        ("liblo" ,liblo)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("qttools" ,qttools)))
@@ -2085,7 +2129,7 @@ effects.")
 (define-public samplv1
   (package
     (name "samplv1")
-    (version "0.9.21")
+    (version "0.9.22")
     (source (origin
               (method url-fetch)
               (uri
@@ -2093,7 +2137,7 @@ effects.")
                               "/samplv1-" version ".tar.gz"))
               (sha256
                (base32
-                "1kz8hcpzhrkvxpah6irz5gbah4m7knjhi4rk5hs1kwiikn7p6vgk"))))
+                "19ajnwzd5w2jlazflh5r9qm4sflkn2s2zc5zh0vlqywxzvb9dp9g"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -2104,7 +2148,7 @@ effects.")
        ("alsa-lib" ,alsa-lib)
        ("non-session-manager" ,non-session-manager)
        ("liblo" ,liblo)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("qttools" ,qttools)))
@@ -2118,7 +2162,7 @@ effects.")
 (define-public padthv1
   (package
     (name "padthv1")
-    (version "0.9.21")
+    (version "0.9.22")
     (source (origin
               (method url-fetch)
               (uri
@@ -2126,7 +2170,7 @@ effects.")
                               "/padthv1-" version ".tar.gz"))
               (sha256
                (base32
-                "0s28l8vp9b85s4bdm18qm57dh8dx8rx7659r05p44828g4053ipl"))))
+                "1wky9v91qc3j866di8mcjz0pf3n8ah888lxg8dpvp6ryh1cm6i6x"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; there are no tests
@@ -2137,7 +2181,7 @@ effects.")
        ("non-session-manager" ,non-session-manager)
        ("liblo" ,liblo)
        ("fftwf" ,fftwf)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("qttools" ,qttools)))
@@ -2694,14 +2738,14 @@ browser.")
 (define-public drumstick
   (package
     (name "drumstick")
-    (version "2.1.1")
+    (version "2.3.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/drumstick/"
                                   version "/drumstick-" version ".tar.bz2"))
               (sha256
                (base32
-                "06lz4kzpgg5lalcjb14pi35jxca5f4j6ckqf6mdxs1k42dfhjpjp"))))
+                "12haksnf91ra5w5dwnlc3rcw4js8wj4hsl6kzyqrx4q4fnpvjahk"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f                      ; no test target
@@ -2717,7 +2761,7 @@ browser.")
                                "/manpages/docbook.xsl")))
              #t)))))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)
        ("qttools" ,qttools)
        ("alsa-lib" ,alsa-lib)))
@@ -2741,14 +2785,14 @@ backends, including ALSA, OSS, Network and FluidSynth.")
 (define-public vmpk
   (package
     (name "vmpk")
-    (version "0.8.2")
+    (version "0.8.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/vmpk/vmpk/"
                                   version "/vmpk-" version ".tar.bz2"))
               (sha256
                (base32
-                "1kv256j13adk4ib7r464gsl4vjhih820bq37ddhqfyfd07wh53a2"))))
+                "0kh8pns9pla9c47y2nwckjpiihczg6rpg96aignsdsd7vkql69s9"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f  ; no test target
@@ -2765,7 +2809,7 @@ backends, including ALSA, OSS, Network and FluidSynth.")
              #t)))))
     (inputs
      `(("drumstick" ,drumstick)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)
        ("qtx11extras" ,qtx11extras)))
     (native-inputs
@@ -3093,19 +3137,19 @@ from the command line.")
 (define-public qtractor
   (package
     (name "qtractor")
-    (version "0.9.21")
+    (version "0.9.22")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://downloads.sourceforge.net/qtractor/"
                                   "qtractor-" version ".tar.gz"))
               (sha256
                (base32
-                "12hn17hqs3jndv6238wj8yhw07n99s0zachab4kfvhwa0qfflsbl"))))
+                "0n73xn3205afi9vsy6ianixq36ddp8qv6iaq03ldc6mkkfvn0nc5"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; no "check" target
     (inputs
-     `(("qt" ,qtbase)
+     `(("qt" ,qtbase-5)
        ("qtx11extras" ,qtx11extras)
        ("alsa-lib" ,alsa-lib)
        ("jack" ,jack-1)
@@ -4423,7 +4467,7 @@ develop custom plugins for use in other applications without programming.")
      `(#:configure-flags
        (list "--enable-qt5")))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("alsa-lib" ,alsa-lib)
        ("jack" ,jack-1)
        ("liblo" ,liblo)
@@ -4454,7 +4498,7 @@ modules running in parallel.")
      `(#:configure-flags
        (list "--enable-qt5")))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("alsa-lib" ,alsa-lib)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -4637,7 +4681,7 @@ are a C compiler and glib.  Full API documentation and examples are included.")
              "0g9pls46iggg7rdm65vzfj8nyr3v2n5xkp54c4qbh9hhalpsw4ay"))))))
     (inputs
      `(("sdl" ,sdl)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtx11extras" ,qtx11extras)
        ("fltk" ,fltk)
        ("libogg" ,libogg)
@@ -4713,7 +4757,7 @@ standalone JACK client and an LV2 plugin is also available.")
                        "thirdparty/portmidi"
                        "thirdparty/qt-google-analytics"))
            #t))))
-    (build-system cmake-build-system)
+    (build-system qt-build-system)
     (arguments
      `(#:configure-flags
        `("-DBUILD_TELEMETRY_MODULE=OFF" ;don't phone home
@@ -4742,8 +4786,9 @@ standalone JACK client and an LV2 plugin is also available.")
        ("portaudio" ,portaudio)
        ("portmidi" ,portmidi)
        ("pulseaudio" ,pulseaudio)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
+       ("qtgraphicaleffects" ,qtgraphicaleffects)
        ("qtquickcontrols2" ,qtquickcontrols2)
        ("qtscript" ,qtscript)
        ("qtsvg" ,qtsvg)
@@ -4770,25 +4815,21 @@ sample library.")
 (define-public muse-sequencer
   (package
     (name "muse-sequencer")
-    (version "3.1.1")
+    (version "4.0.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/muse-sequencer/muse")
-                    (commit (string-append "muse_"
-                                           (string-map (lambda (c)
-                                                         (if (char=? c #\.)
-                                                             #\_ c)) version)))))
+                    (commit version)))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1rasp2v1ds2aw296lbf27rzw0l9fjl0cvbvw85d5ycvh6wkm301p"))))
-    (build-system cmake-build-system)
+                "1gamr9ln10l26wwyin1a4grrqy6h05qzcgp28wsp85yczkpsh02c"))))
+    (build-system qt-build-system)
     (arguments
      `(#:tests? #f ; there is no test target
        #:configure-flags
-       (list "-DENABLE_INSTPATCH=OFF"  ; FIXME: not packaged
-             "-DENABLE_VST_NATIVE=OFF"
+       (list "-DENABLE_VST_NATIVE=OFF"
              (string-append "-DCMAKE_EXE_LINKER_FLAGS="
                             "-Wl,-rpath="
                             (assoc-ref %outputs "out") "/lib/muse-"
@@ -4800,34 +4841,33 @@ sample library.")
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'chdir
-           (lambda _ (chdir "muse3") #t))
-         (add-after 'chdir 'fix-include
-           (lambda _
-             (substitute* "muse/driver/rtaudio.h"
-               (("rtaudio/RtAudio.h") "RtAudio.h"))
-             #t)))))
+           (lambda _ (chdir "src"))))))
     (inputs
      `(("alsa-lib" ,alsa-lib)
-       ("lash" ,lash)
-       ("jack" ,jack-1)
-       ("liblo" ,liblo)
        ("dssi" ,dssi)
-       ("ladspa" ,ladspa)
-       ("lv2" ,lv2)
-       ("lilv" ,lilv)
-       ("sord" ,sord)
-       ("libsndfile" ,libsndfile)
-       ("libsamplerate" ,libsamplerate)
-       ("lrdf" ,lrdf)
        ("fluidsynth" ,fluidsynth)
+       ("glib" ,glib)
+       ("jack" ,jack-1)
+       ("ladspa" ,ladspa)
+       ("lash" ,lash)
+       ("libinstpatch" ,libinstpatch)
+       ("liblo" ,liblo)
+       ("libsamplerate" ,libsamplerate)
+       ("libsndfile" ,libsndfile)
+       ("lilv" ,lilv)
+       ("lrdf" ,lrdf)
+       ("lv2" ,lv2)
        ("pcre" ,pcre)
        ("pulseaudio" ,pulseaudio) ; required by rtaudio
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)
        ("rtaudio" ,rtaudio)
-       ("rubberband" ,rubberband)))
+       ("rubberband" ,rubberband)
+       ("sord" ,sord)))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
+     `(("perl" ,perl)
+       ("pkg-config" ,pkg-config)
+       ("python" ,python-wrapper)
        ("qttools" ,qttools)))
     (home-page "https://muse-sequencer.github.io/")
     (synopsis "MIDI/Audio sequencer")
@@ -4841,7 +4881,7 @@ studio.")
 (define-public gsequencer
   (package
     (name "gsequencer")
-    (version "3.7.48")
+    (version "3.8.13")
     (source
      (origin
        (method git-fetch)
@@ -4850,16 +4890,15 @@ studio.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0pqaj09x3lzcj0zbbkqpyaky9i1w462bhhvg1akh73nzwvyy46zd"))))
-    (build-system gnu-build-system)
+        (base32 "1gwy7fhbxgrd5n6afq1hnxc6p873wsh4qs63yhkkdfzyl7s412z4"))))
+    (build-system glib-or-gtk-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
          (add-before 'build 'prepare-x-for-test
            (lambda _
              (system "Xvfb &")
-             (setenv "DISPLAY" ":0")
-             #t)))))
+             (setenv "DISPLAY" ":0"))))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
@@ -4936,14 +4975,14 @@ specification and header.")
 (define-public rosegarden
   (package
     (name "rosegarden")
-    (version "20.12")
+    (version "21.06")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/rosegarden/rosegarden/"
                            version "/rosegarden-" version ".tar.bz2"))
        (sha256
-        (base32 "0nqw2caxmv6mqh485wzvywa024yvi18q87sd4dw9b2l5qnpq8rl8"))))
+        (base32 "0rhbmygzh62hc3mkq60lh9r28wvfkhzzd5kspl1ll0h1ipjgvr6d"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags '("-DCMAKE_BUILD_TYPE=Release")
@@ -5011,7 +5050,7 @@ specification and header.")
        ("libsamplerate" ,libsamplerate)
        ("lilypond" ,lilypond)
        ("lrdf" ,lrdf)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("tar" ,tar)
        ("lirc" ,lirc)
        ("wavpack" ,wavpack)
@@ -5117,7 +5156,7 @@ the electronic or dubstep genre.")
      `(("alsa-lib" ,alsa-lib)
        ("drumstick" ,drumstick)
        ("pulseaudio" ,pulseaudio)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (home-page "https://github.com/pedrolcl/Linux-SonivoxEas")
@@ -5262,7 +5301,7 @@ MusicBrainz lookup capabilities to their applications.")
 (define-public perl-musicbrainz-discid
   (package
     (name "perl-musicbrainz-discid")
-    (version "0.04")
+    (version "0.06")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -5270,7 +5309,7 @@ MusicBrainz lookup capabilities to their applications.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "1i4qk1qfcmxdibqkyfjrrjdq2zk42vjcz590qgiyc47fi9p6xx1j"))))
+                "1azc91jnwa3gdmy9pc8mflakgvsvf69ywwlqllxmdzwpk386w2xs"))))
     (build-system perl-build-system)
     (native-inputs `(("pkg-config" ,pkg-config)
                      ("which" ,which)))
@@ -5501,7 +5540,7 @@ discard bad quality ones.
        ("fftw" ,fftw)
        ("jack" ,jack-1)
        ("portaudio" ,portaudio)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)
        ("qtsvg" ,qtsvg)))
     (native-inputs
@@ -5901,7 +5940,7 @@ audio and MIDI plugins that can also run as standalone JACK applications.")
          (recursive? #t)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0bxvssqnnd7bph3w1d6xcmxradv4cqq3wyzyv1a1hfm71a0pdahs"))))
+        (base32 "02blg0iqich4vx5z1ahj6avkh83yqszdiq83p9jd5qwm0i4llqjq"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ;no "check" target

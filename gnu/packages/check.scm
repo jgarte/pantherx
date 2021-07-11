@@ -25,7 +25,7 @@
 ;;; Copyright © 2017, 2019 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2015, 2017, 2018, 2020, 2021 Ricardo Wurmus <rekado@elephly.net>
-;;; Copyright © 2016, 2017, 2018, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017, 2018, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2018 Fis Trivial <ybbs.daans@hotmail.com>
 ;;; Copyright © 2019, 2021 Pierre Langlois <pierre.langlois@gmx.com>
@@ -36,6 +36,7 @@
 ;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2020 Tanguy Le Carrour <tanguy@bioneland.org>
 ;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2021 Hugo Lecomte <hugo.lecomte@inria.fr>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -70,6 +71,7 @@
   #:use-module (gnu packages python-build)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages python-science)
   #:use-module (gnu packages time)
   #:use-module (gnu packages xml)
   #:use-module (guix utils)
@@ -423,39 +425,26 @@ a multi-paradigm automated test framework for C++ and Objective-C.")
 (define-public cmdtest
   (package
     (name "cmdtest")
-    (version "0.32")
+    ;; Use the latest commit (from 2019) in order to get Python 3 support.
+    (version "0.32-14-gcdfe14e")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "http://git.liw.fi/cmdtest/snapshot/"
-                                  name "-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "git://git.liw.fi/cmdtest/")
+                    (commit version)))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1jmfiyrrqmpvwdb273bkb8hjaf4rwx9njblx29pmr7giyahskwi5"))))
+                "1yhcwsqcpckkq5kw3h07k0xg6infyiyzq9ni3nqphrzxis7hxjf1"))))
     (build-system python-build-system)
-    (arguments
-     `(#:python ,python-2
-       #:phases
-       (modify-phases %standard-phases
-         ;; check phase needs to be run before the build phase. If not, the
-         ;; coverage test runner looks for tests for the built source files,
-         ;; and fails.
-         (delete 'check)
-         (add-before 'build 'check
-           (lambda _
-             (substitute* "yarn"
-               (("/bin/sh") (which "sh")))
-             ;; yarn uses python2-ttystatus to print messages.
-             ;; python2-ttystatus requires /dev/tty which is not present in
-             ;; the build environment. Hence assuming-failure test fails.
-             (delete-file "yarn.tests/assuming-failure.script")
-             (delete-file "yarn.tests/assuming-failure.stdout")
-             (invoke "python" "setup.py" "check"))))))
+    (arguments `(#:tests? #f))          ;requires Python 2!
     (native-inputs
-     `(("python2-coverage-test-runner" ,python2-coverage-test-runner)))
-    (propagated-inputs
-     `(("python2-cliapp" ,python2-cliapp)
-       ("python2-markdown" ,python2-markdown)
-       ("python2-ttystatus" ,python2-ttystatus)))
+     `(("python-coverage-test-runner" ,python-coverage-test-runner)
+       ("python" ,python)))
+    (inputs
+     `(("python-cliapp" ,python-cliapp)
+       ("python-markdown" ,python-markdown)
+       ("python-ttystatus" ,python-ttystatus)))
     (home-page "https://liw.fi/cmdtest/")
     (synopsis "Black box Unix program tester")
     (description
@@ -710,8 +699,8 @@ generation.")
     (license license:bsd-3)))
 
 (define-public googletest-1.8
-  (package/inherit
-   googletest
+  (package
+    (inherit googletest)
    (version "1.8.1")
    (source (origin
              (method git-fetch)
@@ -1201,8 +1190,8 @@ contacting the real http server.")
 ;; python-bleach 3.1.0 requires this ancient version of pytest-runner.
 ;; Remove once no longer needed.
 (define-public python-pytest-runner-2
-  (package/inherit
-   python-pytest-runner
+  (package
+    (inherit python-pytest-runner)
    (version "2.12.2")
    (source (origin
              (method url-fetch)
@@ -1403,9 +1392,6 @@ a test crashed the process.")
 interactive command-line applications.  With it you can run a script in a
 subprocess and see the output as well as any file modifications.")
     (license license:expat)))
-
-(define-public python2-scripttest
-  (package-with-python2 python-scripttest))
 
 (define-public python-testtools-bootstrap
   (package
@@ -1815,9 +1801,6 @@ and commands.  It contains functions to check things on the file system, and
 tools for mocking system commands and recording calls to those.")
     (license license:expat)))
 
-(define-public python2-testpath
-  (package-with-python2 python-testpath))
-
 (define-public python-testlib
   (package
     (name "python-testlib")
@@ -2131,9 +2114,9 @@ failures.")
 (define-public python2-pytest-flakes
   (package-with-python2 python-pytest-flakes))
 
-(define-public python2-coverage-test-runner
+(define-public python-coverage-test-runner
   (package
-    (name "python2-coverage-test-runner")
+    (name "python-coverage-test-runner")
     (version "1.15")
     (source
      (origin
@@ -2147,20 +2130,22 @@ failures.")
          "1kjjb9llckycnfxag8zcvqsn4z1s3dwyw6b1n0avxydihgf30rny"))))
     (build-system python-build-system)
     (arguments
-     `(#:python ,python-2
-       #:phases
+     `(#:phases
        (modify-phases %standard-phases
          (replace 'check
            (lambda _
              (invoke "./testrun"))))))
     (propagated-inputs
-     `(("python2-coverage" ,python2-coverage)))
+     `(("python-coverage" ,python-coverage)))
     (home-page "https://liw.fi/coverage-test-runner/")
     (synopsis "Python module for running unit tests")
     (description "@code{CoverageTestRunner} is a python module for running
 unit tests and failing them if the unit test module does not exercise all
 statements in the module it tests.")
     (license license:gpl3+)))
+
+(define-public python2-coverage-test-runner
+  (package-with-python2 python-coverage-test-runner))
 
 (define-public python-pylint
   (package
@@ -2866,16 +2851,13 @@ under test to interact with a fake file system instead of the real file
 system.  The code under test requires no modification to work with pyfakefs.")
     (license license:asl2.0)))
 
-(define-public python2-pyfakefs
-  (package-with-python2 python-pyfakefs))
-
 ;; This minimal variant is used to avoid a circular dependency between
 ;; python2-importlib-metadata, which requires pyfakefs for its tests, and
 ;; python2-pytest, which requires python2-importlib-metadata.
 (define-public python2-pyfakefs-bootstrap
   (hidden-package
    (package
-     (inherit python2-pyfakefs)
+     (inherit (package-with-python2 python-pyfakefs))
      (name "python2-pyfakefs-bootstrap")
      (native-inputs '())
      (arguments
@@ -2938,3 +2920,60 @@ to mark some tests as dependent from other tests.  These tests will then be
 skipped if any of the dependencies did fail or has been skipped.")
     (license license:asl2.0)))
 
+(define-public python-pytest-datadir
+  (package
+    (name "python-pytest-datadir")
+    (version "1.3.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pytest-datadir" version))
+       (sha256
+        (base32
+         "066bg6wlzgq2pqnjp73dfrcmk8951xw3aqcxa3p1axgqimrixbyk"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("python-setuptools-scm" ,python-setuptools-scm)))
+    (propagated-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-wheel" ,python-wheel)))
+    (home-page "https://github.com/gabrielcnr/pytest-datadir")
+    (synopsis "Pytest plugin for manipulating test data directories and files")
+    (description
+     "This package provides a Pytest plugin for manipulating test data
+directories and files.")
+    (license license:expat)))
+
+(define-public python-pytest-regressions
+  (package
+    (name "python-pytest-regressions")
+    (version "2.2.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pytest-regressions" version))
+       (sha256
+        (base32
+         "05jpsvv8rj8i4x24fphpnar5dl4s6d6bw6ikjk5d8v96rdviz9qm"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-pytest-datadir" ,python-pytest-datadir)
+       ("python-pyyaml" ,python-pyyaml)))
+    (native-inputs
+     `(("python-matplotlib" ,python-matplotlib)
+       ("python-numpy" ,python-numpy)
+       ("python-pandas" ,python-pandas)
+       ("python-pillow" ,python-pillow)
+       ("python-pre-commit" ,python-pre-commit)
+       ("python-restructuredtext-lint"
+        ,python-restructuredtext-lint)
+       ("python-tox" ,python-tox)
+       ("python-setuptools-scm" ,python-setuptools-scm)
+       ("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/ESSS/pytest-regressions")
+    (synopsis "Easy to use fixtures to write regression tests")
+    (description
+     "This plugin makes it simple to test general data, images, files, and numeric
+tables by saving expected data in a data directory (courtesy of pytest-datadir)
+that can be used to verify that future runs produce the same data.")
+    (license license:expat)))

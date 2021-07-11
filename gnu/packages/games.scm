@@ -10,7 +10,7 @@
 ;;; Copyright © 2014, 2015, 2019 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015, 2016 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2015 David Hashe <david.hashe@dhashe.com>
-;;; Copyright © 2015, 2017, 2018 Christopher Lemmer Webber <cwebber@dustycloud.org>
+;;; Copyright © 2015, 2017, 2018, 2021 Chris Lemmer Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2016, 2017 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2015 Paul van der Walt <paul@denknerd.org>
@@ -60,6 +60,8 @@
 ;;; Copyright © 2021 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2021 Greg Hogan <code@greghogan.com>
 ;;; Copyright © 2021 David Pflug <david@pflug.io>
+;;; Copyright © 2021 Felix Gruber <felgru@posteo.net>
+;;; Copyright © 2021 Solene Rapenne <solene@perso.pw>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -102,6 +104,7 @@
   #:use-module (gnu packages check)
   #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
+  #:use-module (gnu packages code)
   #:use-module (gnu packages cpp)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages crypto)
@@ -394,14 +397,14 @@ The game includes a built-in editor so you can design and share your own maps.")
 (define-public armagetronad
   (package
     (name "armagetronad")
-    (version "0.2.9.0.1")
+    (version "0.2.9.1.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/armagetronad/stable/"
                                   version "/armagetronad-" version ".tbz"))
               (sha256
                (base32
-                "19rfhlg4gp0r7k1j8v4iw20325ciy156nmzax4xikmw22c6nmxcz"))))
+                "18gn4sg4j5sw38ngb90sl50raliplrsgjcvy8fjwry733k0cgdjr"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -833,7 +836,7 @@ high a score as possible.")
 (define-public cataclysm-dda
   (package
     (name "cataclysm-dda")
-    (version "0.E-3")
+    (version "0.F")
     (source
      (origin
        (method git-fetch)
@@ -841,7 +844,7 @@ high a score as possible.")
              (url "https://github.com/CleverRaven/Cataclysm-DDA")
              (commit version)))
        (sha256
-        (base32 "108cs6vp99qmqqfnmczad0xjgcl82bypm5xszwnlfcswdsrfs4da"))
+        (base32 "1jid8lcl04y768b3psj1ifhx96lmd6fn1j2wzxhl4ic7ra66p2z3"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -852,14 +855,22 @@ high a score as possible.")
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)
-         (add-after 'build 'build-tiles
+         ;; Apparently we can't do make on both tiles and a console version at
+         ;; the same time anymore, so we have to either "make clean" between
+         ;; builds or do some other hackery.  See:
+         ;;   https://github.com/CleverRaven/Cataclysm-DDA/issues/42598#issuecomment-667702746
+         (add-after 'install 'make-clean-pre-tiles
+           (lambda* (#:key make-flags outputs #:allow-other-keys)
+             ;; Change prefix directory and enable tile graphics and sound.
+             (invoke "make" "clean")))
+         (add-after 'make-clean-pre-tiles 'build-tiles
            (lambda* (#:key make-flags outputs #:allow-other-keys)
              ;; Change prefix directory and enable tile graphics and sound.
              (apply invoke "make" "TILES=1" "SOUND=1"
                     (string-append "PREFIX="
                                    (assoc-ref outputs "tiles"))
                     (cdr make-flags))))
-         (add-after 'install 'install-tiles
+         (add-after 'build-tiles 'install-tiles
            (lambda* (#:key make-flags outputs #:allow-other-keys)
              (apply invoke "make" "install" "TILES=1" "SOUND=1"
                     (string-append "PREFIX="
@@ -872,7 +883,8 @@ high a score as possible.")
                "tiles"))                ;for tile graphics and sound support
     (native-inputs
      `(("gettext" ,gettext-minimal)
-       ("pkg-config" ,pkg-config)))
+       ("pkg-config" ,pkg-config)
+       ("astyle" ,astyle)))
     (inputs
      `(("freetype" ,freetype)
        ("libogg" ,libogg)
@@ -926,7 +938,7 @@ want what you have.")
          ("pkg-config" ,pkg-config)))
       (inputs
        `(("protobuf" ,protobuf)
-         ("qtbase" ,qtbase)
+         ("qtbase" ,qtbase-5)
          ("qtmultimedia" ,qtmultimedia)
          ("qtsvg" ,qtsvg)
          ("qttools" ,qttools)
@@ -944,7 +956,7 @@ allows users to brew while offline.")
 (define-public corsix-th
   (package
     (name "corsix-th")
-    (version "0.64")
+    (version "0.65")
     (source
      (origin
        (method git-fetch)
@@ -953,7 +965,7 @@ allows users to brew while offline.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0chh9cv2kdc39sr0x8hclcyzd8dz2y6grgagqzkvr7j570wa5cqh"))))
+        (base32 "0hp7da7b73dpn1h22rw3h8w6aaj9azn18qnp3ap3lrlqhj4fzcb3"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -1515,7 +1527,7 @@ shadow mimic them to reach blocks you couldn't reach alone.")
 (define-public opensurge
   (package
     (name "opensurge")
-    (version "0.5.1.2")
+    (version "0.5.2.1")
     (source
      (origin
        (method git-fetch)
@@ -1524,14 +1536,15 @@ shadow mimic them to reach blocks you couldn't reach alone.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ih7hlqjnp9rv0m4lqf7c0s1ai532way5i4pk45jq1gqm8325dbv"))))
+        (base32 "13g5izss7dmgigc8iif8hid3z6i066b0z29rbql2b9qjmdj1dp41"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f                      ;there are no tests
        #:configure-flags
        (let* ((out (assoc-ref %outputs "out"))
               (share (string-append out "/share")))
-         (list (string-append "-DCMAKE_INSTALL_PREFIX=" out "/bin")
+         (list (string-append "-DCMAKE_INSTALL_PREFIX=" out)
+               (string-append "-DGAME_BINDIR=" out "/bin") ; not /bin/games
                (string-append "-DGAME_DATADIR=" share "/" ,name)
                (string-append "-DDESKTOP_ENTRY_PATH=" share "/applications")
                (string-append "-DDESKTOP_ICON_PATH=" share "/pixmaps")
@@ -1835,19 +1848,17 @@ Chess).  It is similar to standard chess but this variant is far more complicate
 (define-public ltris
   (package
     (name "ltris")
-    (version "1.2.1")
+    (version "1.2.3")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/lgames/ltris/"
                            "ltris-" version ".tar.gz"))
        (sha256
-        (base32 "0959vvxh5xnxzpdv7i67lpd2b6ghx69z65ldnclj1z6llyfzfs7q"))))
+        (base32 "1a2m17jwkyar8gj07bn5jk01j2ps4vvc48z955jjjsh67q2svi0f"))))
     (build-system gnu-build-system)
     (arguments
-     '(;; The code in LTris uses traditional GNU semantics for inline functions
-       #:configure-flags '("CFLAGS=-fgnu89-inline")
-       #:phases
+     '(#:phases
        (modify-phases %standard-phases
          (add-after 'set-paths 'set-sdl-paths
            (lambda* (#:key inputs #:allow-other-keys)
@@ -2414,7 +2425,7 @@ and defeat them with your bubbles!")
        ("luajit" ,luajit)
        ("openal" ,openal)
        ("physfs" ,physfs)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("sdl2" ,(sdl-union (list sdl2 sdl2-image sdl2-ttf)))))
     (home-page "https://www.solarus-games.org/")
     (synopsis "Lightweight game engine for Action-RPGs")
@@ -3945,7 +3956,7 @@ Protocol).")
 (define-public extremetuxracer
   (package
     (name "extremetuxracer")
-    (version "0.8.0")
+    (version "0.8.1")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -3953,7 +3964,7 @@ Protocol).")
                     version "/etr-" version ".tar.xz"))
               (sha256
                (base32
-                "05ysaxvsgps9fxc421kdifsxmc1sn6n79cjaa0k0i3fs9qqrja2b"))))
+                "0hc3qd9hv3h9qm53yxgc7iy1v1wyajwxyvil4vqvzf9ascz9dnlj"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -4176,7 +4187,7 @@ falling, themeable graphics and sounds, and replays.")
 (define-public wesnoth
   (package
     (name "wesnoth")
-    (version "1.14.16")
+    (version "1.14.17")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/wesnoth/wesnoth-"
@@ -4185,7 +4196,7 @@ falling, themeable graphics and sounds, and replays.")
                                   "wesnoth-" version ".tar.bz2"))
               (sha256
                (base32
-                "1d9hq3dcx0sgs2v4400rg2nw98v46m7bwiqqjv8z8n7vw8kx8lhg"))))
+                "1qc4ylhc4ab51milclzhflpmzw6bg35knwqaj3b157700jkcniin"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ;no check target
@@ -4316,35 +4327,15 @@ world}, @uref{http://evolonline.org, Evol Online} and
 (define openttd-engine
   (package
     (name "openttd-engine")
-    (version "1.10.3")
+    (version "1.11.2")
     (source
      (origin (method url-fetch)
              (uri (string-append "https://cdn.openttd.org/openttd-releases/"
                                  version "/openttd-" version "-source.tar.xz"))
              (sha256
               (base32
-               "0fxmfz1mm95a2x0rnzfff9wb8q57w0cvsdd0z7agdcbyakph25n1"))))
-    (build-system gnu-build-system)
-    (arguments
-     `(#:tests? #f              ; no "check" target
-       #:phases
-       (modify-phases %standard-phases
-         ;; The build process fails if the configure script is passed the
-         ;; option "--enable-fast-install".
-         (replace 'configure
-           (lambda* (#:key inputs outputs (configure-flags '())
-                     #:allow-other-keys)
-             (let ((out (assoc-ref outputs "out"))
-                   (lzo (assoc-ref inputs "lzo")))
-               (apply invoke "./configure"
-                      (string-append "--prefix=" out)
-                      ;; Provide the "lzo" path.
-                      (string-append "--with-liblzo2="
-                                     lzo "/lib/liblzo2.a")
-                      ;; Put the binary in 'bin' instead of 'games'.
-                      "--binary-dir=bin"
-                      configure-flags)))))))
-    (native-inputs `(("pkg-config" ,pkg-config)))
+               "0v9f93lsdcv3ia28y8iihx9nj9zp6fpf5hkdrpl4ypw159d97fhg"))))
+    (build-system cmake-build-system)
     (inputs
      `(("allegro" ,allegro)
        ("fontconfig" ,fontconfig)
@@ -4511,19 +4502,17 @@ Transport Tycoon Deluxe.")
     (name "openttd")
     (arguments
      `(#:configure-flags
-       (list (string-append "--with-midi=" (assoc-ref %build-inputs "timidity++")
-                            "/bin/timidity"))
-       ,@(substitute-keyword-arguments (package-arguments openttd-engine)
-           ((#:phases phases)
-            `(modify-phases ,phases
-               (add-after 'install 'install-data
-                 (lambda* (#:key inputs outputs #:allow-other-keys)
-                   (for-each
-                    (lambda (input)
-                      (copy-recursively (assoc-ref inputs input)
-                                        (assoc-ref outputs "out")))
-                    (list "opengfx" "openmsx" "opensfx"))
-                   #t)))))))
+       (let* ((out (assoc-ref %outputs "out")))
+         (list (string-append "-DCMAKE_INSTALL_BINDIR=" out "/bin")))
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'check 'install-data
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (for-each
+              (lambda (input)
+                (copy-recursively (assoc-ref inputs input)
+                                  (assoc-ref outputs "out")))
+              (list "opengfx" "openmsx" "opensfx")))))))
     (inputs
      `(("timidity++" ,timidity++)
        ,@(package-inputs openttd-engine)))
@@ -4687,34 +4676,48 @@ images, etc.)")
 (define-public pinball
   (package
     (name "pinball")
-    (version "0.3.1")
+    (version "0.3.20201218")
     (source
-     (origin (method url-fetch)
-             (uri (string-append "mirror://sourceforge/pinball/pinball/"
-                                 "pinball-" version "/"
-                                 "pinball-" version ".tar.gz"))
+     (origin (method git-fetch)
+             (uri (git-reference
+                   (url "https://github.com/adoptware/pinball")
+                   (commit version)))
+             (file-name (git-file-name name version))
              (sha256
               (base32
-               "1f2whlrfidwfh8lvr8cspcyirc6840r5d1ajm7x99qmngygrhixs"))
-             (patches (search-patches "pinball-const-fix.patch"
-                                      "pinball-cstddef.patch"
-                                      "pinball-missing-separators.patch"
-                                      "pinball-src-deps.patch"
-                                      "pinball-system-ltdl.patch"))))
+               "056jk98v6zlkrj9vjm06p0pmpnav1x658n6qw10v5klg5gr6ldf7"))
+             (patches (search-patches "pinball-system-ltdl.patch"))))
     (build-system gnu-build-system)
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("pkg-config" ,pkg-config)
+       ("libtool" ,libtool)))
     (inputs
      `(("glu" ,glu)
+       ("libltdl" ,libltdl)
        ("mesa" ,mesa)
        ("sdl" ,sdl)
        ("sdl-image" ,sdl-image)
        ("sdl-mixer" ,sdl-mixer)))
     (arguments
      '(#:configure-flags
+       ;; Configure tries to use pkg-config, but falls short, so:
        (list (string-append "CPPFLAGS=-I"
                             (assoc-ref %build-inputs "sdl-image")
                             "/include/SDL -I"
                             (assoc-ref %build-inputs "sdl-mixer")
-                            "/include/SDL"))))
+                            "/include/SDL"))
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'bootstrap
+           ;; The `bootstrap` script tries to call a script with
+           ;; `/usr/bin/make` in the shebang, but ultimately does the same as
+           ;; autoreconf would do, so just use that.
+           (lambda _
+             (symlink "README.md" "README")
+             (display (which "autoreconf")) (newline)
+             (invoke "autoreconf" "-vif"))))))
     (home-page "http://pinball.sourceforge.net")
     (synopsis "Pinball simulator")
     (description "The Emilia Pinball Project is a pinball simulator.  There
@@ -5135,7 +5138,7 @@ in-window at 640x480 resolution or fullscreen.")
 (define-public warzone2100
   (package
     (name "warzone2100")
-    (version "3.4.1")
+    (version "4.0.1")
     (source
      (origin
        (method url-fetch)
@@ -5143,7 +5146,7 @@ in-window at 640x480 resolution or fullscreen.")
                            version
                            "/warzone2100_src.tar.xz"))
        (sha256
-        (base32 "0savalmw1kp1sf8vg5aqrl5hc77p4jacxy5y9qj8k2hi2vqdfb7a"))
+        (base32 "1f8a4kflslsjl8jrryhwg034h1yc9y3y1zmllgww3fqkz3aj4xik"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -5157,6 +5160,7 @@ in-window at 640x480 resolution or fullscreen.")
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags '("-DWZ_DISTRIBUTOR=Guix"
+                           "-DWZ_ENABLE_BACKEND_VULKAN=off"
                            "-DENABLE_DISCORD=off")
        #:tests? #f ; TODO: Tests seem to be broken, configure.ac is missing.
        #:phases
@@ -5198,10 +5202,11 @@ in-window at 640x480 resolution or fullscreen.")
               ("miniupnpc" ,miniupnpc)
               ("openal" ,openal)
               ("physfs" ,physfs)
-              ("qtbase" ,qtbase)
+              ("qtbase" ,qtbase-5)
               ("qtscript" ,qtscript)
               ("openssl" ,openssl)
               ("sdl2" ,sdl2)
+              ("sqlite" ,sqlite)
               ("utfcpp" ,utfcpp)))
     (home-page "https://wz2100.net")
     (synopsis "3D Real-time strategy and real-time tactics game")
@@ -5221,15 +5226,16 @@ tactics.")
 (define-public widelands
   (package
     (name "widelands")
-    (version "21")
+    (version "1.0")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "https://launchpad.net/widelands/"
-                           "build" version "/build" version "/+download/"
-                           "widelands-build" version "-source.tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+              (url "https://github.com/widelands/widelands")
+              (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "0mz3jily0w1zxxqbnkqrp6hl88xhrwzbil9crq7gpcwidx60w7k0"))
+        (base32 "1hw51binnbia15mj1gzx1cbk3cw9r91sisqci2qzcy4ahxiadnw0"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -5269,7 +5275,8 @@ tactics.")
      `(("gettext" ,gettext-minimal)
        ("python" ,python-wrapper)))
     (inputs
-     `(("boost" ,boost)
+     `(("curl" ,curl)
+       ("boost" ,boost)
        ("glew" ,glew)
        ("icu4c" ,icu4c)
        ("libpng" ,libpng)
@@ -5288,8 +5295,8 @@ nothing but your headquarters, where all your resources are stored.
 In the course of the game, you will build an ever growing settlement.  Every
 member of your clan will do his or her part to produce more resources---wood,
 food, iron, gold and more---to further this growth.  The economic network is
-complex and different in the four tribes (Barbarians, Empire, Atlanteans, and
-Frisians).
+complex and different in the five tribes (Barbarians, Empire, Atlanteans,
+Frisians and Amazons).
 
 As you are not alone in the world, you will meet other clans sooner or later.
 Some of them may be friendly and you may eventually trade with them.  However,
@@ -5306,6 +5313,12 @@ of war.  Widelands also offers an Artificial Intelligence to challenge you.")
                    license:expat           ;src/third_party/eris
                    license:silofl1.1       ;Widelands.ttf
                    license:cc-by-sa3.0)))) ;some music files
+
+(define-public widelands-21
+  (package
+    (inherit widelands)
+    (version "21")
+    (properties `((superseded . ,widelands)))))
 
 (define-public starfighter
   (package
@@ -5943,7 +5956,7 @@ for Un*x systems with X11.")
 (define-public freeciv
   (package
    (name "freeciv")
-   (version "2.6.4")
+   (version "2.6.5")
    (source
     (origin
      (method url-fetch)
@@ -5955,7 +5968,7 @@ for Un*x systems with X11.")
                   (version-major+minor version) "/" version
                   "/freeciv-" version ".tar.bz2")))
      (sha256
-      (base32 "1kn122f57wn5a8ryxaz73dlbd5m93mqx3bqmmz2lkgdccrvrbns0"))))
+      (base32 "0ngcj59ak71i6m8yvbr0g3aryzpw1scalpdzgfqsq4mf9p3y2r1f"))))
    (build-system gnu-build-system)
    (inputs
     `(("curl" ,curl)
@@ -6906,7 +6919,7 @@ Crowther & Woods, its original authors, in 1995.  It has been known as
 (define-public tome4
   (package
     (name "tome4")
-    (version "1.7.2")
+    (version "1.7.3")
     (synopsis "Single-player, RPG roguelike game set in the world of Eyal")
     (source
      (origin
@@ -6914,7 +6927,7 @@ Crowther & Woods, its original authors, in 1995.  It has been known as
        (uri (string-append "https://te4.org/dl/t-engine/t-engine4-src-"
                            version ".tar.bz2"))
        (sha256
-        (base32 "1xa0pdn9pggwf7hnqb87ya2qxqhjahkdjwf8cr2y01gixgrkj9lv"))
+        (base32 "1rik17r01glq3944sdb06xjf0xppgqkjk564wrh22slm4mi3fifz"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -7157,7 +7170,7 @@ some graphical niceities, and numerous bug-fixes and other improvements.")
                (mkdir-p (string-append out "/lib"))
                (mkdir-p (string-append out "/bin"))
                ;; The yamagi-quake2 binary must be in the same directory
-               ;; as it's engine libraries, but symlinking it to /bin is okay
+               ;; as its engine libraries, but symlinking it to /bin is okay.
                ;; https://github.com/yquake2/yquake2/blob/master/stuff/packaging.md
                (copy-recursively "release"
                                  (string-append out "/lib/yamagi-quake2"))
@@ -7251,7 +7264,7 @@ making Yamagi Quake II one of the most solid Quake II implementations available.
        ;; with multiple "QPainter:: ... Painter not active" warnings.
        #:tests? #f))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)))
     (native-inputs
      `(("cmake" ,cmake-minimal)
@@ -7299,7 +7312,8 @@ elements to achieve a simple goal in the most complex way possible.")
      `(#:tests? #f                      ;tests are broken
        #:configure-flags (list "-DUSE_SYSTEM_LIBLUA:BOOL=YES"
                                (string-append "-DPIONEER_DATA_DIR="
-                                              %output "/share/games/pioneer"))))
+                                              %output "/share/games/pioneer"))
+       #:make-flags (list "all" "build-data")))
     (home-page "https://pioneerspacesim.net")
     (synopsis "Game of lonely space adventure")
     (description
@@ -7516,7 +7530,7 @@ Strife, Chex Quest, and fan-created games like Harmony, Hacx and Freedoom.")
 (define-public odamex
   (package
     (name "odamex")
-    (version "0.9.0")
+    (version "0.9.3")
     (source
      (origin
        (method url-fetch)
@@ -7524,7 +7538,7 @@ Strife, Chex Quest, and fan-created games like Harmony, Hacx and Freedoom.")
              "mirror://sourceforge/odamex/Odamex/" version "/"
              "odamex-src-" version ".tar.bz2"))
        (sha256
-        (base32 "0yfrvx8zb3chy47fyz4nik6gbh0y5608yvld4gz4y8l158qk71y1"))))
+        (base32 "0vmw9ijb6n4wrxjxixakn7l6a6carnvs9wbbzb4vcq1brbzyrb0p"))))
     (build-system cmake-build-system)
     (arguments `(#:tests? #f))          ; no tests
     (native-inputs
@@ -8967,7 +8981,7 @@ a fortress beyond the forbidden swamp.")
        ("mesa" ,mesa)
        ("miniupnpc" ,miniupnpc)
        ("openal" ,openal)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("readline" ,readline)
        ("sdl" ,sdl2)
        ("tinyxml" ,tinyxml)
@@ -9301,7 +9315,7 @@ and also provides the base for the FlightGear Flight Simulator.")
        ("openal" ,openal)
        ("openscenegraph" ,openscenegraph-3.4)
        ("plib" ,plib)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)
        ("simgear" ,simgear)
@@ -9428,7 +9442,7 @@ play with up to four players simultaneously.  It has network support.")
        ("libpng" ,libpng)
        ("lua" ,lua-5.1)
        ("physfs" ,physfs)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("sdl" ,(sdl-union
                 (list sdl2 sdl2-mixer sdl2-net sdl2-ttf sdl2-image)))))
     (native-inputs
@@ -10113,7 +10127,7 @@ remake of that series or any other game.")
       ("ocl-icd" ,ocl-icd)
       ("openblas" ,openblas)
       ("opencl-headers" ,opencl-headers)
-      ("qtbase" ,qtbase)
+      ("qtbase" ,qtbase-5)
       ("zlib" ,zlib)))
    (arguments
     '(#:configure-flags '("-DUSE_BLAS=YES")
@@ -10156,7 +10170,7 @@ can be downloaded from @url{https://zero.sjeng.org/best-network}.")
    (native-inputs
     `(("pkg-config" ,pkg-config)))
    (inputs
-    `(("qtbase" ,qtbase)
+    `(("qtbase" ,qtbase-5)
       ("qtmultimedia" ,qtmultimedia)
       ("qtsvg" ,qtsvg)))
    (arguments
@@ -10248,7 +10262,7 @@ can be downloaded from @url{https://zero.sjeng.org/best-network}.")
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
        ("python" ,python-wrapper)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
@@ -10296,7 +10310,7 @@ This package is part of the KDE games module.")
        ("knewstuff" ,knewstuff)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -10335,7 +10349,7 @@ This package is part of the KDE games module.")
        ("kxmlgui" ,kxmlgui)
        ("ktextwidgets" ,ktextwidgets)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Miniature golf game")
@@ -10379,7 +10393,7 @@ This package is part of the KDE games module.")
        ("kcoreaddons" ,kcoreaddons)
        ("ki18n" ,ki18n)
        ("kwidgetsaddons" ,kwidgetsaddons)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
     (synopsis "Shared library for kmahjongg and kshisen")
@@ -10412,7 +10426,7 @@ other Mah Jongg like games.")
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
        ("libkmahjongg" ,libkmahjongg)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -10455,7 +10469,7 @@ This package is part of the KDE games module.")
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
        ("libkmahjongg" ,libkmahjongg)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Shisen-Sho solitaire game")
@@ -10500,7 +10514,7 @@ This package is part of the KDE games module.")
        ("python" ,python)
        ("python-twisted" ,python-twisted)
        ("python-pyqt" ,python-pyqt)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
     (synopsis "Classical Mah Jongg game for 4 players")
@@ -10543,7 +10557,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Breakout like game")
@@ -10582,7 +10596,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Classical mine sweeper game")
@@ -10619,7 +10633,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -10659,7 +10673,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -10698,7 +10712,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -10742,7 +10756,7 @@ This package is part of the KDE games module.")
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
        ("glu" ,glu)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -10799,7 +10813,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Place 5 equal pieces together, but wait, there are 3 new ones")
@@ -10843,7 +10857,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Action and puzzle solving game")
@@ -10887,7 +10901,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Three-in-a-row game")
@@ -10923,7 +10937,7 @@ This package is part of the KDE games module.")
        ("ki18n" ,ki18n)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -10963,7 +10977,7 @@ This package is part of the KDE games module.")
        ("ktextwidgets" ,ktextwidgets)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11005,7 +11019,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Turn the board pieces to get all computers connected")
@@ -11044,7 +11058,7 @@ This package is part of the KDE games module.")
        ("ki18n" ,ki18n)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Arcade bombing game")
@@ -11089,7 +11103,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11126,7 +11140,7 @@ This package is part of the KDE games module.")
        ("libkdegames" ,libkdegames)
        ("phonon" ,phonon)
        ("qca" ,qca)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)
        ("zlib" ,zlib)))
@@ -11188,7 +11202,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)
        ("shared-mime-info" ,shared-mime-info)))
@@ -11230,7 +11244,7 @@ This package is part of the KDE games module.")
        ("kiconthemes" ,kiconthemes)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Yahtzee dice game")
@@ -11270,7 +11284,7 @@ This package is part of the KDE games module.")
        ("ktextwidgets" ,ktextwidgets)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11316,7 +11330,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11357,7 +11371,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11396,7 +11410,7 @@ This package is part of the KDE games module.")
        ("ki18n" ,ki18n)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11436,7 +11450,7 @@ This package is part of the KDE games module.")
        ("ki18n" ,ki18n)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11470,7 +11484,7 @@ This package is part of the KDE games module.")
        ("ki18n" ,ki18n)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11510,7 +11524,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Port of the classic BSD console game robots")
@@ -11552,7 +11566,7 @@ This package is part of the KDE games module.")
        ("ki18n" ,ki18n)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11590,7 +11604,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Simple ball dodging game")
@@ -11631,7 +11645,7 @@ This package is part of the KDE games module.")
        ("ktextwidgets" ,ktextwidgets)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Battleship board game with built-in game server")
@@ -11671,7 +11685,7 @@ This package is part of the KDE games module.")
        ("kio" ,kio)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11713,7 +11727,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)))
     (home-page "https://games.kde.org/")
     (synopsis "Dots and Boxes game")
@@ -11750,7 +11764,7 @@ This package is part of the KDE games module.")
        ("kwidgetsaddons" ,kwidgetsaddons)
        ("kxmlgui" ,kxmlgui)
        ("libkdegames" ,libkdegames)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)))
     (home-page "https://games.kde.org/")
@@ -11913,7 +11927,7 @@ and chess engines.")
     (native-inputs
      `(("qttools" ,qttools)))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)
        ("qtspeech" ,qtspeech)
        ("qtsvg" ,qtsvg)
@@ -11958,56 +11972,59 @@ etc.  You can also play games on FICS or against an engine.")
     (license license:gpl2+)))
 
 (define-public stockfish
-  (package
-    (name "stockfish")
-    (version "13")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/official-stockfish/Stockfish")
-             (commit (string-append "sf_" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32 "15dfp9fnl3w7dgxhqmsm461amsysn646rj1arnzvwhy2i6ijhg2m"))))
-    (build-system gnu-build-system)
-    (inputs
-     `(("neural-network"
-        ,(origin
-           (method url-fetch)
-           (uri "https://tests.stockfishchess.org/api/nn/nn-62ef826d1a6d.nnue")
-           (sha256
-            (base32 "0qsy9rr4zgxrpgwhwbi96z01a2560am2b00q2klbj4bd39nq5vv2"))))))
-    (arguments
-     `(#:tests? #f
-       #:make-flags (list "-C" "src"
-                          "build"
-                          (string-append "PREFIX="
-                                         (assoc-ref %outputs "out"))
-                          (string-append "ARCH="
-                                         ,(match (%current-system)
-                                            ("x86_64-linux" "x86-64")
-                                            ("i686-linux" "x86-32")
-                                            ("aarch64-linux" "general-64")
-                                            ("armhf-linux" "armv7")
-                                            ("mips64el-linux" "general-64")
-                                            (_ "general-32"))))
-       #:phases (modify-phases %standard-phases
-                  (delete 'configure)
-                  ;; The official neural network file is needed for building
-                  ;; and is embedded in the resulting binary.
-                  (add-after 'unpack 'copy-net
-                    (lambda* (#:key inputs #:allow-other-keys)
-                      (copy-file (assoc-ref inputs "neural-network")
-                                 "src/nn-62ef826d1a6d.nnue")
-                      #t)))))
-    (synopsis "Strong chess engine")
-    (description
-     "Stockfish is a very strong chess engine.  It is much stronger than the
+  (let ((neural-network-revision "3475407dc199")) ; also update hash below
+    (package
+      (name "stockfish")
+      (version "14")
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/official-stockfish/Stockfish")
+               (commit (string-append "sf_" version))))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "046b3rq9w8lzgk07q5zazzkl93ai99ab18hr9d8n73mabjpi6zbx"))))
+      (build-system gnu-build-system)
+      (inputs
+       `(("neural-network"
+          ,(origin
+             (method url-fetch)
+             (uri (string-append "https://tests.stockfishchess.org/api/nn/nn-"
+                                 neural-network-revision ".nnue"))
+             (sha256
+              (base32
+               "11zci5kgwdw9rh8w2w4p84764g82rr666y3n8r2flwwrq5yl0x9l"))))))
+      (arguments
+       `(#:tests? #f
+         #:make-flags (list "-C" "src"
+                            "build"
+                            (string-append "PREFIX="
+                                           (assoc-ref %outputs "out"))
+                            (string-append "ARCH="
+                                           ,(match (%current-system)
+                                              ("x86_64-linux" "x86-64")
+                                              ("i686-linux" "x86-32")
+                                              ("aarch64-linux" "general-64")
+                                              ("armhf-linux" "armv7")
+                                              ("mips64el-linux" "general-64")
+                                              (_ "general-32"))))
+         #:phases (modify-phases %standard-phases
+                    (delete 'configure)
+                    ;; The official neural network file is needed for building
+                    ;; and is embedded in the resulting binary.
+                    (add-after 'unpack 'copy-net
+                      (lambda* (#:key inputs #:allow-other-keys)
+                        (copy-file (assoc-ref inputs "neural-network")
+                                   (format #f "src/nn-~a.nnue"
+                                           ,neural-network-revision)))))))
+      (synopsis "Strong chess engine")
+      (description
+       "Stockfish is a very strong chess engine.  It is much stronger than the
 best human chess grandmasters.  It can be used with UCI-compatible GUIs like
 ChessX.")
-    (home-page "https://stockfishchess.org/")
-    (license license:gpl3+)))
+      (home-page "https://stockfishchess.org/")
+      (license license:gpl3+))))
 
 (define-public barrage
   (package
@@ -12044,14 +12061,14 @@ get high scores.")
 (define-public burgerspace
   (package
     (name "burgerspace")
-    (version "1.9.3")
+    (version "1.9.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://perso.b2b2c.ca/~sarrazip/dev/"
                            "burgerspace-" version ".tar.gz"))
        (sha256
-        (base32 "1005a04rbn4lzjrpfg0m394k2mfaji63fm2qhdqdsxila8a6kjbv"))))
+        (base32 "1xb4immzmd419aa08lgkzf7ibxa6ax238zb2l5iw9nkgvzlh1v6l"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -12244,7 +12261,7 @@ game.")  ;thanks to Debian for description
        ("libgcrypt" ,libgcrypt)
        ("libircclient" ,libircclient)
        ("protobuf" ,protobuf-2)         ; remove package when no longer needed
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("sdl" ,(sdl-union (list sdl sdl-mixer)))
        ("sqlite" ,sqlite)
        ("tinyxml" ,tinyxml)
@@ -12472,3 +12489,38 @@ game FPS.")
 implemented using ncurses user interface.  An SDL graphical version is also
 available.")
     (license license:gpl3+)))
+
+(define-public schiffbruch
+  ;; There haven't been any releases for several years, so I've taken the most
+  ;; recent commit from the master branch that didn't fail to build (the last
+  ;; commit gave me a compile error).
+  (let ((commit "e41916d15d87749c82c5005cbb42d1bb079b43d9"))
+    (package
+      (name "schiffbruch")
+      (version (git-version "1.2.1" "0" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/sandsmark/Schiffbruch")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0lg3rqacrapf6c4sxi12cm9bmg43mlbclway1zxcm848pi1xkzwv"))))
+      (build-system cmake-build-system)
+      (arguments
+       `(#:tests? #f                              ; no tests
+         #:build-type "Release"))
+      (native-inputs
+       `(("gcc" ,gcc-11)))                    ; need C++20-compatible compiler
+      (inputs
+       `(("sfml" ,sfml)))
+      (home-page "https://github.com/sandsmark/Schiffbruch/")
+      (synopsis "Pixelart survival game")
+      (description
+       "Schiffbruch is a mix of building, strategy and adventure and gets played
+with a two-dimensional view.  The game deals with the consequences of a ship
+wreckage.  You're stranded on a desert island and have to survive.  In order to
+do so you need to explore the island, find food, build a shelter and try to
+get attention, so you get found.")
+      (license license:cc-by4.0))))

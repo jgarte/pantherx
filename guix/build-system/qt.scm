@@ -3,6 +3,7 @@
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
 ;;; Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2019 Hartmut Goebel <h.goebel@crazy-compilers.com>
+;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -22,6 +23,8 @@
 (define-module (guix build-system qt)
   #:use-module (guix store)
   #:use-module (guix utils)
+  #:use-module ((guix build qt-utils)
+                #:select (%qt-wrap-excluded-inputs))
   #:use-module (guix derivations)
   #:use-module (guix search-paths)
   #:use-module (guix build-system)
@@ -53,6 +56,7 @@
 (define %qt-build-system-modules
   ;; Build-side modules imported and used by default.
   `((guix build qt-build-system)
+    (guix build qt-utils)
     ,@%cmake-build-system-modules))
 
 (define (default-cmake)
@@ -124,6 +128,7 @@
                    (phases '(@ (guix build qt-build-system)
                                %standard-phases))
                    (qt-wrap-excluded-outputs ''())
+                   (qt-wrap-excluded-inputs %qt-wrap-excluded-inputs)
                    (system (%current-system))
                    (imported-modules %qt-build-system-modules)
                    (modules '((guix build qt-build-system)
@@ -147,6 +152,7 @@ provides a 'CMakeLists.txt' file as its build system."
                                        search-paths)
                  #:phases ,phases
                  #:qt-wrap-excluded-outputs ,qt-wrap-excluded-outputs
+                 #:qt-wrap-excluded-inputs ,qt-wrap-excluded-inputs
                  #:configure-flags ,configure-flags
                  #:make-flags ,make-flags
                  #:out-of-source? ,out-of-source?

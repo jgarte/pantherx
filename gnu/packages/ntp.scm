@@ -6,6 +6,8 @@
 ;;; Copyright © 2016, 2017, 2018 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2018–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2019 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2021 Marius Bakke <marius@gnu.org>
+;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -122,6 +124,16 @@ time-stamping or reference clock, sub-microsecond accuracy is possible.")
                    "/ntp-" version ".tar.gz")))
        (sha256
         (base32 "06cwhimm71safmwvp6nhxp6hvxsg62whnbgbgiflsqb8mgg40n7n"))
+       ;; Add an upstream patch to fix build with GCC 10.  Taken from
+       ;; <https://bugs.ntp.org/show_bug.cgi?id=3688>.
+       (patches (list (origin
+                        (method url-fetch)
+                        (uri "https://bugs.ntp.org/attachment.cgi?id=1760\
+&action=diff&context=patch&collapsed=&headers=1&format=raw")
+                        (file-name "ntp-gcc-compat.patch")
+                        (sha256
+                         (base32
+                          "13d28sg45rflc7kqiv30asrhna8n69wlpwx16l65rravgpvp90h2")))))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -176,11 +188,16 @@ computers over a network.")
                 "0ijsylc7a4jlpxsqa0jq1w1c7333id8pcakzl7a5749ria1xp0l5"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:configure-flags `( "--with-privsep-user=ntpd"
-                            "--localstatedir=/var"
-                            ,(string-append "--with-cacert="
-                                            (assoc-ref %build-inputs "libressl")
-                                            "/etc/ssl/cert.pem"))
+     `(#:configure-flags
+       (let* ((libressl (assoc-ref %build-inputs "libressl"))
+              (libressl-version ,(package-version
+                                  (car (assoc-ref (package-inputs this-package)
+                                                  "libressl")))))
+         (list "--with-privsep-user=ntpd"
+               "--localstatedir=/var"
+               (string-append "--with-cacert=" libressl
+                              "/share/libressl-" libressl-version
+                              "/cert.pem")))
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'modify-install-locations

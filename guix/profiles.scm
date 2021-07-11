@@ -11,6 +11,7 @@
 ;;; Copyright © 2019 Kyle Meyer <kyle@kyleam.com>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2020 Danny Milosavljevic <dannym@scratchpost.org>
+;;; Copyright © 2014 David Thompson <davet@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -54,6 +55,7 @@
   #:use-module (srfi srfi-26)
   #:use-module (srfi srfi-34)
   #:use-module (srfi srfi-35)
+  #:autoload   (srfi srfi-98) (get-environment-variables)
   #:export (&profile-error
             profile-error?
             profile-error-profile
@@ -127,6 +129,7 @@
             %default-profile-hooks
             profile-derivation
             profile-search-paths
+            load-profile
 
             profile
             profile?
@@ -334,7 +337,10 @@ file name."
     (filter-map (lambda (entry)
                   (let ((other (lookup (manifest-entry-name entry)
                                        (manifest-entry-output entry))))
-                    (and other (list entry other))))
+                    (and other
+                         (not (eq? (manifest-entry-item entry)
+                                   (manifest-entry-item other)))
+                         (list entry other))))
                 (manifest-transitive-entries manifest)))
 
   (define lower-pair
@@ -1144,7 +1150,7 @@ MANIFEST.  Single-file bundles are required by programs such as Git and Lynx."
                 (lambda (port)
                   (write
                    `(normal-top-level-add-to-load-path
-                     (list ,@subdirs))
+                     (list ,@(delete-duplicates subdirs)))
                    port)
                   (newline port)
                   #t)))))))
@@ -1745,16 +1751,15 @@ MANIFEST."
                                        maproot "updmap/pdftex/")))))
           #t)))
 
-    (with-monad %store-monad
-      (if (any (cut string-prefix? "texlive-" <>)
-               (map manifest-entry-name (manifest-entries manifest)))
-          (gexp->derivation "texlive-configuration" build
-                            #:substitutable? #f
-                            #:local-build? #t
-                            #:properties
-                            `((type . profile-hook)
-                              (hook . texlive-configuration)))
-          (return #f))))
+  (mlet %store-monad ((texlive-base (manifest-lookup-package manifest "texlive-base")))
+    (if texlive-base
+        (gexp->derivation "texlive-configuration" build
+                          #:substitutable? #f
+                          #:local-build? #t
+                          #:properties
+                          `((type . profile-hook)
+                            (hook . texlive-configuration)))
+        (return #f))))
 
 (define %default-profile-hooks
   ;; This is the list of derivation-returning procedures that are called by
@@ -1810,12 +1815,10 @@ are cross-built for TARGET."
                                    (mapm/accumulate-builds (lambda (hook)
                                                              (hook manifest))
                                                            hooks))))
-    (define inputs
-      (append (filter-map (lambda (drv)
-                            (and (derivation? drv)
-                                 (gexp-input drv)))
-                          extras)
-              (manifest-inputs manifest)))
+    (define extra-inputs
+      (filter-map (lambda (drv)
+                    (and (derivation? drv) (gexp-input drv)))
+                  extras))
 
     (define glibc-utf8-locales                    ;lazy reference
       (module-ref (resolve-interface '(gnu packages base))
@@ -1849,20 +1852,11 @@ are cross-built for TARGET."
 
             #+(if locales? set-utf8-locale #t)
 
-            (define search-paths
-              ;; Search paths of MANIFEST's packages, converted back to their
-              ;; record form.
-              (map sexp->search-path-specification
-                   (delete-duplicates
-                    '#$(map search-path-specification->sexp
-                            (manifest-search-paths manifest)))))
-
-            (build-profile #$output '#$inputs
+            (build-profile #$output '#$(manifest->gexp manifest)
+                           #:extra-inputs '#$extra-inputs
                            #:symlink #$(if relative-symlinks?
                                            #~symlink-relative
-                                           #~symlink)
-                           #:manifest '#$(manifest->gexp manifest)
-                           #:search-paths search-paths))))
+                                           #~symlink)))))
 
     (gexp->derivation name builder
                       #:system system
@@ -1924,6 +1918,44 @@ Use GETENV to determine the current settings and report only settings not
 already effective."
   (evaluate-search-paths (manifest-search-paths manifest)
                          (list profile) getenv))
+
+(define %precious-variables
+  ;; Environment variables in the default 'load-profile' white list.
+  '("HOME" "USER" "LOGNAME" "DISPLAY" "XAUTHORITY" "TERM" "TZ" "PAGER"))
+
+(define (purify-environment white-list white-list-regexps)
+  "Unset all environment variables except those that match the regexps in
+WHITE-LIST-REGEXPS and those listed in WHITE-LIST."
+  (for-each unsetenv
+            (remove (lambda (variable)
+                      (or (member variable white-list)
+                          (find (cut regexp-exec <> variable)
+                                white-list-regexps)))
+                    (match (get-environment-variables)
+                      (((names . _) ...)
+                       names)))))
+
+(define* (load-profile profile
+                       #:optional (manifest (profile-manifest profile))
+                       #:key pure? (white-list-regexps '())
+                       (white-list %precious-variables))
+  "Set the environment variables specified by MANIFEST for PROFILE.  When
+PURE? is #t, unset the variables in the current environment except those that
+match the regexps in WHITE-LIST-REGEXPS and those listed in WHITE-LIST.
+Otherwise, augment existing environment variables with additional search
+paths."
+  (when pure?
+    (purify-environment white-list white-list-regexps))
+  (for-each (match-lambda
+              ((($ <search-path-specification> variable _ separator) . value)
+               (let ((current (getenv variable)))
+                 (setenv variable
+                         (if (and current (not pure?))
+                             (if separator
+                                 (string-append value separator current)
+                                 value)
+                             value)))))
+            (profile-search-paths profile manifest)))
 
 (define (profile-regexp profile)
   "Return a regular expression that matches PROFILE's name and number."

@@ -1,6 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
+;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -148,20 +149,12 @@
       url
       (string-append url "/")))
 
-(cond-expand
-  (guile-3
-   ;; XXX: Work around a bug in Guile 3.0.2 where #:verify-certificate? would
-   ;; be ignored (<https://bugs.gnu.org/40486>).
-   (define* (http-get* uri #:rest rest)
-     (apply http-request uri #:method 'GET rest))
-   (define* (http-post* uri #:rest rest)
-     (apply http-request uri #:method 'POST rest)))
-  (else                                           ;Guile 2.2
-   ;; Guile 2.2 did not have #:verify-certificate? so ignore it.
-   (define* (http-get* uri #:key verify-certificate? streaming?)
-     (http-request uri #:method 'GET #:streaming? streaming?))
-   (define* (http-post* uri #:key verify-certificate? streaming?)
-     (http-request uri #:method 'POST #:streaming? streaming?))))
+;; XXX: Work around a bug in Guile 3.0.2 where #:verify-certificate? would
+;; be ignored (<https://bugs.gnu.org/40486>).
+(define* (http-get* uri #:rest rest)
+  (apply http-request uri #:method 'GET rest))
+(define* (http-post* uri #:rest rest)
+  (apply http-request uri #:method 'POST rest))
 
 (define %date-regexp
   ;; Match strings like "2014-11-17T22:09:38+01:00" or
@@ -463,8 +456,13 @@ URL could not be found."
         ((visit . _)
          (let ((snapshot (visit-snapshot visit)))
            (match (and=> (find (lambda (branch)
-                                 (string=? (string-append "refs/tags/" tag)
-                                           (branch-name branch)))
+                                 (or
+                                  ;; Git specific.
+                                  (string=? (string-append "refs/tags/" tag)
+                                            (branch-name branch))
+                                  ;; Hg specific.
+                                  (string=? tag
+                                            (branch-name branch))))
                                (snapshot-branches snapshot))
                          branch-target)
              ((? release? release)

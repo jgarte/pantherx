@@ -45,17 +45,12 @@
   #:autoload   (gnu packages gnupg) (guile-gcrypt)
   #:use-module (gnu packages gawk)
   #:use-module (gnu packages bash)
-  #:use-module (gnu packages less)
   #:use-module (gnu packages virtualization)
   #:use-module (gnu packages disk)
-  #:use-module (gnu packages zile)
   #:use-module (gnu packages linux)
-  #:use-module (gnu packages admin)
 
   #:use-module (gnu bootloader)
   #:use-module (gnu bootloader grub)
-  #:use-module (gnu system shadow)
-  #:use-module (gnu system pam)
   #:use-module (gnu system linux-container)
   #:use-module (gnu system linux-initrd)
   #:use-module (gnu bootloader)
@@ -718,7 +713,7 @@ with '-virtfs' options for the host file systems listed in SHARED-FS."
 
      #$@(map virtfs-option shared-fs)
      "-vga std"
-     (format #f "-drive file=~a,if=virtio,cache=writeback,werror=report,readonly"
+     (format #f "-drive file=~a,if=virtio,cache=writeback,werror=report,readonly=on"
              #$image)))
 
 (define* (system-qemu-image/shared-store-script os
