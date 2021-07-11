@@ -228,7 +228,7 @@ astronomical image-processing packages like Drizzle, Swarp or SExtractor.")
 (define-public gnuastro
   (package
     (name "gnuastro")
-    (version "0.14")
+    (version "0.15")
     (source
      (origin
        (method url-fetch)
@@ -236,7 +236,7 @@ astronomical image-processing packages like Drizzle, Swarp or SExtractor.")
                            version ".tar.lz"))
        (sha256
         (base32
-         "1xp6n42qxv0x6yigi2w2l5k8006smv27lhrcssysgsvzbydghzg5"))))
+         "1jjr3ixxbpsr5m4s7ahh12ymcnlvjzwcp02ya16b1lvzrz1wmhy4"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--disable-static")))
@@ -401,7 +401,7 @@ deconvolution).  Such post-processing is not performed by Stackistry.")
 (define-public stellarium
   (package
     (name "stellarium")
-    (version "0.21.0")
+    (version "0.21.1")
     (source
      (origin
        (method url-fetch)
@@ -409,10 +409,10 @@ deconvolution).  Such post-processing is not performed by Stackistry.")
                            "/releases/download/v" version
                            "/stellarium-" version ".tar.gz"))
        (sha256
-        (base32 "04vg2asj9gygwnrs32scqc8192ln2lyqa9v7cjqk8zd4frkwszwp"))))
+        (base32 "049jlc8vx06pad5h2syrmf7f1l346yr5iraai0wkn8s8pk30j8q7"))))
     (build-system cmake-build-system)
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtlocation" ,qtlocation)
        ("qtmultimedia" ,qtmultimedia)
        ("qtscript" ,qtscript)
@@ -421,7 +421,7 @@ deconvolution).  Such post-processing is not performed by Stackistry.")
     (native-inputs
      `(("gettext" ,gettext-minimal)     ; xgettext is used at compile time
        ("perl" ,perl)                   ; for pod2man
-       ("qtbase" ,qtbase)               ; Qt MOC is needed at compile time
+       ("qtbase" ,qtbase-5)               ; Qt MOC is needed at compile time
        ("qttools" ,qttools)))
     (arguments
      `(#:test-target "test"
@@ -828,7 +828,7 @@ It can be used to calculate the trajectory of satellites.")
 (define-public indi
   (package
     (name "indi")
-    (version "1.9.0")
+    (version "1.9.1")
     (source
      (origin
        (method git-fetch)
@@ -837,7 +837,7 @@ It can be used to calculate the trajectory of satellites.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0hxklmf432czfmzsyy3rgahs9nr48k4f8v7jxyv2j6py3k743mb1"))))
+        (base32 "0zhsm60hgnmy9lvwckijf6f6yikbvdbxy2qlgclv09p14lgr6wd9"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags

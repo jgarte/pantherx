@@ -45,6 +45,10 @@
 ;;; Copyright © 2020, 2021 Zheng Junjie <873216071@qq.com>
 ;;; Copyright © 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
+;;; Copyright © 2021 Renzo Poddighe <renzo@poddighe.nl>
+;;; Copyright © 2021 Paul A. Patience <paul@apatience.com>
+;;; Copyright © 2021 Niklas Eklund <niklas.eklund@posteo.net>
+;;; Copyright © 2021 Nikita Domnitskii <nikita@domnitskii.me>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -257,7 +261,7 @@ used to further tweak the behaviour of the different profiles.")
 (define-public bemenu
   (package
     (name "bemenu")
-    (version "0.4.1")
+    (version "0.6.2")
     (source
      (origin
        (method git-fetch)
@@ -266,7 +270,7 @@ used to further tweak the behaviour of the different profiles.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1fjcs9d3533ay3nz79cx3c0lmy2chgragr2lhsy0xl2ckr0iins0"))))
+        (base32 "13y4y3i03vdx3zkh4lm67xmigzycf8fxg4fdr5s4x2brr3ya46fv"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f
@@ -317,7 +321,7 @@ with X11 or Wayland, or in a text terminal with ncurses.")
    `(#:configure-flags '("-DCMAKE_BUILD_TYPE=Release")
      #:tests? #f)) ; Test suite is a rather manual process.
   (inputs
-   `(("qtbase" ,qtbase)
+   `(("qtbase" ,qtbase-5)
      ("qtscript" ,qtscript)
      ("qtsvg" ,qtsvg)
      ("qtx11extras" ,qtx11extras)))
@@ -356,6 +360,33 @@ application.")
 high-level and flexible remapping mechanisms.  It affects the low-level
 layers (evdev and uinput), making remapping work in almost all the places.")
     (license license:gpl3+)))           ; see README.md (no licence headers)
+
+(define-public xkb-switch
+  (package
+    (name "xkb-switch")
+    (version "1.8.5")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url "https://github.com/grwlf/xkb-switch")
+         (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1sd6ihgsswp6hjm1i4y092n4gl3gj0bc22grz4n7iy43mwphi40d"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f))                    ;no test target
+    (inputs
+     `(("libx11" ,libx11)
+       ("libxkbfile" ,libxkbfile)))
+    (home-page "https://github.com/grwlf/xkb-switch")
+    (synopsis "Switch your X keyboard layouts from the command line")
+    (description
+     "xkb-switch is a C++ program that queries and changes the XKB layout
+state.")
+    (license license:gpl3+)))
 
 (define-public xclip
   (package
@@ -509,6 +540,39 @@ resize, hide, and modify window properties like the title.  If your window
 manager supports it, you can use xdotool to switch desktops, move windows
 between desktops, and change the number of desktops.")
     (license license:bsd-3)))
+
+(define-public xdo
+  (package
+    (name "xdo")
+    (version "0.5.7")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/baskerville/xdo")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1h3jrygcjjbavdbkpx2hscsf0yf97gk487lzjdlvymd7dxdv9hy9"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ; no tests
+       #:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             (string-append "PREFIX=" %output))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
+    (inputs
+     `(("libxcb" ,libxcb)
+       ("xcb-util-wm" ,xcb-util-wm)
+       ("xcb-util" ,xcb-util)))
+    (home-page "https://github.com/baskerville/xdo")
+    (synopsis "Small X utility to perform elementary actions on windows")
+    (description
+     "Apply the given action to the given windows.  If no window IDs and no
+options are given, the action applies to the focused window.")
+    (license license:bsd-2)))
 
 (define-public xeyes
   (package
@@ -1085,15 +1149,14 @@ compact configuration syntax.")
 (define-public rxvt-unicode
   (package
     (name "rxvt-unicode")
-    (version "9.22")
+    (version "9.26")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://dist.schmorp.de/rxvt-unicode/Attic/"
                                   name "-" version ".tar.bz2"))
-              (patches (search-patches "rxvt-unicode-escape-sequences.patch"))
               (sha256
                (base32
-                "1pddjn5ynblwfrdmskylrsxb9vfnk3w4jdnq2l8xn2pspkljhip9"))))
+                "12y9p32q0v7n7rhjla0j2g9d5rj2dmwk20c9yhlssaaxlawiccb4"))))
     (build-system gnu-build-system)
     (arguments
      ;; This sets the destination when installing the necessary terminal
@@ -1143,7 +1206,8 @@ compact configuration syntax.")
                #t))))))
     (inputs
      `(("libXft" ,libxft)
-       ("libX11" ,libx11)))
+       ("libX11" ,libx11)
+       ("libXt" ,libxt)))
     (native-inputs
      `(("ncurses" ,ncurses)         ;trigger the installation of terminfo data
        ("perl" ,perl)
@@ -1201,7 +1265,7 @@ Escape key when Left Control is pressed and released on its own.")
 (define-public libwacom
   (package
     (name "libwacom")
-    (version "1.7")
+    (version "1.10")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1209,7 +1273,7 @@ Escape key when Left Control is pressed and released on its own.")
                     "libwacom-" version "/libwacom-" version ".tar.bz2"))
               (sha256
                (base32
-                "0797gc055dgg2jfqijy9823bd83jwr4wb2z9id992qlcr0xmz1rw"))))
+                "14aj4ss1chxxgaprs9sfriia2ch9wj9rqay0ndkzk1m7jx2qrjgn"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:configure-flags '("--disable-static")))
@@ -2449,10 +2513,13 @@ Xwrits hides itself until you should take another break.")
          (replace 'install
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
-                    (bin (string-append out "/bin")))
+                    (bin (string-append out "/bin"))
+                    (man (string-append out "/share/man/man1")))
                (mkdir-p bin)
                (install-file "xsettingsd" bin)
                (install-file "dump_xsettings" bin)
+               (install-file "xsettingsd.1" man)
+               (install-file "dump_xsettings.1" man)
                #t))))))
     (home-page "https://github.com/derat/xsettingsd")
     (synopsis "Xorg settings daemon")
@@ -2796,3 +2863,98 @@ and execute @file{.desktop} files of the Application type.")
      "The @command{hsetroot} command composes wallpapers for X.
 This package is the fork of hsetroot by Hyriand.")
     (license license:gpl2+)))
+
+(define-public jumpapp
+  (package
+    (name "jumpapp")
+    (version "1.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/mkropat/jumpapp")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1jrk4mm42sz6ca2gkb6w3dad53d4im4shpgsq8s4vr6xpl3b43ry"))))
+    (build-system gnu-build-system)
+    (arguments `(#:phases
+                 (modify-phases %standard-phases
+                   (delete 'configure)
+                   (delete 'check)
+                   (add-before 'install 'set-prefix-in-makefile
+                     (lambda* (#:key outputs #:allow-other-keys)
+                       (let ((out (assoc-ref outputs "out")))
+                         (substitute* "Makefile"
+                           (("PREFIX =.*")
+                            (string-append "PREFIX = " out "\n")))
+                         #true))))))
+    (propagated-inputs
+     `(("wmctrl" ,wmctrl)
+       ("xdotool" ,xdotool)
+       ("xprop" ,xprop)))
+    (native-inputs
+     `(("pandoc" ,pandoc)
+       ("perl" ,perl)))
+    (synopsis "Run-or-raise application switcher for any X11 desktop")
+    (description
+     "Bind a key for any given application that will launch the application,
+if it's not already running, or focus the application's window,if it is running.
+Pressing the key again will cycle to the application's next window,
+if there's more than one.")
+    (home-page "https://github.com/mkropat/jumpapp")
+    (license license:expat)))
+
+(define-public xkbset
+  (package
+    (name "xkbset")
+    (version "0.6")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://faculty.missouri.edu/~stephen/software/"
+                           name "/" name "-" version ".tar.gz"))
+       (sha256
+        (base32 "199mlm127zk1lr8nrq22n68l2l8cjwc4cgwd67rg1i6497n2y0xc"))))
+    (build-system gnu-build-system)
+    (inputs
+     `(("libx11" ,libx11)
+       ("perl" ,perl)
+       ("perl-tk" ,perl-tk)))
+    (arguments
+     `(#:tests? #f                      ; There are none.
+       #:make-flags
+       `(,,(string-append "CC=" (cc-for-target))
+         ,(string-append "X11PREFIX=" %output)
+         ,(string-append "X11BASE=" (assoc-ref %build-inputs "libx11"))
+         ,(string-append "INSTALL_MAN1=" %output "/share/man/man1"))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (add-before 'install 'create-install-directories
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (mkdir-p out)
+               (with-directory-excursion out
+                 (for-each mkdir-p '("bin" "share/man/man1"))))
+             #t))
+         (add-after 'install 'wrap-perl-script
+           (lambda* (#:key outputs #:allow-other-keys)
+             (wrap-program (string-append (assoc-ref outputs "out")
+                                          "/bin/xkbset-gui")
+               `("PERL5LIB" ":" prefix (,(getenv "PERL5LIB"))))
+             #t))
+         (replace 'install-license-files
+           (lambda* (#:key outputs #:allow-other-keys)
+             (install-file "COPYRIGHT"
+                           (string-append (assoc-ref outputs "out")
+                                          "/share/doc/" ,name "-" ,version))
+             #t)))))
+    (home-page "https://faculty.missouri.edu/~stephen/software/")
+    (synopsis "User-preference utility for XKB extensions for X")
+    (description
+     "This is a program to help manage many of the XKB features of the X Window
+System.  This includes such features as MouseKeys, AccessX, StickyKeys,
+BounceKeys, and SlowKeys.  It includes a graphical program to help with
+MouseKeys-acceleration management.")
+    (license license:bsd-3)))

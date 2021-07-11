@@ -11,7 +11,7 @@
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2015 Fabian Harfert <fhmgufs@web.de>
 ;;; Copyright © 2016 Roel Janssen <roel@gnu.org>
-;;; Copyright © 2016, 2018, 2020 Kei Kebreau <kkebreau@posteo.net>
+;;; Copyright © 2016, 2018, 2020, 2021 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2017 Thomas Danckaert <post@thomasdanckaert.be>
@@ -20,15 +20,15 @@
 ;;; Copyright © 2017 Ben Woodcroft <donttrustben@gmail.com>
 ;;; Copyright © 2017 Theodoros Foradis <theodoros@foradis.org>
 ;;; Copyright © 2017, 2019 Arun Isaac <arunisaac@systemreboot.net>
-;;; Copyright © 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Dave Love <me@fx@gnu.org>
-;;; Copyright © 2018, 2019, 2020 Jan Nieuwenhuizen <janneke@gnu.org>
+;;; Copyright © 2018, 2019, 2020, 2021 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2018 Joshua Sierles, Nextjournal <joshua@nextjournal.com>
 ;;; Copyright © 2018 Nadya Voronova <voronovank@gmail.com>
 ;;; Copyright © 2018 Adam Massmann <massmannak@gmail.com>
 ;;; Copyright © 2018, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2018 Eric Brown <brown@fastmail.com>
-;;; Copyright © 2018 Julien Lepiller <julien@lepiller.eu>
+;;; Copyright © 2018, 2021 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2018 Amin Bandali <bandali@gnu.org>
 ;;; Copyright © 2019, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2019 Steve Sprang <scs@stevesprang.com>
@@ -45,6 +45,7 @@
 ;;; Copyright © 2021 Gerd Heber <gerd.heber@gmail.com>
 ;;; Copyright © 2021 Franck Pérignon <franck.perignon@univ-grenoble-alpes.fr>
 ;;; Copyright © 2021 Philip McGrath <philip@philipmcgrath.com>
+;;; Copyright © 2021 Paul A. Patience <paul@apatience.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -74,6 +75,7 @@
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
+  #:use-module (guix build-system ocaml)
   #:use-module (guix build-system python)
   #:use-module (guix build-system ruby)
   #:use-module (gnu packages algebra)
@@ -85,11 +87,13 @@
   #:use-module (gnu packages check)
   #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
+  #:use-module (gnu packages coq)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages cyrus-sasl)
   #:use-module (gnu packages dbm)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages elf)
+  #:use-module (gnu packages emacs)
   #:use-module (gnu packages file)
   #:use-module (gnu packages flex)
   #:use-module (gnu packages fltk)
@@ -119,6 +123,7 @@
   #:use-module (gnu packages mpi)
   #:use-module (gnu packages multiprecision)
   #:use-module (gnu packages netpbm)
+  #:use-module (gnu packages ocaml)
   #:use-module (gnu packages onc-rpc)
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages popt)
@@ -236,16 +241,19 @@ programming languages.")
 (define-public qhull
   (package
     (name "qhull")
-    (version "2019.1")
+    (version "2020.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://www.qhull.org/download/qhull-"
                                   (car (string-split version #\.))
-                                  "-src-7.3.2.tgz"))
+                                  "-src-8.0.2.tgz"))
               (sha256
                (base32
-                "1ys3vh3qq0v9lh452xb932vp63advds1pxk42lk7cc1niiar0y9b"))))
+                "0zlbhg0lb6j60188c2xhcrvviskr079552icjldqhy1jhgmxghmm"))))
     (build-system cmake-build-system)
+    (arguments
+     `(#:configure-flags '("-DLINK_APPS_SHARED=ON"
+                           "-DCMAKE_POSITION_INDEPENDENT_CODE=ON")))
     (synopsis "Calculate convex hulls and related structures")
     (description
      "@code{Qhull} computes the convex hull, Delaunay triangulation, Voronoi
@@ -948,14 +956,14 @@ singular value problems.")
 (define-public gnuplot
   (package
     (name "gnuplot")
-    (version "5.4.1")
+    (version "5.4.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/gnuplot/gnuplot/"
                                   version "/gnuplot-"
                                   version ".tar.gz"))
        (sha256
-        (base32 "03jrqs5lvxmbbz2c4g17dn2hrxqwd3hfadk9q8wbkbkyas2h8sbb"))))
+        (base32 "1fp7rbhjmz2w63r72kicf8lfszzimz2csfx868fracw167hpaz75"))))
     (build-system gnu-build-system)
     (inputs `(("readline" ,readline)
               ("cairo" ,cairo)
@@ -1170,7 +1178,7 @@ incompatible with HDF5.")
              ;; libhdf5.so.  We truncate the hashes to avoid
              ;; unnecessary store references to those compilers:
              (substitute* "src/libhdf5.settings"
-              (("(/gnu/store/)([a-Z0-9]*)" all prefix hash)
+              (("(/gnu/store/)([a-zA-Z0-9]*)" all prefix hash)
                (string-append prefix (string-take hash 10) "..."))
               ;; Don't record the build-time kernel version to make the
               ;; settings file reproducible.
@@ -1229,7 +1237,8 @@ extremely large and complex data collections.")
               "https://www.hdfgroup.org/ftp/HDF5/current/src/unpacked/COPYING"))))
 
 (define-public hdf5-1.10
-  (package/inherit hdf5-1.8
+  (package
+    (inherit hdf5-1.8)
     (version "1.10.7")
     (source
      (origin
@@ -1248,7 +1257,8 @@ extremely large and complex data collections.")
        (patches (search-patches "hdf5-config-date.patch"))))))
 
 (define-public hdf5-1.12
-  (package/inherit hdf5-1.8
+  (package
+    (inherit hdf5-1.8)
     (version "1.12.0")
     (source
      (origin
@@ -1746,21 +1756,16 @@ online as well as original implementations of various other algorithms.")
 (define-public ipopt
   (package
     (name "ipopt")
-    (version "3.12.12")
+    (version "3.13.4")
     (source (origin
-              (method url-fetch)
-              (uri (string-append
-                    "https://www.coin-or.org/download/source/Ipopt/Ipopt-"
-                    version".tgz"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/coin-or/Ipopt")
+                    (commit (string-append "releases/" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "07yn9rzdswjk8n246qq6ci9ssf2bcplkifcpsfz9j6cdxw9vgbkv"))
-              (modules '((guix build utils)))
-              (snippet
-               ;; Make sure we don't use the bundled software.
-               '(begin
-                  (delete-file-recursively "ThirdParty")
-                  #t))))
+                "08gznhwhqv1x4baksz350ih8q16r5rd0k8vals6078m3h94khr4b"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases (modify-phases %standard-phases
@@ -1780,7 +1785,8 @@ online as well as original implementations of various other algorithms.")
                                           after "\n")))
                         #t))))))
     (native-inputs
-     `(("gfortran" ,gfortran)))
+     `(("gfortran" ,gfortran)
+       ("pkg-config" ,pkg-config)))
     (inputs
      ;; TODO: Maybe add dependency on COIN-MUMPS, ASL, and HSL.
      `(("lapack" ,lapack)))                    ;for both libblas and liblapack
@@ -1790,6 +1796,35 @@ online as well as original implementations of various other algorithms.")
      "The Interior Point Optimizer (IPOPT) is a software package for
 large-scale nonlinear optimization.  It provides C++, C, and Fortran
 interfaces.")
+    (license license:epl2.0)))
+
+(define-public cbc
+  (package
+    (name "cbc")
+    (version "2.10.5")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://www.coin-or.org/download/source/"
+                                  "Cbc/Cbc-" version ".tgz"))
+              (sha256
+               (base32
+                "0wk9vr6zc62gw71v7gnra5wxqlcljcgbhm5lasx236v791b986ns"))
+              (modules '((guix build utils)))
+              (snippet
+               ;; Make sure we don't use the bundled software.
+               '(delete-file-recursively "ThirdParty"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("gfortran" ,gfortran)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("openblas" ,openblas)))
+    (home-page "https://www.coin-or.org")
+    (synopsis "Branch-and-cut solver")
+    (description
+     "Cbc (Coin-or branch and cut) is a mixed integer linear programming
+solver written in C++.  It can be used as a library or as a standalone
+executable.")
     (license license:epl1.0)))
 
 (define-public clp
@@ -2051,7 +2086,7 @@ script files.")
     (name "octave")
     (inputs
      `(("qscintilla" ,qscintilla)
-       ("qt" ,qtbase)
+       ("qt" ,qtbase-5)
        ,@(package-inputs octave-cli)))
     (native-inputs
      `(("qttools" , qttools) ;for lrelease
@@ -2324,7 +2359,7 @@ ASCII text files using Gmsh's own scripting language.")
        ("python-dbus" ,python-dbus)
        ("python-h5py" ,python-h5py) ;optional, for HDF5 data
        ("python-pyqt" ,python-pyqt)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)))
     (propagated-inputs
      `(("python-numpy" ,python-numpy)))
@@ -2382,7 +2417,7 @@ September 2004}")
      `(("python" ,python-2)))
     (inputs
      `(("gfortran" ,gfortran)
-       ("lapack" ,lapack)
+       ("openblas" ,openblas)
        ("superlu" ,superlu)
        ;; leaving out hdf5 and fftw, as petsc expects them to be built with mpi
        ;; leaving out opengl, as configuration seems to only be for mac
@@ -2393,6 +2428,7 @@ September 2004}")
        #:configure-flags
        `("--with-mpi=0"
          "--with-openmp=1"
+         "--with-openblas=1"
          "--with-superlu=1")
        #:make-flags
        ;; Honor (parallel-job-count) for build.  Do not use --with-make-np,
@@ -3132,14 +3168,14 @@ implemented in ANSI C, and MPI for communications.")
 (define-public scotch
   (package
     (name "scotch")
-    (version "6.1.0")
+    (version "6.1.1")
     (source
      (origin
       (method url-fetch)
       (uri (string-append "https://gforge.inria.fr/frs/download.php/"
                           "latestfile/298/scotch_" version ".tar.gz"))
       (sha256
-       (base32 "1184fcv4wa2df8szb5lan6pjh0raarr45pk8ilpvbz23naikzg53"))
+       (base32 "04dkz24a2g20wq703fnyi4440ac4mwycy9gwrrllljj7zxcjy19r"))
       (patches (search-patches "scotch-build-parallelism.patch"
                                "scotch-integer-declarations.patch"))))
     (build-system gnu-build-system)
@@ -3147,7 +3183,8 @@ implemented in ANSI C, and MPI for communications.")
      `(("zlib" ,zlib)))
     (native-inputs
      `(("flex" ,flex)
-       ("bison" ,bison)))
+       ("bison" ,bison)
+       ("gfortran" ,gfortran)))
     (outputs '("out" "metis"))
     (arguments
      `(#:make-flags (list (string-append "prefix=" %output))
@@ -3172,6 +3209,7 @@ CAT = cat
 CCS = gcc
 CCP = mpicc
 CCD = gcc
+FC = gfortran
 CPPFLAGS =~{ -D~a~}
 CFLAGS = -O2 -g -fPIC $(CPPFLAGS)
 LDFLAGS = -lz -lm -lrt -lpthread
@@ -3215,6 +3253,8 @@ YACC = bison -pscotchyy -y -b y
                          (find-files "../lib/" ".*metis\\..*"))
                #t))))))
     (home-page "https://www.labri.fr/perso/pelegrin/scotch/")
+    (properties
+     `((release-monitoring-url . "https://gforge.inria.fr/frs/?group_id=248")))
     (synopsis "Programs and libraries for graph algorithms")
     (description "SCOTCH is a set of programs and libraries which implement
 the static mapping and sparse matrix reordering algorithms developed within
@@ -3251,6 +3291,7 @@ CAT = cat
 CCS = gcc
 CCP = mpicc
 CCD = gcc
+FC = gfortran
 CPPFLAGS =~{ -D~a~}
 CFLAGS = -O2 -g -fPIC $(CPPFLAGS)
 LDFLAGS = -lz -lm -lrt -lpthread
@@ -3305,6 +3346,7 @@ CAT = cat
 CCS = gcc
 CCP = mpicc
 CCD = gcc
+FC = gfortran
 CPPFLAGS =~{ -D~a~}
 CFLAGS = -O2 -g -fPIC $(CPPFLAGS) $(RPATHFLAGS)
 CLIBFLAGS = -shared -fPIC
@@ -3519,7 +3561,7 @@ to BMP, JPEG or PNG image formats.")
 (define-public maxima
   (package
     (name "maxima")
-    (version "5.44.0")
+    (version "5.45.1")
     (source
      (origin
        (method url-fetch)
@@ -3527,7 +3569,7 @@ to BMP, JPEG or PNG image formats.")
                            version "-source/" name "-" version ".tar.gz"))
        (sha256
         (base32
-         "1v6jr5s6hhj6r18gfk6hgxk2qd6z1dxkrjq9ss2z1y6sqi45wgyr"))
+         "1p77nk5sz1qfkn5zr97szpbi8ib4b22k8i52l4ag5gkhd4kid47y"))
        (patches (search-patches "maxima-defsystem-mkdir.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -3618,7 +3660,7 @@ to BMP, JPEG or PNG image formats.")
                (wrap-program (string-append out "/bin/maxima")
                  `("PATH" prefix (,binutils))))
              #t)))))
-    (home-page "http://maxima.sourceforge.net")
+    (home-page "https://maxima.sourceforge.io")
     (synopsis "Numeric and symbolic expression manipulation")
     (description "Maxima is a system for the manipulation of symbolic and
 numerical expressions.  It yields high precision numeric results by using
@@ -3634,7 +3676,7 @@ point numbers.")
 (define-public wxmaxima
   (package
     (name "wxmaxima")
-    (version "21.04.0")
+    (version "21.05.2")
     (source
      (origin
        (method git-fetch)
@@ -3643,7 +3685,7 @@ point numbers.")
              (commit (string-append "Version-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0xj95zk16x8kac8qhzd5kvf3b00x7hgdw85da9ww63xyndvhh2lw"))))
+        (base32 "0h7ryykh2dapcyvpp4f1j1b3vrrz80x9k8nkci2yxifgdb29vyhw"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("gettext" ,gettext-minimal)))
@@ -3801,13 +3843,17 @@ parts of it.")
              ;; Build the library for all supported CPUs.  This allows
              ;; switching CPU targets at runtime with the environment variable
              ;; OPENBLAS_CORETYPE=<type>, where "type" is a supported CPU type.
-             ;; Unfortunately, this is not supported on non-x86 architectures,
+             ;; Unfortunately, this is not supported on all architectures,
              ;; where it leads to failed builds.
              ,@(let ((system (or (%current-target-system) (%current-system))))
                  (cond
                   ((or (string-prefix? "x86_64" system)
                        (string-prefix? "i686" system))
                    '("DYNAMIC_ARCH=1"))
+                  ;; On some of these architectures the CPU can't be detected.
+                  ((string-prefix? "powerpc64le" system)
+                   '("DYNAMIC_ARCH=1"
+                     "TARGET=GENERIC"))
                   ;; On MIPS we force the "SICORTEX" TARGET, as for the other
                   ;; two available MIPS targets special extended instructions
                   ;; for Loongson cores are used.
@@ -3816,6 +3862,9 @@ parts of it.")
                   ;; On aarch64 force the generic 'armv8-a' target
                   ((string-prefix? "aarch64" system)
                    '("TARGET=ARMV8"))
+                  ;; Failed to detect CPU.
+                  ((string-prefix? "armhf" system)
+                   '("TARGET=ARMV7"))
                   (else '()))))
        ;; no configure script
        #:phases
@@ -4037,7 +4086,7 @@ Fresnel integrals, and similar related functions as well.")
 (define-public suitesparse
   (package
     (name "suitesparse")
-    (version "5.9.0")
+    (version "5.10.1")
     (source
      (origin
        (method git-fetch)
@@ -4047,7 +4096,7 @@ Fresnel integrals, and similar related functions as well.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1zhkix58afw92s7p291prljdm3yi0pjg1kbi3lczdb8rb14jkz5n"))
+         "19gx5wlgqnqpgz6mvam9lalyzpbfwgqhppps8z3np9sh0mgaiyw9"))
        (patches (search-patches "suitesparse-mongoose-cmake.patch"))
        (modules '((guix build utils)))
        (snippet
@@ -4062,6 +4111,11 @@ Fresnel integrals, and similar related functions as well.")
        (list (string-append "CC=" ,(cc-for-target))
              "TBB=-ltbb"
              "MY_METIS_LIB=-lmetis"
+
+             ;; The default is to link against netlib lapack.  Use OpenBLAS
+             ;; instead.
+             "BLAS=-lopenblas" "LAPACK=-lopenblas"
+
              ;; Flags for cmake (required to build GraphBLAS and Mongoose)
              (string-append "CMAKE_OPTIONS=-DCMAKE_INSTALL_PREFIX="
                             (assoc-ref %outputs "out")
@@ -4081,7 +4135,7 @@ Fresnel integrals, and similar related functions as well.")
          (delete 'configure))))         ;no configure script
     (inputs
      `(("tbb" ,tbb)
-       ("lapack" ,lapack)
+       ("openblas" ,openblas)
        ("gmp" ,gmp)
        ("mpfr" ,mpfr)
        ("metis" ,metis)))
@@ -4226,6 +4280,9 @@ done in the BIOS, or, on GNU/Linux, with the following command:
 @end example
 
 Failure to do so will result in a library with poor performance.")
+    ;; The test suite is notoriously lengthy and routinely exceeds the default
+    ;; timeout of 21600 seconds on the not unbeefy berlin build nodes.
+    (properties '((timeout . 86400)))        ; 1 day
     (license license:bsd-3)))
 
 (define-public cglm
@@ -4546,7 +4603,7 @@ evaluates expressions using the standard order of operations.")
                 "0maw5am6rrkyjrprfg113zjq37mqj0iaznkg4h2927ff7wrprc94"))))
     (build-system gnu-build-system)
     (native-inputs `(("gettext" ,gettext-minimal)
-                     ("qtbase" ,qtbase)
+                     ("qtbase" ,qtbase-5)
                      ("qttools" ,qttools)))
     (inputs `(("libx11" ,libx11)
               ("zlib" ,zlib)
@@ -4610,7 +4667,7 @@ set.")
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/LLNL/hypre")
+             (url "https://github.com/hypre-space/hypre")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
@@ -4696,7 +4753,8 @@ set.")
                            '("HYPRE_usr_manual"
                              "HYPRE_ref_manual")))
                #t))))))
-    (home-page "http://www.llnl.gov/casc/hypre/")
+    (home-page "https://computing.llnl.gov/projects\
+/hypre-scalable-linear-solvers-multigrid-methods")
     (synopsis "Library of solvers and preconditioners for linear equations")
     (description
      "HYPRE is a software library of high performance preconditioners and
@@ -5118,7 +5176,7 @@ reduction.")
 (define-public mcrl2
   (package
     (name "mcrl2")
-    (version "202006.0")
+    (version "202106.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -5126,12 +5184,12 @@ reduction.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "167ryrzk1a2j53c2j198jlxa98amcaym070gkcj730619gymv5zl"))))
+                "0db9wgy9spwm76mgfisnifrlg69y9cadjgxjr4gdwzfgg6wgqf6d"))))
     (inputs
      `(("boost" ,boost)
        ("glu" ,glu)
        ("mesa" ,mesa)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (build-system cmake-build-system)
     (synopsis "Toolset for the mCRL2 formal specification language")
     (description
@@ -6062,7 +6120,7 @@ functions.")
        (base32
         "0vh7cd1915bjqzkdp3sk25ngy8cq624mkh8c53c5bnzk357kb0fk"))))
     (build-system cmake-build-system)
-    (inputs `(("qtbase" ,qtbase)))
+    (inputs `(("qtbase" ,qtbase-5)))
     (native-inputs `(("qttools" ,qttools)))
     (arguments
      `(#:phases
@@ -6122,7 +6180,7 @@ researchers and developers alike to get started on SAT.")
 (define-public libqalculate
   (package
     (name "libqalculate")
-    (version "3.8.0")
+    (version "3.19.0")
     (source
      (origin
        (method git-fetch)
@@ -6131,7 +6189,7 @@ researchers and developers alike to get started on SAT.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1vbaza9c7159xf2ym90l0xkyj2mp6c3hbghhsqn29yvz08fda9df"))
+        (base32 "1w44407wb552q21dz4m2nwwdi8b9hzjb2w1l3ffsikzqckc7wbyj"))
        (patches
         (search-patches "libqalculate-3.8.0-libcurl-ssl-fix.patch"))))
     (build-system gnu-build-system)
@@ -6176,7 +6234,7 @@ cli.")
 (define-public qalculate-gtk
   (package
     (name "qalculate-gtk")
-    (version "3.8.0")
+    (version "3.19.0")
     (source
      (origin
        (method git-fetch)
@@ -6185,7 +6243,7 @@ cli.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0nsg6dzg5r7rzqr671nvrf1c50rjwpz7bxv5f20i4s7agizgv840"))))
+        (base32 "1nrx7gp6f1yalbdda1gb97azhbr4xclq2xf08vvbvsk8jfd6fd2v"))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -6209,15 +6267,6 @@ cli.")
            ;; script, which has not yet been patched to replace /bin/sh.
            (lambda _
              (setenv "NOCONFIGURE" "TRUE")
-             #t))
-         (add-before 'check 'add-pot-file
-           ;; the file contains translations and are currently not in use
-           ;; left out on purpose so add it to POTFILES.skip
-           (lambda _
-             (with-output-to-file "po/POTFILES.skip"
-               (lambda _
-                 (format #t "data/shortcuts.ui~%")
-                 #t))
              #t)))))
     (home-page "https://qalculate.github.io/")
     (synopsis "Multi-purpose graphical desktop calculator")
@@ -6229,3 +6278,140 @@ and conversions, physical constants, symbolic calculations (including
 integrals and equations), arbitrary precision, uncertainty propagation,
 interval arithmetic, plotting.")
     (license license:gpl2+)))
+
+(define-public numdiff
+  (package
+    (name "numdiff")
+    (version "5.9.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://savannah/numdiff/numdiff-"
+                           version ".tar.gz"))
+       (sha256
+        (base32
+         "1vzmjh8mhwwysn4x4m2vif7q2k8i19x8azq7pzmkwwj4g48lla47"))))
+    (build-system gnu-build-system)
+    (arguments
+     '(#:tests? #f ; There are no tests.
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'compress-documentation 'delete-precompressed-info-file
+           (lambda _
+             (delete-file (string-append (assoc-ref %outputs "out")
+                                         "/share/info/numdiff.info.gz"))
+             #t)))))
+    (home-page "https://nongnu.org/numdiff/")
+    (synopsis "Compare files with numeric fields")
+    (description
+     "Numdiff compares files line by line and field by field, ignoring small
+numeric differences and differences in numeric formats.")
+    (license license:gpl3+)))
+
+(define-public why3
+  (package
+    (name "why3")
+    (version "1.3.3")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://gforge.inria.fr/frs/download.php/file"
+                                  "/38367/why3-" version ".tar.gz"))
+              (sha256
+               (base32
+                "1n0a2nn1gnk0zg339lh698g4wpk7m8m1vyi2yvifd5adqvk4milw"))))
+    (build-system ocaml-build-system)
+    (native-inputs
+     `(("coq" ,coq)
+       ("ocaml" ,ocaml)
+       ("which" ,which)))
+    (propagated-inputs
+     `(("camlzip" ,camlzip)
+       ("ocaml-graph" ,ocaml-graph)
+       ("ocaml-menhir" ,ocaml-menhir)
+       ("ocaml-num" ,ocaml-num)
+       ("ocaml-zarith" ,ocaml-zarith)))
+    (inputs
+     `(("coq-flocq" ,coq-flocq)
+       ("emacs-minimal" ,emacs-minimal)
+       ("zlib" ,zlib)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-before 'configure 'fix-configure
+           (lambda _
+             (setenv "CONFIG_SHELL" (which "sh"))
+             (substitute* "configure"
+               ;; find ocaml-num in the correct directory
+               (("\\$DIR/nums.cma") "$DIR/num.cma")
+               (("\\$DIR/num.cmi") "$DIR/core/num.cmi"))
+             #t))
+         (add-after 'configure 'fix-makefile
+           (lambda _
+             (substitute* "Makefile"
+               ;; find ocaml-num in the correct directory
+               (("site-lib/num") "site-lib"))
+             #t))
+        (add-after 'install 'install-lib
+          (lambda _
+            (invoke "make" "byte")
+            (invoke "make" "install-lib")
+            #t)))))
+    (home-page "http://why3.lri.fr")
+    (synopsis "Deductive program verification")
+    (description "Why3 provides a language for specification and programming,
+called WhyML, and relies on external theorem provers, both automated and
+interactive, to discharge verification conditions.  Why3 comes with a standard
+library of logical theories (integer and real arithmetic, Boolean operations,
+sets and maps, etc.) and basic programming data structures (arrays, queues,
+hash tables, etc.).  A user can write WhyML programs directly and get
+correct-by-construction OCaml programs through an automated extraction
+mechanism.  WhyML is also used as an intermediate language for the verification
+of C, Java, or Ada programs.")
+    (license license:lgpl2.1)))
+
+(define-public frama-c
+  (package
+    (name "frama-c")
+    (version "22.0")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "http://frama-c.com/download/frama-c-"
+                                  version "-Titanium.tar.gz"))
+              (sha256
+               (base32
+                "1mq1fijka95ydrla486yr4w6wdl9l7vmp512s1q00b0p6lmfwmkh"))))
+    (build-system ocaml-build-system)
+    (arguments
+     `(#:tests? #f; no test target in Makefile
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'configure 'export-shell
+           (lambda* (#:key inputs #:allow-other-keys)
+             (setenv "CONFIG_SHELL" (string-append (assoc-ref inputs "bash")
+                                                   "/bin/sh"))
+             #t)))))
+    (inputs
+     `(("gmp" ,gmp)))
+    (propagated-inputs
+     `(("ocaml-biniou" ,ocaml-biniou)
+       ("ocaml-easy-format" ,ocaml-easy-format)
+       ("ocaml-graph" ,ocaml-graph)
+       ("ocaml-yojson" ,ocaml-yojson)
+       ("ocaml-zarith" ,ocaml-zarith)
+       ("why3" ,why3)))
+    (native-search-paths
+     (list (search-path-specification
+            (variable "FRAMAC_SHARE")
+            (files '("share/frama-c"))
+            (separator #f))
+           (search-path-specification
+            (variable "FRAMAC_LIB")
+            (files '("lib/frama-c"))
+            (separator #f))))
+    (home-page "http://frama-c.com")
+    (synopsis "C source code analysis platform")
+    (description "Frama-C is an extensible and collaborative platform dedicated
+to source-code analysis of C software.  The Frama-C analyzers assist you in
+various source-code-related activities, from the navigation through unfamiliar
+projects up to the certification of critical software.")
+    (license license:lgpl2.1+)))

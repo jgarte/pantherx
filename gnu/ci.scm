@@ -69,6 +69,7 @@
   #:export (derivation->job
             image->job
 
+            %bootstrap-packages
             %core-packages
             %cross-targets
             channel-source->package
@@ -92,6 +93,9 @@ MAX-SILENT-TIME and TIMEOUT are build options passed to the daemon when
 building the derivation."
   `((#:job-name . ,name)
     (#:derivation . ,(derivation-file-name drv))
+    (#:inputs . ,(map (compose derivation-file-name
+                               derivation-input-derivation)
+                      (derivation-inputs drv)))
     (#:outputs . ,(filter-map
                    (lambda (res)
                      (match res
@@ -144,6 +148,14 @@ SYSTEM."
         %gcc-bootstrap-tarball
         %guile-bootstrap-tarball
         %bootstrap-tarballs))
+
+(define %bootstrap-packages
+  ;; Return the list of bootstrap packages from the commencement module.
+  (filter package?
+          (module-map
+           (lambda (sym var)
+             (variable-ref var))
+           (resolve-module '(gnu packages commencement)))))
 
 (define (packages-to-cross-build target)
   "Return the list of packages to cross-build for TARGET."
@@ -505,7 +517,7 @@ valid."
            (map (lambda (package)
                   (package-job store (job-name package)
                                package system))
-                %core-packages)
+                (append %bootstrap-packages %core-packages))
            (cross-jobs store system)))
          ('guix
           ;; Build Guix modules only.

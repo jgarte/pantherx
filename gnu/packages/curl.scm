@@ -2,7 +2,7 @@
 ;;; Copyright © 2013, 2014, 2015 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015 Tomáš Čech <sleep_walker@suse.cz>
-;;; Copyright © 2015, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2015, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016, 2017, 2019 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2017, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017 Efraim Flashner <efraim@flashner.co.il>
@@ -53,6 +53,7 @@
 (define-public curl
   (package
    (name "curl")
+   (replacement curl-7.77.0)
    (version "7.74.0")
    (source (origin
              (method url-fetch)
@@ -62,7 +63,6 @@
               (base32
                "12w7gskrglg6qrmp822j37fmbr0icrcxv7rib1fy5xiw80n5z7cr"))
              (patches (search-patches "curl-use-ssl-cert-env.patch"))))
-   (replacement curl/fixed)
    (build-system gnu-build-system)
    (outputs '("out"
               "doc"))                             ;1.2 MiB of man3 pages
@@ -152,19 +152,20 @@ tunneling, and so on.")
     (name "curl-minimal")
     (inputs (alist-delete "openldap" (package-inputs curl))))))
 
-(define-public curl/fixed
+(define-public curl-7.77.0
   (package
     (inherit curl)
-    (version "7.76.0")
+    (version "7.77.0")
     (source
      (origin
        (inherit (package-source curl))
        (uri (string-append "https://curl.haxx.se/download/curl-"
                            version ".tar.xz"))
-       (patches (search-patches "curl-7.76-use-ssl-cert-env.patch"))
+       (patches (search-patches "curl-7.76-use-ssl-cert-env.patch"
+                                "curl-7.77-tls-priority-string.patch"))
        (sha256
         (base32
-         "1j2g04m6als6hmqzvddv84c31m0x90bfgyz3bjrwdkarbkby40k3"))))))
+         "0jsrc97vbghvljic997r9nypc9qqddcil2lzvv032br8ahn5hr0g"))))))
 
 (define-public kurly
   (package

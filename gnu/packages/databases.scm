@@ -10,7 +10,7 @@
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
 ;;; Copyright © 2016 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
-;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016, 2017, 2018 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2016 David Craven <david@craven.ch>
@@ -51,6 +51,7 @@
 ;;; Copyright © 2021 David Larsson <david.larsson@selfhosted.xyz>
 ;;; Copyright © 2021 Pjotr Prins <pjotr.guix@thebird.nl>
 ;;; Copyright © 2021 Bonface Munyoki Kilyungi <me@bonfacemunyoki.com>
+;;; Copyright © 2021 Simon Streit <simon@netpanic.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -80,6 +81,7 @@
   #:use-module (gnu packages check)
   #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
+  #:use-module (gnu packages cpp)
   #:use-module (gnu packages crypto)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages cyrus-sasl)
@@ -100,6 +102,7 @@
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lisp)
   #:use-module (gnu packages lisp-xyz)
+  #:use-module (gnu packages llvm)
   #:use-module (gnu packages logging)
   #:use-module (gnu packages man)
   #:use-module (gnu packages maths)
@@ -984,7 +987,7 @@ as a drop-in replacement of MySQL.")
 (define-public mariadb-connector-c
   (package
     (name "mariadb-connector-c")
-    (version "3.1.12")
+    (version "3.1.13")
     (source
      (origin
        (method url-fetch)
@@ -994,7 +997,7 @@ as a drop-in replacement of MySQL.")
              "/from/https%3A//mirrors.ukfast.co.uk/sites/mariadb/?serve"))
        (file-name (string-append name "-" version ".tar.gz"))
        (sha256
-        (base32 "0qzyahr8x9l1xz0l79wz3iahxz7648n1azc5yr7kx0dl113y2nig"))))
+        (base32 "0xb8fiissblxb319y5ifqqp86zblwis789ipb753pcb4zpnsaw82"))))
     (inputs
      `(("openssl" ,openssl)))
     (build-system cmake-build-system)
@@ -1035,7 +1038,7 @@ and high-availability (HA).")
 (define-public postgresql-13
   (package
     (name "postgresql")
-    (replacement postgresql-13.2)
+    (replacement postgresql-13.3)
     (version "13.1")
     (source (origin
               (method url-fetch)
@@ -1084,56 +1087,56 @@ TIMESTAMP.  It also supports storage of binary large objects, including
 pictures, sounds, or video.")
     (license (license:x11-style "file://COPYRIGHT"))))
 
-(define-public postgresql-13.2
+(define-public postgresql-13.3
   (package
     (inherit postgresql-13)
     (name "postgresql")
-    (version "13.2")
+    (version "13.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://ftp.postgresql.org/pub/source/v"
                                   version "/postgresql-" version ".tar.bz2"))
               (sha256
                (base32
-                "1z5d847jnajcfr3wa6jn52a8xjhamvwzmz18xlm5nvxqip8grmsz"))
+                "18dliq7h2l8irffhyyhdmfwx3si515q6gds3cxdjb9n7m17lbn9w"))
               (patches (search-patches "postgresql-disable-resolve_symlinks.patch"))))))
 
 (define-public postgresql-11
   (package
     (inherit postgresql-13)
     (name "postgresql")
-    (version "11.11")
+    (version "11.12")
     (source (origin
               (inherit (package-source postgresql-13))
               (uri (string-append "https://ftp.postgresql.org/pub/source/v"
                                   version "/postgresql-" version ".tar.bz2"))
               (sha256
                (base32
-                "0v0qk298nxmpzpgsxcsxma328hdkyzd7fwjs0zsn6zavl5zpnq20"))))))
+                "016bacpmqxc676ipzc1l8zv1jj44mjz7dv7jhqazg3ibdfqxiyc7"))))))
 
 (define-public postgresql-10
   (package
     (inherit postgresql-11)
-    (version "10.16")
+    (version "10.17")
     (source (origin
               (inherit (package-source postgresql-11))
               (uri (string-append "https://ftp.postgresql.org/pub/source/v"
                                   version "/postgresql-" version ".tar.bz2"))
               (sha256
                (base32
-                "1cvv8qw0gkkczqhiwx6ns7w88dwkvdz4cvb2d4ff14363f5p2p53"))))))
+                "0v5jahkqm6gkq67s4bac3h7297bscn2ab6y128idi73cc1qq1wjs"))))))
 
 (define-public postgresql-9.6
   (package
     (inherit postgresql-10)
-    (version "9.6.21")
+    (version "9.6.22")
     (source (origin
               (inherit (package-source postgresql-10))
               (uri (string-append "https://ftp.postgresql.org/pub/source/v"
                                   version "/postgresql-" version ".tar.bz2"))
               (sha256
                (base32
-                "0d0ngpadf1i7c0i2psaxcbmiwx8334ibcsn283n9fp4853pyl3wk"))))))
+                "0c19kzrj5ib5ygmavf5d6qvxdwrxzzz6jz1r2dl5b815208cscix"))))))
 
 (define-public postgresql postgresql-13)
 
@@ -1836,7 +1839,7 @@ columns, primary keys, unique constraints and relationships.")
 (define-public perl-dbd-pg
   (package
     (name "perl-dbd-pg")
-    (version "3.7.4")
+    (version "3.14.2")
     (source
      (origin
        (method url-fetch)
@@ -1844,7 +1847,7 @@ columns, primary keys, unique constraints and relationships.")
                            "DBD-Pg-" version ".tar.gz"))
        (sha256
         (base32
-         "0gkqlvbmzbdm0g4k328nlkjdg3wrjm5i2n9jxj1i8sqxkm79rylz"))))
+         "0kcfqq7g3832wiix0sbyvlc885qghjrp2ah3akn7h2lnb22fjwy9"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-dbi" ,perl-dbi)))
@@ -2012,18 +2015,19 @@ your data changes, as this module figures it out.")
 (define-public perl-sql-splitstatement
   (package
     (name "perl-sql-splitstatement")
-    (version "1.00020")
+    (version "1.00023")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "mirror://cpan/authors/id/E/EM/EMAZEP/"
+       (uri (string-append "mirror://cpan/authors/id/V/VE/VEESH/"
                            "SQL-SplitStatement-" version ".tar.gz"))
        (sha256
-        (base32
-         "0bqg45k4c9qkb2ypynlwhpvzsl4ssfagmsalys18s5c79ps30z7p"))))
+        (base32 "0ppkx46nydzlnsxf9a8pkyb74wggfrdiiwafab143lrarlh88x0s"))))
     (build-system perl-build-system)
     (native-inputs
-     `(("perl-test-exception" ,perl-test-exception)))
+     `(("perl-test-differences" ,perl-test-differences)
+       ("perl-test-exception" ,perl-test-exception)
+       ("perl-test-script" ,perl-test-script)))
     (propagated-inputs
      `(("perl-class-accessor" ,perl-class-accessor)
        ("perl-list-moreutils" ,perl-list-moreutils)
@@ -2106,6 +2110,43 @@ a simpler and less verbose API for working with ODBC.  Common tasks should be
 easy, requiring concise and simple code.")
     (license license:expat)))
 
+(define-public nanodbc-for-irods
+  (package
+    (inherit nanodbc)
+    (arguments
+     `(#:tests? #false
+       #:configure-flags
+       '("-DBUILD_SHARED_LIBS=ON"
+         ;; The tests require ODBC backends to be installed.
+         "-DNANODBC_DISABLE_TESTS=ON"
+         "-DCMAKE_CXX_COMPILER=clang++"
+         "-DCMAKE_CXX_FLAGS=-stdlib=libc++"
+         "-DCMAKE_EXE_LINKER_FLAGS=-lc++abi")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'set-paths 'adjust-CPLUS_INCLUDE_PATH
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((gcc (assoc-ref inputs "gcc")))
+               (setenv "CPLUS_INCLUDE_PATH"
+                       (string-join
+                        (cons (string-append (assoc-ref inputs "libcxx")
+                                             "/include/c++/v1")
+                              ;; Hide GCC's C++ headers so that they do not interfere with
+                              ;; the Clang headers.
+                              (delete (string-append gcc "/include/c++")
+                                      (string-split (getenv "CPLUS_INCLUDE_PATH")
+                                                    #\:)))
+                        ":"))
+               (format #true
+                       "environment variable `CPLUS_INCLUDE_PATH' changed to ~a~%"
+                       (getenv "CPLUS_INCLUDE_PATH"))))))))
+    (properties `((hidden? . #true)))
+    (inputs
+     `(("unixodbc" ,unixodbc)
+       ("libcxx" ,libcxx+libcxxabi-6)
+       ("libcxxabi" ,libcxxabi-6)
+       ("clang" ,clang-6)))))
+
 (define-public unqlite
   (package
     (name "unqlite")
@@ -2135,14 +2176,14 @@ similar to BerkeleyDB, LevelDB, etc.")
 (define-public redis
   (package
     (name "redis")
-    (version "6.0.11")
+    (version "6.2.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://download.redis.io/releases/redis-"
                                   version".tar.gz"))
               (sha256
                (base32
-                "0prwqap452m581nyc3cz642d1z3x9nd81896hlqdm3z8238z49y9"))
+                "0vp1d9mlfsppry3nsj9f7bmh9wjgsy3jggp24sac1hhgl43c8cms"))
               (modules '((guix build utils)))
               (snippet
                ;; Delete bundled jemalloc, as the package will use the libc one
@@ -2150,8 +2191,8 @@ similar to BerkeleyDB, LevelDB, etc.")
                        #t))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("procps" ,procps) ; for tests
-       ("tcl" ,tcl)))     ; for tests
+     `(("procps" ,procps)               ; for tests
+       ("tcl" ,tcl)))                   ; for tests
     (arguments
      '(#:phases
        (modify-phases %standard-phases
@@ -2168,9 +2209,10 @@ similar to BerkeleyDB, LevelDB, etc.")
            (lambda _
              ;; Disable failing tests
              (substitute* "tests/test_helper.tcl"
-               (("    integration/replication[^-]") "")
-               (("    integration/replication-4") "")
-               (("    integration/replication-psync") ""))
+               (("integration/failover") "")
+               (("integration/replication-4") "")
+               (("integration/replication-psync") "")
+               (("integration/replication[^-]") ""))
              #t)))
        #:make-flags `("CC=gcc"
                       "MALLOC=libc"
@@ -2355,14 +2397,14 @@ database.")
 (define-public perl-db-file
  (package
   (name "perl-db-file")
-  (version "1.855")
+  (version "1.856")
   (source
     (origin
       (method url-fetch)
       (uri (string-append "mirror://cpan/authors/id/P/PM/PMQS/DB_File-"
                           version ".tar.gz"))
       (sha256
-        (base32 "0q599h7g4jkzks5dxf1zifx9k7l9vif26r2dlgkzxkg6bfif5zyr"))))
+        (base32 "1ab6rm2b8lz0g3gc8k9y79gkgajyby0zpybkdg9mk4g35y9bmyfd"))))
   (build-system perl-build-system)
   (inputs `(("bdb" ,bdb)))
   (native-inputs `(("perl-test-pod" ,perl-test-pod)))
@@ -2383,7 +2425,7 @@ database.")
 (define-public lmdb
   (package
     (name "lmdb")
-    (version "0.9.28")
+    (version "0.9.29")
     (source
      (origin
        (method git-fetch)
@@ -2392,7 +2434,7 @@ database.")
              (commit (string-append "LMDB_" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "012a8bs49cswsnzw7k4piis5b6dn4by85w7a7mai9i04xcjyy9as"))))
+        (base32 "0airps4cd0d91nbgy7hgvifa801snxwxzwxyr6pdv61plsi7h8l3"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -2791,24 +2833,19 @@ Memory-Mapped Database} (LMDB), a high-performance key-value store.")
     (description
      "Orator provides a simple ActiveRecord-like Object Relational Mapping
 implementation for Python.")
-    (license license:expat)
-    (properties `((python2-variant . ,(delay python2-orator))))))
-
-(define-public python2-orator
-  (package-with-python2 (strip-python2-variant python-orator)))
+    (license license:expat)))
 
 (define-public virtuoso-ose
   (package
     (name "virtuoso-ose")
-    (version "7.2.5")
+    (version "7.2.6")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append
-             "https://github.com/openlink/virtuoso-opensource/releases/"
-             "download/v" version "/virtuoso-opensource-" version ".tar.gz"))
+       (uri (string-append "mirror://sourceforge/virtuoso/virtuoso/" version "/"
+                           "virtuoso-opensource-" version ".tar.gz"))
        (sha256
-        (base32 "0r1xakclkfi69pzh8z2k16z3x0m49pxp764icj0ad4w4bb97fr42"))))
+        (base32 "0ly7s7a3w2a2zhhi9rq9k2qlnzapqbbc1rcdqb3zqqpgg81krz9q"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f ; Tests require a network connection.
@@ -2829,7 +2866,7 @@ implementation for Python.")
                          '("libvirtuoso-t.a"
                            "libvirtuoso-t.la"))))))))
     (inputs
-     `(("openssl" ,openssl-1.0)
+     `(("openssl" ,openssl)
        ("net-tools" ,net-tools)
        ("readline" ,readline)
        ("zlib" ,zlib)))
@@ -3568,9 +3605,6 @@ is designed to have a low barrier to entry.")
 provides support for parsing, splitting and formatting SQL statements.")
     (license license:bsd-3)))
 
-(define-public python2-sqlparse
-  (package-with-python2 python-sqlparse))
-
 (define-public python-sql
   (package
     (name "python-sql")
@@ -3619,7 +3653,7 @@ the SQL language using a syntax that reflects the resulting query.")
 (define-public apache-arrow
   (package
     (name "apache-arrow")
-    (version "3.0.0")
+    (version "4.0.1")
     (source
      (origin
        (method git-fetch)
@@ -3629,21 +3663,22 @@ the SQL language using a syntax that reflects the resulting query.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "03ngddh3r1g6f9aja2jlfksgvgyzmxmfy4bxvzjrcv5fvl5x8ii0"))))
+         "1lcd9gdpwlrr92rm812a5p4l6zx0arwd0zj72a4ga699s1psz8yv"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f
        #:phases
        (modify-phases %standard-phases
          (add-before 'configure 'enter-source-directory
-           (lambda _ (chdir "cpp") #t))
+           (lambda _ (chdir "cpp")))
          (add-after 'unpack 'set-env
            (lambda _
+             (substitute* "cpp/cmake_modules/ThirdpartyToolchain.cmake"
+               (("set\\(xsimd_SOURCE.*") ""))
              (setenv "BOOST_ROOT" (assoc-ref %build-inputs "boost"))
              (setenv "BROTLI_HOME" (assoc-ref %build-inputs "brotli"))
              (setenv "FLATBUFFERS_HOME" (assoc-ref %build-inputs "flatbuffers"))
-             (setenv "RAPIDJSON_HOME" (assoc-ref %build-inputs "rapidjson"))
-             #t)))
+             (setenv "RAPIDJSON_HOME" (assoc-ref %build-inputs "rapidjson")))))
        #:build-type "Release"
        #:configure-flags
        (list "-DARROW_PYTHON=ON"
@@ -3665,6 +3700,7 @@ the SQL language using a syntax that reflects the resulting query.")
              ;; function, or using pkg-config for packages that do not
              ;; have this feature
              "-DARROW_DEPENDENCY_SOURCE=SYSTEM"
+             "-Dxsimd_SOURCE=SYSTEM"
 
              ;; Split output into its component packages.
              (string-append "-DCMAKE_INSTALL_PREFIX="
@@ -3723,6 +3759,7 @@ the SQL language using a syntax that reflects the resulting query.")
        ("re2" ,re2)
        ("snappy" ,snappy)
        ("utf8proc" ,utf8proc)
+       ("xsimd" ,xsimd)
        ("zlib" ,zlib)
        ("zstd" ,zstd "lib")))
     (native-inputs

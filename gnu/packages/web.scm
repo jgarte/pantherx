@@ -15,7 +15,7 @@
 ;;; Copyright © 2016 Ben Woodcroft <donttrustben@gmail.com>
 ;;; Copyright © 2016 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
-;;; Copyright © 2016, 2017, 2018, 2019 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2016, 2017, 2018, 2019, 2021 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2016–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2016 Bake Timmons <b3timmons@speedymail.org>
 ;;; Copyright © 2017 Thomas Danckaert <post@thomasdanckaert.be>
@@ -49,6 +49,7 @@
 ;;; Copyright © 2020 Alexandru-Sergiu Marton <brown121407@posteo.ro>
 ;;; Copyright © 2021 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2021 la snesne <lasnesne@lagunposprasihopre.org>
+;;; Copyright © 2021 Matthew James Kraai <kraai@ftbfs.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -237,7 +238,7 @@
              #t)))))
     (inputs
      `(("http-parser" ,http-parser)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (home-page "https://github.com/azadkuh/qhttp/")
     (synopsis "Qt-based HTTP Library")
     (description
@@ -248,14 +249,14 @@
 (define-public httpd
   (package
     (name "httpd")
-    (version "2.4.47")
+    (version "2.4.48")
     (source (origin
              (method url-fetch)
              (uri (string-append "mirror://apache/httpd/httpd-"
                                  version ".tar.bz2"))
              (sha256
               (base32
-               "1jh31j4740wz463l1j49ir2lhh42x9z4byiq25m12y75r3dhdl13"))))
+               "0v4npxnvih5mlxx6dywwhhfs8xvgcckc0hxzwk3hi0g8nbkjdj0v"))))
     (build-system gnu-build-system)
     (native-inputs `(("pcre" ,pcre "bin")))       ;for 'pcre-config'
     (inputs `(("apr" ,apr)
@@ -317,7 +318,7 @@ Interface} specification.")
 (define-public monolith
   (package
     (name "monolith")
-    (version "2.4.1")
+    (version "2.6.1")
     (source
      (origin
        (method git-fetch)
@@ -326,7 +327,7 @@ Interface} specification.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1z0bcvk2cvx2cd0hs8addzcb070xvrkcxvg25691xw0ikiynpkwz"))))
+        (base32 "1pj4wnsw5a4ys79sqw68ib6zimaqlkplb89x6yncg949a6hj8516"))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-inputs
@@ -335,14 +336,14 @@ Interface} specification.")
         ("rust-chrono" ,rust-chrono-0.4)
         ("rust-clap" ,rust-clap-2)
         ("rust-cssparser" ,rust-cssparser-0.28)
+        ("rust-encoding-rs" ,rust-encoding-rs-0.8)
         ("rust-html5ever" ,rust-html5ever-0.24)
         ("rust-regex" ,rust-regex-1)
         ("rust-reqwest" ,rust-reqwest-0.11)
         ("rust-sha2" ,rust-sha2-0.9)
         ("rust-url" ,rust-url-2))
        #:cargo-development-inputs
-       (("rust-assert-cmd" ,rust-assert-cmd-1)
-        ("rust-tempfile" ,rust-tempfile-3))))
+       (("rust-assert-cmd" ,rust-assert-cmd-1))))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
@@ -368,14 +369,14 @@ the same, being completely separated from the Internet.")
     ;; ’stable’ and recommends that “in general you deploy the NGINX mainline
     ;; branch at all times” (https://www.nginx.com/blog/nginx-1-6-1-7-released/)
     ;; Consider updating the nginx-documentation package together with this one.
-    (version "1.19.10")
+    (version "1.21.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nginx.org/download/nginx-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "121d11693d6dbim3lh64hrqi66z129z30cvcrpbnm631yl7jkl78"))))
+                "0w87zhm5nfx88x9hj6drrvm5f3m02kzbjp39x1lsglrbmi5jl6gy"))))
     (build-system gnu-build-system)
     (inputs `(("libxml2" ,libxml2)
               ("libxslt" ,libxslt)
@@ -399,6 +400,10 @@ the same, being completely separated from the Internet.")
                                   "--with-http_ssl_module"
                                   "--with-http_v2_module"
                                   "--with-http_xslt_module"
+                                  "--with-http_gzip_static_module"
+                                  "--with-http_gunzip_module"
+                                  "--with-http_addition_module"
+                                  "--with-http_sub_module"
                                   "--with-pcre-jit"
                                   "--with-debug"
                                   "--with-stream"
@@ -466,9 +471,9 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
 
 (define-public nginx-documentation
   ;; This documentation should be relevant for the current nginx package.
-  (let ((version "1.19.10")
-        (revision 2708)
-        (changeset "f8686d85df53"))
+  (let ((version "1.21.0")
+        (revision 2726)
+        (changeset "a7a36efd10af"))
     (package
       (name "nginx-documentation")
       (version (simple-format #f "~A-~A-~A" version revision changeset))
@@ -480,7 +485,7 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
                (file-name (string-append name "-" version))
                (sha256
                 (base32
-                 "00b0dkpblw3m2cwbbzv3miw47c0m3s0dvh1xy0hihkggy7mqv2r2"))))
+                 "1fl7rkbfdd26c78h85x4w3kas16rpj4pxzjhc071qvx7znwgm2pn"))))
       (build-system gnu-build-system)
       (arguments
        '(#:tests? #f                    ; no test suite
@@ -1120,7 +1125,7 @@ project)
          (add-before 'check 'render-offscreen
            (lambda _ (setenv "QT_QPA_PLATFORM" "offscreen") #t)))))
     (inputs
-     `(("qtbase" ,qtbase)))
+     `(("qtbase" ,qtbase-5)))
     (home-page "http://qjson.sourceforge.net")
     (synopsis "Library that maps JSON data to QVariant objects")
     (description "QJson is a Qt-based library that maps JSON data to
@@ -1145,7 +1150,7 @@ instances, while JSON's objects will be mapped to @code{QVariantMap}.")
     (build-system gnu-build-system)
     (inputs
      `(("qca" ,qca)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (arguments
      '(#:tests? #f                      ;FIXME: some tests are failing
        #:phases
@@ -1591,7 +1596,7 @@ used to validate and fix HTML data.")
 (define-public esbuild
   (package
     (name "esbuild")
-    (version "0.11.14")
+    (version "0.12.9")
     (source
      (origin
        (method git-fetch)
@@ -1600,7 +1605,7 @@ used to validate and fix HTML data.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0qxylzc7lzpsp5hm3dl5jvy9aca8azn8dmbjz9z5n5rkdmm8vd9p"))
+        (base32 "10bz1xq2frdja7mbx04m009svg8b5rj7vfq3sc2gc88n31v21b1j"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -2008,7 +2013,7 @@ stylesheets, you'll need to use another program that uses this library,
 (define-public sassc
   (package
     (name "sassc")
-    (version "3.6.1")
+    (version "3.6.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2017,7 +2022,7 @@ stylesheets, you'll need to use another program that uses this library,
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1sxm54mkhs9m4vnl7vn11y17mhzamc403hv3966j1c7p2rbzg5pv"))))
+                "0m7flrs0hz3ivib8kvsgn3d0fgkabqviadkp1dyspa6iibx3gjwd"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -2036,9 +2041,9 @@ stylesheets, you'll need to use another program that uses this library,
                (("install: libsass-install-\\$\\(BUILD\\) \\\\")
                 "install: \\"))
              #t))
-         ;; This phase fails for some reason.
+         ;; This phase fails because…
          (delete 'bootstrap)
-         ;; There is no configure script.
+         ;; …there is no configure script to be generated.
          (delete 'configure)
          (add-before 'build 'setup-environment
            (lambda _
@@ -3874,7 +3879,7 @@ select or poll.")
 (define-public perl-libwww
   (package
     (name "perl-libwww")
-    (version "6.49")
+    (version "6.55")
     (source (origin
              (method url-fetch)
              (uri (string-append
@@ -3882,7 +3887,7 @@ select or poll.")
                    version ".tar.gz"))
              (sha256
               (base32
-               "19k0cg4j4qz005a4ngy48z4r8dc99dxlpq8kvj7qnk15mvgd1r63"))))
+               "0869hn711d6fd6yil8p88wij6p1zdrbnycy7p9p176q39ajd7l61"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-test-fatal" ,perl-test-fatal)
@@ -4300,7 +4305,7 @@ can say what method it actually meant.")
 (define-public perl-plack-middleware-removeredundantbody
   (package
     (name "perl-plack-middleware-removeredundantbody")
-    (version "0.07")
+    (version "0.09")
     (source
      (origin
        (method url-fetch)
@@ -4308,7 +4313,7 @@ can say what method it actually meant.")
                            "Plack-Middleware-RemoveRedundantBody-"
                            version ".tar.gz"))
        (sha256
-        (base32 "1hz3kgb5vw4r02gfk9i911f5ykvz55lrsx45bdcllk2bszal3f34"))))
+        (base32 "0zh83001rn5aqwpc1pn3di2h3ibzlf2dvkmkv05hnadpss9mzm40"))))
     (build-system perl-build-system)
     (propagated-inputs
      `(("perl-plack" ,perl-plack)))
@@ -5824,14 +5829,14 @@ config files---you only have to specify the www root.")
 (define-public goaccess
   (package
     (name "goaccess")
-    (version "1.0.2")
+    (version "1.5.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://tar.goaccess.io/goaccess-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1w84y61f3ldg2f28q6qlyr1scn3mcx0bsbq3i5xi5w193wh3xa2q"))
+                "03wp75n1krv8g643q00gcv1ikmzwwh8jjqmph0wxww1bwrw7whc8"))
               (modules '((guix build utils)))
               (snippet '(begin
                           (substitute* "src/error.h"
@@ -6573,51 +6578,37 @@ Instagram and YouTube.")
 (define-public linkchecker
   (package
     (name "linkchecker")
-    (version "9.4.0")
+    (version "10.0.1")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://github.com/linkchecker/linkchecker")
              (commit (string-append "v" version))))
-       (patches
-        (search-patches "linkchecker-tests-require-network.patch"))
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "03ihjmc4bqxxqv71bb43r2f23sx0xnbq1k2fsg9fw05qa5s9x187"))))
+         "1j97dc9a4yhpscwadhv5dxp7036pnrxiaky18l8ddr3pvxdjvkxs"))))
     (build-system python-build-system)
     (inputs
-     `(("python2-dnspython" ,python2-dnspython-1.16)
-       ("python2-pyxdg" ,python2-pyxdg)
-       ("python2-requests" ,python2-requests)))
+     `(("python-beautifulsoup4" ,python-beautifulsoup4)
+       ("python-dnspython" ,python-dnspython)
+       ("python-pyxdg" ,python-pyxdg)
+       ("python-requests" ,python-requests)))
     (native-inputs
      `(("gettext" ,gettext-minimal)
-       ("python2-pytest" ,python2-pytest)
-       ("python2-miniboa" ,python2-miniboa)
-       ("python2-parameterized" ,python2-parameterized)))
+       ("python-pytest" ,python-pytest)
+       ("python-miniboa" ,python-miniboa)
+       ("python-parameterized" ,python-parameterized)))
     (arguments
-     `(#:python ,python-2
-       #:phases
+     `(#:phases
        (modify-phases %standard-phases
-         ;; Move the 'check phase to after 'install, so that the installed
-         ;; library can be used
-         (delete 'check)
-         (add-after 'install 'check
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let ((out (assoc-ref outputs "out")))
-               ;; Set PYTHONPATH so that the installed linkchecker is used
-               (setenv "PYTHONPATH"
-                       (string-append out "/lib/python2.7/site-packages"
-                                      ":"
-                                      (getenv "PYTHONPATH")))
-               ;; Remove this directory to avoid it being used when running
-               ;; the tests
-               (delete-file-recursively "linkcheck")
-
-               (invoke "py.test" "tests"))
-             #t)))))
-    (home-page "https://linkcheck.github.io/linkchecker")
+         (replace 'check
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "py.test" "tests")))))))
+    (home-page "https://linkchecker.github.io/linkchecker/")
     (synopsis "Check websites for broken links")
     (description "LinkChecker is a website validator.  It checks for broken
 links in websites.  It is recursive and multithreaded providing output in
@@ -8016,7 +8007,7 @@ solution for any project's interface needs:
 (define-public libzim
   (package
     (name "libzim")
-    (version "6.3.0")
+    (version "6.3.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -8024,7 +8015,7 @@ solution for any project's interface needs:
                     (commit version)))
               (sha256
                (base32
-                "0iy0f1clhihq277x218ccx3mszgpr3h9l0by48b9ykr115nffw3s"))
+                "00kc4qc0a69jh1jwk5xhi567b7ffpc3p38ffrf2xaax4hvpjwmn6"))
               (file-name (git-file-name name version))))
     (build-system meson-build-system)
     (arguments
@@ -8152,7 +8143,7 @@ It contains the code shared by all Kiwix ports.")
        ("libmicrohttpd" ,libmicrohttpd)
        ("libzim" ,libzim)
        ("pugixml" ,pugixml)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtwebchannel" ,qtwebchannel)
        ("qtwebengine" ,qtwebengine)
@@ -8161,7 +8152,7 @@ It contains the code shared by all Kiwix ports.")
        ("zstd" ,zstd "lib")))
     (native-inputs
      `(("pkg-config" ,pkg-config)
-       ("qmake" ,qtbase)))
+       ("qmake" ,qtbase-5)))
     (home-page "https://wiki.kiwix.org/wiki/Software")
     (synopsis "Viewer and manager of ZIM files")
     (description "Kiwix Desktop allows you to enjoy a lot of different content

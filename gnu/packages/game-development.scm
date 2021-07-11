@@ -4,7 +4,7 @@
 ;;; Copyright © 2015, 2018 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015, 2018 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2015, 2016, 2017 David Thompson <davet@gnu.org>
-;;; Copyright © 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017, 2020 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2016, 2018, 2019 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016, 2017, 2018 Julian Graham <joolean@gmail.com>
@@ -66,6 +66,7 @@
   #:use-module (gnu packages fribidi)
   #:use-module (gnu packages dbm)
   #:use-module (gnu packages gcc)
+  #:use-module (gnu packages gettext)
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
@@ -460,7 +461,7 @@ support.")
                 "1prajkx1xpp3csa0xpkrn3c2cnzvmwzxgrqb9d3gqszp3sllr2dg"))))
     (build-system gnu-build-system)
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtsvg" ,qtsvg)
        ("zlib" ,zlib)))
@@ -493,7 +494,7 @@ clone.")
 (define-public tsukundere
   (package
     (name "tsukundere")
-    (version "0.2.3")
+    (version "0.3.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -502,10 +503,12 @@ clone.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "05ckds2df810441wfavllx9lsw5jsc9h3nb7m31df01nsj56azdw"))))
+                "05y3nj8vpn40hfr2y29p8pa9hhpzibhbvfzpm0dlphjh9crq3ii4"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:modules (((guix build guile-build-system)
+     `(#:modules ((ice-9 match)
+                  (srfi srfi-1)
+                  ((guix build guile-build-system)
                    #:select (target-guile-effective-version))
                   ,@%gnu-build-system-modules)
        #:imported-modules ((guix build guile-build-system)
@@ -513,31 +516,44 @@ clone.")
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'patch-command
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (version (target-guile-effective-version))
-                    (scm (string-append out "/share/guile/site/"
-                                        version))
-                    (go (string-append out "/lib/guile/"
-                                       version "/site-ccache")))
-
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((scm (lambda (in)
+                           (string-append in "/share/guile/site/"
+                                          (target-guile-effective-version))))
+                    (ccache (lambda (in)
+                              (string-append in "/lib/guile/"
+                                             (target-guile-effective-version)
+                                             "/site-ccache")))
+                    (pkgs
+                     (cons
+                      (assoc-ref outputs "out")
+                      (filter-map
+                       (match-lambda
+                         (("guile" . pkg) pkg)
+                         ((label . pkg)
+                          (and (string-prefix? "guile-" label) pkg)))
+                       inputs))))
                (substitute* "bin/tsukundere"
-                 (("exec guile .*" all)
+                 (("exec guile (.*)" _ args)
                   (string-append
-                   (format #f "export GUILE_LOAD_PATH=~@?~%"
-                           "\"~a:~a\"" scm (getenv "GUILE_LOAD_PATH"))
-                   (format #f "export GUILE_LOAD_COMPILED_PATH=~@?~%"
-                           "\"~a:~a\"" go (getenv "GUILE_LOAD_COMPILED_PATH"))
-                   all)))
+                   (format #f "export GUILE_LOAD_PATH=\"~@?\"~%"
+                           "~{~a~^:~}" (map scm pkgs))
+                   (format #f "export GUILE_LOAD_COMPILED_PATH=\"~@?\"~%"
+                           "~{~a~^:~}" (map ccache pkgs))
+                   "exec "
+                   (assoc-ref inputs "guile")
+                   "/bin/guile " args)))
                #t))))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
+       ("gettext" ,gettext-minimal)
        ("guile" ,guile-3.0)
        ("pkg-config" ,pkg-config)
        ("texinfo" ,texinfo)))
-    (propagated-inputs
-     `(("guile-sdl2" ,guile3.0-sdl2)))
+    (inputs
+     `(("guile-sdl2" ,guile3.0-sdl2)
+       ("guile" ,guile-3.0)))
     (home-page "https://gitlab.com/leoprikler/tsukundere")
     (synopsis "Visual novel engine")
     (description "Tsukundere is a game engine geared heavily towards the
@@ -1092,7 +1108,7 @@ to create fully featured games and multimedia programs in the python language.")
 
 (define-public python2-pygame-sdl2
   (let ((real-version "2.1.0")
-        (renpy-version "7.4.4"))
+        (renpy-version "7.4.6"))
     (package
       (inherit python2-pygame)
       (name "python2-pygame-sdl2")
@@ -1102,7 +1118,7 @@ to create fully featured games and multimedia programs in the python language.")
          (method url-fetch)
          (uri (string-append "https://www.renpy.org/dl/" renpy-version
                              "/pygame_sdl2-" version ".tar.gz"))
-         (sha256 (base32 "1lj5c3kfnl8s824j3hs47dg3g5rlabscmwrbb0lgpyy4633pv9ka"))
+         (sha256 (base32 "1cay8mb5ww72mkhjp8y467i5alnjinwai2z0xypp78kjapbma9nb"))
          (modules '((guix build utils)))
          (snippet
           '(begin
@@ -1145,13 +1161,13 @@ developed mainly for Ren'py.")
 (define-public python2-renpy
   (package
     (name "python2-renpy")
-    (version "7.4.4")
+    (version "7.4.6")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.renpy.org/dl/" version
                            "/renpy-" version "-source.tar.bz2"))
-       (sha256 (base32 "1cbbvsk1snjrsh59blb8q2h86555gi23pylmwlnk9dx0jxckdi21"))
+       (sha256 (base32 "1nnidghwi725n6kizd18fk3fdyh1fx4d48jngg8cnwgnz7i66bd6"))
        (modules '((guix build utils)))
        (patches
         (search-patches
@@ -1474,7 +1490,7 @@ painted with a mouse.")
 (define-public ois
   (package
     (name "ois")
-    (version "1.5")
+    (version "1.5.1")
     (source
      (origin
        (method git-fetch)
@@ -1483,7 +1499,7 @@ painted with a mouse.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0g8krgq5bdx2rw7ig0xva4kqv4x815672i7z6lljp3n8847wmypa"))))
+        (base32 "0nkh0zrsbyv47c0i0vhdna3jsnvs69pb1svg75avxw6z7kwskgla"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ; no test suite
@@ -1596,7 +1612,7 @@ of use.")
        ("mygui" ,mygui-gl)              ; OpenMW does not need Ogre.
        ("openal" ,openal)
        ("openscenegraph" ,openmw-openscenegraph)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("sdl" ,sdl2)
        ("unshield" ,unshield)))
     (synopsis "Re-implementation of the RPG Morrowind engine")
@@ -2273,6 +2289,39 @@ computer games, 3D authoring tools and simulation tools.")
 rigid body physics library written in C.")
     (license license:expat)))
 
+(define-public box2d
+  (package
+    (name "box2d")
+    (version "2.4.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/erincatto/box2d")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1ja9cahf3z9zzrdaqcw44lpjmqf2ir2g4chwz0iwqwlkckwhpgvh"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Bundled code only used for the testbed.
+           (delete-file-recursively "extern")))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:test-target "unit_test"
+       #:configure-flags '("-DBUILD_SHARED_LIBS=ON"
+                           "-DBOX2D_BUILD_TESTBED=OFF")))
+    (inputs
+     `(("libx11" ,libx11)))
+    (home-page "https://box2d.org/")
+    (synopsis "2D physics engine for games")
+    (description "Box2D is a 2D rigid body simulation library for games.
+Programmers can use it in their games to make objects move in realistic ways and
+make the game world more interactive.  From the game engine's point of view, a
+physics engine is just a system for procedural animation.")
+    (license license:expat)))
+
 (define-public libtcod
   (package
     (name "libtcod")
@@ -2415,7 +2464,7 @@ utilities frequently used in roguelikes.")
          ("mesa" ,mesa)
          ("openal" ,openal)
          ("pulseaudio" ,pulseaudio)
-         ("qtbase" ,qtbase)
+         ("qtbase" ,qtbase-5)
          ("qtdeclarative" ,qtdeclarative)
          ("sdl2" ,sdl2)
          ("uuid.h" ,util-linux "lib")

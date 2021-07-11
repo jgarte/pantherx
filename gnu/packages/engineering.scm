@@ -23,6 +23,7 @@
 ;;; Copyright © 2020, 2021 Morgan Smith <Morgan.J.Smith@outlook.com>
 ;;; Copyright © 2021 qblade <qblade@protonmail.com>
 ;;; Copyright © 2021 Gerd Heber <gerd.heber@gmail.com>
+;;; Copyright © 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -200,7 +201,7 @@
      `(("boost" ,boost)
        ("muparser" ,muparser)
        ("freetype" ,freetype)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -700,7 +701,7 @@ multipole-accelerated algorithm.")
                        (string-append "PREFIX=" out)
                        "phoenix.pro")))))))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtserialport" ,qtserialport)
        ("qtsvg" ,qtsvg)
        ("libgit2" ,libgit2)
@@ -833,7 +834,7 @@ fonts to gEDA.")
       (inputs
        `(("boost" ,boost)
          ("libpng" ,libpng)
-         ("qtbase" ,qtbase)
+         ("qtbase" ,qtbase-5)
          ("eigen" ,eigen)
          ("guile" ,guile-3.0)))
       (home-page "https://libfive.com")
@@ -923,6 +924,13 @@ Emacs).")
              "-DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE")
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'fix-ngspice-detection
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "eeschema/CMakeLists.txt"
+               (("NGSPICE_DLL_FILE=\"\\$\\{NGSPICE_DLL_FILE\\}\"")
+                (string-append "NGSPICE_DLL_FILE=\""
+                               (assoc-ref inputs "libngspice")
+                               "/lib/libngspice.so\"")))))
          (add-after 'install 'install-translations
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (copy-recursively (assoc-ref inputs "kicad-i18n")
@@ -1038,23 +1046,17 @@ translations for KiCad.")
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags (list "-DBUILD_FORMATS=html")
+       #:tests? #f                      ; no test suite
        #:phases
        (modify-phases %standard-phases
-         (delete 'build)
-         (add-before 'install 'set-perl-env
-           (lambda* (#:key inputs #:allow-other-keys)
-             (setenv "PERL5LIB"
-                     (string-append (assoc-ref inputs "perl-unicode-linebreak")
-                                    "/lib/perl5/site_perl" ":"
-                                    (getenv "PERL5LIB")))
-             #t))
-         (delete 'check))))
+         (delete 'build))))
     (native-inputs
      `(("asciidoc" ,asciidoc)
        ("gettext" ,gettext-minimal)
        ("git" ,git-minimal)
        ("perl" ,perl)
        ("perl-unicode-linebreak" ,perl-unicode-linebreak)
+       ("perl-yaml-tiny" ,perl-yaml-tiny)
        ("po4a" ,po4a)
        ("source-highlight" ,source-highlight)))
     (home-page "https://kicad.org")
@@ -1225,14 +1227,14 @@ use on a given system.")
 (define-public libredwg
   (package
     (name "libredwg")
-    (version "0.12.3")
+    (version "0.12.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://gnu/libredwg/libredwg-"
              version ".tar.xz"))
        (sha256
-        (base32 "1vhm3r3zr8hh0jbvv6qdykh1x14r4c1arl1qj48i4cx2dd3366mk"))))
+        (base32 "05v5k8fkx4z1p81x9kna7nlzmyx09dn686rj2zprnkf337qmg24i"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags '("--disable-bindings")))
@@ -1675,31 +1677,18 @@ high-performance parallel differential evolution (DE) optimization algorithm.")
   ;; See <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=27344#236>.
   (package
     (name "libngspice")
-    (version "28")
-    (source (origin
-              (method url-fetch)
-              (uri (list
-                     (string-append "mirror://sourceforge/ngspice/ng-spice-rework/"
-                                    version "/ngspice-" version ".tar.gz")
-                     (string-append "mirror://sourceforge/ngspice/ng-spice-rework/"
-                                    "old-releases/" version
-                                    "/ngspice-" version ".tar.gz")))
-              (sha256
-               (base32
-                "0rnz2rdgyav16w7wfn3sfrk2lwvvgz1fh0l9107zkcldijklz04l"))
-              (modules '((guix build utils)))
-              ;; We remove the non-free cider and build without it.
-              (snippet
-               '(begin
-                  (delete-file-recursively "src/ciderlib")
-                  (delete-file "src/ciderinit")
-                  (substitute* "configure"
-                    (("src/ciderlib/Makefile") "")
-                    (("src/ciderlib/input/Makefile") "")
-                    (("src/ciderlib/support/Makefile") "")
-                    (("src/ciderlib/oned/Makefile") "")
-                    (("src/ciderlib/twod/Makefile") ""))
-                  #t))))
+    (version "34")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (list
+             (string-append "mirror://sourceforge/ngspice/ng-spice-rework/"
+                            version "/ngspice-" version ".tar.gz")
+             (string-append "mirror://sourceforge/ngspice/ng-spice-rework/"
+                            "old-releases/" version
+                            "/ngspice-" version ".tar.gz")))
+       (sha256
+        (base32 "1dfpkgkwmgwhq8dnbb8dh28cfap6rw0yywkhmxr4jxclcvygyqr2"))))
     (build-system gnu-build-system)
     (arguments
      `(;; No tests for libngspice exist.
@@ -1710,31 +1699,36 @@ high-performance parallel differential evolution (DE) optimization algorithm.")
          (add-after 'unpack 'patch-timestamps
            (lambda _
              (substitute* "configure"
-               (("`date`") "Thu Jan  1 00:00:01 UTC 1970"))
-             #t))
+               (("`date`") "Thu Jan  1 00:00:01 UTC 1970"))))
          (add-after 'unpack 'delete-program-manuals
            (lambda _
              (substitute* "man/man1/Makefile.in"
                (("^man_MANS = ngspice\\.1 ngnutmeg\\.1 ngsconvert\\.1 ngmultidec\\.1")
-                "man_MANS = "))
-             #t))
-         (add-after 'install 'delete-script-files
+                "man_MANS = "))))
+         (add-after 'install 'delete-scripts-and-config
            (lambda* (#:key outputs #:allow-other-keys)
              (delete-file-recursively
               (string-append (assoc-ref outputs "out")
-                             "/share/ngspice/scripts")))))
+                             "/share/ngspice/scripts"))
+             ;; This file is autogenerated by the configure script and should
+             ;; not be distributed.  It could be removed in ngspice 35.  See
+             ;; https://bugs.archlinux.org/task/70569 for reference.
+             (delete-file (string-append (assoc-ref outputs "out")
+                                         "/include/config.h")))))
        #:configure-flags
        (list "--enable-openmp"
+             "--enable-ciderlib"
              "--enable-xspice"
              "--with-ngshared"
-             "--with-readline=yes")))
+             ;; Readline must be disabled to build KiCad with ngspice 34.  See
+             ;; https://bugs.archlinux.org/task/70563 for reference.
+             "--with-readline=no")))
     (native-inputs
      `(("bison" ,bison)
        ("flex" ,flex)))
     (inputs
      `(("libxaw" ,libxaw)
-       ("mpi" ,openmpi)
-       ("readline" ,readline)))
+       ("mpi" ,openmpi)))
     (home-page "http://ngspice.sourceforge.net/")
     (synopsis "Mixed-level/mixed-signal circuit simulator")
     (description
@@ -1744,6 +1738,7 @@ provides code modeling support and simulation of digital components through
 an embedded event driven algorithm.")
     (license (list license:lgpl2.0+ ; code in frontend/numparam
                    (license:non-copyleft "file:///COPYING") ; spice3 bsd-style
+                   license:bsd-3 ; ciderlib
                    license:public-domain)))) ; xspice
 
 (define-public ngspice
@@ -1760,16 +1755,7 @@ an embedded event driven algorithm.")
              (lambda _
                (substitute* "src/Makefile.in"
                  (("^SUBDIRS = misc maths frontend spicelib include/ngspice")
-                  "SUBDIRS = misc maths frontend spicelib"))
-               #t))
-           (add-after 'install 'delete-cmpp-dlmain
-             (lambda* (#:key outputs #:allow-other-keys)
-               (for-each (lambda (file)
-                           (delete-file
-                            (string-append (assoc-ref outputs "out")
-                                           file)))
-                         '("/bin/cmpp" "/share/ngspice/dlmain.c"))
-               #t))
+                  "SUBDIRS = misc maths frontend spicelib"))))
            (delete 'delete-program-manuals)
            (delete 'delete-script-files)))))
     (inputs
@@ -2039,7 +2025,7 @@ parallel computing platforms.  It also supports serial execution.")
         (base32 "1b5dkanz3q0y5ag80w0l85hn7axrachb5m9zvyv4zvzrfy09wa88"))))
     (build-system gnu-build-system)
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)
        ("zlib" ,zlib)))
     (native-inputs
@@ -2201,7 +2187,7 @@ simulation.")
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)
        ("openssl" ,openssl)
        ;; Depends on radare2 4.5.1 officially, builds and works fine with
@@ -2280,7 +2266,7 @@ specification can be downloaded at @url{http://3mf.io/specification/}.")
        ("mpfr" ,mpfr)
        ("opencsg" ,opencsg)
        ("qscintilla" ,qscintilla)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)))
     (native-inputs
      `(("bison" ,bison)
@@ -2412,7 +2398,7 @@ comments.")))
        ("python-pyyaml" ,python-pyyaml)
        ("python-shiboken-2" ,python-shiboken-2)
        ("python-wrapper" ,python-wrapper)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)
        ("qtwebkit" ,qtwebkit)
        ("qtx11extras" ,qtx11extras)
@@ -2692,7 +2678,7 @@ export filters.")
                (base32 "1cgx24wxh2ah5pff51rcrk6x8qcdjpkxcdak7s4cfzmxvjlshydd"))))
     (build-system cmake-build-system)
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtscript" ,qtscript)
        ("qtxmlpatterns" ,qtxmlpatterns)
        ("mesa" ,mesa)
@@ -2737,14 +2723,14 @@ GUI.")
 (define-public poke
   (package
     (name "poke")
-    (version "1.2")
+    (version "1.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/poke/poke-" version
                                   ".tar.gz"))
               (sha256
                (base32
-                "0qnz7lc681nxa16rw9n9q4spy9fas6m2adrpb49imh34bgdgh77n"))))
+                "06qgry1pal2vampmbmc1lzlhf1qnjkd8py781r5h020v981n6y5s"))))
     (build-system gnu-build-system)
     ;; The GUI, which we elide, requires tcl and tk.
     (native-inputs `(;; Requires bison 3.6+ but we currently only have 3.5.

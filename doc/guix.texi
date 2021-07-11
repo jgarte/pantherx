@@ -17,8 +17,9 @@
 @set BASE-URL https://ftp.gnu.org/gnu/guix
 
 @c The official substitute server used by default.
-@set SUBSTITUTE-SERVER ci.guix.gnu.org
-@set SUBSTITUTE-URL https://@value{SUBSTITUTE-SERVER}
+@set SUBSTITUTE-SERVER-1 ci.guix.gnu.org
+@set SUBSTITUTE-SERVER-2 bordeaux.guix.gnu.org
+@set SUBSTITUTE-URLS https://@value{SUBSTITUTE-SERVER-1} https://@value{SUBSTITUTE-SERVER-2}
 
 @copying
 Copyright @copyright{} 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ludovic Courtès@*
@@ -76,7 +77,7 @@ Copyright @copyright{} 2020 Damien Cassou@*
 Copyright @copyright{} 2020 Jakub Kądziołka@*
 Copyright @copyright{} 2020 Jack Hill@*
 Copyright @copyright{} 2020 Naga Malleswari@*
-Copyright @copyright{} 2020 Brice Waegeneire@*
+Copyright @copyright{} 2020, 2021 Brice Waegeneire@*
 Copyright @copyright{} 2020 R Veera Kumar@*
 Copyright @copyright{} 2020 Pierre Langlois@*
 Copyright @copyright{} 2020 pinoaffe@*
@@ -89,6 +90,10 @@ Copyright @copyright{} 2020 Jonathan Brielmaier@*
 Copyright @copyright{} 2020 Edgar Vincent@*
 Copyright @copyright{} 2021 Maxime Devos@*
 Copyright @copyright{} 2021 B. Wilson@*
+Copyright @copyright{} 2021 Xinglu Chen@*
+Copyright @copyright{} 2021 Raghav Gururajan@*
+Copyright @copyright{} 2021 Domagoj Stolfa@*
+Copyright @copyright{} 2021 Hui Lu@*
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -228,7 +233,7 @@ Package Management
 
 Substitutes
 
-* Official Substitute Server::  One particular source of substitutes.
+* Official Substitute Servers::  One particular source of substitutes.
 * Substitute Server Authorization::  How to enable or disable substitutes.
 * Getting Substitutes from Other Servers::  Substitute diversity.
 * Substitute Authentication::   How Guix verifies substitutes.
@@ -779,13 +784,23 @@ Info search path).
 
 @item
 @cindex substitutes, authorization thereof
-To use substitutes from @code{@value{SUBSTITUTE-SERVER}} or one of its mirrors
-(@pxref{Substitutes}), authorize them:
+To use substitutes from @code{@value{SUBSTITUTE-SERVER-1}},
+@code{@value{SUBSTITUTE-SERVER-2}} or a mirror (@pxref{Substitutes}),
+authorize them:
 
 @example
 # guix archive --authorize < \
-     ~root/.config/guix/current/share/guix/@value{SUBSTITUTE-SERVER}.pub
+     ~root/.config/guix/current/share/guix/@value{SUBSTITUTE-SERVER-1}.pub
+# guix archive --authorize < \
+     ~root/.config/guix/current/share/guix/@value{SUBSTITUTE-SERVER-2}.pub
 @end example
+
+@quotation Note
+If you do not enable substitutes, Guix will end up building
+@emph{everything} from source on your machine, making each installation
+and upgrade very expensive.  @xref{On Trusting Binaries}, for a
+discussion of reasons why one might want do disable substitutes.
+@end quotation
 
 @item
 Each user may need to perform a few additional steps to make their Guix
@@ -833,8 +848,7 @@ GNU Guix is available for download from its website at
 GNU Guix depends on the following packages:
 
 @itemize
-@item @url{https://gnu.org/software/guile/, GNU Guile}, version 3.0.x or
-2.2.x;
+@item @url{https://gnu.org/software/guile/, GNU Guile}, version 3.0.x;
 @item @url{https://notabug.org/cwebber/guile-gcrypt, Guile-Gcrypt}, version
 0.1.0 or later;
 @item
@@ -849,9 +863,7 @@ version 0.1.0 or later;
 @item @uref{https://notabug.org/guile-lzlib/guile-lzlib, Guile-lzlib};
 @item @uref{https://www.nongnu.org/guile-avahi/, Guile-Avahi};
 @item
-@c FIXME: We need the #:fetch-options parameter of 'submodule-update',
-@c which appeared in 0.5.0.  Change below after string freeze.
-@uref{https://gitlab.com/guile-git/guile-git, Guile-Git}, version 0.3.0
+@uref{https://gitlab.com/guile-git/guile-git, Guile-Git}, version 0.5.0
 or later;
 @item @uref{https://savannah.nongnu.org/projects/guile-json/, Guile-JSON}
 4.3.0 or later;
@@ -1542,7 +1554,7 @@ remote procedure call (@pxref{The Store}).
 @item --substitute-urls=@var{urls}
 Consider @var{urls} the default whitespace-separated list of substitute
 source URLs.  When this option is omitted,
-@indicateurl{https://@value{SUBSTITUTE-SERVER}} is used.
+@indicateurl{@value{SUBSTITUTE-URLS}} is used.
 
 This means that substitutes may be downloaded from @var{urls}, as long
 as they are signed by a trusted signature (@pxref{Substitutes}).
@@ -2531,7 +2543,7 @@ provide the declaration of the operating system to be installed.  To
 that end, the installation system comes with three text editors.  We
 recommend GNU nano (@pxref{Top,,, nano, GNU nano Manual}), which
 supports syntax highlighting and parentheses matching; other editors
-include GNU Zile (an Emacs clone), and
+include mg (an Emacs clone), and
 nvi (a clone of the original BSD @command{vi} editor).
 We strongly recommend storing that file on the target root file system, say,
 as @file{/mnt/etc/config.scm}.  Failing to do that, you will have lost your
@@ -2628,7 +2640,7 @@ root's login shell, you'll need to @command{guix pull} separately.
 @end quotation
 
 Now, @pxref{Getting Started}, and
-join us on @code{#guix} on the Freenode IRC network or on
+join us on @code{#guix} on the Libera Chat IRC network or on
 @email{guix-devel@@gnu.org} to share your experience!
 
 
@@ -3680,7 +3692,7 @@ pre-built package binaries, but source tarballs, for instance, which
 also result from derivation builds, can be available as substitutes.
 
 @menu
-* Official Substitute Server::  One particular source of substitutes.
+* Official Substitute Servers::  One particular source of substitutes.
 * Substitute Server Authorization::  How to enable or disable substitutes.
 * Getting Substitutes from Other Servers::  Substitute diversity.
 * Substitute Authentication::   How Guix verifies substitutes.
@@ -3689,14 +3701,15 @@ also result from derivation builds, can be available as substitutes.
 * On Trusting Binaries::        How can you trust that binary blob?
 @end menu
 
-@node Official Substitute Server
-@subsection Official Substitute Server
+@node Official Substitute Servers
+@subsection Official Substitute Servers
 
 @cindex build farm
-The @code{@value{SUBSTITUTE-SERVER}} server is a front-end to an official build farm
-that builds packages from Guix continuously for some
-architectures, and makes them available as substitutes.  This is the
-default source of substitutes; it can be overridden by passing the
+@code{@value{SUBSTITUTE-SERVER-1}} and
+@code{@value{SUBSTITUTE-SERVER-2}} are both front-ends to official build
+farms that build packages from Guix continuously for some architectures,
+and make them available as substitutes.  These are the default source of
+substitutes; which can be overridden by passing the
 @option{--substitute-urls} option either to @command{guix-daemon}
 (@pxref{daemon-substitute-urls,, @code{guix-daemon --substitute-urls}})
 or to client tools such as @command{guix package}
@@ -3709,7 +3722,7 @@ using HTTP makes all communications visible to an eavesdropper, who
 could use the information gathered to determine, for instance, whether
 your system has unpatched security vulnerabilities.
 
-Substitutes from the official build farm are enabled by default when
+Substitutes from the official build farms are enabled by default when
 using Guix System (@pxref{GNU Distribution}).  However,
 they are disabled by default when using Guix on a foreign distribution,
 unless you have explicitly enabled them via one of the recommended
@@ -3725,27 +3738,28 @@ other substitute server.
 @cindex substitutes, authorization thereof
 @cindex access control list (ACL), for substitutes
 @cindex ACL (access control list), for substitutes
-To allow Guix to download substitutes from @code{@value{SUBSTITUTE-SERVER}} or a
-mirror thereof, you
-must add its public key to the access control list (ACL) of archive
+To allow Guix to download substitutes from @code{@value{SUBSTITUTE-SERVER-1}}, @code{@value{SUBSTITUTE-SERVER-2}} or a mirror, you
+must add the relevant public key to the access control list (ACL) of archive
 imports, using the @command{guix archive} command (@pxref{Invoking guix
-archive}).  Doing so implies that you trust @code{@value{SUBSTITUTE-SERVER}} to not
+archive}).  Doing so implies that you trust the substitute server to not
 be compromised and to serve genuine substitutes.
 
 @quotation Note
 If you are using Guix System, you can skip this section: Guix System
-authorizes substitutes from @code{@value{SUBSTITUTE-SERVER}} by default.
+authorizes substitutes from @code{@value{SUBSTITUTE-SERVER-1}} and
+@code{@value{SUBSTITUTE-SERVER-2}} by default.
 @end quotation
 
-The public key for @code{@value{SUBSTITUTE-SERVER}} is installed along with Guix, in
-@code{@var{prefix}/share/guix/@value{SUBSTITUTE-SERVER}.pub}, where @var{prefix} is
-the installation prefix of Guix.  If you installed Guix from source,
-make sure you checked the GPG signature of
+The public keys for each of the project maintained substitute servers
+are installed along with Guix, in @code{@var{prefix}/share/guix/}, where
+@var{prefix} is the installation prefix of Guix.  If you installed Guix
+from source, make sure you checked the GPG signature of
 @file{guix-@value{VERSION}.tar.gz}, which contains this public key file.
 Then, you can run something like this:
 
 @example
-# guix archive --authorize < @var{prefix}/share/guix/@value{SUBSTITUTE-SERVER}.pub
+# guix archive --authorize < @var{prefix}/share/guix/@value{SUBSTITUTE-SERVER-1}.pub
+# guix archive --authorize < @var{prefix}/share/guix/@value{SUBSTITUTE-SERVER-2}.pub
 @end example
 
 Once this is in place, the output of a command like @code{guix build}
@@ -3777,8 +3791,8 @@ $ guix build emacs --dry-run
 @noindent
 The text changed from ``The following derivations would be built'' to
 ``112.3 MB would be downloaded''.  This indicates that substitutes from
-@code{@value{SUBSTITUTE-SERVER}} are usable and will be downloaded, when
-possible, for future builds.
+the configured substitute servers are usable and will be downloaded,
+when possible, for future builds.
 
 @cindex substitutes, how to disable
 The substitute mechanism can be disabled globally by running
@@ -3812,8 +3826,9 @@ its configuration and add the URLs and substitute keys that you want
 
 As an example, suppose you want to fetch substitutes from
 @code{guix.example.org} and to authorize the signing key of that server,
-in addition to the default @code{@value{SUBSTITUTE-SERVER}}.  The
-resulting operating system configuration will look something like:
+in addition to the default @code{@value{SUBSTITUTE-SERVER-1}} and
+@code{@value{SUBSTITUTE-SERVER-2}}.  The resulting operating system
+configuration will look something like:
 
 @lisp
 (operating-system
@@ -3857,7 +3872,7 @@ line and list the URLs of interest (@pxref{daemon-substitute-urls,
 @code{guix-daemon --substitute-urls}}):
 
 @example
-@dots{} --substitute-urls='https://guix.example.org https://@value{SUBSTITUTE-SERVER}'
+@dots{} --substitute-urls='https://guix.example.org @value{SUBSTITUTE-URLS}'
 @end example
 
 @item
@@ -3880,10 +3895,12 @@ Again this assumes @file{key.pub} contains the public key that
 @end enumerate
 
 Now you're all set!  Substitutes will be preferably taken from
-@code{https://guix.example.org}, using @code{@value{SUBSTITUTE-SERVER}}
-as a fallback.  Of course you can list as many substitute servers as you
-like, with the caveat that substitute lookup can be slowed down if too
-many servers need to be contacted.
+@code{https://guix.example.org}, using
+@code{@value{SUBSTITUTE-SERVER-1}} then
+@code{@value{SUBSTITUTE-SERVER-2}} as fallback options.  Of course you
+can list as many substitute servers as you like, with the caveat that
+substitute lookup can be slowed down if too many servers need to be
+contacted.
 
 Note that there are also situations where one may want to add the URL of
 a substitute server @emph{without} authorizing its key.
@@ -3971,12 +3988,12 @@ by a server.
 Today, each individual's control over their own computing is at the
 mercy of institutions, corporations, and groups with enough power and
 determination to subvert the computing infrastructure and exploit its
-weaknesses.  While using @code{@value{SUBSTITUTE-SERVER}} substitutes can be
-convenient, we encourage users to also build on their own, or even run
-their own build farm, such that @code{@value{SUBSTITUTE-SERVER}} is less of an
-interesting target.  One way to help is by publishing the software you
-build using @command{guix publish} so that others have one more choice
-of server to download substitutes from (@pxref{Invoking guix publish}).
+weaknesses.  While using substitutes can be convenient, we encourage
+users to also build on their own, or even run their own build farm, such
+that the project run substitute servers are less of an interesting
+target.  One way to help is by publishing the software you build using
+@command{guix publish} so that others have one more choice of server to
+download substitutes from (@pxref{Invoking guix publish}).
 
 Guix has the foundations to maximize build reproducibility
 (@pxref{Features}).  In most cases, independent builds of a given
@@ -4940,11 +4957,11 @@ Read a single-item archive as served by substitute servers
 low-level operation needed in only very narrow use cases; see below.
 
 For example, the following command extracts the substitute for Emacs
-served by @code{@value{SUBSTITUTE-SERVER}} to @file{/tmp/emacs}:
+served by @code{@value{SUBSTITUTE-SERVER-1}} to @file{/tmp/emacs}:
 
 @example
 $ wget -O - \
-  https://@value{SUBSTITUTE-SERVER}/nar/gzip/@dots{}-emacs-24.5 \
+  https://@value{SUBSTITUTE-SERVER-1}/nar/gzip/@dots{}-emacs-24.5 \
   | gunzip | guix archive -x /tmp/emacs
 @end example
 
@@ -4966,7 +4983,7 @@ this example:
 
 @example
 $ wget -O - \
-  https://@value{SUBSTITUTE-SERVER}/nar/lzip/@dots{}-emacs-26.3 \
+  https://@value{SUBSTITUTE-SERVER-1}/nar/lzip/@dots{}-emacs-26.3 \
   | lzip -d | guix archive -t
 @end example
 
@@ -5913,7 +5930,7 @@ For example, to create a bundle containing Guile, Emacs, Geiser, and all
 their dependencies, you can run:
 
 @example
-$ guix pack guile emacs geiser
+$ guix pack guile emacs emacs-geiser
 @dots{}
 /gnu/store/@dots{}-pack.tar.gz
 @end example
@@ -5931,7 +5948,7 @@ find inconvenient.  To work around it, you can create, say, a
 @file{/opt/gnu/bin} symlink to the profile:
 
 @example
-guix pack -S /opt/gnu/bin=bin guile emacs geiser
+guix pack -S /opt/gnu/bin=bin guile emacs emacs-geiser
 @end example
 
 @noindent
@@ -5975,7 +5992,7 @@ Yet another option is to produce a SquashFS image with the following
 command:
 
 @example
-guix pack -f squashfs bash guile emacs geiser
+guix pack -f squashfs bash guile emacs emacs-geiser
 @end example
 
 @noindent
@@ -6025,6 +6042,27 @@ If you forget the @code{bash} (or similar) package, @command{singularity
 run} and @command{singularity exec} will fail with an unhelpful ``no
 such file or directory'' message.
 @end quotation
+
+@item deb
+This produces a Debian archive (a package with the @samp{.deb} file
+extension) containing all the specified binaries and symbolic links,
+that can be installed on top of any dpkg-based GNU(/Linux) distribution.
+
+@quotation Note
+Because archives produced with @command{guix pack} contain a collection
+of store items and because each @command{dpkg} package must not have
+conflicting files, in practice that means you likely won't be able to
+install more than one such archive on a given system.
+@end quotation
+
+@quotation Warning
+@command{dpkg} will assume ownership of any files contained in the pack
+that it does @emph{not} know about.  It is unwise to install
+Guix-produced @samp{.deb} files on a system where @file{/gnu/store} is
+shared by other software, such as a Guix installation or other, non-deb
+packs.
+@end quotation
+
 @end table
 
 @cindex relocatable binaries
@@ -6651,7 +6689,8 @@ This is the data type representing a package recipe.
 The name of the package, as a string.
 
 @item @code{version}
-The version of the package, as a string.
+The version of the package, as a string.  @xref{Version Numbers}, for
+guidelines.
 
 @item @code{source}
 An object telling how the source code for the package should be
@@ -7338,7 +7377,7 @@ the @code{RUNPATH} of ELF binaries (@code{.so} shared libraries as well
 as executables) previously installed by the @code{install} phase.
 
 This validation step consists in making sure that all the shared
-libraries needed by an ELF binaries, which are listed as
+libraries needed by an ELF binary, which are listed as
 @code{DT_NEEDED} entries in its @code{PT_DYNAMIC} segment, appear in the
 @code{DT_RUNPATH} entry of that binary.  In other words, it ensures that
 running or using those binaries will not result in a ``file not found''
@@ -7801,7 +7840,7 @@ MbedTLS package:
 Some older packages that aren't using @file{Package.toml} yet, will require
 this file to be created, too.  The function @code{julia-create-package-toml}
 helps creating the file.  You need to pass the outputs and the source of the
-package, it's name (the same as the @code{file-name} parameter), the package
+package, its name (the same as the @code{file-name} parameter), the package
 uuid, the package version, and a list of dependencies specified by their name
 and their uuid.
 @end defvr
@@ -10023,6 +10062,16 @@ corresponding to @var{obj} for @var{system}, cross-compiling for
 has an associated gexp compiler, such as a @code{<package>}.
 @end deffn
 
+@deffn {Procedure} gexp->approximate-sexp @var{gexp}
+Sometimes, it may be useful to convert a G-exp into a S-exp.  For
+example, some linters (@pxref{Invoking guix lint}) peek into the build
+phases of a package to detect potential problems.  This conversion can
+be achieved with this procedure.  However, some information can be lost
+in the process.  More specifically, lowerable objects will be silently
+replaced with some arbitrary object -- currently the list
+@code{(*approximate*)}, but this may change.
+@end deffn
+
 @node Invoking guix repl
 @section Invoking @command{guix repl}
 
@@ -10899,7 +10948,7 @@ but you are actually on an @code{x86_64} machine:
 
 @example
 $ guix build --log-file gdb -s aarch64-linux
-https://@value{SUBSTITUTE-SERVER}/log/@dots{}-gdb-7.10
+https://@value{SUBSTITUTE-SERVER-1}/log/@dots{}-gdb-7.10
 @end example
 
 You can freely access a huge library of build logs!
@@ -11594,6 +11643,28 @@ using this mode, the symbol of the package is made by appending the
 version to its name, so that multiple versions of the same package can
 coexist.
 @end table
+
+@item egg
+@cindex egg
+Import metadata for @uref{https://wiki.call-cc.org/eggs, CHICKEN eggs}.
+The information is taken from @file{PACKAGE.egg} files found in the
+@uref{git://code.call-cc.org/eggs-5-latest, eggs-5-latest} Git
+repository.  However, it does not provide all the information that we
+need, there is no ``description'' field, and the licenses used are not
+always precise (BSD is often used instead of BSD-N).
+
+@example
+guix import egg sourcehut
+@end example
+
+Additional options include:
+@table @code
+@item --recursive
+@itemx -r
+Traverse the dependency graph of the given upstream package recursively
+and generate package expressions for all those packages that are not yet
+in Guix.
+@end table
 @end table
 
 The structure of the @command{guix import} code is modular.  It would be
@@ -11748,6 +11819,8 @@ the updater for KDE packages;
 the updater for X.org packages;
 @item kernel.org
 the updater for packages hosted on kernel.org;
+@item egg
+the updater for @uref{https://wiki.call-cc.org/eggs/, Egg} packages;
 @item elpa
 the updater for @uref{https://elpa.gnu.org/, ELPA} packages;
 @item cran
@@ -11835,7 +11908,7 @@ an upgrade.  More rebuilds might be required under some circumstances.
 @example
 $ guix refresh --list-dependent flex
 Building the following 120 packages would ensure 213 dependent packages are rebuilt:
-hop@@2.4.0 geiser@@0.4 notmuch@@0.18 mu@@0.9.9.5 cflow@@1.4 idutils@@4.6 @dots{}
+hop@@2.4.0 emacs-geiser@@0.13 notmuch@@0.18 mu@@0.9.9.5 cflow@@1.4 idutils@@4.6 @dots{}
 @end example
 
 The command above lists a set of packages that could be built to check
@@ -12528,7 +12601,7 @@ When @command{guix publish} runs, it spawns an HTTP server which allows
 anyone with network access to obtain substitutes from it.  This means
 that any machine running Guix can also act as if it were a build farm,
 since the HTTP interface is compatible with Cuirass, the software behind
-the @code{@value{SUBSTITUTE-SERVER}} build farm.
+the @code{@value{SUBSTITUTE-SERVER-1}} build farm.
 
 For security, each substitute is signed, allowing recipients to check
 their authenticity and integrity (@pxref{Substitutes}).  Because
@@ -12703,6 +12776,16 @@ Additionally, when @option{--cache} is used, cached entries that have
 not been accessed for @var{ttl} and that no longer have a corresponding
 item in the store, may be deleted.
 
+@item --negative-ttl=@var{ttl}
+Similarly produce @code{Cache-Control} HTTP headers to advertise the
+time-to-live (TTL) of @emph{negative} lookups---missing store items, for
+which the HTTP 404 code is returned.  By default, no negative TTL is
+advertised.
+
+This parameter can help adjust server load and substitute latency by
+instructing cooperating clients to be more or less patient when a store
+item is missing.
+
 @item --cache-bypass-threshold=@var{size}
 When used in conjunction with @option{--cache}, store items smaller than
 @var{size} are immediately available, even when they are not yet in
@@ -12807,12 +12890,12 @@ any given store item.
 The command output looks like this:
 
 @smallexample
-$ guix challenge --substitute-urls="https://@value{SUBSTITUTE-SERVER} https://guix.example.org"
-updating list of substitutes from 'https://@value{SUBSTITUTE-SERVER}'... 100.0%
+$ guix challenge --substitute-urls="https://@value{SUBSTITUTE-SERVER-1} https://guix.example.org"
+updating list of substitutes from 'https://@value{SUBSTITUTE-SERVER-1}'... 100.0%
 updating list of substitutes from 'https://guix.example.org'... 100.0%
 /gnu/store/@dots{}-openssl-1.0.2d contents differ:
   local hash: 0725l22r5jnzazaacncwsvp9kgf42266ayyp814v7djxs7nk963q
-  https://@value{SUBSTITUTE-SERVER}/nar/@dots{}-openssl-1.0.2d: 0725l22r5jnzazaacncwsvp9kgf42266ayyp814v7djxs7nk963q
+  https://@value{SUBSTITUTE-SERVER-1}/nar/@dots{}-openssl-1.0.2d: 0725l22r5jnzazaacncwsvp9kgf42266ayyp814v7djxs7nk963q
   https://guix.example.org/nar/@dots{}-openssl-1.0.2d: 1zy4fmaaqcnjrzzajkdn3f5gmjk754b43qkq47llbyak9z0qjyim
   differing files:
     /lib/libcrypto.so.1.1
@@ -12820,14 +12903,14 @@ updating list of substitutes from 'https://guix.example.org'... 100.0%
 
 /gnu/store/@dots{}-git-2.5.0 contents differ:
   local hash: 00p3bmryhjxrhpn2gxs2fy0a15lnip05l97205pgbk5ra395hyha
-  https://@value{SUBSTITUTE-SERVER}/nar/@dots{}-git-2.5.0: 069nb85bv4d4a6slrwjdy8v1cn4cwspm3kdbmyb81d6zckj3nq9f
+  https://@value{SUBSTITUTE-SERVER-1}/nar/@dots{}-git-2.5.0: 069nb85bv4d4a6slrwjdy8v1cn4cwspm3kdbmyb81d6zckj3nq9f
   https://guix.example.org/nar/@dots{}-git-2.5.0: 0mdqa9w1p6cmli6976v4wi0sw9r4p5prkj7lzfd1877wk11c9c73
   differing file:
     /libexec/git-core/git-fsck
 
 /gnu/store/@dots{}-pius-2.1.1 contents differ:
   local hash: 0k4v3m9z1zp8xzzizb7d8kjj72f9172xv078sq4wl73vnq9ig3ax
-  https://@value{SUBSTITUTE-SERVER}/nar/@dots{}-pius-2.1.1: 0k4v3m9z1zp8xzzizb7d8kjj72f9172xv078sq4wl73vnq9ig3ax
+  https://@value{SUBSTITUTE-SERVER-1}/nar/@dots{}-pius-2.1.1: 0k4v3m9z1zp8xzzizb7d8kjj72f9172xv078sq4wl73vnq9ig3ax
   https://guix.example.org/nar/@dots{}-pius-2.1.1: 1cy25x1a4fzq5rk0pmvc8xhwyffnqz95h2bpvqsz2mpvlbccy0gs
   differing file:
     /share/man/man1/pius.1.gz
@@ -12849,7 +12932,7 @@ the servers obtained a result different from the local build.
 
 @cindex non-determinism, in package builds
 As an example, @code{guix.example.org} always gets a different answer.
-Conversely, @code{@value{SUBSTITUTE-SERVER}} agrees with local builds, except in the
+Conversely, @code{@value{SUBSTITUTE-SERVER-1}} agrees with local builds, except in the
 case of Git.  This might indicate that the build process of Git is
 non-deterministic, meaning that its output varies as a function of
 various things that Guix does not fully control, in spite of building
@@ -12865,7 +12948,7 @@ to run:
 @example
 guix challenge git \
   --diff=diffoscope \
-  --substitute-urls="https://@value{SUBSTITUTE-SERVER} https://guix.example.org"
+  --substitute-urls="https://@value{SUBSTITUTE-SERVER-1} https://guix.example.org"
 @end example
 
 This automatically invokes @command{diffoscope}, which displays detailed
@@ -12875,14 +12958,14 @@ Alternatively, we can do something along these lines (@pxref{Invoking guix
 archive}):
 
 @example
-$ wget -q -O - https://@value{SUBSTITUTE-SERVER}/nar/lzip/@dots{}-git-2.5.0 \
+$ wget -q -O - https://@value{SUBSTITUTE-SERVER-1}/nar/lzip/@dots{}-git-2.5.0 \
    | lzip -d | guix archive -x /tmp/git
 $ diff -ur --no-dereference /gnu/store/@dots{}-git.2.5.0 /tmp/git
 @end example
 
 This command shows the difference between the files resulting from the
 local build, and the files resulting from the build on
-@code{@value{SUBSTITUTE-SERVER}} (@pxref{Overview, Comparing and Merging Files,,
+@code{@value{SUBSTITUTE-SERVER-1}} (@pxref{Overview, Comparing and Merging Files,,
 diffutils, Comparing and Merging Files}).  The @command{diff} command
 works great for text files.  When binary files differ, a better option
 is @uref{https://diffoscope.org/, Diffoscope}, a tool that helps
@@ -12897,7 +12980,7 @@ In the meantime, @command{guix challenge} is one tool to help address
 the problem.
 
 If you are writing packages for Guix, you are encouraged to check
-whether @code{@value{SUBSTITUTE-SERVER}} and other substitute servers obtain the
+whether @code{@value{SUBSTITUTE-SERVER-1}} and other substitute servers obtain the
 same build result as you did with:
 
 @example
@@ -13178,14 +13261,14 @@ on @var{a} and @var{a} has no substitutes, only @var{a} is listed, even though
 @var{b} usually lacks substitutes as well.  The result looks like this:
 
 @example
-$ guix weather --substitute-urls=@value{SUBSTITUTE-URL} -c 10
+$ guix weather --substitute-urls=@value{SUBSTITUTE-URLS} -c 10
 computing 8,983 package derivations for x86_64-linux...
-looking for 9,343 store items on @value{SUBSTITUTE-URL}...
-updating substitutes from '@value{SUBSTITUTE-URL}'... 100.0%
-@value{SUBSTITUTE-URL}
+looking for 9,343 store items on @value{SUBSTITUTE-URLS}...
+updating substitutes from '@value{SUBSTITUTE-URLS}'... 100.0%
+@value{SUBSTITUTE-URLS}
   64.7% substitutes available (6,047 out of 9,343)
 @dots{}
-2502 packages are missing from '@value{SUBSTITUTE-URL}' for 'x86_64-linux', among which:
+2502 packages are missing from '@value{SUBSTITUTE-URLS}' for 'x86_64-linux', among which:
     58  kcoreaddons@@5.49.0      /gnu/store/@dots{}-kcoreaddons-5.49.0
     46  qgpgme@@1.11.1           /gnu/store/@dots{}-qgpgme-1.11.1
     37  perl-http-cookiejar@@0.008  /gnu/store/@dots{}-perl-http-cookiejar-0.008
@@ -13194,7 +13277,7 @@ updating substitutes from '@value{SUBSTITUTE-URL}'... 100.0%
 
 What this example shows is that @code{kcoreaddons} and presumably the 58
 packages that depend on it have no substitutes at
-@code{@value{SUBSTITUTE-SERVER}}; likewise for @code{qgpgme} and the 46
+@code{@value{SUBSTITUTE-SERVER-1}}; likewise for @code{qgpgme} and the 46
 packages that depend on it.
 
 If you are a Guix developer, or if you are taking care of this build farm,
@@ -13402,7 +13485,7 @@ environment variable---in addition to the per-user profiles
 (@pxref{Invoking guix package}).  The @code{%base-packages} variable
 provides all the tools one would expect for basic user and administrator
 tasks---including the GNU Core Utilities, the GNU Networking Utilities,
-the GNU Zile lightweight text editor, @command{find}, @command{grep},
+the @command{mg} lightweight text editor, @command{find}, @command{grep},
 etc.  The example above adds GNU@tie{}Screen to those,
 taken from the @code{(gnu packages screen)}
 module (@pxref{Package Modules}).  The
@@ -13415,12 +13498,12 @@ of a package:
 
 (operating-system
   ;; ...
-  (packages (cons (list bind "utils")
+  (packages (cons (list isc-bind "utils")
                   %base-packages)))
 @end lisp
 
 @findex specification->package
-Referring to packages by variable name, like @code{bind} above, has
+Referring to packages by variable name, like @code{isc-bind} above, has
 the advantage of being unambiguous; it also allows typos and such to be
 diagnosed right away as ``unbound variables''.  The downside is that one
 needs to know which module defines which package, and to augment the
@@ -13459,10 +13542,11 @@ Occasionally, instead of using the base services as is, you will want to
 customize them.  To do this, use @code{modify-services} (@pxref{Service
 Reference, @code{modify-services}}) to modify the list.
 
-For example, suppose you want to modify @code{guix-daemon} and Mingetty
-(the console log-in) in the @code{%base-services} list (@pxref{Base
-Services, @code{%base-services}}).  To do that, you can write the
-following in your operating system declaration:
+@anchor{auto-login to TTY} For example, suppose you want to modify
+@code{guix-daemon} and Mingetty (the console log-in) in the
+@code{%base-services} list (@pxref{Base Services,
+@code{%base-services}}).  To do that, you can write the following in
+your operating system declaration:
 
 @lisp
 (define %my-services
@@ -13488,7 +13572,9 @@ following in your operating system declaration:
 
 This changes the configuration---i.e., the service parameters---of the
 @code{guix-service-type} instance, and that of all the
-@code{mingetty-service-type} instances in the @code{%base-services} list.
+@code{mingetty-service-type} instances in the @code{%base-services} list
+(@pxref{Auto-Login to a Specific TTY, see the cookbook for how to
+auto-login one user to a specific TTY,, guix-cookbook, GNU Guix Cookbook})).
 Observe how this is accomplished: first, we arrange for the original
 configuration to be bound to the identifier @code{config} in the
 @var{body}, and then we write the @var{body} so that it evaluates to the
@@ -15231,6 +15317,14 @@ Font engine used in Kmscon.
 @item @code{font-size} (default: @code{12})
 Font size used in Kmscon.
 
+@item @code{keyboard-layout} (default: @code{#f})
+If this is @code{#f}, Kmscon uses the default keyboard layout---usually US
+English (``qwerty'') for a 105-key PC keyboard.
+
+Otherwise this must be a @code{keyboard-layout} object specifying the
+keyboard layout.  @xref{Keyboard Layout}, for more information on how to
+specify the keyboard layout.
+
 @item @code{kmscon} (default: @var{kmscon})
 The Kmscon package to use.
 
@@ -15401,7 +15495,9 @@ Number of build user accounts to create.
 @item @code{authorize-key?} (default: @code{#t})
 @cindex substitutes, authorization thereof
 Whether to authorize the substitute keys listed in
-@code{authorized-keys}---by default that of @code{@value{SUBSTITUTE-SERVER}}
+@code{authorized-keys}---by default that of
+@code{@value{SUBSTITUTE-SERVER-1}} and
+@code{@value{SUBSTITUTE-SERVER-2}}
 (@pxref{Substitutes}).
 
 When @code{authorize-key?} is true, @file{/etc/guix/acl} cannot be
@@ -15422,8 +15518,9 @@ allowed for in-place modifications to @file{/etc/guix/acl}.
 @item @code{authorized-keys} (default: @code{%default-authorized-guix-keys})
 The list of authorized key files for archive imports, as a list of
 string-valued gexps (@pxref{Invoking guix archive}).  By default, it
-contains that of @code{@value{SUBSTITUTE-SERVER}} (@pxref{Substitutes}).
-See @code{substitute-urls} below for an example on how to change it.
+contains that of @code{@value{SUBSTITUTE-SERVER-1}} and
+@code{@value{SUBSTITUTE-SERVER-2}} (@pxref{Substitutes}).  See
+@code{substitute-urls} below for an example on how to change it.
 
 @item @code{use-substitutes?} (default: @code{#t})
 Whether to use substitutes.
@@ -15432,7 +15529,7 @@ Whether to use substitutes.
 The list of URLs where to look for substitutes by default.
 
 Suppose you would like to fetch substitutes from @code{guix.example.org}
-in addition to @code{@value{SUBSTITUTE-SERVER}}.  You will need to do
+in addition to @code{@value{SUBSTITUTE-SERVER-1}}.  You will need to do
 two things: (1) add @code{guix.example.org} to @code{substitute-urls},
 and (2) authorize its signing key, having done appropriate checks
 (@pxref{Substitute Server Authorization}).  The configuration below does
@@ -16410,6 +16507,7 @@ configuration rejecting all incoming connections except those to the ssh port
 :INPUT ACCEPT
 :FORWARD ACCEPT
 :OUTPUT ACCEPT
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 -A INPUT -p tcp --dport 22 -j ACCEPT
 -A INPUT -j REJECT --reject-with icmp-port-unreachable
 COMMIT
@@ -16418,6 +16516,7 @@ COMMIT
 :INPUT ACCEPT
 :FORWARD ACCEPT
 :OUTPUT ACCEPT
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 -A INPUT -p tcp --dport 22 -j ACCEPT
 -A INPUT -j REJECT --reject-with icmp6-port-unreachable
 COMMIT
@@ -16678,6 +16777,99 @@ must be @code{'()} or @code{'("internal")}.
 detailed discussion of each configuration field.
 @end deftp
 
+@cindex opendht, distributed hash table network service
+@cindex dhtproxy, for use with jami
+@defvr {Scheme Variable} opendht-service-type
+This is the type of the service running a @uref{https://opendht.net,
+OpenDHT} node, @command{dhtnode}.  The daemon can be used to host your
+own proxy service to the distributed hash table (DHT), for example to
+connect to with Jami, among other applications.
+
+@quotation Important
+When using the OpenDHT proxy server, the IP addresses it ``sees'' from
+the clients should be addresses reachable from other peers.  In practice
+this means that a publicly reachable address is best suited for a proxy
+server, outside of your private network.  For example, hosting the proxy
+server on a IPv4 private local network and exposing it via port
+forwarding could work for external peers, but peers local to the proxy
+would have their private addresses shared with the external peers,
+leading to connectivity problems.
+@end quotation
+
+The value of this service is a @code{opendht-configuration} object, as
+described below.
+@end defvr
+
+@deftp {Data Type} opendht-configuration
+This is the data type for the OpenDHT service configuration.
+
+@c The fields documentation has been auto-generated using the
+@c configuration->documentation procedure from
+@c (gnu services configuration).
+Available @code{opendht-configuration} fields are:
+
+@deftypevr {@code{opendht-configuration} parameter} package opendht
+The @code{opendht} package to use.
+
+@end deftypevr
+
+@deftypevr {@code{opendht-configuration} parameter} boolean peer-discovery?
+Whether to enable the multicast local peer discovery mechanism.
+
+Defaults to @samp{#f}.
+
+@end deftypevr
+
+@deftypevr {@code{opendht-configuration} parameter} boolean enable-logging?
+Whether to enable logging messages to syslog.  It is disabled by default
+as it is rather verbose.
+
+Defaults to @samp{#f}.
+
+@end deftypevr
+
+@deftypevr {@code{opendht-configuration} parameter} boolean debug?
+Whether to enable debug-level logging messages.  This has no effect if
+logging is disabled.
+
+Defaults to @samp{#f}.
+
+@end deftypevr
+
+@deftypevr {@code{opendht-configuration} parameter} maybe-string bootstrap-host
+The node host name that is used to make the first connection to the
+network.  A specific port value can be provided by appending the
+@code{:PORT} suffix.  By default, it uses the Jami bootstrap nodes, but
+any host can be specified here.  It's also possible to disable
+bootsrapping by setting this to the @code{'disabled} symbol.
+
+Defaults to @samp{"bootstrap.jami.net:4222"}.
+
+@end deftypevr
+
+@deftypevr {@code{opendht-configuration} parameter} maybe-number port
+The UDP port to bind to.  When set to @code{'disabled}, an available
+port is automatically selected.
+
+Defaults to @samp{4222}.
+
+@end deftypevr
+
+@deftypevr {@code{opendht-configuration} parameter} maybe-number proxy-server-port
+Spawn a proxy server listening on the specified port.
+
+Defaults to @samp{disabled}.
+
+@end deftypevr
+
+@deftypevr {@code{opendht-configuration} parameter} maybe-number proxy-server-port-tls
+Spawn a proxy server listening to TLS connections on the specified port.
+
+Defaults to @samp{disabled}.
+
+@end deftypevr
+@end deftp
+
 @cindex Tor
 @defvr {Scheme Variable} tor-service-type
 This is the type for a service that runs the @uref{https://torproject.org,
@@ -16923,7 +17115,7 @@ shell daemon, @command{sshd}.  Its value must be an
 (service openssh-service-type
          (openssh-configuration
            (x11-forwarding? #t)
-           (permit-root-login 'without-password)
+           (permit-root-login 'prohibit-password)
            (authorized-keys
              `(("alice" ,(local-file "alice.pub"))
                ("bob" ,(local-file "bob.pub"))))))
@@ -16957,7 +17149,7 @@ TCP port on which @command{sshd} listens for incoming connections.
 @item @code{permit-root-login} (default: @code{#f})
 This field determines whether and when to allow logins as root.  If
 @code{#f}, root logins are disallowed; if @code{#t}, they are allowed.
-If it's the symbol @code{'without-password}, then root logins are
+If it's the symbol @code{'prohibit-password}, then root logins are
 permitted but not with password-based authentication.
 
 @item @code{allow-empty-passwords?} (default: @code{#f})
@@ -18552,12 +18744,6 @@ Specifies whether to support HTTP keep-alive connections.
 Defaults to @samp{#t}.
 @end deftypevr
 
-@deftypevr {@code{cups-configuration} parameter} non-negative-integer keep-alive-timeout
-Specifies how long an idle client connection remains open, in seconds.
-
-Defaults to @samp{30}.
-@end deftypevr
-
 @deftypevr {@code{cups-configuration} parameter} non-negative-integer limit-request-body
 Specifies the maximum size of print files, IPP requests, and HTML form
 data.  A limit of 0 disables the limit check.
@@ -18784,7 +18970,7 @@ Specifies an access list for a job's private values.  @code{@@ACL} maps
 to the printer's requesting-user-name-allowed or
 requesting-user-name-denied values.  @code{@@OWNER} maps to the job's
 owner.  @code{@@SYSTEM} maps to the groups listed for the
-@code{system-group} field of the @code{files-config} configuration,
+@code{system-group} field of the @code{files-configuration},
 which is reified into the @code{cups-files.conf(5)} file.  Other
 possible elements of the access list include specific user names, and
 @code{@@@var{group}} to indicate members of a specific group.  The
@@ -18806,7 +18992,7 @@ Specifies an access list for a subscription's private values.
 @code{@@ACL} maps to the printer's requesting-user-name-allowed or
 requesting-user-name-denied values.  @code{@@OWNER} maps to the job's
 owner.  @code{@@SYSTEM} maps to the groups listed for the
-@code{system-group} field of the @code{files-config} configuration,
+@code{system-group} field of the @code{files-configuration},
 which is reified into the @code{cups-files.conf(5)} file.  Other
 possible elements of the access list include specific user names, and
 @code{@@@var{group}} to indicate members of a specific group.  The
@@ -19103,7 +19289,7 @@ The MATE package to use.
 @end deftp
 
 @deffn {Scheme Variable} lxqt-desktop-service-type
-This is the type of the service that runs the @uref{https://lxqt.github.io,
+This is the type of the service that runs the @uref{https://lxqt-project.org,
 LXQt desktop environment}.  Its value is a @code{lxqt-desktop-configuration}
 object (see below).
 
@@ -21620,7 +21806,7 @@ Available @code{getmail-options-configuration} fields are:
 If set to @samp{0}, getmail will only print warnings and errors.  A
 value of @samp{1} means that messages will be printed about retrieving
 and deleting messages.  If set to @samp{2}, getmail will print messages
-about each of it's actions.
+about each of its actions.
 
 Defaults to @samp{1}.
 
@@ -25367,7 +25553,7 @@ directives} for comprehensive documentation on the acceptable
 @deftp {Data type} php-fpm-dynamic-process-manager-configuration
 Data Type for the @code{dynamic} php-fpm process manager.  With the
 @code{dynamic} process manager, spare worker processes are kept around
-based on it's configured limits.
+based on its configured limits.
 @table @asis
 @item @code{max-children} (default: @code{5})
 Maximum of worker processes.
@@ -25792,6 +25978,14 @@ manual plugin (see @code{authentication-hook}, @code{cleanup-hook} and
 the documentation at @url{https://certbot.eff.org/docs/using.html#hooks}),
 and gives Let's Encrypt permission to log the public IP address of the
 requesting machine.
+
+@item @code{csr} (default: @code{#f})
+File name of Certificate Signing Request (CSR) in DER or PEM format.
+If @code{#f} is specified, this argument will not be passed to certbot.
+If a value is specified, certbot will use it to obtain a certificate, instead of
+using a self-generated CSR.
+The domain-name(s) mentioned in @code{domains}, must be consistent with the
+domain-name(s) mentioned in CSR file.
 
 @item @code{authentication-hook} (default: @code{#f})
 Command to be run in a shell once for each certificate challenge to be
@@ -26578,6 +26772,15 @@ Defaults to @samp{()}.
 The @code{(gnu services vpn)} module provides services related to
 @dfn{virtual private networks} (VPNs).
 
+@subsubheading Bitmask
+
+@defvr {Scheme Variable} bitmask-service-type
+A service type for the @uref{https://bitmask.net, Bitmask} VPN client.  It makes
+the client available in the system and loads its polkit policy.  Please note that
+the client expects an active polkit-agent, which is either run by your
+desktop-environment or should be run manually.
+@end defvr
+
 @subsubheading OpenVPN
 
 It provides a @emph{client} service for your machine to connect to a
@@ -26957,8 +27160,44 @@ Defaults to @samp{#f}.
 
 @end deftypevr
 
-
 @c %end of automatic openvpn-server documentation
+
+@subheading strongSwan
+
+Currently, the strongSwan service only provides legacy-style configuration with
+@file{ipsec.conf} and @file{ipsec.secrets} files.
+
+@defvr {Scheme Variable} strongswan-service-type
+A service type for configuring strongSwan for IPsec @acronym{VPN,
+Virtual Private Networking}.  Its value must be a
+@code{strongswan-configuration} record as in this example:
+
+@lisp
+(service strongswan-service-type
+         (strongswan-configuration
+          (ipsec-conf "/etc/ipsec.conf")
+          (ipsec-secrets "/etc/ipsec.secrets")))
+@end lisp
+
+@end defvr
+
+@deftp {Data Type} strongswan-configuration
+Data type representing the configuration of the StrongSwan service.
+
+@table @asis
+@item @code{strongswan}
+The strongSwan package to use for this service.
+
+@item @code{ipsec-conf} (default: @code{#f})
+The file name of your @file{ipsec.conf}.  If not @code{#f}, then this and
+@code{ipsec-secrets} must both be strings.
+
+@item @code{ipsec-secrets} (default @code{#f})
+The file name of your @file{ipsec.secrets}.  If not @code{#f}, then this and
+@code{ipsec-conf} must both be strings.
+
+@end table
+@end deftp
 
 @subsubheading Wireguard
 
@@ -29186,7 +29425,7 @@ cluster node that supports multiple storage backends, and installs the
                  ;; Ganeti uses SSH to communicate between nodes.
                  (service openssh-service-type
                           (openssh-configuration
-                           (permit-root-login 'without-password)))
+                           (permit-root-login 'prohibit-password)))
 
                  (service ganeti-service-type
                           (ganeti-configuration
@@ -31435,7 +31674,7 @@ notifications.
 
 The kernel module loader service allows one to load loadable kernel
 modules at boot.  This is especially useful for modules that don't
-autoload and need to be manually loaded, as it's the case with
+autoload and need to be manually loaded, as is the case with
 @code{ddcci}.
 
 @deffn {Scheme Variable} kernel-module-loader-service-type
@@ -32536,7 +32775,7 @@ program.  That gives a lot of flexibility.  The
 program to run in that initrd.
 
 @deffn {Scheme Procedure} expression->initrd @var{exp} @
-       [#:guile %guile-3.0-static-stripped] [#:name "guile-initrd"]
+       [#:guile %guile-static-stripped] [#:name "guile-initrd"]
 Return as a file-like object a Linux initrd (a gzipped cpio archive)
 containing @var{guile} and that evaluates @var{exp}, a G-expression,
 upon booting.  All the derivations referenced by @var{exp} are
@@ -33090,7 +33329,7 @@ below, which enables networking and requests 1@tie{}GiB of RAM for the
 emulated machine:
 
 @example
-$ /gnu/store/@dots{}-run-vm.sh -m 1024 -smp 2 -net user,model=virtio-net-pci
+$ /gnu/store/@dots{}-run-vm.sh -m 1024 -smp 2 -nic user,model=virtio-net-pci
 @end example
 
 The VM shares its store with the host system.
@@ -33735,6 +33974,13 @@ every time you modify your @command{config.scm} file and the
 @command{-o StrictHostKeyChecking=no} prevents you from having to allow a
 connection to an unknown host every time you connect.
 
+@quotation Note
+If you find the above @samp{hostfwd} example not to be working (e.g.,
+your SSH client hangs attempting to connect to the mapped port of your
+VM), make sure that your Guix System VM has networking support, such as
+by using the @code{dhcp-client-service-type} service type.
+@end quotation
+
 @subsection Using @command{virt-viewer} with Spice
 
 As an alternative to the default @command{qemu} graphical client you can
@@ -34262,13 +34508,10 @@ This service type is intended to be extended by other service types,
 such as below:
 
 @lisp
-(define module-installing-service-type
-  (service-type
-    (name 'module-installing-service)
-    (extensions (list (service-extension linux-loadable-module-service-type
-                                         (const (list module-to-install-1
-                                                      module-to-install-2)))))
-    (default-value #f)))
+(simple-service 'installing-module
+                linux-loadable-module-service-type
+                (list module-to-install-1
+                      module-to-install-2))
 @end lisp
 
 This does not actually load modules at bootup, only adds it to the

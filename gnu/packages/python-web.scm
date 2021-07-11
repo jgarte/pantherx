@@ -6,7 +6,7 @@
 ;;; Copyright © 2013, 2014, 2015, 2016, 2020 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2016, 2017, 2019, 2020, 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ricardo Wurmus <rekado@elephly.net>
-;;; Copyright © 2017 Roel Janssen <roel@gnu.org>
+;;; Copyright © 2017, 2021 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2016, 2017, 2020 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2014, 2017, 2021 Eric Bavier <bavier@posteo.net>
@@ -14,7 +14,7 @@
 ;;; Copyright © 2015 Cyril Roelandt <tipecaml@gmail.com>
 ;;; Copyright © 2015, 2016, 2017, 2019 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2019 Hartmut Goebel <h.goebel@crazy-compilers.com>
-;;; Copyright © 2016, 2017, 2018, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2016–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2015, 2017 Ben Woodcroft <donttrustben@gmail.com>
 ;;; Copyright © 2015, 2016 Christopher Allan Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2017 Adriano Peluso <catonano@gmail.com>
@@ -42,6 +42,7 @@
 ;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2021 Ekaitz Zarraga <ekaitz@elenq.tech>
 ;;; Copyright © 2021 Greg Hogan <code@greghogan.com>
+;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -362,13 +363,13 @@ WSGI.  This package includes libraries for implementing ASGI servers.")
 (define-public python-aws-sam-translator
   (package
     (name "python-aws-sam-translator")
-    (version "1.30.1")
+    (version "1.36.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "aws-sam-translator" version))
               (sha256
                (base32
-                "0d9ppd94x2kw404m49ajswmmxgdngbs4p5ajyrdvnlivfzqbv7dx"))))
+                "115mcbb4r205c1hln199llqrvvbijfqz075rwx991l99jc6rj6zs"))))
     (build-system python-build-system)
     (arguments
      `(;; XXX: Tests are not distributed with the PyPI archive, and would
@@ -465,7 +466,7 @@ emit information from within their applications to the AWS X-Ray service.")
 (define-public python-cfn-lint
   (package
     (name "python-cfn-lint")
-    (version "0.41.0")
+    (version "0.51.0")
     (home-page "https://github.com/aws-cloudformation/cfn-python-lint")
     (source (origin
               (method git-fetch)
@@ -475,7 +476,7 @@ emit information from within their applications to the AWS X-Ray service.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0nqs0fmj3hd7pnd9hkb4z57jvi2iv82hh6n3xxba6i6p8zgx75q4"))))
+                "1027s243sik25c6sqw6gla7k7vl3jdicrik5zdsa8pafxh2baja4"))))
     (build-system python-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -486,6 +487,8 @@ emit information from within their applications to the AWS X-Ray service.")
                         ;; to avoid a dependency on 'git'.
                         (delete-file
                          "test/unit/module/maintenance/test_update_documentation.py")
+                        (delete-file
+                         "test/unit/module/maintenance/test_update_resource_specs.py")
                         (setenv "PYTHONPATH"
                                 (string-append "./build/lib:"
                                                (getenv "PYTHONPATH")))
@@ -707,7 +710,8 @@ Swartz.")
 
 (define-public python2-html2text
   (let ((base (package-with-python2 python-html2text)))
-    (package/inherit base
+    (package
+      (inherit base)
       ;; This is the last version with support for Python 2.
       (version "2019.8.11")
       (source (origin
@@ -825,9 +829,6 @@ websites.  It automatically stores and sends cookies, follows redirects, and can
 follow links and submit forms.  It doesn’t do JavaScript.")
     (license license:expat)))
 
-(define-public python2-mechanicalsoup
-  (package-with-python2 python-mechanicalsoup))
-
 (define-public python-hyperframe
   (package
     (name "python-hyperframe")
@@ -843,9 +844,10 @@ follow links and submit forms.  It doesn’t do JavaScript.")
      `(#:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (add-installed-pythonpath inputs outputs)
-             (invoke "pytest" "-vv" "test"))))))
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest" "-vv" "test")))))))
     (native-inputs
      `(("python-pytest" ,python-pytest)))
     (home-page "https://github.com/python-hyper/hyperframe")
@@ -875,12 +877,13 @@ into HTTP/2 frames.")
      `(#:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (add-installed-pythonpath inputs outputs)
-             (invoke "pytest" "-vv" "test" "-k"
-                     ;; This test will be fixed in the next version. See:
-                     ;; https://github.com/python-hyper/hpack/issues/168.
-                     "not test_get_by_index_out_of_range"))))))
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest" "-vv" "test" "-k"
+                       ;; This test will be fixed in the next version. See:
+                       ;; https://github.com/python-hyper/hpack/issues/168.
+                       "not test_get_by_index_out_of_range")))))))
     (native-inputs
      `(("python-pytest" ,python-pytest)))
     (home-page "https://hyper.rtfd.org")
@@ -905,8 +908,9 @@ for use in Python programs that implement HTTP/2.")
      `(#:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda _
-             (invoke "pytest" "-vv"))))))
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest" "-vv")))))))
     (native-inputs
      `(("python-pytest" ,python-pytest)))
     (home-page "https://github.com/python-hyper/h11")
@@ -933,9 +937,10 @@ and that could be anything you want.")
      `(#:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (add-installed-pythonpath inputs outputs)
-             (invoke "pytest" "-vv" "test"))))))
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest" "-vv" "test")))))))
     (native-inputs
      `(("python-pytest" ,python-pytest)))
     (propagated-inputs
@@ -1749,14 +1754,14 @@ web framework, either via the basic or digest authentication schemes.")
 (define-public python-terminado
   (package
     (name "python-terminado")
-    (version "0.9.4")
+    (version "0.10.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "terminado" version))
        (sha256
         (base32
-         "1glqyw97rddyzvisz8rihsn3x2nrm5xbyq82nzp3123pqbxvqzcs"))))
+         "1smvra3sc9sg64w49kfn5yhagshq3x55839748ck5dvxvk4hgza6"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-tornado" ,python-tornado-6)
@@ -1772,17 +1777,7 @@ web framework, either via the basic or digest authentication schemes.")
     (synopsis "Terminals served to term.js using Tornado websockets")
     (description "This package provides a Tornado websocket backend for the
 term.js Javascript terminal emulator library.")
-    (license license:bsd-2)
-    (properties `((python2-variant . ,(delay python2-terminado))))))
-
-(define-public python2-terminado
-  (let ((terminado (package-with-python2 (strip-python2-variant python-terminado))))
-    (package/inherit terminado
-      (propagated-inputs
-       `(("python2-backport-ssl-match-hostname"
-          ,python2-backport-ssl-match-hostname)
-         ("python2-futures" ,python2-futures)
-          ,@(package-propagated-inputs terminado))))))
+    (license license:bsd-2)))
 
 (define-public python-wsgi-intercept
   (package
@@ -2784,7 +2779,8 @@ supports url redirection and retries, and also gzip and deflate decoding.")
     (license license:expat)))
 
 (define python-urllib3/fixed
-  (package/inherit python-urllib3
+  (package
+    (inherit python-urllib3)
     (version "1.26.4")
     (source
      (origin
@@ -2880,9 +2876,6 @@ WSGIProxy turns WSGI function calls into HTTP requests.
 It also includes code to sign requests and pass private data,
 and to spawn subprocesses to handle requests.")
     (license license:expat)))
-
-(define-public python2-wsgiproxy2
- (package-with-python2 python-wsgiproxy2))
 
 (define-public python-pastedeploy
   (package
@@ -3926,7 +3919,7 @@ for Flask programs that are using @code{python-alembic}.")
 (define-public python-genshi
   (package
     (name "python-genshi")
-    (version "0.7.3")
+    (version "0.7.5")
     (source
      (origin
        (method git-fetch)
@@ -3935,7 +3928,9 @@ for Flask programs that are using @code{python-alembic}.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "04bw7nd4wyn8ixnhik57hny2xpjjpn80k5hp6691inix5gc6rxaf"))))
+        (base32 "04i0caywiwrgw09grz988n15qr9lr31d9n6a529p8v80cy1fv23c"))))
+    (propagated-inputs
+     `(("python-six" ,python-six)))
     (build-system python-build-system)
     (home-page "https://genshi.edgewall.org/")
     (synopsis "Toolkit for generation of output for the web")
@@ -4293,6 +4288,25 @@ name resolutions asynchronously.")
     (description "@code{yarl} module provides handy @code{URL} class
 for URL parsing and changing.")
     (license license:asl2.0)))
+
+(define-public python-google
+  (package
+    (name "python-google")
+    (version "3.0.0")
+    (source (origin
+              (method url-fetch)
+              (uri (pypi-uri "google" version))
+              (sha256
+               (base32
+                "1gncv3l11za0mpxvmpaf5n5j3jzp282rz62yml4ha4z55q930d8l"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f)) ; There are no tests.
+    (home-page "https://breakingcode.wordpress.com/")
+    (synopsis "Python bindings to the Google search engine")
+    (description "This package provides Python bindings for using the
+Google search engine.  Its module is called @code{googlesearch}.")
+    (license license:bsd-3)))
 
 (define-public python-google-api-client
   (package
@@ -5494,13 +5508,13 @@ according to the standard set by PasteDeploy ")
 (define-public python-hupper
   (package
     (name "python-hupper")
-    (version "1.10.2")
+    (version "1.10.3")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "hupper" version))
               (sha256
                (base32
-                "0am0p6g5cz6xmcaf04xq8q6dzdd9qz0phj6gcmpsckf2mcyza61q"))))
+                "1nbc648d110jx6ziji980cdmzsd14p8fqrcarsdvr1vm5jvm2vyd"))))
     (build-system python-build-system)
     (arguments '(#:test-target "pytest"))
     (native-inputs

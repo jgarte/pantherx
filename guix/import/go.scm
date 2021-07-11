@@ -5,6 +5,7 @@
 ;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
+;; Copyright © 2021 Sarah Morgensen <iskarian@mgsn.dev>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -186,8 +187,9 @@ e.g. \"google.golang.org/protobuf/proto\"."
          (description (if (not (null? overview))
                           overview
                           (select-content sxml)))
-         (description* (and (not (null? description))
-                            (first description))))
+         (description* (if (not (null? description))
+                           (first description)
+                           description)))
     (match description*
       (() #f)                           ;nothing selected
       ((p elements ...)
@@ -428,9 +430,9 @@ hence the need to derive this information."
 (define* (go-module->guix-package-name module-path #:optional version)
   "Converts a module's path to the canonical Guix format for Go packages.
 Optionally include a VERSION string to append to the name."
-  ;; Map dot, slash and underscore characters to hyphens.
+  ;; Map dot, slash, underscore and tilde characters to hyphens.
   (let ((module-path* (string-map (lambda (c)
-                                    (if (member c '(#\. #\/ #\_))
+                                    (if (member c '(#\. #\/ #\_ #\~))
                                         #\-
                                         c))
                                   module-path)))

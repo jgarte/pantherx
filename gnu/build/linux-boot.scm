@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
-;;; Copyright © 2016, 2017, 2019, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2016, 2017, 2019–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2019 Guillaume Le Vaillant <glv@posteo.net>
 ;;;
@@ -411,11 +411,13 @@ the last argument of `mknod'."
           (filter-map string->number (scandir "/proc")))))
 
 (define* (mount-root-file-system root type
-                                 #:key volatile-root? (flags 0) options)
+                                 #:key volatile-root? (flags 0) options
+                                 check?)
   "Mount the root file system of type TYPE at device ROOT. If VOLATILE-ROOT? is
 true, mount ROOT read-only and make it an overlay with a writable tmpfs using
 the kernel built-in overlayfs. FLAGS and OPTIONS indicates the options to use
-to mount ROOT, and behave the same as for the `mount' procedure."
+to mount ROOT, and behave the same as for the `mount' procedure.
+If CHECK? is true, first run ROOT's fsck tool (if any) non-interactively."
 
   (if volatile-root?
       (begin
@@ -436,7 +438,8 @@ to mount ROOT, and behave the same as for the `mount' procedure."
         (mount "none" "/root" "overlay" 0
                "lowerdir=/real-root,upperdir=/rw-root/upper,workdir=/rw-root/work"))
       (begin
-        (check-file-system root type)
+        (when check?
+          (check-file-system root type))
         (mount root "/root" type flags options)))
 
   ;; Make sure /root/etc/mtab is a symlink to /proc/self/mounts.
@@ -582,6 +585,16 @@ upon error."
           (unless (configure-qemu-networking)
             (display "network interface is DOWN\n")))
 
+        ;; A big ugly hammer, to be used only for debugging and in desperate
+        ;; situations where no proper device synchonisation is possible.
+        (let ((root-delay (and=> (find-long-option "rootdelay" args)
+                                 string->number)))
+          (when root-delay
+            (format #t
+                    "Pausing for rootdelay=~a seconds before mounting the root file system...\n"
+                    root-delay)
+            (sleep root-delay)))
+
         ;; Prepare the real root file system under /root.
         (unless (file-exists? "/root")
           (mkdir "/root"))
@@ -600,7 +613,10 @@ upon error."
                                     root-fs-type
                                     #:volatile-root? volatile-root?
                                     #:flags root-fs-flags
-                                    #:options root-options)
+                                    #:options root-options
+                                    #:check? (if root-fs
+                                                 (file-system-check? root-fs)
+                                                 #t))
             (mount "none" "/root" "tmpfs"))
 
         ;; Mount the specified file systems.

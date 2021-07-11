@@ -177,7 +177,7 @@ information.")
      `(("python-pypdf2" ,python-pypdf2)
        ("python-pyqt" ,python-pyqt)
        ("python-poppler-qt5" ,python-poppler-qt5)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (home-page "http://crazy-compilers.com/flyer-composer")
     (synopsis "Rearrange PDF pages to print as flyers on one sheet")
     (description "@command{flyer-composer} can be used to prepare one- or
@@ -302,7 +302,7 @@ When present, Poppler is able to correctly render CJK and Cyrillic text.")
 (define-public poppler-qt5
   (package/inherit poppler
    (name "poppler-qt5")
-   (inputs `(("qtbase" ,qtbase)
+   (inputs `(("qtbase" ,qtbase-5)
              ,@(package-inputs poppler)))
    (synopsis "Qt5 frontend for the Poppler PDF rendering library")))
 
@@ -342,7 +342,7 @@ When present, Poppler is able to correctly render CJK and Cyrillic text.")
      `(("python-sip" ,python-sip-4)
        ("python-pyqt" ,python-pyqt)
        ("poppler-qt5" ,poppler-qt5)
-       ("qtbase" ,qtbase)))
+       ("qtbase" ,qtbase-5)))
     (home-page "https://pypi.org/project/python-poppler-qt5/")
     (synopsis "Python bindings for Poppler-Qt5")
     (description
@@ -400,7 +400,7 @@ reading and editing of existing PDF files.")
    (inputs `(("cups" ,cups)
              ("freetype" ,freetype)
              ("libpng" ,libpng)
-             ("qtbase" ,qtbase)
+             ("qtbase" ,qtbase-5)
              ("zlib" ,zlib)))
    (arguments
     `(#:tests? #f))                   ; there is no check target
@@ -839,7 +839,7 @@ program capable of converting PDF into other formats.")
        (sha256
         (base32 "0v1rl126hvblajnph2hkansgi0s8vjdc5yxrm4y3faa0lxzjwr6c"))
        (patches (search-patches "qpdfview-qt515-compat.patch"))))
-    (build-system gnu-build-system)
+    (build-system qt-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
@@ -847,25 +847,17 @@ program capable of converting PDF into other formats.")
        ("djvulibre" ,djvulibre)
        ("libspectre" ,libspectre)
        ("poppler-qt5" ,poppler-qt5)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)))
     (arguments
-     `(#:imported-modules ((guix build qt-build-system)
-                           (guix build cmake-build-system)
-                           ,@%gnu-build-system-modules)
-       #:modules ((guix build utils)
-                  (guix build gnu-build-system)
-                  ((guix build qt-build-system) #:prefix qt:))
+     `(#:tests? #f ; no tests
        #:phases
        (modify-phases %standard-phases
          (replace 'configure
            (lambda _
              (substitute* "qpdfview.pri"
                (("/usr") (assoc-ref %outputs "out")))
-             (invoke "qmake" "qpdfview.pro")))
-         ;; Otherwise, the user interface will not display any icons.
-         (add-after 'install 'qt-wrap
-           (assoc-ref qt:%standard-phases 'qt-wrap)))))
+             (invoke "qmake" "qpdfview.pro"))))))
     (home-page "https://launchpad.net/qpdfview")
     (synopsis "Tabbed document viewer")
     (description "@command{qpdfview} is a document viewer for PDF, PS and DJVU

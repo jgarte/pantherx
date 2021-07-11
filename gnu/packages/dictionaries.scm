@@ -175,11 +175,10 @@ work, such as sentence length and other readability measures.")
          (delete 'build)
          (delete 'check)
          (replace 'install
-           (lambda _
+           (lambda* (#:key inputs #:allow-other-keys)
              (let ((bindir (string-append
                             (assoc-ref %outputs "out") "/bin"))
-                   (wish (string-append
-                          (assoc-ref %build-inputs "tk")
+                   (wish (string-append (assoc-ref inputs "tk")
                           "/bin/wish8.6"))
                    (sharedir (string-append
                               (assoc-ref %outputs "out")
@@ -439,12 +438,6 @@ intelligible and easily correctable.")
        ("ncurses" ,ncurses)
        ("readline" ,readline)
        ("zlib" ,zlib)))
-    ;; If you use Guix to package and install dictionary data,
-    ;; you need this variable to load them.
-    (native-search-paths
-     (list (search-path-specification
-            (variable "STARDICT_DATA_DIR")
-            (files '("share/stardict/dic")))))
     (home-page "https://dushistov.github.io/sdcv/")
     (synopsis "Console version of StarDict")
     (description "sdcv is simple text-based utility for work with dictionaries

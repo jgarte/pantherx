@@ -51,10 +51,18 @@
             evaluation-complete?
             evaluation-checkouts
 
+            job?
+            job-build-id
+            job-status
+            job-name
+
             %query-limit
             queued-builds
             latest-builds
             evaluation
+            evaluation-jobs
+            build
+            job-build
             latest-evaluations
             evaluations-for-commit
 
@@ -75,13 +83,31 @@
   (file-size   build-product-file-size)           ;integer
   (path        build-product-path))               ;string
 
+(define-syntax-rule (define-enumeration-mapping proc
+                      (names integers) ...)
+  (define (proc value)
+    (match value
+      (integers 'names) ...)))
+
+(define-enumeration-mapping integer->build-status
+  ;; Copied from 'build-status' in Cuirass.
+  (submitted        -3)
+  (scheduled        -2)
+  (started          -1)
+  (succeeded         0)
+  (failed            1)
+  (failed-dependency 2)
+  (failed-other      3)
+  (canceled          4))
+
 (define-json-mapping <build> make-build build?
   json->build
   (id          build-id "id")                     ;integer
   (derivation  build-derivation)                  ;string | #f
   (evaluation  build-evaluation)                  ;integer
   (system      build-system)                      ;string
-  (status      build-status "buildstatus" )       ;integer
+  (status      build-status "buildstatus"         ;symbol
+               integer->build-status)
   (timestamp   build-timestamp)                   ;integer
   (products    build-products "buildproducts"     ;<build-product>*
                (lambda (products)
@@ -90,6 +116,13 @@
                       (if (vector? products)
                           (vector->list products)
                           '())))))
+
+(define-json-mapping <job> make-job job?
+  json->job
+  (build-id    job-build-id "build")              ;integer
+  (status      job-status "status"                ;symbol
+               integer->build-status)
+  (name        job-name))                         ;string
 
 (define-json-mapping <checkout> make-checkout checkout?
   json->checkout
@@ -100,7 +133,7 @@
   json->evaluation
   (id          evaluation-id)                     ;integer
   (spec        evaluation-spec "specification")   ;string
-  (complete?   evaluation-complete? "in-progress"
+  (complete?   evaluation-complete? "status"
                (match-lambda
                  (0 #t)
                  (_ #f)))                         ;Boolean
@@ -154,14 +187,21 @@ string such as \"x86_64-linux\"), restrict to builds for SYSTEM."
                                     (number->string evaluation)))))
     (json->evaluation evaluation)))
 
-(define* (latest-evaluations url #:optional (limit %query-limit))
-  "Return the latest evaluations performed by the CI server at URL."
-  (map json->evaluation
-       (vector->list
-        (json->scm
-         (http-fetch (string-append url "/api/evaluations?nr="
-                                    (number->string limit)))))))
-
+(define* (latest-evaluations url
+                             #:optional (limit %query-limit)
+                             #:key spec)
+  "Return the latest evaluations performed by the CI server at URL.  If SPEC
+is passed, only consider the evaluations for the given SPEC specification."
+  (let ((spec (if spec
+                  (format #f "&spec=~a" spec)
+                  "")))
+    (map json->evaluation
+         (vector->list
+          (json->scm
+           (http-fetch
+            (string-append url "/api/evaluations?nr="
+                           (number->string limit)
+                           spec)))))))
 
 (define* (evaluations-for-commit url commit #:optional (limit %query-limit))
   "Return the evaluations among the latest LIMIT evaluations that have COMMIT
@@ -171,6 +211,28 @@ as one of their inputs."
                     (string=? (checkout-commit checkout) commit))
                   (evaluation-checkouts evaluation)))
           (latest-evaluations url limit)))
+
+(define (evaluation-jobs url evaluation-id)
+  "Return the list of jobs of evaluation EVALUATION-ID."
+  (map json->job
+       (vector->list
+        (json->scm (http-fetch
+                    (string-append url "/api/jobs?evaluation="
+                                   (number->string evaluation-id)))))))
+
+(define (build url id)
+  "Look up build ID at URL and return it.  Raise &http-get-error if it is not
+found (404)."
+  (json->build
+   (http-fetch (string-append url "/build/"       ;note: no "/api" here
+                              (number->string id)))))
+
+(define (job-build url job)
+  "Return the build associated with JOB."
+  (build url (job-build-id job)))
+
+;; TODO: job history:
+;; https://ci.guix.gnu.org/api/jobs/history?spec=master&names=coreutils.x86_64-linux&nr=10
 
 (define (find-latest-commit-with-substitutes url)
   "Return the latest commit with available substitutes for the Guix package

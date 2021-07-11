@@ -2,7 +2,7 @@
 ;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
 ;;; Copyright © 2014, 2015, 2016, 2018, 2019, 2020 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2020 Eric Bavier <bavier@posteo.net>
+;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2020, 2021 Eric Bavier <bavier@posteo.net>
 ;;; Copyright © 2015, 2016 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015 Alex Sassmannshausen <alex.sassmannshausen@gmail.com>
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
@@ -41,6 +41,7 @@
 ;;; Copyright © 2021 Hyunseok Kim <lasnesne@lagunposprasihopre.org>
 ;;; Copyright © 2021 David Larsson <david.larsson@selfhosted.xyz>
 ;;; Copyright © 2021 WinterHound <winterhound@yandex.com>
+;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -681,13 +682,13 @@ memory, disks, network and processes.")
 (define-public bpytop
   (package
     (name "bpytop")
-    (version "1.0.65")
+    (version "1.0.67")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "bpytop" version))
        (sha256
-        (base32 "1vq51vg2ygk2p738zi21v5chn908d4bd5zkb8s4fbgf4zqp425ny"))))
+        (base32 "1fwmiwvs8ax9az3hbp1p79x6m3wq73pn3vkbhcg9jvps4wv8wcwb"))))
     (build-system python-build-system)
     (inputs
      `(("python-psutil" ,python-psutil)))
@@ -702,7 +703,7 @@ memory, disks, network and processes.")
                                             (package-version python))
                                           "/site-packages/bpytop-themes")))
                (mkdir-p themes)
-               (copy-recursively "bpytop-themes" themes)))))))
+               (copy-recursively "themes" themes)))))))
     (home-page
      "https://github.com/aristocratos/bpytop")
     (synopsis "Resource monitor")
@@ -714,7 +715,7 @@ memory, disks, network and processes.  It's a Python port and continuation of
 (define-public pies
   (package
     (name "pies")
-    (version "1.5")
+    (version "1.6")
     (source
      (origin
        (method url-fetch)
@@ -722,7 +723,7 @@ memory, disks, network and processes.  It's a Python port and continuation of
                            version ".tar.bz2"))
        (sha256
         (base32
-         "11j168qljsinaj5dwmg7nkm2z1aghi6gc3d0wf0pikflnh2q2wqf"))))
+         "0ad5bg1czwmr4qw33aszxzc6ll99a9lfs32lyfb1wl5x9s1cc7az"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases (modify-phases %standard-phases
@@ -1135,7 +1136,7 @@ connection alive.")
 (define-public isc-dhcp
   (let* ((bind-major-version "9")
          (bind-minor-version "11")
-         (bind-patch-version "31")
+         (bind-patch-version "32")
          (bind-release-type "")         ; for patch release, use "-P"
          (bind-release-version "")      ; for patch release, e.g. "6"
          (bind-version (string-append bind-major-version
@@ -1147,14 +1148,15 @@ connection alive.")
                                       bind-release-version)))
     (package
       (name "isc-dhcp")
-      (version "4.4.2")
+      (version "4.4.2-P1")
       (source (origin
                 (method url-fetch)
                 (uri (string-append "https://ftp.isc.org/isc/dhcp/"
                                     version "/dhcp-" version ".tar.gz"))
+                (patches (search-patches "isc-dhcp-gcc-compat.patch"))
                 (sha256
                  (base32
-                  "08a5003zdxgl41b29zjkxa92h2i40zyjgxg0npvnhpkfl5jcsz0s"))))
+                  "06jsr0cg5rsmyibshrpcb9za0qgwvqccashdma7mlm1rflrh8pmh"))))
       (build-system gnu-build-system)
       (arguments
        `(#:parallel-build? #f
@@ -1272,12 +1274,12 @@ connection alive.")
                                         "/bind-" bind-version ".tar.gz"))
                     (sha256
                      (base32
-                      "0sm3vy5g21isdywxr650442x9r00fpj9cxc81n3qcbibyibl9wpm"))))
+                      "0hhkb4d14hvly2751cxl2s2xyim3bri8qaisgkcm456xfi5wpy6b"))))
 
                 ("coreutils*" ,coreutils)
                 ("sed*" ,sed)))
 
-      (home-page "https://www.isc.org/products/DHCP/")
+      (home-page "https://www.isc.org/dhcp/")
       (synopsis "Dynamic Host Configuration Protocol (DHCP) tools")
       (description
        "ISC's Dynamic Host Configuration Protocol (DHCP) distribution provides a
@@ -1289,21 +1291,29 @@ tools: server, client, and relay agent.")
 (define-public libpcap
   (package
     (name "libpcap")
-    (version "1.10.0")
+    (version "1.10.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://www.tcpdump.org/release/libpcap-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "07ibr6zzfh1wk5gqcbnlyh6v0dfmhpfd0fqj5y3yxvzf4ckb84ld"))))
+                "1m5x26vlbymp90k1qh0w3nj2nxzyvfrmfmwpj17k81dgri55ya7d"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("bison" ,bison)
        ("flex" ,flex)))
     (arguments
      ;; There are some tests in testprogs/, but no automated test suite.
-     '(#:tests? #f))
+     `(#:tests? #f
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'omit-static-library
+           ;; Neither build nor install libpcap.a.
+           (lambda _
+             (substitute* "Makefile.in"
+               ((" libpcap\\.a") "")
+               ((" install-archive ") " ")))))))
     (home-page "https://www.tcpdump.org")
     (synopsis "Network packet capture library")
     (description
@@ -1317,14 +1327,14 @@ network statistics collection, security monitoring, network debugging, etc.")
 (define-public tcpdump
   (package
     (name "tcpdump")
-    (version "4.99.0")
+    (version "4.99.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://www.tcpdump.org/release/tcpdump-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0hmqh2fx8rgs9v1mk3vpywj61xvkifz260q685xllxr8jmxg3wlc"))))
+                "1ghfs5gifzrk3813zf9zalfbjs70wg6llz6q31k180r7zf2nkcvr"))))
     (build-system gnu-build-system)
     (inputs `(("libpcap" ,libpcap)
               ("openssl" ,openssl)))
@@ -1586,7 +1596,7 @@ system administrator.")
 (define-public sudo
   (package
     (name "sudo")
-    (version "1.9.7")
+    (version "1.9.7p1")
     (source (origin
               (method url-fetch)
               (uri
@@ -1596,7 +1606,7 @@ system administrator.")
                                     version ".tar.gz")))
               (sha256
                (base32
-                "0jg5vf6hc0j2bh4vqwsb4jybhryrsh4kz97r1salvf4rcqnprgib"))
+                "1kyqj45nmykwj38sc5kx7mi0vf6x637hzvbd1jv22lg5aks3251r"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -1699,18 +1709,27 @@ commands and their arguments.")
     (arguments
      `(#:phases
        (modify-phases %standard-phases
+         (add-before 'configure 'pre-configure
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "GNUmakefile"
+               (("^\tchown.*$") ""))
+             ;; OpenDoas look for binaries in safepath when a rule specify a
+             ;; relative command, such as “permit keepenv :wheel cmd guix”.
+             (substitute* "doas.c"
+               (("safepath =" match)
+                (string-append match " \""
+                               "/run/setuid-programs:"
+                               "/run/current-system/profile/bin:"
+                               "/run/current-system/profile/sbin:"
+                               "\" ")))
+             #t))
          (replace 'configure
            ;; The configure script doesn't accept most of the default flags.
            (lambda* (#:key configure-flags #:allow-other-keys)
              ;; The configure script can be told which compiler to use only
              ;; through environment variables.
              (setenv "CC" ,(cc-for-target))
-             (apply invoke "./configure" configure-flags)))
-         (add-before 'install 'fix-makefile
-           (lambda* (#:key outputs #:allow-other-keys)
-             (substitute* "GNUmakefile"
-               (("^\tchown.*$") ""))
-             #t)))
+             (apply invoke "./configure" configure-flags))))
        #:configure-flags
        (list (string-append "--prefix=" (assoc-ref %outputs "out"))
              "--with-timestamp")
@@ -1866,7 +1885,7 @@ command.")
   (package
     (inherit wpa-supplicant)
     (name "wpa-supplicant-gui")
-    (inputs `(("qtbase" ,qtbase)
+    (inputs `(("qtbase" ,qtbase-5)
               ("qtsvg" ,qtsvg)
               ,@(package-inputs wpa-supplicant)))
     (native-inputs
@@ -2054,15 +2073,15 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
 (define-public acpica
   (package
     (name "acpica")
-    (version "20210331")
+    (version "20210604")
     (source (origin
               (method url-fetch)
               (uri (string-append
                     "https://acpica.org/sites/acpica/files/acpica-unix2-"
-                    version ".tar.gz"))
+                    version ".tar_0.gz"))
               (sha256
                (base32
-                "1h98pvc9iy1c49cid0ppjwk5zsy2m1xbvfqb72pkwkrd4rn35arx"))))
+                "1wsgg6fx7bhbpfzhbpbq2r7jpmv4c4n7v0zidbh25swrz7kfgpwz"))))
     (build-system gnu-build-system)
     (native-inputs `(("flex" ,flex)
                      ("bison" ,bison)))
@@ -2137,7 +2156,7 @@ system is under heavy load.")
 (define-public detox
   (package
     (name "detox")
-    (version "1.3.3")
+    (version "1.4.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2146,21 +2165,23 @@ system is under heavy load.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "13mhs62m7bpff45liy65pajq5jg3i12jj90vwdkra94z9mlr2rlz"))))
+                "0q16dvjbry573j4ayh9dwskdh1dxx8dk4rj94w6f2dcv4ww37is1"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
        ("flex" ,flex)))
     (arguments
-     `(#:tests? #f                    ;no 'check' target
-       #:phases (modify-phases %standard-phases
+     `(#:phases (modify-phases %standard-phases
                   (add-after 'unpack 'delete-configure
                     ;; The "configure" script is present, but otherwise the
                     ;; project is not bootstrapped: missing install-sh and
                     ;; Makefile.in, so delete it so the bootstrap phase will
                     ;; take over.
-                    (lambda _ (delete-file "configure") #t)))))
+                    (lambda _ (delete-file "configure") #t))
+                  (replace 'check
+                    (lambda _
+                      (invoke "./tests/test.sh" "src/detox"))))))
     (home-page "https://github.com/dharple/detox")
     (synopsis "Clean up file names")
     (description
@@ -2830,14 +2851,14 @@ done with the @code{auditctl} utility.")
 (define-public nmap
   (package
     (name "nmap")
-    (version "7.80")
+    (version "7.91")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nmap.org/dist/nmap-" version
                                   ".tar.bz2"))
               (sha256
                (base32
-                "1aizfys6l9f9grm82bk878w56mg0zpkfns3spzj157h98875mypw"))
+                "001kb5xadqswyw966k2lqi6jr6zz605jpp9w4kmm272if184pk0q"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -2913,6 +2934,7 @@ tool.  It is also useful for tasks such as network inventory, managing service
 upgrade schedules, and monitoring host or service uptime.  It also provides an
 advanced netcat implementation (ncat), a utility for comparing scan
 results (ndiff), and a packet generation and response analysis tool (nping).")
+    ;; See <https://github.com/nmap/nmap/issues/2199#issuecomment-792048244>.
     ;; This package uses nmap's bundled versions of libdnet and liblinear, which
     ;; both use a 3-clause BSD license.
     (license (list license:nmap license:bsd-3))))
@@ -3594,14 +3616,14 @@ information tool.")
 (define-public nnn
   (package
     (name "nnn")
-    (version "4.0")
+    (version "4.1.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/jarun/nnn/releases/download/v"
                            version "/nnn-v" version ".tar.gz"))
        (sha256
-        (base32 "0m07nh1cdfikn4bkpni29j61hr9jdwbl0n5fmlm53l1xmn7yq6d2"))))
+        (base32 "1fnf35s3b2nfp18s712n5vhg6idx4rfgwdfv74nc2933v9l2dq7h"))))
     (build-system gnu-build-system)
     (inputs
      `(("ncurses" ,ncurses)
@@ -3612,30 +3634,26 @@ information tool.")
      `(#:tests? #f                      ; no tests
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure)            ; no configure script
-         (add-after 'unpack 'patch-pkg-config
-           (lambda _
-             (substitute* "Makefile"
-               (("pkg-config")
-                ,(pkg-config-for-target))))))
+         (delete 'configure))           ; no configure script
        #:make-flags
        (list
         (string-append "PREFIX="
                        (assoc-ref %outputs "out"))
-        (string-append "CC=" ,(cc-for-target)))))
+        (string-append "CC=" ,(cc-for-target))
+        (string-append "PKG_CONFIG=" ,(pkg-config-for-target)))))
     (home-page "https://github.com/jarun/nnn")
     (synopsis "Terminal file browser")
-    (description "@command{nnn} is a fork of @command{noice}, a blazing-fast
-lightweight terminal file browser with easy keyboard shortcuts for
-navigation, opening files and running tasks.  There is no config file and
-mime associations are hard-coded.  The incredible user-friendliness and speed
-make it a perfect utility on modern distros.")
+    (description
+     "@command{nnn} is a fork of @command{noice}, a fast and minimal text
+terminal file browser with keyboard shortcuts for navigation, opening files and
+running tasks.  There is no configuration file and MIME associations are
+hard-coded.")
     (license license:bsd-2)))
 
 (define-public thermald
   (package
     (name "thermald")
-    (version "2.4.4")
+    (version "2.4.6")
     (source
      (origin
       (method git-fetch)
@@ -3644,7 +3662,7 @@ make it a perfect utility on modern distros.")
              (commit (string-append "v" version))))
       (file-name (git-file-name name version))
       (sha256
-       (base32 "1k0r2c13fihjndwfh0byw0i8ni4lzsjgwz874pvpj1l1nvjj0ajx"))))
+       (base32 "1lgaky8cmxbi17zpymy2v9wgknx1g92bq50j6kfpsm8qgb7djjb6"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -3658,13 +3676,7 @@ make it a perfect utility on modern distros.")
        (modify-phases %standard-phases
          (add-before 'bootstrap 'no-early-./configure
            (lambda _
-             (setenv "NO_CONFIGURE" "yet")
-             ;; XXX thd_trip_point.h redefines "__STDC_LIMIT_MACROS" after
-             ;; <xz>/include/lzma.h.  ./configure forcibly appends -Werror
-             ;; to CXXFLAGS, overriding any -Wno-error we'd add.
-             (substitute* "configure.ac"
-               (("-Werror") ""))
-             #t)))))
+             (setenv "NO_CONFIGURE" "yet"))))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("autoconf-archive" ,autoconf-archive)
@@ -4081,7 +4093,7 @@ Logitech Unifying Receiver.")
   (package
     (name "lynis")
     ;; Also update the ‘lynis-sdk’ input to the commit matching this release.
-    (version "3.0.4")
+    (version "3.0.5")
     (source
      (origin
        (method git-fetch)
@@ -4090,7 +4102,7 @@ Logitech Unifying Receiver.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1i556d8xpas6k5k3ad0xvc6ihxnw27nzrjkf14759jkcqrbpb4gy"))
+        (base32 "11kl54hbvjl7q2i1jz8a726vlkdmknvbp4zac3j4fgljg27qp410"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -4107,10 +4119,10 @@ Logitech Unifying Receiver.")
            (method git-fetch)
            (uri (git-reference
                  (url "https://github.com/CISOfy/lynis-sdk")
-                 (commit "a4087770b7ee794901c5135673e006e8f84bfd3d")))
+                 (commit "99f79c4deb4cb2221d7fccfe82baf58c0a55b9e7")))
            (file-name (git-file-name "lynis-sdk" version))
            (sha256
-            (base32 "00wikqydhrjcn0ampgr4qjg30y12as1gm23z94bs72ff035lhcpw"))))))
+            (base32 "1nc2rhzj6l08d2mnjrzkm4mxla1mjkddcxl8n05c1kdz9ycn6cpl"))))))
     (arguments
      `(#:phases
        (modify-phases %standard-phases

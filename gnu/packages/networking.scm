@@ -2,7 +2,7 @@
 ;;; Copyright © 2014, 2017, 2018 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2015, 2016, 2017 Stefan Reichör <stefan@xsteve.at>
+;;; Copyright © 2015, 2016, 2017, 2021 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2016 Raimon Grau <raimonster@gmail.com>
 ;;; Copyright © 2016–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2016 John Darrington <jmd@gnu.org>
@@ -23,26 +23,26 @@
 ;;; Copyright © 2018 Tonton <tonton@riseup.net>
 ;;; Copyright © 2018 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2018 Theodoros Foradis <theodoros@foradis.org>
-;;; Copyright © 2018, 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2018, 2020, 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2018, 2020 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2018 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2019, 2020, 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2019 Vasile Dumitrascu <va511e@yahoo.com>
 ;;; Copyright © 2019 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2019 Timotej Lazar <timotej.lazar@araneo.si>
-;;; Copyright © 2019 Brice Waegeneire <brice@waegenei.re>
+;;; Copyright © 2019, 2020, 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2019 Tonton <tonton@riseup.net>
 ;;; Copyright © 2019, 2020 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2019, 2020 Jan Wielkiewicz <tona_kosmicznego_smiecia@interia.pl>
 ;;; Copyright © 2019 Daniel Schaefer <git@danielschaefer.me>
 ;;; Copyright © 2019 Diego N. Barbato <dnbarbato@posteo.de>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
-;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020 Jesse Dowell <jessedowell@gmail.com>
 ;;; Copyright © 2020 Hamzeh Nasajpour <h.nasajpour@pantherx.org>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2021 Hartmut Goebel <h.goebel@crazy-compilers.com>
+;;; Copyright © 2021 Justin Veilleux <terramorpha@cock.li>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -108,7 +108,6 @@
   #:use-module (gnu packages libidn)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lua)
-  #:use-module (gnu packages multiprecision)
   #:use-module (gnu packages kerberos)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages nettle)
@@ -255,7 +254,7 @@ protocols.")
        ("gnutls" ,gnutls)
        ("libtiff" ,libtiff)
        ("openssl" ,openssl)
-       ("qt5" ,qtbase)
+       ("qt5" ,qtbase-5)
        ("udev" ,eudev)))
     (synopsis "Camera stack and framework")
     (description "LibCamera is a complex camera support library for GNU+Linux,
@@ -440,7 +439,7 @@ performance across unpredictable networks, such as the Internet.")
 (define-public lksctp-tools
   (package
     (name "lksctp-tools")
-    (version "1.0.18")
+    (version "1.0.19")
     (source
      (origin
        (method git-fetch)
@@ -449,10 +448,8 @@ performance across unpredictable networks, such as the Internet.")
          (url "https://github.com/sctp/lksctp-tools")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
-       (patches
-        (search-patches "lksctp-tools-1.0.18-fix-header-file-name.patch"))
        (sha256
-        (base32 "1x4fwzrlzvfa3vcpja97m8w5g9ir2zrh4zs7zksminrnmdrs0dsr"))))
+        (base32 "1jfq58j365mlgssavyw5wcal42n0xjkr40vmj9b8w265wgs28j20"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -461,11 +458,14 @@ performance across unpredictable networks, such as the Internet.")
        ("pkg-config" ,pkg-config)))
     (inputs
      `(("linux-headers" ,linux-libre-headers)))
-    (synopsis "Linux SCTP helper library")
-    (description "Lksctp-tools project provides a user space library for SCTP
-(libsctp) including C language header files (netinet/sctp.h) for accessing SCTP
-specific application programming interfaces not provided by the standard
-sockets, and also some helper utilities around SCTP.")
+    (synopsis
+     "@acronym{SCTP, Stream Control Transmission Protocol} helpers for Linux")
+    (description
+     "The lksctp-tools project provides a user-space library for @acronym{SCTP,
+the Stream Control Transmission Protocol} (@file{libsctp}) and C language header
+files (@file{netinet/sctp.h}) for accessing SCTP-specific @acronym{APIs,
+application programming interfaces} not provided by the standard sockets.
+It also includes some SCTP-related helper utilities.")
     (home-page "http://lksctp.sourceforge.net/")
     (license
      (list
@@ -619,14 +619,14 @@ systems with no further dependencies.")
 (define-public blueman
   (package
     (name "blueman")
-    (version "2.1.4")
+    (version "2.2.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/blueman-project/blueman/releases"
                            "/download/" version "/blueman-" version ".tar.xz"))
        (sha256
-        (base32 "1nk46s1s8yrlqv37sc7la05nnn7sdgqhkrcdm98qin34llwkv70x"))))
+        (base32 "0whs1bqnn1fgzrq7y2w1d06ldvfafq6h2xzmcfncbwmyb4i0mhgw"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:configure-flags (list "--enable-polkit"
@@ -640,8 +640,7 @@ systems with no further dependencies.")
            (lambda* (#:key inputs #:allow-other-keys)
              (with-directory-excursion "apps"
                (substitute* '("blueman-adapters.in" "blueman-applet.in"
-                              "blueman-assistant.in" "blueman-manager.in"
-                              "blueman-mechanism.in" "blueman-report.in"
+                              "blueman-manager.in" "blueman-mechanism.in"
                               "blueman-rfcomm-watcher.in" "blueman-sendto.in"
                               "blueman-services.in" "blueman-tray.in")
                  (("@PYTHON@") (string-append (assoc-ref inputs "python")
@@ -652,7 +651,7 @@ systems with no further dependencies.")
          ;; Fix loading of external programs.
          (add-after 'unpack 'patch-external-programs
            (lambda* (#:key inputs #:allow-other-keys)
-             (substitute* '("apps/blueman-report.in" "blueman/main/NetConf.py"
+             (substitute* '("blueman/main/NetConf.py"
                             "blueman/main/PPPConnection.py")
                (("/usr/sbin/bluetoothd")
                 (string-append (assoc-ref inputs "bluez")
@@ -693,7 +692,7 @@ systems with no further dependencies.")
                     `("GI_TYPELIB_PATH" = (,(getenv "GI_TYPELIB_PATH")))))
                 (append
                  (map (lambda (prog) (string-append bin prog))
-                      '("adapters" "applet" "assistant" "manager" "report"
+                      '("adapters" "applet" "manager"
                         "sendto" "services" "tray"))
                  (map (lambda (prog) (string-append libexec prog))
                       '("mechanism" "rfcomm-watcher"))))
@@ -908,6 +907,38 @@ establish a relatively secure environment (su and chroot) for running client
 or server shell scripts with network connections.")
     (license license:gpl2)))
 
+(define-public mbuffer
+  (package
+    (name "mbuffer")
+    (version "20210328")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "http://www.maier-komor.de/software/mbuffer/mbuffer-"
+                    version ".tgz"))
+              (sha256
+               (base32
+                "0pfw9xw4ph18yss07fl6w8fbqiwy1w9r1knzw5gsb4c993cbidai"))))
+    (build-system gnu-build-system)
+    (inputs `(("openssl" ,openssl)))
+    (home-page "http://www.maier-komor.de/mbuffer.html")
+    (synopsis
+     "Swiss army knife for data stream buffering (network aware)")
+    (description
+     "mbuffer is a tool for buffering data streams with a large set of features:
+
+@itemize
+@item direct support for TCP based network targets (IPv4 and IPv6)
+@item ability to send to multiple targets in parallel (distribution mode)
+@item support for multiple volumes
+@item I/O rate limitation
+@item high/low watermark based restart criteria
+@item configurable buffer size
+@item on the fly MD5 hash calculation
+@item highly efficient, multi-threaded implementation
+@end itemize")
+    (license license:gpl3+)))
+
 (define-public tcp-wrappers
   (package
     (name "tcp-wrappers")
@@ -1025,20 +1056,7 @@ more.")
                 "0fdclvd7fcwixp0k57ccv7d159v3slasyhvndxfn8n1a9hh0lwjx"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:configure-flags '("--enable-drafts")
-       #:phases (modify-phases %standard-phases
-                  (add-before 'check 'patch-tests
-                    (lambda _
-                      (substitute* "src/czmq_selftest.c"
-                        ;; Disable the zproc test, which fails on some hardware
-                        ;; (see: https://github.com/zeromq/czmq/issues/2007).
-                        (("\\{ \"zproc\", zproc_test.*")
-                         "")
-                        ;; Also disable the zarmour test, which fails as well
-                        ;; (see: https://github.com/zeromq/czmq/issues/2125).
-                        (("\\{ \"zarmour\", zarmour_test.*")
-                         ""))
-                      #t)))))
+     '(#:configure-flags '("--enable-drafts")))
     (inputs
      `(("zeromq" ,zeromq)))
     (home-page "https://zeromq.org")
@@ -1154,14 +1172,14 @@ containing both Producer and Consumer support.")
 (define-public libndp
   (package
     (name "libndp")
-    (version "1.7")
+    (version "1.8")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://libndp.org/files/"
                                   "libndp-" version ".tar.gz"))
               (sha256
                (base32
-                "1dlinhl39va00v55qygjc9ap77yqf7xvn4rwmvdr49xhzzxhlj1c"))))
+                "0ay0n0d85254zdmv8znmn399gfiqpk6ga0jwdwa7ylpbw9pbdzw8"))))
     (build-system gnu-build-system)
     (home-page "https://libndp.org/")
     (synopsis "Library for Neighbor Discovery Protocol")
@@ -1380,7 +1398,7 @@ and up to 1 Mbit/s downstream.")
 (define-public whois
   (package
     (name "whois")
-    (version "5.5.8")
+    (version "5.5.10")
     (source
      (origin
        (method git-fetch)
@@ -1389,7 +1407,7 @@ and up to 1 Mbit/s downstream.")
               (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "12lhl2q1pa1qkbv0l1cpy8hn4wh5i99bqc68rlm4f7jyqlj2l82r"))))
+        (base32 "179hgmh9yqk8jq26ybik4cr3lgryd5p6kdwccc3r7mfssk3yp8lz"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no test suite
@@ -1425,14 +1443,14 @@ of the same name.")
 (define-public wireshark
   (package
     (name "wireshark")
-    (version "3.4.5")
+    (version "3.4.6")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.wireshark.org/download/src/wireshark-"
                            version ".tar.xz"))
        (sha256
-        (base32 "0cyk8nqws9gp8p2ywszbynh8vawivnbhw60dhmy21qd1038sy6ny"))))
+        (base32 "0a26kcj3n1a2kw1f3fc6s1x3rw3f3bj2cq6rp7k0kc4ciwh7i9hj"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -1463,6 +1481,7 @@ of the same name.")
      `(("c-ares" ,c-ares)
        ("glib" ,glib)
        ("gnutls" ,gnutls)
+       ("google-brotli" ,google-brotli)
        ("libcap" ,libcap)
        ("libgcrypt" ,libgcrypt)
        ("libnl" ,libnl)
@@ -1472,12 +1491,15 @@ of the same name.")
        ("lz4" ,lz4)
        ("lua" ,lua-5.2)                 ;Lua 5.3 unsupported
        ("krb5" ,mit-krb5)
-       ("qtbase" ,qtbase)
+       ("nghttp2:lib" ,nghttp2 "lib")
+       ("minizip" ,minizip)
+       ("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)
        ("qtsvg" ,qtsvg)
        ("sbc" ,sbc)
        ("snappy" ,snappy)
-       ("zlib" ,zlib)))
+       ("zlib" ,zlib)
+       ("zstd:lib" ,zstd "lib")))
     (native-inputs
      `(("bison" ,bison)
        ("doxygen" ,doxygen)
@@ -2347,15 +2369,20 @@ that block port 22.")
 (define-public iperf
   (package
     (name "iperf")
-    (version "3.9")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "http://downloads.es.net/pub/iperf"
-                                  "/iperf-" version ".tar.gz"))
-              (sha256
-                (base32
-                 "0f601avdmzpwsa3lbi0ppjhkrdipm5wifhhxy5czf99370k3mdi4"))))
+    (version "3.10.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/esnet/iperf")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0svkrmxki6ckn2a8xysh5x0bw68mqnvl3w64j6d45fxs97dca2vq"))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list "--disable-static")))
     (synopsis "TCP, UDP and SCTP bandwidth measurement tool")
     (description
      "iPerf is a tool to measure achievable bandwidth on IP networks.  It
@@ -2409,7 +2436,7 @@ gone wild and are suddenly taking up your bandwidth.")
 (define-public nzbget
   (package
     (name "nzbget")
-    (version "21.0")
+    (version "21.1")
     (source
      (origin
        (method url-fetch)
@@ -2417,16 +2444,7 @@ gone wild and are suddenly taking up your bandwidth.")
                            "/download/v" version
                            "/nzbget-" version "-src.tar.gz"))
        (sha256
-        (base32
-         "0lwd0pfrs4a5ms193hgz2qiyf7grrc925dw6y0nfc0gkp27db9b5"))
-       (modules '((guix build utils)))
-       (snippet
-        ;; Reported upstream as <https://github.com/nzbget/nzbget/pull/414>.
-        '(begin
-           (substitute* "daemon/connect/TlsSocket.cpp"
-             (("gnutls_certificate-verification_status_print")
-              "gnutls_certificate_verification_status_print"))
-           #t))))
+        (base32 "09900x1k0yf4yi2cc0k093advvadyhrkm8rnd8nszhhdp2zc33sf"))))
     (arguments
      `(#:configure-flags
        (list
@@ -2828,88 +2846,10 @@ It then continually measures the response time and packet loss at each hop, and
 displays the results in real time.")
     (license license:gpl2+)))
 
-(define-public strongswan
-  (package
-    (name "strongswan")
-    (version "5.8.4")
-    (source
-     (origin
-       (method url-fetch)
-       (uri (string-append "https://download.strongswan.org/strongswan-"
-                           version ".tar.bz2"))
-       (sha256
-        (base32 "0g2m08gmgdi3qvvqz6zy7n16np53sp232xd0rdc2vdhk73img6id"))))
-    (build-system gnu-build-system)
-    (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-before 'build 'patch-command-file-names
-           (lambda* (#:key inputs #:allow-other-keys)
-             (substitute* "src/libstrongswan/utils/process.c"
-               (("/bin/sh")
-                (string-append (assoc-ref inputs "bash") "/bin/sh")))
-
-             (substitute* "src/libstrongswan/tests/suites/test_process.c"
-               (("/bin/sh") (which "sh"))
-               (("/bin/echo") (which "echo"))
-               (("cat") (which "cat")))
-             #t))
-         (add-before 'check 'set-up-test-environment
-           (lambda* (#:key inputs #:allow-other-keys)
-             (setenv "TZDIR" (string-append (assoc-ref inputs "tzdata")
-                                            "/share/zoneinfo"))
-             #t)))
-       #:configure-flags
-       (list
-        ;; Disable bsd-4 licensed plugins.
-        "--disable-des"
-        "--disable-blowfish")))
-    (inputs
-     `(("curl" ,curl)
-       ("gmp" ,gmp)
-       ("libgcrypt" ,libgcrypt)
-       ("openssl" ,openssl)))
-    (native-inputs
-     `(("coreutils" ,coreutils)
-       ("tzdata" ,tzdata-for-tests)))
-    (synopsis "IKEv1/v2 keying daemon")
-    (description "StrongSwan is an IPsec implementation originally based upon
-the FreeS/WAN project.  It contains support for IKEv1, IKEv2, MOBIKE, IPv6,
-NAT-T and more.")
-    (home-page "https://strongswan.org/")
-    (license
-     (list license:gpl2+
-           ;; src/aikgen/*
-           ;; src/libcharon/plugins/dnscert/*
-           ;; src/libcharon/plugins/ext_auth/*
-           ;; src/libcharon/plugins/vici/ruby/*
-           ;; src/libcharon/plugins/xauth_pam/xauth_pam_listener.[ch]
-           license:expat
-           ;; src/inclue/sys/*
-           license:bsd-3
-           ;; src/libstrongswan/plugins/sha3/sha3_keccak.c
-           license:public-domain
-           ;; src/libstrongswan/plugins/pkcs11/pkcs11.h
-           (license:non-copyleft
-            "file://src/libstrongswan/plugins/pkcs11/pkcs11.h"
-            "pkcs11 contains a unknown permissive license. View the specific
-file for more details.")
-           ;; These files are not included in the
-           ;; build, they are disabled through
-           ;; options to ./configure
-           ;;
-           ;; src/libstrongswan/plugins/blowfish/bf_enc.c
-           ;; src/libstrongswan/plugins/blowfish/bf_locl.h
-           ;; src/libstrongswan/plugins/blowfish/bf_pi.h
-           ;; src/libstrongswan/plugins/blowfish/bf_skey.c
-           ;; src/libstrongswan/plugins/blowfish/blowfish_crypter.c
-           ;; src/libstrongswan/plugins/des/des_crypter.c
-           license:bsd-4))))
-
 (define-public amule
   (package
     (name "amule")
-    (version "2.3.2")
+    (version "2.3.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2918,9 +2858,7 @@ file for more details.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "010wxm6g9f92x6fympj501zbnjka32rzbx0sk3a2y4zpih5d2nsn"))
-              ;; Patch for adopting crypto++ >= 6.0.
-              (patches (search-patches "amule-crypto-6.patch"))))
+                "1nm4vxgmisn1b6l3drmz0q04x067j2i8lw5rnf0acaapwlp8qwvi"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -2956,7 +2894,7 @@ file for more details.")
        ("crypto++" ,crypto++)
        ("libpng" ,libpng)
        ("wxwidgets-gtk2" ,wxwidgets-gtk2)))
-    (home-page "http://amule.org/")
+    (home-page "https://amule.org/")
     (synopsis "Peer-to-peer client for the eD2K and Kademlia networks")
     (description
      "aMule is an eMule-like client for the eD2k and Kademlia peer-to-peer
@@ -3094,14 +3032,14 @@ asynchronous model using a modern C++ approach.")
 (define-public asio
   (package
     (inherit asio-1.12)
-    (version "1.18.1")
+    (version "1.18.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/asio/asio/"
                            version " (Stable)/asio-" version ".tar.bz2"))
        (sha256
-        (base32 "04wi69d72l1p5c7d63z1dz06zn8pdqsbgx1if98dszs9ymfqgyaa"))))))
+        (base32 "1wpr4ymv63a192fmymwyxd7v0bv575v022gz53y0mcflhr2mvh1s"))))))
 
 (define-public shadowsocks
   ;; There are some security fixes after the last release.
@@ -3152,14 +3090,14 @@ Features:
 (define-public net-snmp
   (package
     (name "net-snmp")
-    (version "5.9")
+    (version "5.9.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/net-snmp/net-snmp/"
                                   version "/net-snmp-" version ".tar.gz"))
               (sha256
                (base32
-                "0wb0vyafpspw3mcifkjjmf17r1r80kjvslycscb8nvaxz1k3lc04"))
+                "0gwcyi9qk707jgfsgmdr9w2w3r892fnqaam9v7zxpkg69njd8zzb"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -3176,6 +3114,7 @@ Features:
        (list (string-append "LDFLAGS=-Wl,-rpath="
                             (assoc-ref %outputs "out")
                             "/lib")
+             "--disable-static"
              "--with-logfile=/var/log/snmpd.log"
              (string-append "--with-openssl="
                             (assoc-ref %build-inputs "openssl")))
@@ -3461,58 +3400,118 @@ and targeted primarily for asynchronous processing of HTTP-requests.")
     (license license:bsd-3)))
 
 (define-public opendht
-  (package
-    (name "opendht")
-    (version "2.2.0rc4")                ;jami requires >= 2.2.0
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/savoirfairelinux/opendht")
-                    (commit version)))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "1wc0f6cnvnlmhxnx64nxqgsx93k4g7ljdaqjl40ml74jg3nqrzcl"))))
-    ;; Since 2.0, the gnu-build-system does not seem to work anymore, upstream bug?
-    (build-system cmake-build-system)
-    (inputs
-     `(("argon2" ,argon2)
-       ("nettle" ,nettle-3.7)
-       ("readline" ,readline)
-       ("jsoncpp" ,jsoncpp)
-       ("openssl" ,openssl)             ;required for the DHT proxy
-       ("fmt" ,fmt)))
-    (propagated-inputs
-     `(("gnutls" ,gnutls)               ;included in opendht/crypto.h
-       ("msgpack" ,msgpack)             ;included in several installed headers
-       ("restinio" ,restinio)))         ;included in opendht/http.h
-    (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("pkg-config" ,pkg-config)
-       ("libtool" ,libtool)
-       ("cppunit" ,cppunit)))
-    (arguments
-     `(#:tests? #f                      ; Tests require network connection.
-       #:configure-flags
-       '(;;"-DOPENDHT_TESTS=on"
-         "-DOPENDHT_TOOLS=off"
-         "-DOPENDHT_PYTHON=off"
-         "-DOPENDHT_PROXY_SERVER=on"
-         "-DOPENDHT_PUSH_NOTIFICATIONS=on"
-         "-DOPENDHT_PROXY_SERVER_IDENTITY=on"
-         "-DOPENDHT_PROXY_CLIENT=on")))
-    (home-page "https://github.com/savoirfairelinux/opendht/")
-    (synopsis "Distributed Hash Table (DHT) library")
-    (description "OpenDHT is a Distributed Hash Table (DHT) library.  It may
-be used to manage peer-to-peer network connections as needed for real time
-communication.")
-    (license license:gpl3+)))
+  ;; Jami requires unreleased features of OpenDHT.
+  (let ((commit "c8a0b443f3117e2fa1343d2cb3c091f502b1a24e")
+        (revision "1"))
+    (package
+      (name "opendht")
+      (version (git-version "2.2.0rc7" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/savoirfairelinux/opendht")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "062irb9yii66n2fzbpsjf7v2v53zzvakr1wjmi4l1jaz33fwx5by"))))
+      ;; Since 2.0, the gnu-build-system does not seem to work anymore, upstream bug?
+      (outputs '("out" "tools" "debug"))
+      (build-system cmake-build-system)
+      (inputs
+       `(("argon2" ,argon2)
+         ("nettle" ,nettle-3.7)
+         ("readline" ,readline)
+         ("jsoncpp" ,jsoncpp)
+         ("openssl" ,openssl)             ;required for the DHT proxy
+         ("fmt" ,fmt)))
+      (propagated-inputs
+       `(("gnutls" ,gnutls)               ;included in opendht/crypto.h
+         ("msgpack" ,msgpack)             ;included in several installed headers
+         ("restinio" ,restinio)))         ;included in opendht/http.h
+      (native-inputs
+       `(("autoconf" ,autoconf)
+         ("automake" ,automake)
+         ("pkg-config" ,pkg-config)
+         ("python" ,python)
+         ("python-cython" ,python-cython)
+         ("libtool" ,libtool)
+         ("cppunit" ,cppunit)))
+      (arguments
+       `(#:imported-modules ((guix build python-build-system) ;for site-packages
+                             ,@%cmake-build-system-modules)
+         #:modules (((guix build python-build-system) #:prefix python:)
+                    (guix build cmake-build-system)
+                    (guix build utils))
+         #:tests? #f                      ; Tests require network connection.
+         #:configure-flags
+         '( ;;"-DOPENDHT_TESTS=on"
+           "-DOPENDHT_STATIC=off"
+           "-DOPENDHT_TOOLS=on"
+           "-DOPENDHT_PYTHON=on"
+           "-DOPENDHT_PROXY_SERVER=on"
+           "-DOPENDHT_PUSH_NOTIFICATIONS=on"
+           "-DOPENDHT_PROXY_SERVER_IDENTITY=on"
+           "-DOPENDHT_PROXY_CLIENT=on")
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'fix-python-installation-prefix
+             ;; Specify the installation prefix for the compiled Python module
+             ;; that would otherwise attempt to installs itself to Python's own
+             ;; site-packages directory.
+             (lambda* (#:key inputs outputs #:allow-other-keys)
+               (substitute* "python/CMakeLists.txt"
+                 (("--root=\\\\\\$ENV\\{DESTDIR\\}")
+                  (string-append "--root=/ --single-version-externally-managed "
+                                 "--prefix=${CMAKE_INSTALL_PREFIX}")))))
+           (add-after 'unpack 'specify-runpath-for-python-module
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let ((out (assoc-ref outputs "out")))
+                 (substitute* "python/setup.py.in"
+                   (("extra_link_args=\\[(.*)\\]" _ args)
+                    (string-append "extra_link_args=[" args
+                                   ", '-Wl,-rpath=" out "/lib']"))))))
+           (add-after 'install 'move-and-wrap-tools
+             (lambda* (#:key inputs outputs #:allow-other-keys)
+               (let ((out (assoc-ref outputs "out"))
+                     (tools (assoc-ref outputs "tools"))
+                     (site-packages (python:site-packages inputs outputs)))
+                 (mkdir tools)
+                 (rename-file (string-append out "/bin")
+                              (string-append tools "/bin"))
+                 (wrap-program (string-append tools "/bin/dhtcluster")
+                   `("PYTHONPATH" prefix (,site-packages)))))))))
+      (home-page "https://github.com/savoirfairelinux/opendht/")
+      (synopsis "Lightweight Distributed Hash Table (DHT) library")
+      (description "OpenDHT provides an easy to use distributed in-memory data
+store.  Every node in the network can read and write values to the store.
+Values are distributed over the network, with redundancy.  It includes the
+following features:
+@itemize
+@item Lightweight and scalable, designed for large networks and small devices;
+@item High resilience to network disruption;
+@item Public key cryptography layer providing optional data signature and
+encryption (using GnuTLS);
+@item IPv4 and IPv6 support;
+@item Clean and powerful C++14 map API;
+@item Bindings for C, Rust & Python 3;
+@item REST API with an optional HTTP client and server with push notification
+support.
+@end itemize
+The following tools are also included:
+@table @command
+@item dhtnode
+A command line tool to run a DHT node and perform operations supported by the
+library (get, put, etc.) with text values.
+@item dhtchat
+A very simple IM client working over the DHT.
+@end table")
+      (license license:gpl3+))))
 
 (define-public frrouting
   (package
     (name "frrouting")
-    (version "7.5")
+    (version "7.5.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/FRRouting/frr/releases/"
@@ -3520,7 +3519,7 @@ communication.")
                                   ".tar.xz"))
               (sha256
                (base32
-                "1a27wvxmc51sr0kchy0hjfpv19imlgrr3s9k48lik9k01g71yrdr"))))
+                "1r7gh5h27ii7d1d0z0x48wx7hs8vvympv3gqvy3cwzg05q5vk9xs"))))
     (build-system gnu-build-system)
     (inputs
      `(("c-ares" ,c-ares)
@@ -3542,28 +3541,26 @@ protocol daemons for BGP, IS-IS, LDP, OSPF, PIM, and RIP. ")
 (define-public iwd
   (package
     (name "iwd")
-    (version "0.21")
+    (version "1.15")
     (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://git.kernel.org/pub/scm/network/wireless/iwd.git")
-                    (commit version)))
-              (file-name (git-file-name name version))
+              ;; FIXME: We're using the bootstrapped sources because
+              ;; otherwise using an external ell library is impossible.
+              ;; How to bootstrap with Guix?
+              (method url-fetch)
+              (uri (string-append "https://www.kernel.org/pub/linux/network"
+                                  "/wireless/iwd-" version ".tar.xz"))
               (sha256
                (base32
-                "001dikinsa6kshwscjbvwipavzwpqnpvx9fpshcn63gbvbhyd393"))))
+                "0ngng9a9ra5w0mp2813yy2ihfibyx10ns6v5icdcp99db608xax7"))))
     (build-system gnu-build-system)
     (inputs
      `(("dbus" ,dbus)
        ("ell" ,ell)
        ("readline" ,readline)))
     (native-inputs
-     `(("asciidoc" ,asciidoc)
-       ("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("libtool" ,libtool)
-       ("pkgconfig" ,pkg-config)
+     `(("pkgconfig" ,pkg-config)
        ("python" ,python)
+       ("rst2man" ,python-docutils)
        ("openssl" ,openssl)))
     (arguments
      `(#:configure-flags
@@ -3573,22 +3570,17 @@ protocol daemons for BGP, IS-IS, LDP, OSPF, PIM, and RIP. ")
                "--enable-hwsim"
                "--enable-tools"
                "--enable-wired"
-               "--enable-docs"
                "--localstatedir=/var"
                (string-append "--with-dbus-datadir=" dbus "/share/")
                (string-append "--with-dbus-busdir="
                               dbus "/share/dbus-1/system-services")))
        #:phases
        (modify-phases %standard-phases
-         (add-before 'bootstrap 'pre-bootstrap
+         (add-after 'configure 'patch-Makefile
            (lambda _
-             (substitute* "Makefile.am"
-               ;; Test disabled because it needs the kernel module
-               ;; 'pkcs8_key_parser' loaded.
-               (("unit\\/test-eapol.*? ") "")
+             (substitute* "Makefile"
                ;; Don't try to 'mkdir /var'.
-               (("\\$\\(MKDIR_P\\) -m 700") "true"))
-             #t)))))
+               (("\\$\\(MKDIR_P\\) -m 700") "true")))))))
     (home-page "https://git.kernel.org/pub/scm/network/wireless/iwd.git/")
     (synopsis "Internet Wireless Daemon")
     (description "iwd is a wireless daemon for Linux that aims to replace WPA
@@ -4078,3 +4070,33 @@ IPv6 Internet connectivity - it also works over IPv4.")
      ;; version. This exception does not (and cannot) modify any license terms
      ;; which apply to the Application, with which you must still comply
      license:lgpl3)))
+
+(define-public netdiscover
+  (package
+   (name "netdiscover")
+   (version "0.7")
+   (source
+    (origin
+      (method git-fetch)
+      (uri (git-reference
+            (url "https://github.com/netdiscover-scanner/netdiscover")
+            (commit version)))
+      (sha256
+       (base32 "0g8w8rlg16dsibxi4dnyn7v7r8wwi5ypd51c4w59j0ps2id0w8yj"))
+      (file-name (string-append "netdiscover-" version))))
+   (arguments
+    `(#:tests? #f)) ;; no tests
+   (build-system gnu-build-system)
+   (inputs
+    `(("libnet" ,libnet)
+      ("libpcap" ,libpcap)))
+   (native-inputs
+    `(("autoconf" ,autoconf)
+      ("automake" ,automake)))
+   (synopsis "Network address discovery tool")
+   (description "Netdiscover is a network address discovery tool developed
+mainly for wireless networks without a @acronym{DHCP} server.  It also works
+on hub/switched networks.  It is based on @acronym{ARP} packets, it will send
+@acronym{ARP} requests and sniff for replies.")
+   (home-page "https://github.com/netdiscover-scanner/netdiscover")
+   (license license:gpl3+)))

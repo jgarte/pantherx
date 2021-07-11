@@ -82,7 +82,7 @@
 (define-public cl-asdf
   (package
     (name "cl-asdf")
-    (version "3.3.4")
+    (version "3.3.5")
     (source
      (origin
        (method url-fetch)
@@ -90,7 +90,7 @@
         (string-append "https://common-lisp.net/project/asdf/archives/asdf-"
                        version ".lisp"))
        (sha256
-        (base32 "1hpx30f6yrak15nw992k7x3pn75ahvjs04n4f134k68mhgs62km2"))))
+        (base32 "1mydyrii3f0aig1q5admj6hyf59vjn4a5x1q8hqgh483987ilz6h"))))
     (build-system trivial-build-system)
     (native-inputs
      `(("config-patch" ,@(search-patches "cl-asdf-config-directories.patch"))
@@ -400,14 +400,14 @@ an interpreter, a compiler, a debugger, and much more.")
 (define-public sbcl
   (package
     (name "sbcl")
-    (version "2.1.4")
+    (version "2.1.6")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/sbcl/sbcl/" version "/sbcl-"
                            version "-source.tar.bz2"))
        (sha256
-        (base32 "04dxxycqhds9r1ycqx3cbavv7p4r13svl5bfakjjmlpw8qihw9lr"))))
+        (base32 "1vydq6mmssla2vn0plpsrm50n3b42a464zxw72j6qihas9fhq8cb"))))
     (build-system gnu-build-system)
     (outputs '("out" "doc"))
     (native-inputs
@@ -598,7 +598,9 @@ statistical profiler, a code coverage tool, and many other extensions.")
   ;;     it, as is the case for SBCL, but I know of no attempt to do so."
   (package
     (name "ccl")
-    (version "1.12")
+    ;; XXX When updating this package, check whether we can simply append
+    ;; VERSION to the ccl-bootstrap URL again, instead of per architecture.
+    (version "1.12.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -607,7 +609,7 @@ statistical profiler, a code coverage tool, and many other extensions.")
               (file-name (git-file-name "ccl" version))
               (sha256
                (base32
-                "0kxr24d2fzsmpsilijpwwfl6g89y7fcrwb80kai5nx9pwgxmjbp3"))))
+                "1zz291lvsrr7pps8wfl2kdxsnzjngqi4v3mil14pga4r5zanmsi7"))))
     (build-system gnu-build-system)
     ;; CCL consists of a "lisp kernel" and "heap image", both of which are
     ;; shipped in precompiled form in source tarballs.  The former is a C
@@ -619,20 +621,20 @@ statistical profiler, a code coverage tool, and many other extensions.")
         ,(origin
            (method url-fetch)
            (uri (string-append
-                 "https://github.com/Clozure/ccl/releases/download/v" version "/"
+                 "https://github.com/Clozure/ccl/releases/download/v"
                  (match (%current-system)
-                   ("armhf-linux" "linuxarm")
+                   ("armhf-linux" "1.12/linuxarm")
                    ;; XXX: This source only works on x86, but provide it as a
                    ;; catch-all to prevent errors when querying this package
                    ;; on unsupported platforms.
-                   (_ "linuxx86"))
+                   (_ "1.12.1/linuxx86"))
                  ".tar.gz"))
            (sha256
             (base32
              (match (%current-system)
                ("armhf-linux"
                 "0x4bjx6cxsjvxyagijhlvmc7jkyxifdvz5q5zvz37028va65243c")
-               (_ "15l7cfa4a7jkfwdzsfm4q3n22jnb57imxahpql3h77xin57v1gbz"))))))))
+               (_ "0ll017ajcfsyx8f7zsy4394y8xxvz40iz0gcsmznp0n3mf0xi67c"))))))))
     (native-inputs
      `(("cl-asdf" ,cl-asdf)
        ("m4" ,m4)))
@@ -847,7 +849,7 @@ enough to play the original mainframe Zork all the way through.")
 (define-public txr
   (package
     (name "txr")
-    (version "258")
+    (version "263")
     (source
      (origin
        (method git-fetch)
@@ -856,7 +858,7 @@ enough to play the original mainframe Zork all the way through.")
              (commit (string-append "txr-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "126hvjqlbrsp7sp9wbcii5cc9j5r3dq24cvxi5z3z9zys2plzrn2"))))
+        (base32 "14zaziymnbr2ld79x4h7sf88bzzzj82w3xpavmcx7mhwannb2swh"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags

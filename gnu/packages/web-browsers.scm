@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2014 John Darrington <jmd@gnu.org>
 ;;; Copyright © 2014, 2019 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2015, 2016, 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2015, 2016, 2019, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2017 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2018–2021 Tobias Geerinckx-Rice <me@tobias.gr>
@@ -18,6 +18,7 @@
 ;;; Copyright © 2021 Cage <cage-dev@twistfold.it>
 ;;; Copyright © 2021 Benoit Joly <benoit@benoitj.ca>
 ;;; Copyright © 2021 Alexander Krotov <krotov@iitp.ru>
+;;; Copyright © 2020 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -47,7 +48,9 @@
   #:use-module (guix packages)
   #:use-module (guix utils)
   #:use-module (gnu packages)
+  #:use-module (gnu packages autotools)
   #:use-module (gnu packages backup)
+  #:use-module (gnu packages bison)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages documentation)
@@ -178,14 +181,14 @@ older or slower computers and embedded systems.")
 (define-public links
   (package
     (name "links")
-    (version "2.22")
+    (version "2.23")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://links.twibright.com/download/"
                                   "links-" version ".tar.bz2"))
               (sha256
                (base32
-                "0k88qbmq0mf6zmk2v158c0rxvqbi7ysn58xyf4qqw7kz79mrhr03"))))
+                "0idcwryfbf6ds5x2fx1k21m459qz5mrz3hw4a6ziiz91yl1d4q36"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -231,7 +234,7 @@ features including, tables, builtin image display, bookmarks, SSL and more.")
 (define-public luakit
   (package
     (name "luakit")
-    (version "2.2")
+    (version "2.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -240,7 +243,7 @@ features including, tables, builtin image display, bookmarks, SSL and more.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0km5nxn6innzn8pfsvlkxvfj2z5g46fp6dy5bnmaklbn13mqlcrn"))))
+                "1khbn7dpizkznnwkw7rcfhf72dnd1nazk7dwb4rkh9i97b53mf1y"))))
     (inputs
      `(("lua-5.1" ,lua-5.1)
        ("gtk+" ,gtk+)
@@ -254,7 +257,7 @@ features including, tables, builtin image display, bookmarks, SSL and more.")
      `(("pkg-config" ,pkg-config)))
     (build-system glib-or-gtk-build-system)
     (arguments
-     '(#:make-flags
+     `(#:make-flags
        (let ((out (assoc-ref %outputs "out")))
          (list
           "CC=gcc"
@@ -270,6 +273,10 @@ features including, tables, builtin image display, bookmarks, SSL and more.")
                      (string-append
                       (assoc-ref %build-inputs "lua5.1-filesystem")
                       "/lib/lua/5.1/?.so;;"))
+             #t))
+         (add-before 'build 'set-version
+           (lambda _
+             (setenv "VERSION_FROM_GIT" ,(package-version this-package))
              #t))
          (delete 'configure)
          (delete 'check)
@@ -443,9 +450,9 @@ access.")
                    "/share/fonts/truetype/NotoColorEmoji")))
                #t))
            (add-after 'install 'wrap-program
-             (lambda* (#:key outputs #:allow-other-keys)
+             (lambda* (#:key outputs inputs #:allow-other-keys)
                (let ((out (assoc-ref outputs "out")))
-                 (wrap-qt-program out "kristall"))
+                 (wrap-qt-program "kristall" #:output out #:inputs inputs))
                #t)))))
       (native-inputs
        `(("breeze-stylesheet"
@@ -467,7 +474,7 @@ access.")
          ("font-google-noto" ,font-google-noto)
          ("font-openmoji" ,font-openmoji)
          ("openssl" ,openssl)
-         ("qtbase" ,qtbase)
+         ("qtbase" ,qtbase-5)
          ("qtmultimedia" ,qtmultimedia)
          ("qtsvg" ,qtsvg)))
       (home-page "https://kristall.random-projects.net")
@@ -483,7 +490,7 @@ interface.")
 (define-public qutebrowser
   (package
     (name "qutebrowser")
-    (version "2.2.1")
+    (version "2.2.2")
     (source
      (origin
        (method url-fetch)
@@ -491,7 +498,7 @@ interface.")
                            "qutebrowser/releases/download/v" version "/"
                            "qutebrowser-" version ".tar.gz"))
        (sha256
-        (base32 "0vr6xpjy93w4i0x408vvs9xl497sjah51lxdk4awnx2gfg3acz14"))))
+        (base32 "11vjp20gzmdjj09b7wxzn7ar6viih0bk76y618yqsyqqkffylmbq"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-attrs" ,python-attrs))) ; for tests
@@ -599,9 +606,7 @@ driven and does not detract you from your daily work.")
 (define-public nyxt
   (package
     (name "nyxt")
-    ;; Package the pre-release because latest stable 1.5.0 does not build
-    ;; anymore.
-    (version "2-pre-release-7")
+    (version "2.1.1")
     (source
      (origin
        (method git-fetch)
@@ -612,7 +617,7 @@ driven and does not detract you from your daily work.")
              (commit version)))
        (sha256
         (base32
-         "0d5mawka26gwi9nb45x1n33vgskwyn46jrvfz7nzmm2jfaq4ipn6"))
+         "0kzm05swhyb197cjfd3iglf60b997sx7v95yxzyq483jxqbcxm0r"))
        (file-name (git-file-name "nyxt" version))))
     (build-system gnu-build-system)
     (arguments
@@ -626,10 +631,6 @@ driven and does not detract you from your daily work.")
          (add-before 'build 'fix-common-lisp-cache-folder
            (lambda _
              (setenv "HOME" "/tmp")
-             #t))
-         (add-before 'build 'set-version
-           (lambda _
-             (setenv "NYXT_VERSION" ,version)
              #t))
          (add-before 'check 'configure-tests
            (lambda _
@@ -678,7 +679,6 @@ driven and does not detract you from your daily work.")
        ("cluffer" ,sbcl-cluffer)
        ("dexador" ,sbcl-dexador)
        ("enchant" ,sbcl-enchant)
-       ("file-attributes" ,sbcl-file-attributes)
        ("fset" ,sbcl-fset)
        ("hu.dwim.defclass-star" ,sbcl-hu.dwim.defclass-star)
        ("iolib" ,sbcl-iolib)
@@ -711,9 +711,9 @@ driven and does not detract you from your daily work.")
        ("gobject-introspection" ,gobject-introspection)))
     (synopsis "Extensible web-browser in Common Lisp")
     (home-page "https://nyxt.atlas.engineer")
-    (description "Nyxt is a keyboard-oriented, extensible web-browser
-designed for power users.  The application has familiar Emacs and VI
-key-bindings and is fully configurable and extensible in Common Lisp.")
+    (description "Nyxt is a keyboard-oriented, extensible web browser designed
+for power users.  Conceptually inspired by Emacs and Vim, it has familiar
+key-bindings (Emacs, vi, CUA), and is fully configurable in Common Lisp.")
     (license license:bsd-3)))
 
 (define-public next
@@ -725,7 +725,7 @@ key-bindings and is fully configurable and extensible in Common Lisp.")
 (define-public lagrange
   (package
     (name "lagrange")
-    (version "1.3.4")
+    (version "1.5.2")
     (source
      (origin
        (method url-fetch)
@@ -733,10 +733,11 @@ key-bindings and is fully configurable and extensible in Common Lisp.")
         (string-append "https://git.skyjake.fi/skyjake/lagrange/releases/"
                        "download/v" version "/lagrange-" version ".tar.gz"))
        (sha256
-        (base32 "108b8a9vdmf846v7p30fs9z0b68w3naifixnia0ra54ssxjvy0h6"))))
+        (base32 "0gqaipgs16kw711ijhshmbhhvlyjvh37wxdz059p4vvjhfrxbr1v"))))
     (build-system cmake-build-system)
     (arguments
-     `(#:tests? #false))                ;no tests
+     `(#:tests? #false                  ;no tests
+       #:configure-flags (list "-DTFDN_ENABLE_SSE41=OFF")))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
@@ -837,7 +838,7 @@ http, and https via third-party applications.")
 (define-public tinmop
   (package
     (name "tinmop")
-    (version "0.6.2")
+    (version "0.8.3")
     (source
      (origin
        (method git-fetch)
@@ -846,7 +847,7 @@ http, and https via third-party applications.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1fz52agvxnavz375apb1pjalf3myjllr4pc096b6qvc6vzhadg4c"))))
+        (base32 "117p1wxi5swmqw429qrswxz2zvp1dcaw2145gk6zxlgwln48qxl8"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("curl" ,curl)
@@ -907,3 +908,31 @@ http, and https via third-party applications.")
 interface.")
     (home-page "https://www.autistici.org/interzona/tinmop.html")
     (license license:gpl3+)))
+
+(define-public telescope
+  (package
+    (name "telescope")
+    (version "0.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://git.omarpolo.com/telescope/snapshot/"
+                           "telescope-" version ".tar.gz"))
+       (sha256
+        (base32 "1wg5x04n9iri7jx1lzhmd79j41grhjm3mpxn9qq9nf8n102wlvm3"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f))                    ;no tests
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("bison"   ,bison)
+       ("gettext" ,gettext-minimal)))
+    (inputs
+     `(("libevent"  ,libevent)
+       ("libressl"  ,libressl)
+       ("ncurses"   ,ncurses)))
+    (home-page "https://git.omarpolo.com/telescope/about/")
+    (synopsis "Gemini client with a terminal interface")
+    (description "Telescope is a w3m-like browser for Gemini.")
+    (license license:x11)))

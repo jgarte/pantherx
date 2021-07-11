@@ -101,7 +101,7 @@
         (base32 "0ac242n7996fswq1a3nlh1bbbhrsdwsq4mx7xq8ffq6aplb4rj4a"))
        (patches
         (search-patches
-         ;; To create make-flag vairables,
+         ;; To create make-flag variables,
          ;; for splitting installation of drill and examples.
          "ldns-drill-examples.patch"))))
     (build-system gnu-build-system)
@@ -320,7 +320,7 @@ and BOOTP/TFTP for network booting of diskless machines.")
     ;; When updating, check whether isc-dhcp's bundled copy should be as well.
     ;; The BIND release notes are available here:
     ;; https://www.isc.org/bind/
-    (version "9.16.15")
+    (version "9.16.16")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -328,7 +328,7 @@ and BOOTP/TFTP for network booting of diskless machines.")
                     "/bind-" version ".tar.xz"))
               (sha256
                (base32
-                "0fbqisrh84f8wszm94cqp7v8q9r7pql3qyzbay7vz9vqv0rg9dlq"))))
+                "0yqxfq7qc26x7qhk0nkp8h7x9jggzaafm712bvfffy7qml13k4bc"))))
     (build-system gnu-build-system)
     (outputs `("out" "utils"))
     (inputs
@@ -625,12 +625,15 @@ to result in system-wide compromise.")
     (inputs
      `(("expat" ,expat)
        ("libevent" ,libevent)
+       ("nghttp2" ,nghttp2 "lib")
        ("protobuf" ,protobuf)
        ("python-wrapper" ,python-wrapper)
        ("openssl" ,openssl)))
     (arguments
      `(#:configure-flags
        (list "--disable-static" ; save space and non-determinism in libunbound.a
+             (string-append
+              "--with-libnghttp2=" (assoc-ref %build-inputs "nghttp2"))
              (string-append
               "--with-ssl=" (assoc-ref %build-inputs "openssl"))
              (string-append
@@ -766,16 +769,16 @@ served by AS112.  Stub and forward zones are supported.")
 (define-public yadifa
   (package
     (name "yadifa")
-    (version "2.4.2")
+    (version "2.5.0")
     (source
-     (let ((build "9997"))
+     (let ((build "10188"))
        (origin
          (method url-fetch)
          (uri
           (string-append "https://www.yadifa.eu/sites/default/files/releases/"
                          "yadifa-" version "-" build ".tar.gz"))
          (sha256
-          (base32 "0f1by2c7l39qpsar5nh98f3xypmn2ikv7wr557wmva6m0lwbl3q0")))))
+          (base32 "05ps6fif3sqn6yzkprnp1cm81f3ja4vqc0r6vh7nvzl73gv4rp2w")))))
     (build-system gnu-build-system)
     (native-inputs
      `(("which" ,which)))
@@ -800,7 +803,8 @@ served by AS112.  Stub and forward zones are supported.")
        (list "--sysconfdir=/etc"
              "--localstatedir=/var"
              "--enable-shared" "--disable-static"
-             "--disable-build-timestamp"))) ; build reproducibly
+             "--disable-build-timestamp"    ; build reproducibly
+             "--enable-tcp-manager")))
     (home-page "https://www.yadifa.eu/")
     (synopsis "Authoritative DNS name server")
     (description "YADIFA is an authoritative name server for the @dfn{Domain
@@ -813,7 +817,7 @@ Extensions} (DNSSEC).")
 (define-public knot
   (package
     (name "knot")
-    (version "3.0.6")
+    (version "3.0.7")
     (source
      (origin
        (method git-fetch)
@@ -822,7 +826,7 @@ Extensions} (DNSSEC).")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0mjgjx43yb3w688jw16g5m1724wb0wnv4y7di2rslrp0s11wl2a9"))
+        (base32 "0ihd0lfh0r1nzz2di2rqkrx5j1017xv7m54irlhccx21inwv6g3y"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -1233,7 +1237,7 @@ known public suffixes.")
 (define-public maradns
   (package
     (name "maradns")
-    (version "3.5.0007")
+    (version "3.5.0020")
     (source
      (origin
        (method url-fetch)
@@ -1241,7 +1245,7 @@ known public suffixes.")
                            (version-major+minor version) "/"
                            version "/maradns-" version ".tar.xz"))
        (sha256
-        (base32 "0bc19xylg4whww9qaj5i4izwxcrh0c0ja7l1pfcn2la02hlvg1a6"))))
+        (base32 "1qgabw6y2bwy6y88dikis62k789i0xh7iwxan8jmqpzvksqwjfgw"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; need to be root to run tests

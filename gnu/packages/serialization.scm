@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2015, 2017, 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2017, 2019, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016 Lukas Gradl <lgradl@openmailbox.org>
 ;;; Copyright © 2016 David Craven <david@craven.ch>
 ;;; Copyright © 2016, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
@@ -45,6 +45,7 @@
   #:use-module (gnu packages databases)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages gcc)
+  #:use-module (gnu packages llvm)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
@@ -87,10 +88,47 @@ Code generation is not required to read or write data files nor to use or
 implement RPC protocols.")
     (license license:asl2.0)))
 
+(define-public avro-cpp-1.9-for-irods
+  (package
+    (inherit avro-cpp-1.9)
+    (properties `((hidden? . #true)))
+    (arguments
+     `(#:configure-flags
+       '("-DCMAKE_CXX_COMPILER=clang++"
+         "-DCMAKE_CXX_FLAGS=-stdlib=libc++"
+         "-DCMAKE_EXE_LINKER_FLAGS=-lc++abi -lz")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'chdir
+           (lambda _ (chdir "lang/c++")))
+         (add-after 'set-paths 'adjust-CPLUS_INCLUDE_PATH
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((gcc (assoc-ref inputs  "gcc")))
+               (setenv "CPLUS_INCLUDE_PATH"
+                       (string-join
+                        (cons* (string-append (assoc-ref inputs "libcxx+libcxxabi")
+                                              "/include/c++/v1")
+                               ;; Hide GCC's C++ headers so that they do not interfere with
+                               ;; the Clang headers.
+                               (delete (string-append gcc "/include/c++")
+                                       (string-split (getenv "CPLUS_INCLUDE_PATH")
+                                                     #\:)))
+                        ":"))
+               (format #true
+                       "environment variable `CPLUS_INCLUDE_PATH' changed to ~a~%"
+                       (getenv "CPLUS_INCLUDE_PATH"))))))))
+    (inputs
+     `(("boost" ,boost-for-irods)
+       ("clang" ,clang-toolchain-6)
+       ("libcxx+libcxxabi" ,libcxx+libcxxabi-6)
+       ("libcxxabi" ,libcxxabi-6)
+       ("snappy" ,snappy-with-clang6)
+       ("zlib" ,zlib)))))
+
 (define-public cereal
   (package
     (name "cereal")
-    (version "1.2.1")
+    (version "1.3.0")
     (source
      (origin
        (method git-fetch)
@@ -99,7 +137,8 @@ implement RPC protocols.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1vxkrsnxkiblzi1z61vfix167c184fy868sgwj2dxxgbgjcq2nrh"))))
+        (base32
+         "0hc8wh9dwpc1w1zf5lfss4vg5hmgpblqxbrpp1rggicpx9ar831p"))))
     (build-system cmake-build-system)
     (arguments
      `(;; The only included tests are portability tests requiring
@@ -113,9 +152,10 @@ implement RPC protocols.")
          (replace 'build
           (lambda _
             (substitute* "doc/doxygen.in"
+              (("@CMAKE_CURRENT_BINARY_DIR@") ".")
               (("@CMAKE_CURRENT_SOURCE_DIR@") "."))
-            (invoke "doxygen" "doc/doxygen.in")
-            #t))
+            (with-directory-excursion "doc"
+              (invoke "doxygen" "doxygen.in"))))
          ;; There is no "install" target, so we have to provide our own
          ;; "install" phase.
          (replace 'install
@@ -126,8 +166,7 @@ implement RPC protocols.")
               (mkdir-p doc)
               (mkdir-p include)
               (copy-recursively "include/cereal" include)
-              (copy-recursively "doc/html" doc))
-            #t)))))
+              (copy-recursively "doc/html" doc)))))))
     (native-inputs
      `(("doxygen" ,doxygen)))
     (home-page "https://uscilab.github.io/cereal/")
@@ -141,7 +180,7 @@ such as compact binary encodings, XML, or JSON.")
 (define-public msgpack
   (package
     (name "msgpack")
-    (version "3.2.1")
+    (version "3.3.0")
     (source
      (origin
        (method url-fetch)
@@ -156,7 +195,7 @@ such as compact binary encodings, XML, or JSON.")
            (close-output-port p)
            #t))
        (sha256
-        (base32 "1ljqmgscdb0f8w8kx2lnswnisyxchcmijbjbmswkv0g187bvqg23"))))
+        (base32 "0yzhq50ijvwrfkr97knhvn54lj3f4hr3zy39yq8wpf6xll94s4bf"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("googletest" ,googletest-1.8)
@@ -385,9 +424,9 @@ it a convenient format to store user input files.")
              ;; /etc/services, which is not present in build environment.
              (substitute* "src/kj/async-io-test.c++" ((":http") ":80"))
              #t))
-         (add-before 'check 'use-tmp-for-tempory-files
+         (add-before 'check 'use-tmp-for-temporary-files
            (lambda _
-             ;; Use /tmp for tempory files, as the default /var/tmp directory
+             ;; Use /tmp for temporary files, as the default /var/tmp directory
              ;; doesn't exist.
              (substitute* "src/kj/filesystem-disk-test.c++"
                (("VAR\\_TMP \"/var/tmp\"")

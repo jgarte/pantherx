@@ -59,6 +59,7 @@
 ;;; Copyright © 2020, 2021 Andy Tai <atai@atai.org>
 ;;; Copyright © 2020, 2021 Sébastien Lerique <sl@eauchat.org>
 ;;; Copyright © 2021 Trevor Hass <thass@okstate.edu>
+;;; Copyright © 2021 Solene Rapenne <solene@perso.pw>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -126,6 +127,7 @@
   #:use-module (gnu packages gstreamer)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages guile)
+  #:use-module (gnu packages haskell-xyz)
   #:use-module (gnu packages ibus)
   #:use-module (gnu packages icu4c)
   #:use-module (gnu packages image)
@@ -390,7 +392,9 @@ services.")
                        (version-major+minor version) "/"
                        name "-" version ".tar.xz"))
        (sha256
-        (base32 "1nalslgyglvhpva3px06fj6lv5zgfg0qmj0sbxyyl5d963vc02b7"))))
+        (base32 "1nalslgyglvhpva3px06fj6lv5zgfg0qmj0sbxyyl5d963vc02b7"))
+       (patches
+        (search-patches "libgrss-CVE-2016-2001.patch"))))
     (build-system glib-or-gtk-build-system)
     (outputs '("out" "doc"))
     (arguments
@@ -1108,7 +1112,7 @@ freedesktop.org desktop notification specification.")
 (define-public mm-common
   (package
     (name "mm-common")
-    (version "1.0.2")
+    (version "1.0.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/mm-common/"
@@ -1116,10 +1120,11 @@ freedesktop.org desktop notification specification.")
                                   "mm-common-" version ".tar.xz"))
               (sha256
                (base32
-                "07b4s5ckcz9q5gwx8vchim19mhfgl8wysqwi30pndks3m4zrzad2"))))
+                "1x8yvjy0yg17qyhmqws8xh2k8dvzrhpwqz7j1cfwzalrb1i9c5g8"))))
     (build-system meson-build-system)
     (arguments
-     `(#:phases
+     `(#:meson ,meson-0.55
+       #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'patch
            (lambda* (#:key inputs #:allow-other-keys)
@@ -1164,17 +1169,24 @@ Library reference documentation.")
    (arguments
     `(#:phases
       (modify-phases %standard-phases
+        (add-after 'unpack 'fix-udev-rules-directory
+          (lambda* (#:key outputs #:allow-other-keys)
+            (let* ((out   (assoc-ref outputs "out"))
+                   (rules (string-append out "/lib/udev/rules.d")))
+              (substitute* "data/meson.build"
+                (("udev\\.get_pkgconfig_variable\\('udevdir'\\)")
+                 (format #f "'~a'" rules))))))
         (add-before 'check 'start-virtual-dir-server
           ;; The same server when started by tests/virtual-dir returns an
           ;; unexpected status (4 instead of 200) and fails a test.  It is
           ;; unclear why starting it manually here makes it pass.
           (lambda _
-            (system "tests/virtual-dir-server &")
-            #t)))))
+            (system "tests/virtual-dir-server &"))))))
    (native-inputs
     `(("docbook-xml" ,docbook-xml-4.3)
       ("gettext" ,gettext-minimal)
       ("glib:bin" ,glib "bin")
+      ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
       ("gtk-doc" ,gtk-doc/stable)
       ("pkg-config" ,pkg-config)))
    (inputs
@@ -1407,7 +1419,7 @@ and implementation of UPnP A/V profiles.")
 (define-public libmediaart
   (package
     (name "libmediaart")
-    (version "1.9.4")
+    (version "1.9.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -1415,8 +1427,10 @@ and implementation of UPnP A/V profiles.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "0gc10imyabk57ar54m0qzms0x9dnmkymhkzyk8w1aj3y4lby0yx5"))))
-    (build-system gnu-build-system)
+                "1mlw1qgj8nkd9ll6b6h54r1gfdy3zp8a8xqz7qfyfaj85jjgbph7"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:meson ,meson-next))
     (native-inputs
      `(("glib:bin" ,glib "bin")
        ("pkg-config" ,pkg-config)))
@@ -2719,7 +2733,7 @@ and how they are displayed (View).")
 (define-public gtg
   (package
     (name "gtg")
-    (version "0.4")
+    (version "0.5")
     (source
      (origin
        (method git-fetch)
@@ -2728,7 +2742,7 @@ and how they are displayed (View).")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0r28vyr88rj3kd3cg4gj7sd29wadjchi92wzmbx67d4hlg25h8kk"))))
+        (base32 "0b2slm7kjq6q8c7v4m7aqc8m1ynjxn3bl7445srpv1xc0dilq403"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -2755,10 +2769,13 @@ and how they are displayed (View).")
        ("gtk+:bin" ,gtk+ "bin")
        ("pkg-config" ,pkg-config)))
     (inputs
-     `(("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+     `(("gdk-pixbuf" ,gdk-pixbuf+svg)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
        ("gtk+" ,gtk+)
+       ("pango" ,pango)
        ("python-dbus" ,python-dbus)
        ("python-liblarch" ,python-liblarch)
+       ("python-lxml" ,python-lxml)
        ("python-pycairo" ,python-pycairo)
        ("python-pygobject" ,python-pygobject)
        ("python-pyxdg" ,python-pyxdg)))
@@ -4120,14 +4137,14 @@ Hints specification (EWMH).")
 (define-public goffice
   (package
     (name "goffice")
-    (version "0.10.49")
+    (version "0.10.50")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/goffice/"
                                   (version-major+minor version)  "/"
                                   "goffice-" version ".tar.xz"))
               (sha256
-               (base32 "1s87ngs3g3nfvcn96aq4lgzx5cscbfg4n9f6ns2zpvc5ngdiiz2z"))))
+               (base32 "1p5zbj7cbcfcxd6l8pnph54p6ah1bwf146y810j4bcq8ggf3sp1c"))))
     (build-system gnu-build-system)
     (outputs '("out"
                "doc"))                  ; 4.0 MiB of gtk-doc
@@ -4184,7 +4201,7 @@ Hints specification (EWMH).")
 (define-public gnumeric
   (package
     (name "gnumeric")
-    (version "1.12.49")
+    (version "1.12.50")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/gnumeric/"
@@ -4192,7 +4209,7 @@ Hints specification (EWMH).")
                                   "gnumeric-" version ".tar.xz"))
               (sha256
                (base32
-                "0mzdhhpa7kwkc51l344g6vgqwaxkjdf03s7zasqh0bn3jpn75h4i"))))
+                "1f0lrj5msg80pgjp38jj6rddf352gwddgip7z4lki66n3fx1k23m"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(;; The gnumeric developers don't worry much about failing tests.
@@ -4245,7 +4262,7 @@ engineering.")
 (define-public drawing
   (package
     (name "drawing")
-    (version "0.6.5")
+    (version "0.8.2")
     (source
      (origin
        (method git-fetch)
@@ -4254,7 +4271,7 @@ engineering.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1kfgmalakifcvzhzss9zhmqjbdk24zr22c5xwkkahlvfcafp13wn"))))
+        (base32 "0lpszd8276rp5chn84rkvwmnflxc3pqlg4cz53gfxkqdb3gn02zz"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -5384,28 +5401,33 @@ faster results and to avoid unnecessary server load.")
 (define-public upower
   (package
     (name "upower")
-    (version "0.99.11")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://upower.freedesktop.org/releases/"
-                                  "upower-" version ".tar.xz"))
-              (sha256
-               (base32
-                "1vxxvmz2cxb1qy6ibszaz5bskqdy9nd9fxspj9fv3gfmrjzzzdb4"))
-              (patches (search-patches "upower-builddir.patch"))
-              (modules '((guix build utils)))
-              (snippet
-               '(begin
-                  ;; Upstream commit
-                  ;; <https://cgit.freedesktop.org/upower/commit/?id=18457c99b68786cd729b315723d680e6860d9cfa>
-                  ;; moved 'dbus-1/system.d' from etc/ to share/.  However,
-                  ;; 'dbus-configuration-directory' in (gnu services dbus)
-                  ;; expects it in etc/.  Thus, move it back to its previous
-                  ;; location.
-                  (substitute* "src/Makefile.in"
-                    (("^dbusconfdir =.*$")
-                     "dbusconfdir = $(sysconfdir)/dbus-1/system.d\n"))
-                  #t))))
+    (version "0.99.12")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.freedesktop.org/upower/upower")
+             (commit (string-append "UPOWER_"
+                                    (string-map (match-lambda (#\. #\_)
+                                                              (chr chr))
+                                                version)))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "00q63yc8vp5cq05vhpwq3qglapdm8hg0lrqkzdwkphk30qzb6hv6"))
+       (patches (search-patches "upower-builddir.patch"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; Upstream commit
+           ;; <https://cgit.freedesktop.org/upower/commit/?id=18457c99b68786cd729b315723d680e6860d9cfa>
+           ;; moved 'dbus-1/system.d' from etc/ to share/.  However,
+           ;; 'dbus-configuration-directory' in (gnu services dbus)
+           ;; expects it in etc/.  Thus, move it back to its previous
+           ;; location.
+           (substitute* "src/Makefile.am"
+             (("^dbusconfdir =.*$")
+              "dbusconfdir = $(sysconfdir)/dbus-1/system.d\n"))
+           #t))))
     (build-system glib-or-gtk-build-system)
     (arguments
      '(#:phases
@@ -5421,10 +5443,15 @@ faster results and to avoid unnecessary server load.")
                                               (assoc-ref %outputs "out")
                                               "/lib/udev/rules.d"))))
     (native-inputs
-     `(("gobject-introspection" ,gobject-introspection)
-       ("pkg-config" ,pkg-config)
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("gobject-introspection" ,gobject-introspection)
+       ("gtk-doc" ,gtk-doc)
        ("intltool" ,intltool)
+       ("libtool" ,libtool)
+       ("pkg-config" ,pkg-config)
        ("python" ,python)
+       ("which" ,which)                 ; for ./autogen.sh
 
        ;; For tests.
        ("python-dbus" ,python-dbus)
@@ -5433,9 +5460,9 @@ faster results and to avoid unnecessary server load.")
        ("umockdev" ,umockdev)
 
        ;; For man pages.
-       ("libxslt" ,libxslt)                       ;for 'xsltproc'
-       ("libxml2" ,libxml2)                       ;for 'XML_CATALOG_FILES'
-       ("docbook-xsl" ,docbook-xsl)))
+       ("docbook-xsl" ,docbook-xsl)
+       ("libxslt" ,libxslt)             ; for 'xsltproc'
+       ("libxml2" ,libxml2)))           ; for 'XML_CATALOG_FILES'
     (inputs
      `(("dbus-glib" ,dbus-glib)
        ("libgudev" ,libgudev)
@@ -5584,7 +5611,7 @@ settings, themes, mouse settings, and startup of other daemons.")
 (define-public totem-pl-parser
  (package
    (name "totem-pl-parser")
-   (version "3.26.5")
+   (version "3.26.6")
    (source (origin
             (method url-fetch)
             (uri (string-append "mirror://gnome/sources/totem-pl-parser/"
@@ -5592,7 +5619,7 @@ settings, themes, mouse settings, and startup of other daemons.")
                                 "totem-pl-parser-" version ".tar.xz"))
             (sha256
              (base32
-              "132jihnf51zs98yjkc6jxyqib4f3dawpjm17g4bj4j78y93dww2k"))))
+              "075csd5x0frgf93jvhlqiwv5i0qm24zz3iw17jj7v7fgsml0zpy0"))))
    (build-system meson-build-system)
    (arguments
     ;; FIXME: Tests require gvfs.
@@ -6161,7 +6188,7 @@ discovery protocols.")
 (define-public totem
   (package
     (name "totem")
-    (version "3.38.0")
+    (version "3.38.1")
     (source
      (origin
        (method url-fetch)
@@ -6169,8 +6196,7 @@ discovery protocols.")
                            (version-major+minor version) "/"
                            "totem-" version ".tar.xz"))
        (sha256
-        (base32
-         "0bs33ijvxbr2prb9yj4dxglsszslsn9k258n311sld84masz4ad8"))))
+        (base32 "02510lvzvxvmpcs64k6sqix8ysl7sihhhwvp0vmfv7521ryczylg"))))
     (build-system meson-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -6231,14 +6257,6 @@ discovery protocols.")
              (substitute* "meson_post_install.py"
                (("gtk-update-icon-cache") "true"))
              #t))
-         (add-after 'unpack 'patch-failing-test
-           (lambda _
-             ;; Work around test failure with GStreamer 1.18, because the test
-             ;; relies on "und" not being mapped to a particular language:
-             ;; https://gitlab.gnome.org/GNOME/totem/-/issues/450
-            (substitute* "src/test-totem.c"
-              (("und") "nosuchlang"))
-            #t))
          (add-before
           'install 'disable-cache-generation
           (lambda _
@@ -6467,25 +6485,22 @@ side panel;
 (define-public libgudev
   (package
     (name "libgudev")
-    (version "232")
+    (version "236")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
                                   version "/" name "-" version ".tar.xz"))
               (sha256
                (base32
-                "0q3qki451zzgdjazlgshsfzbbm0in40lyx7dyrag7kbkqnwv4k7f"))))
-    (build-system gnu-build-system)
-    (arguments
-     '(#:configure-flags
-       ;; umockdev depends on libgudev.
-       (list "--disable-umockdev")))
+                "094mgjmwgsgqrr1i0vd20ynvlkihvs3vgbmpbrhswjsrdp86j0z5"))))
+    (build-system meson-build-system)
     (native-inputs
      `(("glib:bin" ,glib "bin") ; for glib-genmarshal, etc.
        ("gobject-introspection" ,gobject-introspection)
        ("pkg-config" ,pkg-config)))
     (propagated-inputs
-     `(("glib" ,glib))) ; required by gudev-1.0.pc
+     `(("glib" ,glib)                   ; in Requires of gudev-1.0.pc
+       ("eudev" ,eudev)))               ; in Requires.private of gudev-1.0.pc
     (inputs
      `(("udev" ,eudev)))
     (home-page "https://wiki.gnome.org/Projects/libgudev")
@@ -7021,7 +7036,7 @@ metadata in photo and video files of various formats.")
 (define-public shotwell
   (package
     (name "shotwell")
-    (version "0.30.11")
+    (version "0.30.12")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/shotwell/"
@@ -7029,7 +7044,7 @@ metadata in photo and video files of various formats.")
                                   "shotwell-" version ".tar.xz"))
               (sha256
                (base32
-                "12d26y40kjlv5x8f5g04wff33vh7mdjb8c41ydqbrwdip0jwy2n2"))))
+                "1h5crjq59lqi8f8mdkadzi8pc3i9i2ik4lsx2nrhzq486fzdfhw6"))))
     (build-system meson-build-system)
     (arguments
      '(#:glib-or-gtk? #t
@@ -8696,7 +8711,7 @@ core C library, and bindings for Python (PyGTK).")
 (define-public gnome-autoar
   (package
     (name "gnome-autoar")
-    (version "0.3.2")
+    (version "0.3.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -8704,7 +8719,7 @@ core C library, and bindings for Python (PyGTK).")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "0wkwix44yg126xn1v4f2j60bv9yiyadfpzf8ifx0bvd9x5f4v354"))))
+                "012w7rhhpxvlrnnhqy01vwzg1wxqpy8jbqgizn47wnip7bvh0917"))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      `(("gobject-introspection" ,gobject-introspection)
@@ -11609,6 +11624,69 @@ and toolbars.")
 GTK+.  It integrates well with the GNOME desktop environment.")
     (license license:gpl3+)))
 
+(define-public apostrophe
+  (package
+    (name "apostrophe")
+    (version "2.4")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://gitlab.gnome.org/somas/apostrophe")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1qzy3zhi18wf42m034s8kcmx9gl05j620x3hf6rnycq2fvy7g4gz"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:glib-or-gtk? #t
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-meson
+           (lambda _
+             (substitute* "build-aux/meson_post_install.py"
+               (("gtk-update-icon-cache") "true"))
+             #t))
+         (add-after 'glib-or-gtk-wrap 'python-and-gi-wrap
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let ((prog (string-append (assoc-ref outputs "out")
+                                        "/bin/apostrophe"))
+                   (pylib (string-append (assoc-ref outputs "out")
+                                         "/lib/python"
+                                         ,(version-major+minor
+                                           (package-version python))
+                                         "/site-packages")))
+               (wrap-program prog
+                 `("PYTHONPATH" = (,(getenv "PYTHONPATH") ,pylib))
+                 `("GI_TYPELIB_PATH" = (,(getenv "GI_TYPELIB_PATH")))
+                 `("PATH" prefix (,(string-append (assoc-ref inputs "pandoc")
+                                                  "/bin"))))
+               #t))))))
+    (inputs
+     `(("glib" ,glib)
+       ("gobject-introspection" ,gobject-introspection)
+       ("gspell" ,gspell)
+       ("gtk+" ,gtk+)
+       ("libhandy" ,libhandy)
+       ("pandoc" ,pandoc)
+       ("python-chardet" ,python-chardet)
+       ("python-levenshtein" ,python-levenshtein)
+       ("python-regex" ,python-regex)
+       ("python-pycairo" ,python-pycairo)
+       ("python-pygobject" ,python-pygobject)
+       ("python-pyenchant" ,python-pyenchant)
+       ("python-pypandoc" ,python-pypandoc)
+       ("webkitgtk" ,webkitgtk)))
+    (native-inputs
+     `(("gettext" ,gettext-minimal)
+       ("glib:bin" ,glib "bin")
+       ("pkg-config" ,pkg-config)))
+    (home-page "https://gitlab.gnome.org/somas/apostrophe")
+    (synopsis "Markdown editor written in Python with GTK+")
+    (description "Apostrophe is a GTK+ based distraction free Markdown editor.
+It uses pandoc as back-end for parsing Markdown.")
+    (license license:gpl3)))
+
 (define-public libratbag
   (package
     (name "libratbag")
@@ -11990,7 +12068,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.28.1")
+    (version "0.29.2")
     (source
      (origin
        (method git-fetch)
@@ -12000,7 +12078,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0ifcwp5fw74yypxkq7i0yc3002bsvj3p5c1icspr8s2kyjyllm6i"))))
+         "0g1whk0y3k1cy6ix20gz226ww1vzpb9hinn5d24z6j38mdgqqa5l"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -12033,6 +12111,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        ("libsecret" ,libsecret)
        ("python-beautifulsoup4" ,python-beautifulsoup4)
        ("python-brotli" ,python-brotli)
+       ("python-cloudscraper" ,python-cloudscraper)
        ("python-dateparser" ,python-dateparser)
        ("python-keyring" ,python-keyring)
        ("python-lxml" ,python-lxml)

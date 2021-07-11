@@ -28,6 +28,7 @@
 ;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
 ;;; Copyright © 2020, 2021 Robert Karszniewicz <avoidr@posteo.de>
 ;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
+;;; Copyright © 2021 Denis 'GNUtoo' Carikli <GNUtoo@cyberdimension.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -123,6 +124,7 @@
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
   #:use-module (guix build-system cmake)
+  #:use-module (guix build-system go)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system meson)
@@ -178,7 +180,7 @@
        ("hunspell" ,hunspell)
        ("libidn" ,libidn)
        ("qca" ,qca)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)
        ("qtsvg" ,qtsvg)
        ("qtwebkit" ,qtwebkit)
@@ -478,7 +480,7 @@ your private keys, no previous conversation is compromised.")
 (define-public libsignal-protocol-c
   (package
   (name "libsignal-protocol-c")
-  (version "2.3.2")
+  (version "2.3.3")
   (source (origin
            (method git-fetch)
            (uri (git-reference
@@ -487,7 +489,7 @@ your private keys, no previous conversation is compromised.")
            (file-name (git-file-name name version))
            (sha256
             (base32
-             "1qj2w4csy6j9jg1jy66n1qwysx7hgjywk4n35hlqcnh1kpa14k3p"))))
+             "0z5p03vk15i6h870azfjgyfgxhv31q2vq6rfhnybrnkxq2wqzwhk"))))
   (arguments
    `(;; Required for proper linking and for tests to run.
      #:configure-flags '("-DBUILD_SHARED_LIBS=on" "-DBUILD_TESTING=1")))
@@ -675,6 +677,7 @@ used by Pidgin and Bitlbee, among others, to access
               (method url-fetch)
               (uri (string-append "https://dl.hexchat.net/hexchat/hexchat-"
                                   version ".tar.xz"))
+              (patches (search-patches "hexchat-add-libera-chat.patch"))
               (sha256
                (base32
                 "10p829jm1r6kidkgf5lhqhyqc5mxdcq96q3zhadsckasvc9rs6lh"))))
@@ -788,7 +791,7 @@ authentication.")
 (define-public pidgin
   (package
     (name "pidgin")
-    (version "2.14.4")
+    (version "2.14.5")
     (source
      (origin
        (method url-fetch)
@@ -796,7 +799,7 @@ authentication.")
         (string-append "mirror://sourceforge/pidgin/Pidgin/"
                        version "/pidgin-" version ".tar.gz"))
        (sha256
-        (base32 "1h952bh2jdm9jymzpj4dgmh530yh7pag2janfz6d5m1r4mljwraq"))
+        (base32 "12llip3r8126gph82r638xjv2v2rg34qgggn1nbwfmc3s7halimr"))
        (patches
         (search-patches "pidgin-add-search-path.patch"))
        (modules '((guix build utils)))
@@ -1144,7 +1147,7 @@ and OpenPGP) and available in 29 languages.")
 (define-public gajim-omemo
   (package
     (name "gajim-omemo")
-    (version "2.7.13")
+    (version "2.7.14")
     (source
      (origin
        (method url-fetch/zipbomb)
@@ -1153,7 +1156,7 @@ and OpenPGP) and available in 29 languages.")
          "https://ftp.gajim.org/plugins_releases/omemo_"
          version ".zip"))
        (sha256
-        (base32 "1msr71rvik05wjpa2inpkadddad2rxaqbqcww5qrdrcz75pm8brn"))))
+        (base32 "0jmyjqfc4vimvq5vdqsvz25dsij6bh92alml8qnn59p5farnf86v"))))
     (build-system trivial-build-system)
     (arguments
      `(#:modules ((guix build utils))
@@ -1217,7 +1220,7 @@ Encryption to Gajim.")
 (define-public dino
   (package
     (name "dino")
-    (version "0.2.0")
+    (version "0.2.1")
     (source
      (origin
        (method url-fetch)
@@ -1225,7 +1228,7 @@ Encryption to Gajim.")
         (string-append "https://github.com/dino/dino/releases/download/v"
                        version "/dino-" version ".tar.gz"))
        (sha256
-        (base32 "0iigh7bkil6prf02dqcl6lmd89jxz685h8lqr3ni4x39zkcransn"))))
+        (base32 "13rk8b0sj35az32c0ii173g9ww231awmyb4jlk56jy38hpyp7x1g"))))
     (build-system cmake-build-system)
     (outputs '("out" "debug"))
     (arguments
@@ -1239,30 +1242,49 @@ Encryption to Gajim.")
                            (guix build glib-or-gtk-build-system))
        #:phases
        (modify-phases %standard-phases
+         ;; To be enabled in v0.3.0, for A/V support.
+         ;;(add-after 'install 'wrap
+           ;;(lambda* (#:key outputs #:allow-other-keys)
+             ;;(let* ((out (assoc-ref outputs "out"))
+                    ;;(dino (string-append out "/bin/dino"))
+                    ;;(gst-plugin-path (getenv "GST_PLUGIN_SYSTEM_PATH")))
+               ;;(wrap-program dino
+                 ;;`("GST_PLUGIN_SYSTEM_PATH" ":" prefix (,gst-plugin-path))))))
          (add-after 'install 'glib-or-gtk-wrap
            (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-wrap)))))
     (native-inputs
      `(("gettext" ,gettext-minimal)
        ("glib:bin" ,glib "bin")
+       ("gobject-introspection" ,gobject-introspection)
        ("gtk+:bin" ,gtk+ "bin")
        ("pkg-config" ,pkg-config)
        ("vala" ,vala)))
     (inputs
-     `(("glib" ,glib)
+     ;; NOTE: Commented-out lines are to be enabled in v0.3.0.
+     `(("atk" ,atk)
+       ("cairo" ,cairo)
+       ("gdk-pixbuf" ,gdk-pixbuf+svg)
+       ("glib" ,glib)
        ("glib-networking" ,glib-networking)
        ("gpgme" ,gpgme)
        ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+       ("gspell" ,gspell)               ;for spell-check support
+       ;;("gstreamer" ,gstreamer)         ;for A/V support
+       ;;("gst-plugins-base" ,gst-plugins-base)
+       ;;("gst-plugins-good" ,gst-plugins-good)
        ("gtk+" ,gtk+)
+       ("icu4c" ,icu4c)                 ;for emoji support
+       ;;("libcanberra" ,libcanberra)    ;for sound-notification support
        ("libgcrypt" ,libgcrypt)
        ("libgee" ,libgee)
+       ("libnice" ,libnice)
        ("libsignal-protocol-c" ,libsignal-protocol-c)
        ("libsoup" ,libsoup)
+       ;;("libsrtp" ,libsrtp)             ;for calls support
+       ("pango" ,pango)
        ("qrencode" ,qrencode)
-       ("sqlite" ,sqlite)
-       ("gpgme" ,gpgme)
-       ("gtk+" ,gtk+)
-       ("glib-networking" ,glib-networking)
-       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)))
+       ("sqlite" ,sqlite)))
+       ;;("webrtc-audio-processing" ,webrtc-audio-processing))) ;for A/V support
     (synopsis "Graphical Jabber/XMPP Client using GTK+/Vala")
     (description "Dino is a chat client for the desktop.  It focuses on providing
 a minimal yet reliable Jabber/XMPP experience and having encryption enabled by
@@ -1273,14 +1295,14 @@ default.")
 (define-public prosody
   (package
     (name "prosody")
-    (version "0.11.3")
+    (version "0.11.9")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://prosody.im/downloads/source/"
                                   "prosody-" version ".tar.gz"))
               (sha256
                (base32
-                "11xz4milv2962qf75vrdwsvd8sy2332nf69202rmvz5989pvvnng"))))
+                "02gzvsaq0l5lx608sfh7hfz14s6yfsr4sr4kzcsqd1cxljp35h6c"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ;tests require "busted"
@@ -1604,7 +1626,7 @@ instant messenger with audio and video chat capabilities.")
        ("sqlite" ,sqlite)
        ("openal" ,openal)
        ("qrencode" ,qrencode)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)
        ("sqlcipher" ,sqlcipher)))
     (native-inputs
@@ -2225,7 +2247,7 @@ notifications, and Python scripting support.")
         (base32 "0gkwr3yw6k2m0j8cc085b5p2q788rf5nhp1p5hc5d55pc7mci2qs"))))
     (build-system cmake-build-system)
     (inputs
-     `(("qtbase" ,qtbase)
+     `(("qtbase" ,qtbase-5)
        ("qtmultimedia" ,qtmultimedia)))
     (arguments
      `(#:configure-flags (list "-DBUILD_SHARED_LIBS=ON")
@@ -2329,7 +2351,7 @@ for the Matrix protocol.  It is built on to of @code{Boost.Asio}.")
        ("lmdbxx" ,lmdbxx)
        ("mtxclient" ,mtxclient)
        ("openssl" ,openssl)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtgraphicaleffects" ,qtgraphicaleffects)
        ("qtmultimedia" ,qtmultimedia)
@@ -2382,7 +2404,7 @@ There is support for:
     (build-system qt-build-system)
     (inputs
      `(("libqmatrixclient" ,libqmatrixclient)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
        ("qtmultimedia" ,qtmultimedia)
        ("qtquickcontrols" ,qtquickcontrols)
@@ -2404,13 +2426,13 @@ QMatrixClient project.")
 (define-public hangups
   (package
     (name "hangups")
-    (version "0.4.13")
+    (version "0.4.14")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "hangups" version))
        (sha256
-        (base32 "015g635vnrxk5lf9n80rdcmh6chv8kmla1k2j7m1iijijs519ngn"))))
+        (base32 "15qbbafcrdkx73xz9y30qa3d8nj6mgrp2m41749i5nn1qywmikk8"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -2722,7 +2744,7 @@ as phones, embedded computers or microcontrollers.")
                   "\"../build"))
                #t)))))
       (inputs
-       `(("qtbase" ,qtbase)
+       `(("qtbase" ,qtbase-5)
          ("qtdeclarative" ,qtdeclarative)
          ("qtwebchannel" ,qtwebchannel)))
       (propagated-inputs
@@ -2851,7 +2873,7 @@ social and chat platform.")
        ("qca" ,qca)
        ("qhttp" ,qhttp)
        ("qite" ,qite)
-       ("qtbase" ,qtbase)
+       ("qtbase" ,qtbase-5)
        ("qtkeychain" ,qtkeychain)
        ("qtmultimedia" ,qtmultimedia)
        ("qtsvg" ,qtsvg)
@@ -2965,6 +2987,33 @@ designed for experienced users.")
     (home-page "https://github.com/zulip/zulip-terminal")
     (synopsis "Zulip's official terminal client")
     (description "This package contains Zulip's official terminal client.")
+    (license license:asl2.0)))
+
+(define-public matterbridge
+  (package
+    (name "matterbridge")
+    (version "1.22.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/42wim/matterbridge")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "07rgdc4v043fhzsalmlhickqizk6xjlpjkzn6l5v9ryp5gmv580z"))))
+    (build-system go-build-system)
+    (arguments
+     `(#:import-path "github.com/42wim/matterbridge"
+       #:unpack-path "github.com/42wim/matterbridge"))
+    (synopsis "Bridge together various messaging networks and protocols")
+    (description "Relays messages between different channels from various
+messaging networks and protocols.  So far it supports mattermost, IRC, gitter,
+xmpp, slack, discord, telegram, rocketchat, twitch, ssh-chat, zulip, whatsapp,
+keybase, matrix, microsoft teams, nextcloud, mumble, vk and more with REST
+API.  Mattermost is not required.")
+    (home-page "https://github.com/42wim/matterbridge")
     (license license:asl2.0)))
 
 ;;; messaging.scm ends here
