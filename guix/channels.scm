@@ -174,7 +174,7 @@ to the corresponding bytevector."
 
 (define %default-channel-url
   ;; URL of the default 'guix' channel.
-  "https://rolling:s7T92icU5usys-R2bsM6@git.pantherx.org/development/pantherx.git")
+  "https://channels.pantherx.org/git/pantherx.git")
 
 (define %default-guix-channel
   (channel
@@ -189,11 +189,11 @@ to the corresponding bytevector."
         (channel
           (name 'nongnu)
           (branch "rolling")
-          (url "https://rolling:ieE7t6i5WJqmzyppJAWv@git.pantherx.org/development/pantherx-nonguix.git"))
+          (url "https://channels.pantherx.org/git/nongnu.git"))
         (channel
           (name 'pantherx)
           (branch "rolling")
-          (url "https://rolling:HPuf8Tdt6RFNFaoi_kVi@git.pantherx.org/development/guix-pantherx.git"))))
+          (url "https://channels.pantherx.org/git/pantherx-extra.git"))))
 
 (define (guix-channel? channel)
   "Return true if CHANNEL is the 'guix' channel."

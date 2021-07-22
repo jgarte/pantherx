@@ -146,7 +146,7 @@
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
-                      (url "https://rolling:s7T92icU5usys-R2bsM6@git.pantherx.org/development/pantherx.git")
+                      (url "https://channels.pantherx.org/git/pantherx.git")
                       (commit commit)))
                 (sha256
                  (base32
