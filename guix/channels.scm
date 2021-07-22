@@ -168,7 +168,7 @@ to the corresponding bytevector."
   ;; before that commit cannot be merged or it will be rejected by 'guix pull'
   ;; & co.
   (make-channel-introduction
-   "2cd230b55f3164bf51b33c657fe3e10efcf57df5"     ;2021-05-18
+   "c371d76d5a9259e4f138d349bac68b955784e68e"     ;2021-05-18
    (openpgp-fingerprint                           ;ramajd
     "2C9B 882C 7E22 0B10 145B  9E50 0831 3F33 9213 9E68")))
 
