@@ -589,7 +589,8 @@ dist_pkgdata_DATA =				\
   etc/substitutes/ci.guix.gnu.org.pub		\
   etc/substitutes/ci.guix.info.pub		\
   etc/substitutes/bordeaux.guix.gnu.org.pub \
-  etc/substitutes/build.pantherx.org.pub
+  etc/substitutes/build.pantherx.org.pub \
+  etc/substitutes/packages.pantherx.org.pub
 
 # Bash completion file.
 dist_bashcompletion_DATA = etc/completion/bash/guix	\

@@ -789,7 +789,8 @@ encoding conversion errors."
            (cut string-append "http://" <>))
        '("ci.guix.gnu.org"
          "bordeaux.guix.gnu.org"
-         "build.pantherx.org")))
+         "build.pantherx.org"
+         "packages.pantherx.org")))
 
 (define (current-user-name)
   "Return the name of the calling user."

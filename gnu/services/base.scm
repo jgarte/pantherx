@@ -1506,7 +1506,8 @@ archive' public keys, with GUIX."
   ;; List of authorized substitute keys.
   (list (file-append guix "/share/guix/berlin.guix.gnu.org.pub")
         (file-append guix "/share/guix/bordeaux.guix.gnu.org.pub")
-        (file-append guix "/share/guix/build.pantherx.org.pub")))
+        (file-append guix "/share/guix/build.pantherx.org.pub")
+        (file-append guix "/share/guix/packages.pantherx.org.pub")))
 
 (define-record-type* <guix-configuration>
   guix-configuration make-guix-configuration

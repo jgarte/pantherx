@@ -722,7 +722,9 @@ load path."
                   ("share/guix/bordeaux.guix.gnu.org.pub"
                    ,(file-append* source "/etc/substitutes/bordeaux.guix.gnu.org.pub"))
                   ("share/guix/build.pantherx.org.pub"  ;alias
-                   ,(file-append* source "/etc/substitutes/build.pantherx.org.pub")))))
+                   ,(file-append* source "/etc/substitutes/build.pantherx.org.pub"))
+                  ("share/guix/packages.pantherx.org.pub"  ;alias
+                   ,(file-append* source "/etc/substitutes/packages.pantherx.org.pub")))))
 
 (define* (whole-package name modules dependencies
                         #:key
