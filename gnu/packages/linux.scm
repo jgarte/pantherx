@@ -33,7 +33,7 @@
 ;;; Copyright © 2018 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2018 Vasile Dumitrascu <va511e@yahoo.com>
 ;;; Copyright © 2019 Tim Gesthuizen <tim.gesthuizen@yahoo.de>
-;;; Copyright © 2019, 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2019, 2020, 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2019 Stefan Stefanović <stefanx2ovic@gmail.com>
 ;;; Copyright © 2019 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2019, 2020, 2021 Brice Waegeneire <brice@waegenei.re>
@@ -47,12 +47,12 @@
 ;;; Copyright © 2020 John Soo <jsoo1@asu.edu>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Anders Thuné <asse.97@gmail.com>
-;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2020, 2021 Greg Hogan <code@greghogan.com>
 ;;; Copyright © 2020 Zhu Zihao <all_but_last@163.com>
 ;;; Copyright © 2020 David Dashyan <mail@davie.li>
 ;;; Copyright © 2020 pukkamustard <pukkamustard@posteo.net>
 ;;; Copyright © 2021 B. Wilson <elaexuotee@wilsonb.com>
+;;; Copyright © 2021 Ivan Gankevich <i.gankevich@spbu.ru>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -164,7 +164,8 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
-  #:use-module (ice-9 match))
+  #:use-module (ice-9 match)
+  #:use-module (ice-9 regex))
 
 (define-public (system->linux-architecture arch)
   "Return the Linux architecture name for ARCH, a Guix system name such as
@@ -355,36 +356,36 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The current "stable" kernels. That is, the most recently released major
 ;; versions that are still supported upstream.
-(define-public linux-libre-5.12-version "5.12.15")
-(define deblob-scripts-5.12
+(define-public linux-libre-5.13-version "5.13.7")
+(define deblob-scripts-5.13
   (linux-libre-deblob-scripts
-   linux-libre-5.12-version
-   (base32 "1vdsr9y4gckknrbqcjyfakwva3k0vb5zcivzk3k1s9mh7qp9dils")
-   (base32 "1p1jzrci97sipjdx3h0vmdnw35z2vyvczinxmp65xi1ja7ww0g14")))
-(define-public linux-libre-5.12-pristine-source
-  (let ((version linux-libre-5.12-version)
-        (hash (base32 "1nlgwcxfhxzf5wak8c0gamn4k8vpdllzqlpqqn5fa08cdjcymz27")))
+   linux-libre-5.13-version
+   (base32 "08xai5zqgk0y0rwhssf81lf8vivjg12wjkv7855l3ljkivgjclbf")
+   (base32 "153jf5l5x4438zgxwggaky2ahjlfl48j438vhpzks6h77lzc51a5")))
+(define-public linux-libre-5.13-pristine-source
+  (let ((version linux-libre-5.13-version)
+        (hash (base32 "0fg41dv62vsnv2hywym15zz0n08rhdzwqvcarspm9r5gac85c7pr")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
-                            deblob-scripts-5.12)))
+                            deblob-scripts-5.13)))
 
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
-(define-public linux-libre-5.10-version "5.10.48")
+(define-public linux-libre-5.10-version "5.10.55")
 (define deblob-scripts-5.10
   (linux-libre-deblob-scripts
    linux-libre-5.10-version
-   (base32 "1rmnx1px4sizs2lq831yd2g9dyflg0vmykz3cv9443x2a2vwy81f")
-   (base32 "1zsr02zmpx3968277sy8pfs2mdlgh86ifymwyj0r56wnhzf5q6hk")))
+   (base32 "16w9r5h8r8j5ckq2brr15xgdq3ksr2pgwcmjx5a7bqry8a60i3m4")
+   (base32 "0c9x07gplzajm0h5if3fpw2rvfb7psw3yp7i2n6ws7ggq1dvmki2")))
 (define-public linux-libre-5.10-pristine-source
   (let ((version linux-libre-5.10-version)
-        (hash (base32 "0pn24bkz9mkphv9f634117zam0ak6q3pbpfwv0l5kf71h0s1klfv")))
+        (hash (base32 "12c8zrbj2c578ysz6j72g4azk0wj39z4aay3bjy9b837mlyi30bm")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.10)))
 
-(define-public linux-libre-5.4-version "5.4.130")
+(define-public linux-libre-5.4-version "5.4.137")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
    linux-libre-5.4-version
@@ -392,12 +393,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1xghbbnaisjd0k1klbyn1p7r6r4x5a1bpmkm56a3gh2zvw4s7mj8")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "0ywwy6g0fd05fxgwsrycz2l6khjljxa3qbi6hywp3rjgmgxp2ak6")))
+        (hash (base32 "0z0zlfm9jkwk3wi059q66xjx33qk2zpjk8ndhzlbvn75dhv5x7ph")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.196")
+(define-public linux-libre-4.19-version "4.19.200")
 (define deblob-scripts-4.19
   (linux-libre-deblob-scripts
    linux-libre-4.19-version
@@ -405,12 +406,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1jiaw0as1ippkrjdpd52657w5mz9qczg3y2hlra7m9k0xawwiqlf")))
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "0liapgaczv6lq7223wnq2cbwfb6w93iw14dv1xidcb3bnakm4h5f")))
+        (hash (base32 "06q8ws1lsrvhssp9qwdlq47sbsf7wzzxbp97sdjfnvmlqvchjx1h")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.238")
+(define-public linux-libre-4.14-version "4.14.241")
 (define deblob-scripts-4.14
   (linux-libre-deblob-scripts
    linux-libre-4.14-version
@@ -418,12 +419,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1qij18inijj6c3ma8hv98yjagnzxdxyn134da9fd23ky8q6hbvky")))
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "1phjgm1fhyfpm2h9b2bngcbh91v2qrxcm7vma86q7pdqrcbh1fih")))
+        (hash (base32 "0zczi2hv6ib67niycn6s2gaw73y0nxz0c75w11xa4jqmf2xh9fxm")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.274")
+(define-public linux-libre-4.9-version "4.9.277")
 (define deblob-scripts-4.9
   (linux-libre-deblob-scripts
    linux-libre-4.9-version
@@ -431,12 +432,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0fxajshb75siq39lj5h8xvhdj8lcmddkslwlyj65rhlwk6g2r4b2")))
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "0xdi33f25lbpplx36cz7chdsn7a6xdjvwxgvnmvrw7b2y0g45m95")))
+        (hash (base32 "1pkjcz9llc7hkmzfyjcx20b5njnqbkwlzyy1ncc8na71nn6rvsg6")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.274")
+(define-public linux-libre-4.4-version "4.4.277")
 (define deblob-scripts-4.4
   (linux-libre-deblob-scripts
    linux-libre-4.4-version
@@ -444,7 +445,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0hhin1jpfkd6nwrb6xqxjzl3hdxy4pn8a15hy2d3d83yw6pflbsf")))
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "1n4wawk8fi5s22177994vq9hzay49cackdabl9r1x8y2i9jcqmg4")))
+        (hash (base32 "1m5zkssh523f15fvy80rcvfwqzdkldz3jhny6vbaj8q0zvk3w5r5")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -477,8 +478,8 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
     (patches (append (origin-patches source)
                      patches))))
 
-(define-public linux-libre-5.12-source
-  (source-with-patches linux-libre-5.12-pristine-source
+(define-public linux-libre-5.13-source
+  (source-with-patches linux-libre-5.13-pristine-source
                        (list %boot-logo-patch
                              %linux-libre-arm-export-__sync_icache_dcache-patch
                              ;; Pinebook Pro patch to fix LCD display
@@ -592,9 +593,9 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
     (description "Headers of the Linux-Libre kernel.")
     (license license:gpl2)))
 
-(define-public linux-libre-headers-5.12
-  (make-linux-libre-headers* linux-libre-5.12-version
-                             linux-libre-5.12-source))
+(define-public linux-libre-headers-5.13
+  (make-linux-libre-headers* linux-libre-5.13-version
+                             linux-libre-5.13-source))
 
 (define-public linux-libre-headers-5.10
   (make-linux-libre-headers* linux-libre-5.10-version
@@ -891,16 +892,16 @@ It has been modified to remove all non-free binary blobs.")
 ;;; Generic kernel packages.
 ;;;
 
-(define-public linux-libre-5.12
-  (make-linux-libre* linux-libre-5.12-version
-                     linux-libre-5.12-source
+(define-public linux-libre-5.13
+  (make-linux-libre* linux-libre-5.13-version
+                     linux-libre-5.13-source
                      '("x86_64-linux" "i686-linux" "armhf-linux" "aarch64-linux" "riscv64-linux")
                      #:configuration-file kernel-config))
 
-(define-public linux-libre-version         linux-libre-5.12-version)
-(define-public linux-libre-pristine-source linux-libre-5.12-pristine-source)
-(define-public linux-libre-source          linux-libre-5.12-source)
-(define-public linux-libre                 linux-libre-5.12)
+(define-public linux-libre-version         linux-libre-5.13-version)
+(define-public linux-libre-pristine-source linux-libre-5.13-pristine-source)
+(define-public linux-libre-source          linux-libre-5.13-source)
+(define-public linux-libre                 linux-libre-5.13)
 
 (define-public linux-libre-5.10
   (make-linux-libre* linux-libre-5.10-version
@@ -1114,8 +1115,8 @@ It has been modified to remove all non-free binary blobs.")
 (define-public linux-libre-with-bpf
   (let ((base-linux-libre
          (make-linux-libre*
-          linux-libre-5.12-version
-          linux-libre-5.12-source
+          linux-libre-5.13-version
+          linux-libre-5.13-source
           '("x86_64-linux" "i686-linux" "armhf-linux"
             "aarch64-linux" "riscv64-linux")
           #:extra-version "bpf"
@@ -1619,6 +1620,31 @@ at login.  Local and dynamic reconfiguration are its key features.")
 ;;;
 ;;; Miscellaneous.
 ;;;
+
+(define-public powercap
+  (package
+    (name "powercap")
+    (version "0.4.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/powercap/powercap")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1hp2i1d195v0n4jgvgaymkxlpgyhn07ic273gkda95lz65cdfcgm"))))
+    (build-system cmake-build-system)
+    (arguments
+     '(#:configure-flags
+       '("-DBUILD_SHARED_LIBS=ON")))
+    (home-page "https://github.com/powercap/powercap")
+    (synopsis "Utilities for accessing the powercap Linux kernel feature")
+    (description "This package contains utilities for accessing the powercap
+Linux kernel feature through sysfs.  It includes an implementation for working
+with Intel @acronym{RAPL, Running Average Power Limit}.
+It provides the commands @code{powercap-info} and @code{powercap-set}.")
+    (license license:bsd-3)))
 
 (define-public powerstat
   (package
@@ -3053,7 +3079,9 @@ processes currently causing I/O.")
                 "1ddlq6kzxilccgbvxjfx80jx6kamgw4sv49phks2zhlcc1frvrnh"))
               (patches (search-patches "fuse-overlapping-headers.patch"))))
     (build-system gnu-build-system)
-    (inputs `(("util-linux" ,util-linux)))
+    (inputs
+     `(("bash-minimal" ,bash-minimal)
+       ("util-linux" ,util-linux)))
     (arguments
      '(#:configure-flags (list (string-append "MOUNT_FUSE_PATH="
                                               (assoc-ref %outputs "out")
@@ -3076,9 +3104,9 @@ processes currently causing I/O.")
                (("/bin/(u?)mount" _ maybe-u)
                 (string-append (assoc-ref inputs "util-linux")
                                "/bin/" maybe-u "mount")))
-             (substitute* '("util/mount.fuse.c")
-               (("/bin/sh")
-                (which "sh")))
+             (substitute* "util/mount.fuse.c"
+               (("/bin/sh" command)
+                (string-append (assoc-ref inputs "bash-minimal") command)))
 
              ;; This hack leads libfuse to search for 'fusermount' in
              ;; $PATH, where it may find a setuid-root binary, instead of
@@ -3086,8 +3114,7 @@ processes currently causing I/O.")
              ;; it's not setuid.
              (substitute* "lib/Makefile"
                (("-DFUSERMOUNT_DIR=[[:graph:]]+")
-                "-DFUSERMOUNT_DIR=\\\"/var/empty\\\""))
-             #t)))))
+                "-DFUSERMOUNT_DIR=\\\"/var/empty\\\"")))))))
     (supported-systems (delete "i586-gnu" %supported-systems))
     (home-page "https://github.com/libfuse/libfuse")
     (synopsis "Support file systems implemented in user space")
@@ -3721,7 +3748,7 @@ devices that can inject events directly into the input subsystem.")
 (define-public interception-dual-function-keys
   (package
     (name "interception-dual-function-keys")
-    (version "1.3.0")
+    (version "1.4.0")
     (home-page "https://gitlab.com/interception/linux/plugins/dual-function-keys")
     (source (origin
               (method git-fetch)
@@ -3731,14 +3758,15 @@ devices that can inject events directly into the input subsystem.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1gvhkmwzl5fyyc7k8rc4rf2b9mzh05wa8wcybf9hz2x1mqkc7lmz"))))
+                "0s49vbg3j4rwh78i8rx8qr7myql09p7b3lhrjl0p7dd98xp6ann6"))))
     (build-system gnu-build-system)
     (inputs
      `(("libevdev" ,libevdev)
        ("yaml-cpp" ,yaml-cpp)))
     (arguments
-     `(#:make-flags (list "CC=gcc" "CXX=g++"
-                          (string-append "PREFIX=" (assoc-ref %outputs "out")))
+     `(#:make-flags (list ,(string-append "CC=" (cc-for-target))
+                          ,(string-append "CXX=" (cxx-for-target))
+                          (string-append "PREFIX=" %output))
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'fix-libevdev-path
@@ -3749,9 +3777,9 @@ devices that can inject events directly into the input subsystem.")
                   (string-append libevdev "/include/libevdev-1.0")))
                #t)))
          ;; No configure script
-         (delete 'configure)
-         ;; No target 'check'
-         (delete 'check))))
+         (delete 'configure))
+       ;; No tests are included.
+       #:tests? #f))
     (synopsis "Tap for one key, hold for another")
     (description
      "Dual Function Keys is a plugin for @code{interception-tools} that allows
@@ -5206,7 +5234,7 @@ and copy/paste text in the console and in xterm.")
 (define-public btrfs-progs
   (package
     (name "btrfs-progs")
-    (version "5.12.1")
+    (version "5.13")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://kernel.org/linux/kernel/"
@@ -5214,7 +5242,7 @@ and copy/paste text in the console and in xterm.")
                                   "btrfs-progs-v" version ".tar.xz"))
               (sha256
                (base32
-                "0n9p8zaz4nrkgc20cp6zj7gp4ib4hd4lbyph74f4pysllkz4c24m"))))
+                "0hsqbv7kvw5j2669xmp226cf7mgdfyq6xg8vjhm5w9ix43922aaf"))))
     (build-system gnu-build-system)
     (outputs '("out"
                "static"))      ; static versions of the binaries in "out"
@@ -6811,7 +6839,9 @@ userspace queueing component and the logging subsystem.")
 (define-public proot
   (package
     (name "proot")
-    (version "5.1.0")
+    ;; The last stable release was made in 2015, and fails to build for
+    ;; the aarch64 platform.
+    (version "5.2.0-alpha")
     (source
      (origin
        (method git-fetch)
@@ -6820,32 +6850,33 @@ userspace queueing component and the logging subsystem.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0azsqis99gxldmbcg43girch85ysg4hwzf0h1b44bmapnsm89fbz"))
-       (patches (search-patches "proot-test-fhs.patch"))))
+        (base32 "09vp806y4hqfq2fn2hpi873rh4j6a3c572ph4mkirx1n32wj8srl"))))
     (build-system gnu-build-system)
+    ;; The powerpc64le-linux and mips64el-linux architectures are not
+    ;; supported (see:
+    ;; https://github.com/proot-me/proot/blob/master/src/arch.h#L51).
+    (supported-systems '("x86_64-linux" "i686-linux"
+                         "armhf-linux" "aarch64-linux" "i586-gnu"))
     (arguments
-     '(#:make-flags '("-C" "src")
-
+     ;; Disable the test suite on ARM platforms, as there are too many
+     ;; failures to keep track of (see for example:
+     ;; https://github.com/proot-me/proot/issues/263).
+     `(#:tests? ,(not (string-match "^(arm|aarch64)"
+                                    (or (%current-target-system)
+                                        (%current-system))))
+       #:make-flags '("-C" "src")
        #:phases (modify-phases %standard-phases
-                  (delete 'configure)
-                  (add-before 'build 'set-shell-file-name
+                  (add-after 'unpack 'patch-sources
                     (lambda* (#:key inputs #:allow-other-keys)
                       (substitute* (find-files "src" "\\.[ch]$")
                         (("\"/bin/sh\"")
-                         (string-append "\""
-                                        (assoc-ref inputs "bash")
+                         (string-append "\"" (assoc-ref inputs "bash")
                                         "/bin/sh\"")))
-                      #t))
-                  (add-before 'check 'fix-fhs-assumptions-in-tests
-                    (lambda _
-                      (substitute* "tests/test-c6b77b77.mk"
-                        (("/bin/bash") (which "bash"))
-                        (("/usr/bin/test") (which "test")))
-                      (substitute* '("tests/test-16573e73.c")
-                        (("/bin/([a-z-]+)" _ program)
-                         (which program)))
 
-                      (substitute* (find-files "tests" "\\.sh$")
+                      (substitute* "src/GNUmakefile"
+                        (("/bin/echo") (which "echo")))
+
+                      (substitute* (find-files "test" "\\.sh$")
                         ;; Some of the tests try to "bind-mount" /bin/true.
                         (("-b /bin/true:")
                          (string-append "-b " (which "true") ":"))
@@ -6855,30 +6886,65 @@ userspace queueing component and the logging subsystem.")
                         (("/bin/sh") (which "sh"))
                         ;; Others assume /etc/fstab exists.
                         (("/etc/fstab") "/etc/passwd"))
-
-                      (substitute* "tests/GNUmakefile"
+                      (substitute* "test/GNUmakefile"
                         (("-b /bin:") "-b /gnu:"))
+                      (substitute* "test/test-c6b77b77.mk"
+                        (("/bin/bash") (which "bash"))
+                        (("/usr/bin/test") (which "test")))
+                      (substitute* "test/test-16573e73.c"
+                        (("/bin/([a-z-]+)" _ program)
+                         (which program)))
+                      (substitute* "test/test-d2175fc3.sh"
+                        (("\\^/bin/true\\$") "$(which true)"))
+                      (substitute* "test/test-5467b986.sh"
+                        (("-w /usr") "-w /gnu")
+                        (("-w usr") "-w gnu")
+                        (("/usr/share") "/gnu/store")
+                        (("share") "store"))
+                      (substitute* "test/test-092c5e26.sh"
+                        (("-q echo ")
+                         "-q $(which echo) "))
+
+                      ;; The following tests are known to fail (see:
+                      ;; https://github.com/proot-me/proot/issues/184).
+                      (delete-file "test/test-0228fbe7.sh")
+                      (delete-file "test/test-2db65cd2.sh")
+
+                      ;; This one fails with "bind: Address already in use"
+                      ;; (see: https://github.com/proot-me/proot/issues/260).
+                      (delete-file "test/test-ssssssss.c")
+
+                      ;; This one fails on a waitpid call that returns 1 (see:
+                      ;; https://github.com/proot-me/proot/issues/261).
+                      (delete-file "test/test-ptrace01.c")
 
                       ;; XXX: This test fails in an obscure corner case, just
                       ;; skip it.
-                      (delete-file "tests/test-kkkkkkkk.c")
+                      (delete-file "test/test-kkkkkkkk.c")
 
-                      #t))
-                  (replace 'check
+                      ;; The socket tests requires networking.
+                      (for-each delete-file
+                                (find-files "test" "test-socket.*\\.sh$"))))
+                  (delete 'configure)
+                  (add-after 'build 'build-manpage
                     (lambda _
-                      (let ((n (parallel-job-count)))
-                        ;; For some reason we get lots of segfaults with
-                        ;; seccomp support (x86_64, Linux-libre 4.11.0).
-                        (setenv "PROOT_NO_SECCOMP" "1")
-
-                        ;; Most of the tests expect "/bin" to be in $PATH so
-                        ;; they can run things that live in $ROOTFS/bin.
-                        (setenv "PATH"
-                                (string-append (getenv "PATH") ":/bin"))
-
-                        (invoke "make" "check" "-C" "tests"
-                                ;;"V=1"
-                                "-j" (number->string n)))))
+                      (with-directory-excursion "doc"
+                        (invoke "make" "proot/man.1" "SUFFIX=.py"))))
+                  (replace 'check
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (when tests?
+                        (let ((n (parallel-job-count)))
+                          ;; There are lots of segfaults with seccomp support
+                          ;; (x86_64, Linux-libre 4.11.0) (see:
+                          ;; https://github.com/proot-me/proot/issues/106).
+                          (setenv "PROOT_NO_SECCOMP" "1")
+                          ;; Most of the tests expect "/bin" to be in $PATH so
+                          ;; they can run things that live in $ROOTFS/bin.
+                          (setenv "PATH"
+                                  (string-append (getenv "PATH") ":/bin"))
+                          (invoke "make" "check" "-C" "test"
+                                  ;;"V=1"
+                                  "-j" (number->string n))))))
                   (replace 'install
                     (lambda* (#:key outputs #:allow-other-keys)
                       ;; The 'install' rule does nearly nothing.
@@ -6888,25 +6954,22 @@ userspace queueing component and the logging subsystem.")
                         ;; build currently.)
                         (invoke "make" "-C" "src" "install"
                                 (string-append "PREFIX=" out))
-
                         (mkdir-p man1)
                         (copy-file "doc/proot/man.1"
-                                   (string-append man1 "/proot.1"))
-                        #t))))))
+                                   (string-append man1 "/proot.1"))))))))
     (native-inputs `(("which" ,which)
-
                      ;; For 'mcookie', used by some of the tests.
                      ("util-linux" ,util-linux)
-
                      ;; XXX: Choose the old coreutils because its 'stat'
                      ;; program does not use statx(2) when running 'stat -c
-                     ;; %a' or similar, which PRoot doesn't properly support.
+                     ;; %a' or similar, which PRoot doesn't properly support
+                     ;; (see: https://github.com/proot-me/proot/issues/262).
                      ("coreutils-old" ,coreutils-8.30)
-
-                     ;; XXX: 'test-c6b77b77.sh' runs 'make' and that leads
-                     ;; make 4.3 to segfault.
-                     ("make-old" ,gnu-make-4.2)))
-    (inputs `(("talloc" ,talloc)))
+                     ("pkg-config" ,pkg-config)
+                     ;; For rst2man, used to generate the manual page.
+                     ("python-docutils" ,python-docutils)))
+    (inputs `(("libarchive" ,libarchive)
+              ("talloc" ,talloc)))
     (home-page "https://github.com/proot-me/PRoot")
     (synopsis "Unprivileged chroot, bind mount, and binfmt_misc")
     (description
@@ -8248,3 +8311,39 @@ Availability and Serviceability} reports from Linux kernel trace events.
 These trace events are logged in @file{/sys/kernel/debug/tracing} and reported
 through standard log mechanisms like syslog.")
     (license license:gpl2)))
+
+(define-public libgpiod
+  (package
+    (name "libgpiod")
+    (version "1.6.3")
+    (source
+      (origin
+        (method git-fetch)
+        (uri
+          (git-reference
+            (url "https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git")
+            (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256 (base32 "0rv8a11hx3pc6sdw6nfc6k35hkp2clb3v53n1381cvip8fzhbsad"))))
+    (build-system gnu-build-system)
+    (arguments
+      `(#:configure-flags
+        '("--enable-tools=yes"
+          "--enable-bindings-cxx"
+          "--enable-bindings-python")))
+    (native-inputs
+      `(("automake" ,automake)
+        ("autoconf" ,autoconf)
+        ("libtool" ,libtool)
+        ("autoconf-archive" ,autoconf-archive)
+        ("pkg-config" ,pkg-config)
+        ("python" ,python-3)))
+    (synopsis "Interact with the Linux GPIO character device")
+    (description
+     "This package provides a C library with C++/Python bindings and
+command-line tools for interacting with GPIO devices that avoids the usage of
+older system-wide @file{/sys} interface.")
+    (home-page "https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/")
+    (license (list license:lgpl2.1+   ;; libgpiod
+                   license:gpl2+      ;; gpio-tools
+                   license:lgpl3+)))) ;; C++ bindings

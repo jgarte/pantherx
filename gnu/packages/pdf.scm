@@ -78,6 +78,7 @@
   #:use-module (gnu packages libffi)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lua)
+  #:use-module (gnu packages man)
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages photo)
@@ -605,7 +606,7 @@ by using the poppler rendering engine.")
 (define-public zathura
   (package
     (name "zathura")
-    (version "0.4.7")
+    (version "0.4.8")
     (source (origin
               (method url-fetch)
               (uri
@@ -613,7 +614,7 @@ by using the poppler rendering engine.")
                               version ".tar.xz"))
               (sha256
                (base32
-                "1rx1fk9s556fk59lmqgvhwrmv71ashh89bx9adjq46wq5gzdn4p0"))))
+                "1nr0ym1mi2afk4ycdf1ppmkcv7i7hyzwn4p3r4m0j2qm3nvaiami"))))
     (native-inputs `(("pkg-config" ,pkg-config)
                      ("gettext" ,gettext-minimal)
                      ("glib:bin" ,glib "bin")
@@ -897,7 +898,7 @@ using a stylus.")
 (define-public xournalpp
   (package
     (name "xournalpp")
-    (version "1.0.20")
+    (version "1.1.0")
     (source
      (origin
        (method git-fetch)
@@ -906,7 +907,7 @@ using a stylus.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1c7n03xm3m4lwcwxgplkn25i8c6s3i7rijbkcx86br1j4jadcs3k"))))
+        (base32 "0ldf58l5sqy52x5dqfpdjdh7ldjilj9mw42jzsl5paxg0md2k0hl"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags (list "-DENABLE_CPPUNIT=ON") ;enable tests
@@ -920,31 +921,31 @@ using a stylus.")
          (add-after 'unpack 'fix-permissions-on-po-files
            (lambda _
              ;; Make sure 'msgmerge' can modify the PO files.
-             (for-each (lambda (po) (chmod po #o666))
-                       (find-files "." "\\.po$"))
-             #t))
+             (for-each make-file-writable
+                       (find-files "." "\\.po$"))))
          ;; Fix path to addr2line utility, which the crash reporter uses.
          (add-after 'unpack 'fix-paths
            (lambda* (#:key inputs #:allow-other-keys)
              (substitute* "src/util/Stacktrace.cpp"
                ;; Match only the commandline.
                (("\"addr2line ")
-                (string-append "\"" (which "addr2line") " ")))
-             #t))
+                (string-append "\"" (which "addr2line") " ")))))
          (add-after 'install 'glib-or-gtk-wrap
            (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-wrap)))))
     (native-inputs
      `(("cppunit" ,cppunit)
+       ("gcc" ,gcc-8)
        ("gettext" ,gettext-minimal)
+       ("help2man" ,help2man)
        ("pkg-config" ,pkg-config)))
     (inputs
      `(("alsa-lib" ,alsa-lib)
-       ("glib" ,glib)
        ("gtk+" ,gtk+)
+       ("librsvg" ,librsvg)
        ("libsndfile" ,libsndfile)
        ("libxml2" ,libxml2)
        ("libzip" ,libzip)
-       ("lua" ,lua)                    ;FIXME: It cannot find the Lua library.
+       ("lua" ,lua)
        ("poppler" ,poppler)
        ("portaudio" ,portaudio)
        ("texlive-bin" ,texlive-bin)))

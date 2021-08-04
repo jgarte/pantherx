@@ -490,7 +490,7 @@ interface.")
 (define-public qutebrowser
   (package
     (name "qutebrowser")
-    (version "2.2.2")
+    (version "2.3.1")
     (source
      (origin
        (method url-fetch)
@@ -498,7 +498,7 @@ interface.")
                            "qutebrowser/releases/download/v" version "/"
                            "qutebrowser-" version ".tar.gz"))
        (sha256
-        (base32 "11vjp20gzmdjj09b7wxzn7ar6viih0bk76y618yqsyqqkffylmbq"))))
+        (base32 "05n64mw9lzzxpxr7lhakbkm9ir3x8p0rwk6vbbg01aqg5iaanyj0"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-attrs" ,python-attrs))) ; for tests
@@ -912,22 +912,19 @@ interface.")
 (define-public telescope
   (package
     (name "telescope")
-    (version "0.3")
+    (version "0.4.1")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "https://git.omarpolo.com/telescope/snapshot/"
-                           "telescope-" version ".tar.gz"))
+       (uri (string-append "https://github.com/omar-polo/telescope/releases/download/"
+                           version "/telescope-" version ".tar.gz"))
        (sha256
-        (base32 "1wg5x04n9iri7jx1lzhmd79j41grhjm3mpxn9qq9nf8n102wlvm3"))))
+        (base32 "086zps4nslv5isfw1b5gvms7vp3fglm7x1a6ks0h0wxarzj350bl"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ;no tests
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("bison"   ,bison)
-       ("gettext" ,gettext-minimal)))
+     `(("gettext" ,gettext-minimal)))
     (inputs
      `(("libevent"  ,libevent)
        ("libressl"  ,libressl)

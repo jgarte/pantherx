@@ -15,7 +15,7 @@
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2017 Thomas Danckaert <post@thomasdanckaert.be>
-;;; Copyright © 2017, 2018, 2019, 2020 Paul Garlick <pgarlick@tourbillion-technology.com>
+;;; Copyright © 2017, 2018, 2019, 2020, 2021 Paul Garlick <pgarlick@tourbillion-technology.com>
 ;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017 Ben Woodcroft <donttrustben@gmail.com>
 ;;; Copyright © 2017 Theodoros Foradis <theodoros@foradis.org>
@@ -46,6 +46,8 @@
 ;;; Copyright © 2021 Franck Pérignon <franck.perignon@univ-grenoble-alpes.fr>
 ;;; Copyright © 2021 Philip McGrath <philip@philipmcgrath.com>
 ;;; Copyright © 2021 Paul A. Patience <paul@apatience.com>
+;;; Copyright © 2021 Ivan Gankevich <i.gankevich@spbu.ru>
+;;; Copyright © 2021 Jean-Baptiste Volatier <jbv@pm.me>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -122,9 +124,11 @@
   #:use-module (gnu packages m4)
   #:use-module (gnu packages mpi)
   #:use-module (gnu packages multiprecision)
+  #:use-module (gnu packages ncurses)
   #:use-module (gnu packages netpbm)
   #:use-module (gnu packages ocaml)
   #:use-module (gnu packages onc-rpc)
+  #:use-module (gnu packages parallel)
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages popt)
   #:use-module (gnu packages perl)
@@ -171,6 +175,39 @@ logical symbols and its natural deduction interface make it easy to use for
 beginners.")
     (license license:gpl3+)
     (home-page "https://www.gnu.org/software/aris/")))
+
+(define-public bitwise
+  (package
+    (name "bitwise")
+    (version "0.42")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://github.com/mellowcandle/bitwise"
+                                  "/releases/download/v" version
+                                  "/bitwise-v" version ".tar.gz"))
+              (sha256
+               (base32 "1lniw4bsb5qs5ybf018qllf95pzixb1q3lvybzl4k3xz8zpkrm6k"))))
+    (build-system gnu-build-system)
+    (inputs
+     `(("ncurses" ,ncurses)
+       ("readline" ,readline)))
+    (native-inputs
+     `(("cunit" ,cunit)
+       ("pkg-config" ,pkg-config)))
+    (synopsis "Terminal based bit manipulator in ncurses")
+    (description "Bitwise is a multi base interactive calculator supporting
+dynamic base conversion and bit manipulation.  It's a handy tool for low level
+hackers, kernel developers and device drivers developers.
+
+Some of the features include:
+@itemize
+@item Interactive ncurses interface.
+@item Command line calculator supporting all bitwise operations.
+@item Individual bit manipulator.
+@item Bitwise operations such as NOT, OR, AND, XOR, and shifts.
+@end itemize")
+    (license license:gpl3+)
+    (home-page "https://github.com/mellowcandle/bitwise/")))
 
 (define-public c-graph
   (package
@@ -1798,6 +1835,154 @@ large-scale nonlinear optimization.  It provides C++, C, and Fortran
 interfaces.")
     (license license:epl2.0)))
 
+(define-public nomad-optimizer
+  (package
+    (name "nomad-optimizer")
+    (version "4.1.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/bbopt/nomad/")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0w386d8r5ldbvnv0c0g7vz95pfpvwdxis26vaalk2amsa5akl775"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("python" ,python-wrapper)
+       ("python-cython" ,python-cython)))
+    (arguments
+     `(#:imported-modules ((guix build python-build-system)
+                           ,@%cmake-build-system-modules)
+       #:modules (((guix build python-build-system)
+                   #:select (python-version site-packages))
+                  (guix build cmake-build-system)
+                  (guix build utils))
+       #:configure-flags
+       '("-DBUILD_INTERFACES=ON"
+         "-DBUILD_TESTS=ON")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-sources-for-build
+           (lambda* (#:key outputs #:allow-other-keys)
+             (substitute* "CMakeLists.txt"
+               ;; CMAKE_INSTALL_PREFIX is accidentally hardcoded.
+               (("set\\(CMAKE_INSTALL_PREFIX .* FORCE\\)") "")
+               ;; Requiring GCC version 8 or later is unwarranted.
+               (("message\\(FATAL_ERROR \"GCC version < 8")
+                "message(STATUS \"GCC version < 8"))
+
+             (let ((out (assoc-ref outputs "out")))
+               (substitute* "interfaces/PyNomad/CMakeLists.txt"
+                 ;; We don't want to build in-place, and anyway the install
+                 ;; command further below runs build_ext as a prerequisite.
+                 (("COMMAND python setup_PyNomad\\.py .* build_ext --inplace\n")
+                  "")
+                 ;; Don't install locally.
+                 (("COMMAND python (setup_PyNomad\\.py .* install) --user\n"
+                   _ args)
+                  (string-append "COMMAND ${CMAKE_COMMAND} -E env"
+                                 " CC=" ,(cc-for-target)
+                                 " CXX=" ,(cxx-for-target)
+                                 " " (which "python")
+                                 " " args
+                                 " --prefix=" out
+                                 "\n")))
+               ;; Fix erroneous assumptions about the paths of the include and
+               ;; library directories.
+               (substitute* "interfaces/PyNomad/setup_PyNomad.py"
+                 (("^( +os_include_dirs = ).*" _ prefix)
+                  (string-append prefix "[\"../../src\"]\n"))
+                 (("^(installed_lib_dir = ).*" _ prefix)
+                  (string-append prefix "\"" out "/lib\"\n"))))
+             #t))
+
+         ;; Fix the tests so they run in out-of-source builds.
+         (add-after 'fix-sources-for-build 'fix-sources-for-tests
+           (lambda _
+             (substitute*
+                 (map (lambda (d) (string-append "examples/" d "/CMakeLists.txt"))
+                      (append
+                       (map (lambda (d) (string-append "basic/library/" d))
+                            '("example1" "example2" "example3"
+                              "single_obj_parallel"))
+                       (map (lambda (d) (string-append "advanced/library/" d))
+                            '("FixedVariable" "NMonly" "PSDMads" "Restart"
+                              "c_api/example1" "c_api/example2"
+                              "exampleSuggestAndObserve"))))
+               ;; The built examples are assumed to be in the source tree
+               ;; (which isn't the case here).
+               (("(COMMAND \\$\\{CMAKE_BINARY_DIR\\}/examples/runExampleTest\\.sh )\\.(/.*)"
+                 _ command test)
+                (string-append command "${CMAKE_CURRENT_BINARY_DIR}" test)))
+             ;; (Unrelated to support for out-of-source testing.)
+             (make-file-writable
+              "examples/advanced/library/exampleSuggestAndObserve/cache0.txt")
+
+             (let* ((builddir (string-append (getcwd) "/../build"))
+                    ;; The BB_EXE and SURROGATE_EXE paths are interpreted
+                    ;; relative to the configuration file provided to NOMAD.
+                    ;; However, the configuration files are all in the source
+                    ;; tree rather than in the build tree (unlike the compiled
+                    ;; executables).
+                    (fix-exe-path (lambda* (dir #:optional
+                                                (file "param.txt")
+                                                (exe-opt "BB_EXE"))
+                                    (substitute* (string-append dir "/" file)
+                                      (((string-append "^" exe-opt " +"))
+                                       ;; The $ prevents NOMAD from prefixing
+                                       ;; the executable with the path of the
+                                       ;; parent directory of the configuration
+                                       ;; file NOMAD was provided with as
+                                       ;; argument (param.txt or some such).
+                                       (string-append exe-opt " $"
+                                                      builddir "/" dir "/"))))))
+               (for-each
+                (lambda (dir)
+                  (let ((dir (string-append "examples/" dir)))
+                    (substitute* (string-append dir "/CMakeLists.txt")
+                      ;; The install phase has not yet run.
+                      (("COMMAND \\$\\{CMAKE_INSTALL_PREFIX\\}/bin/nomad ")
+                       "COMMAND ${CMAKE_BINARY_DIR}/src/nomad "))
+                    (fix-exe-path dir)
+                    (when (equal? dir "examples/basic/batch/surrogate_sort")
+                      (fix-exe-path dir "param.txt" "SURROGATE_EXE"))))
+                (append (map (lambda (d) (string-append "basic/batch/" d))
+                             '("example1" "example2"
+                               "single_obj" "single_obj_parallel"
+                               "surrogate_sort"))
+                        '("advanced/batch/LHonly")))
+
+               (let ((dir "examples/advanced/batch/FixedVariable"))
+                 (substitute* (string-append dir "/runFixed.sh")
+                   ;; Hardcoded path to NOMAD executable.
+                   (("^\\.\\./\\.\\./\\.\\./\\.\\./bin/nomad ")
+                    (string-append builddir "/src/nomad ")))
+                 (for-each
+                  (lambda (f) (fix-exe-path dir f))
+                  '("param1.txt" "param2.txt" "param3.txt" "param10.txt"))))
+             #t))
+
+         ;; The information in the .egg-info file is not kept up to date.
+         (add-after 'install 'delete-superfluous-egg-info
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (delete-file (string-append
+                           (site-packages inputs outputs)
+                           "PyNomad-0.0.0-py"
+                           (python-version (assoc-ref inputs "python"))
+                           ".egg-info"))
+             #t)))))
+    (home-page "https://www.gerad.ca/nomad/")
+    (synopsis "Nonlinear optimization by mesh-adaptive direct search")
+    (description
+     "NOMAD is a C++ implementation of the mesh-adaptive direct search (MADS)
+algorithm, designed for difficult blackbox optimization problems.  These
+problems occur when the functions defining the objective and constraints are
+the result of costly computer simulations.")
+    (license license:lgpl3+)))
+
 (define-public cbc
   (package
     (name "cbc")
@@ -2258,7 +2443,7 @@ This is the certified version of the Open Cascade Technology (OCCT) library.")
 (define-public gmsh
   (package
     (name "gmsh")
-    (version "4.6.0")
+    (version "4.8.4")
     (source
      (origin
       (method git-fetch)
@@ -2266,11 +2451,10 @@ This is the certified version of the Open Cascade Technology (OCCT) library.")
             (url "https://gitlab.onelab.info/gmsh/gmsh.git")
             (commit
              (string-append "gmsh_"
-                            (string-map (lambda (x) (if (eq? x #\.) #\_ x))
-                                        version)))))
+                            (string-replace-substring version "." "_")))))
       (file-name (git-file-name name version))
       (sha256
-       (base32 "0m0pjxcy1bnr7a20i11lh0ih159pphq9wsvfjr3sfx4y3lginz5y"))
+       (base32 "07mi6ja3b9libgcdp2b4dwnkap1b9ha2wi2zdn9mhmwvp3g1pxhp"))
       (modules '((guix build utils)))
       (snippet
        '(begin
@@ -2280,22 +2464,48 @@ This is the certified version of the Open Cascade Technology (OCCT) library.")
     (propagated-inputs
      `(("fltk" ,fltk)
        ("gfortran" ,gfortran)
+       ("glu" ,glu)
        ("gmp" ,gmp)
        ("hdf5" ,hdf5)
        ("lapack" ,lapack)
-       ("mesa" ,mesa)
-       ("glu" ,glu)
-       ("metis" ,metis)
-       ("opencascade-occt" ,opencascade-occt)
        ("libx11" ,libx11)
-       ("libxext" ,libxext)))
+       ("libxext" ,libxext)
+       ("mesa" ,mesa)
+       ("metis" ,metis)
+       ("opencascade-occt" ,opencascade-occt)))
     (inputs
      `(("fontconfig" ,fontconfig)
-       ("libxft" ,libxft)))
+       ("libxft" ,libxft)
+       ("python" ,python)))
     (arguments
      `(#:configure-flags `("-DENABLE_SYSTEM_CONTRIB:BOOL=ON"
                            "-DENABLE_BUILD_SHARED:BOOL=ON"
-                           "-DENABLE_BUILD_DYNAMIC:BOOL=ON")))
+                           "-DENABLE_BUILD_DYNAMIC:BOOL=ON")
+       #:imported-modules (,@%cmake-build-system-modules
+                           (guix build python-build-system))
+       #:modules (((guix build python-build-system) #:select (site-packages))
+                  (guix build cmake-build-system)
+                  (guix build utils))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-paths
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             ;; Use the standard Guix site-package path for
+             ;; installation of the Python API.
+             (substitute* "CMakeLists.txt"
+               (("include\\(GNUInstallDirs\\)\n")
+                (string-append "include(GNUInstallDirs)\n"
+                               "  set(GMSH_PY_LIB "
+                               (site-packages inputs outputs) ")\n"))
+               (("\\$\\{GMSH\\_PY\\} DESTINATION \\$\\{GMSH\\_LIB\\}")
+                "${GMSH_PY} DESTINATION ${GMSH_PY_LIB}"))
+             ;; Find the shared library.
+             (let ((libgmsh (string-append (assoc-ref outputs "out")
+                                           "/lib/libgmsh.so")))
+               (substitute* "api/gmsh.py"
+                 (("find_library\\(\"gmsh\"\\)")
+                  (simple-format #f "\"~a\"" libgmsh))))
+             #t)))))
     (home-page "http://gmsh.info/")
     (synopsis "3D finite element grid generator")
     (description "Gmsh is a 3D finite element grid generator with a built-in
@@ -3526,31 +3736,32 @@ processor cores.")
     (synopsis "Parallel adaptive mesh refinement on forests of octrees")))
 
 (define-public gsegrafix
+  ;; This is an old and equally dead "experimental fork" of the longer-dead
+  ;; original. At least it no longer requires the even-deader libgnomeprint{,ui}
+  ;; libraries, instead rendering plots with Pango.
   (package
     (name "gsegrafix")
-    (version "1.0.6")
+    (version "1.0.7.2")
     (source
      (origin
-      (method url-fetch)
-      (uri (string-append "mirror://gnu/" name "/" name "-"
-                          version ".tar.gz"))
-      (sha256
-       (base32
-        "1b13hvx063zv970y750bx41wpx6hwd5ngjhbdrna8w8yy5kmxcda"))))
+       (method url-fetch)
+       (uri (string-append "mirror://savannah/gsegrafix-experimental/"
+                           "gsegrafix-experimental-" version ".tar.gz"))
+       (sha256
+        (base32 "0fwh6719xy2zasmqlp0vdx6kzm45hn37ga88xmw5cz0yx7xw4j6f"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:configure-flags '("LDFLAGS=-lm")))
+     `(#:configure-flags
+       (list "--disable-static")))
     (inputs
-     `(("libgnomecanvas" ,libgnomecanvas)
-       ("libbonoboui" ,libbonoboui)
-       ("libgnomeui" ,libgnomeui)
-       ("libgnomeprintui" ,libgnomeprintui)
-       ("popt" ,popt)))
+     `(("glib" ,glib)
+       ("gtk+" ,gtk+)))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (home-page "https://www.gnu.org/software/gsegrafix/")
     (synopsis "GNOME application to create scientific and engineering plots")
-    (description  "GSEGrafix is an application which produces high-quality graphical
+    (description
+     "GSEGrafix is an application which produces high-quality graphical
 plots for science and engineering.  Plots are specified via simple ASCII
 parameter files and data files and are presented in an anti-aliased GNOME
 canvas.  The program supports rectangular two-dimensional plots, histograms,
@@ -4009,7 +4220,7 @@ access to BLIS implementations via traditional BLAS routine calls.")
 (define-public openlibm
   (package
     (name "openlibm")
-    (version "0.6.0")
+    (version "0.7.4")
     (source
      (origin
        (method git-fetch)
@@ -4018,11 +4229,12 @@ access to BLIS implementations via traditional BLAS routine calls.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "08wfchmmr5200fvmn1kwq9byc1fhsq46hn0y5k8scdl74771c7gh"))))
+        (base32 "1azms0lpxb7vxb3bln5lyz0wpwx6jnzbffkclclpq2v5aiw8d14i"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
-       (list (string-append "prefix=" (assoc-ref %outputs "out")))
+       (list (string-append "prefix=" (assoc-ref %outputs "out"))
+             ,(string-append "CC=" (cc-for-target)))
        #:phases
        ;; no configure script
        (modify-phases %standard-phases (delete 'configure))
@@ -4436,40 +4648,75 @@ revised simplex and the branch-and-bound methods.")
 (define-public dealii
   (package
     (name "dealii")
-    (version "9.2.0")
+    (version "9.3.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/dealii/dealii/releases/"
                            "download/v" version "/dealii-" version ".tar.gz"))
        (sha256
-        (base32
-         "0fm4xzrnb7dfn4415j24d8v3jkh0lssi86250x2f5wgi83xq4nnh"))
+        (base32 "1f0sqvlxvl0myqcn0q6xrn1vnp5pgx143lai4a4jkh1dmdv4cbx6"))
        (modules '((guix build utils)))
        (snippet
-        ;; Remove bundled sources: UMFPACK, TBB, muParser, and boost
         '(begin
+           ;; Remove bundled boost, muparser, TBB and UMFPACK.
            (delete-file-recursively "bundled")
            #t))))
     (build-system cmake-build-system)
+    (outputs '("out" "doc"))
+    (native-inputs
+     ;; Required to build the documentation.
+     `(("dot" ,graphviz)
+       ("doxygen" ,doxygen)
+       ("perl" ,perl)))
     (inputs
-     `(("tbb" ,tbb)
-       ("zlib" ,zlib)
-       ("boost" ,boost)
-       ("p4est" ,p4est)
+     `(("arpack" ,arpack-ng)
        ("blas" ,openblas)
-       ("lapack" ,lapack)
-       ("arpack" ,arpack-ng)
-       ("muparser" ,muparser)
        ("gfortran" ,gfortran)
-       ("suitesparse" ,suitesparse)))   ;for UMFPACK
+       ("lapack" ,lapack)
+       ("muparser" ,muparser)
+       ("zlib" ,zlib)))
+    (propagated-inputs
+     ;; Some scripts are installed into share/deal.II/scripts that require
+     ;; perl and python, but they are not executable (and some are missing the
+     ;; shebang line) and therefore must be explicitly passed to the
+     ;; interpreter.
+     ;; Anyway, they are meant to be used at build time, so rather than adding
+     ;; the interpreters here, any package depending on them should just add
+     ;; the requisite interpreter to its native inputs.
+     `(("boost" ,boost)
+       ("hdf5" ,hdf5)
+       ("suitesparse" ,suitesparse)     ; For UMFPACK.
+       ("tbb" ,tbb)))
     (arguments
-     `(#:build-type "DebugRelease" ;only supports Release, Debug, or DebugRelease
+     `(#:build-type "DebugRelease" ; Supports only Debug, Release and DebugRelease.
+       ;; The tests take too long and must be explicitly enabled with "make
+       ;; setup_tests".
+       ;; See https://www.dealii.org/developer/developers/testsuite.html.
+       ;; (They can also be run for an already installed deal.II.)
+       #:tests? #f
        #:configure-flags
-       ;; Work around a bug in libsuitesparseconfig linking
-       ;; see https://github.com/dealii/dealii/issues/4745
-       '("-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON")))
-    (home-page "https://www.dealii.org")
+       (let ((doc (string-append (assoc-ref %outputs "doc")
+                                 "/share/doc/" ,name "-" ,version)))
+         `("-DDEAL_II_COMPONENT_DOCUMENTATION=ON"
+           ,(string-append "-DDEAL_II_DOCREADME_RELDIR=" doc)
+           ,(string-append "-DDEAL_II_DOCHTML_RELDIR=" doc "/html")
+           ;; Don't compile the examples because the source and CMakeLists.txt
+           ;; are installed anyway, allowing users to do so for themselves.
+           "-DDEAL_II_COMPILE_EXAMPLES=OFF"
+           ,(string-append "-DDEAL_II_EXAMPLES_RELDIR=" doc "/examples")))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'remove-build-logs
+           ;; These build logs leak the name of the build directory by storing
+           ;; the values of CMAKE_SOURCE_DIR and CMAKE_BINARY_DIR.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((doc (string-append (assoc-ref outputs "doc")
+                                       "/share/doc/" ,name "-" ,version)))
+               (for-each delete-file (map (lambda (f) (string-append doc "/" f))
+                                          '("detailed.log" "summary.log"))))
+             #t)))))
+    (home-page "https://www.dealii.org/")
     (synopsis "Finite element library")
     (description
      "Deal.II is a C++ program library targeted at the computational solution
@@ -4480,30 +4727,24 @@ in finite element programs.")
     (license license:lgpl2.1+)))
 
 (define-public dealii-openmpi
-  (package (inherit dealii)
+  (package/inherit dealii
     (name "dealii-openmpi")
     (inputs
-     `(("mpi" ,openmpi)
-       ;;Supported only with MPI:
-       ("hdf5" ,hdf5-parallel-openmpi)  ;TODO: have petsc-openmpi propagate?
+     `(("arpack" ,arpack-ng-openmpi)
+       ("metis" ,metis)
+       ("scalapack" ,scalapack)
+       ,@(alist-delete "arpack" (package-inputs dealii))))
+    (propagated-inputs
+     `(("hdf5" ,hdf5-parallel-openmpi)
+       ("mpi" ,openmpi)
        ("p4est" ,p4est-openmpi)
        ("petsc" ,petsc-openmpi)
        ("slepc" ,slepc-openmpi)
-       ("metis" ,metis)               ;for MUMPS
-       ("scalapack" ,scalapack)       ;for MUMPS
-       ("mumps" ,mumps-metis-openmpi) ;configure supports only metis orderings
-       ("arpack" ,arpack-ng-openmpi)
-       ,@(fold alist-delete (package-inputs dealii)
-               '("p4est" "arpack"))))
+       ,@(alist-delete "hdf5" (package-propagated-inputs dealii))))
     (arguments
      (substitute-keyword-arguments (package-arguments dealii)
-       ((#:configure-flags cf)
-        `(cons "-DDEAL_II_WITH_MPI:BOOL=ON"
-               ,cf))
-       ((#:phases phases '%standard-phases)
-        `(modify-phases ,phases
-           (add-before 'check 'mpi-setup
-             ,%openmpi-setup)))))
+       ((#:configure-flags flags)
+        `(cons "-DDEAL_II_WITH_MPI=ON" ,flags))))
     (synopsis "Finite element library (with MPI support)")))
 
 (define-public flann
@@ -6415,3 +6656,99 @@ to source-code analysis of C software.  The Frama-C analyzers assist you in
 various source-code-related activities, from the navigation through unfamiliar
 projects up to the certification of critical software.")
     (license license:lgpl2.1+)))
+
+(define-public blitz
+  (package
+    (name "blitz")
+    (version "1.0.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/blitzpp/blitz")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0c88gc72j3zggyk4yrrip6i0v7xkx97l140vpy3xhxs2i7xy1461"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:configure-flags '("-DBUILD_DOC=ON"
+                           "-DBUILD_TESTING=ON")
+       ;; The default "check" target also includes examples and benchmarks.
+       #:test-target "check-testsuite"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'build 'build-doc
+           (lambda _
+             (invoke "make" "-j" (number->string (parallel-job-count))
+                     "blitz-doc"))))))
+    (native-inputs
+     `(("python" ,python)
+       ("texinfo" ,texinfo)))
+    (synopsis "C++ template class library for multidimensional arrays")
+    (description "Blitz++ is a C++ template class library that provides
+high-performance multidimensional array containers for scientific computing.")
+    (home-page "https://github.com/blitzpp/blitz")
+    (license (list license:artistic2.0
+                   license:bsd-3
+                   license:lgpl3+))))
+
+(define-public fxdiv
+  ;; There is currently no tag in this repo.
+  (let ((commit "63058eff77e11aa15bf531df5dd34395ec3017c8")
+        (version "0.0")
+        (revision "1"))
+    (package
+      (name "fxdiv")
+      (version (git-version version revision commit))
+      (home-page "https://github.com/Maratyszcza/FXdiv")
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference (url home-page) (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "0zwzh8gmbx4m6b18s5nf13b0dk5yjkd1fs8f421bl7fz5f9gjd9f"))
+                (patches (search-patches "fxdiv-system-libraries.patch"))))
+      (build-system cmake-build-system)
+      (inputs
+       `(("googletest" ,googletest)
+         ("googlebenchmark" ,googlebenchmark)))
+      (synopsis
+       "C++ library for division via fixed-point multiplication by inverse")
+      (description
+       "On modern CPUs and GPUs, integer division is several times slower than
+multiplication.  FXdiv implements an algorithm to replace an integer division
+with a multiplication and two shifts.  This algorithm improves performance
+when an application performs repeated divisions by the same divisor.")
+      (license license:expat))))
+
+(define-public fp16
+  ;; There is currently no tag in this repo.
+  (let ((commit "0a92994d729ff76a58f692d3028ca1b64b145d91")
+        (version "0.0")
+        (revision "1"))
+    (package
+      (name "fp16")
+      (version (git-version version revision commit))
+      (home-page "https://github.com/Maratyszcza/FP16")
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference (url home-page) (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "05mm4vrxsac35hjf5djif9r6rdxj9ippg97ia3p6q6b8lrp7srwv"))
+                (patches (search-patches "fp16-system-libraries.patch"))))
+      (build-system cmake-build-system)
+      (native-inputs
+       `(("python-wrapper" ,python-wrapper)))
+      (inputs
+       `(("psimd" ,psimd)
+         ("googletest" ,googletest)
+         ("googlebenchmark" ,googlebenchmark)))
+      (synopsis "C++ library for half-precision floating point formats")
+      (description
+       "This header-only C++ library implements conversion to and from
+half-precision floating point formats.")
+      (license license:expat))))

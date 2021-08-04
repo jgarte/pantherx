@@ -62,6 +62,7 @@
 ;;; Copyright © 2021 David Pflug <david@pflug.io>
 ;;; Copyright © 2021 Felix Gruber <felgru@posteo.net>
 ;;; Copyright © 2021 Solene Rapenne <solene@perso.pw>
+;;; Copyright © 2021 Noisytoot <noisytoot@disroot.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -3167,7 +3168,7 @@ asynchronously and at a user-defined speed.")
 (define-public chess
   (package
     (name "chess")
-    (version "6.2.8")
+    (version "6.2.9")
     (source
      (origin
        (method url-fetch)
@@ -3175,7 +3176,7 @@ asynchronously and at a user-defined speed.")
                            ".tar.gz"))
        (sha256
         (base32
-         "0irqb0wl30c2i1rs8f6mm1c89l7l9nxxv7533lr408h1m36lc16m"))))
+         "140qqkmvldnf41s39khrgyzr6a0az7dcfhkcmflh0sbmvl5w5z6x"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases
@@ -4364,7 +4365,7 @@ engine.  When you start it you will be prompted to download a graphics set.")
 (define openttd-opengfx
   (package
     (name "openttd-opengfx")
-    (version "0.6.0")
+    (version "0.6.1")
     (source
      (origin
        (method url-fetch)
@@ -4372,7 +4373,7 @@ engine.  When you start it you will be prompted to download a graphics set.")
                            version "/opengfx-" version "-source.tar.xz"))
        (sha256
         (base32
-         "0qxc6gl2gxcrn1np88dnjgbaaakkkx96b13rcmy1spryc8c09hyr"))))
+         "0jgy8xv7r72m127qn09vr3rxhnbakl2990f7lldsk0d5d8n993vd"))))
     (build-system gnu-build-system)
     (arguments
      '(#:make-flags (list "CC=gcc"
@@ -4423,24 +4424,28 @@ OpenGFX provides you with...
 (define openttd-opensfx
   (package
     (name "openttd-opensfx")
-    (version "0.2.3")
+    (version "1.0.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append
-             "https://binaries.openttd.org/extra/opensfx/"
-             version "/opensfx-" version "-source.tar.gz"))
+             "https://cdn.openttd.org/opensfx-releases/"
+             version "/opensfx-" version "-source.tar.xz"))
        (sha256
         (base32
-         "03jxgp02ks31hmsdh4xh0xcpkb70ds8jakc9pfc1y9vdrdavh4p5"))))
+         "06vycppqcxbfdqlxzna5xr303zgcmpcvj6ylw5b2ws0ssph2f1s0"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("catcodec" ,catcodec)
-       ("python" ,python-2)))
+       ("python" ,python-2)
+       ("tar" ,tar)))
     (arguments
      `(#:make-flags
-       (list (string-append "INSTALL_DIR=" %output
-                            "/share/games/openttd/baseset/opensfx"))
+       (list (string-append "DIR_NAME=opensfx")
+             (string-append "TAR=" (assoc-ref %build-inputs "tar")
+                            "/bin/tar"))
+       ;; The check phase only verifies md5sums, see openttd-opengfx.
+       #:tests? #f
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'make-reproducible
@@ -4450,45 +4455,56 @@ OpenGFX provides you with...
              (substitute* "scripts/Makefile.def"
                (("-cf") " --mtime=@0 -cf"))
              #t))
-         (delete 'configure))))
+         (delete 'configure)
+         (add-before 'build 'prebuild
+           (lambda _ (invoke "make" "opensfx.cat")))
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (copy-recursively "opensfx"
+                               (string-append (assoc-ref outputs "out")
+                                              "/share/games/openttd/baseset"
+                                              "/opensfx")))))))
     (home-page "http://dev.openttdcoop.org/projects/opensfx")
     (synopsis "Base sounds for OpenTTD")
     (description "OpenSFX is a set of free base sounds for OpenTTD which make
 it possible to play OpenTTD without requiring the proprietary sound files from
 the original Transport Tycoon Deluxe.")
-    (license license:cc-sampling-plus-1.0)))
+    (license license:cc-by-sa3.0)))
 
 (define openttd-openmsx
   (package
     (name "openttd-openmsx")
-    (version "0.3.1")
+    (version "0.4.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append
-             "https://binaries.openttd.org/extra/openmsx/"
-             version "/openmsx-" version "-source.tar.gz"))
+             "https://cdn.openttd.org/openmsx-releases/"
+             version "/openmsx-" version "-source.tar.xz"))
        (sha256
         (base32
-         "0nskq97a6fsv1v6d62zf3yb8whzhqnlh3lap3va3nzvj7csjgf7c"))))
+         "0prjljsdgdxqdhhcriqskqha004ybs575xcjq80zha3pqnmrdk0k"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("python" ,python-2)))
+     `(("grfcodec" ,grfcodec)
+       ("python" ,python-2)
+       ("tar" ,tar)))
     (arguments
      `(#:make-flags
-       (list (string-append "INSTALL_DIR=" %output
-                            "/share/games/openttd/baseset"))
+       (list (string-append "DIR_NAME=openmsx")
+             (string-append "TAR=" (assoc-ref %build-inputs "tar")
+                            "/bin/tar"))
+       ;; The check phase only verifies md5sums, see openttd-opengfx.
+       #:tests? #f
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)
-         (add-after 'install 'post-install
-           ;; Rename openmsx-version to openmsx
+         (replace 'install
            (lambda* (#:key outputs #:allow-other-keys)
-             (let ((install-directory (string-append (assoc-ref outputs "out")
-                                                     "/share/games/openttd/baseset")))
-               (rename-file (string-append install-directory "/openmsx-" ,version)
-                            (string-append install-directory "/openmsx"))
-               #t))))))
+             (copy-recursively "openmsx"
+                               (string-append (assoc-ref outputs "out")
+                                              "/share/games/openttd/baseset"
+                                              "/openmsx")))))))
     (home-page "http://dev.openttdcoop.org/projects/openmsx")
     (synopsis "Music set for OpenTTD")
     (description "OpenMSX is a music set for OpenTTD which makes it possible
@@ -8771,7 +8787,7 @@ game field is extended to 4D space, which has to filled up by the gamer with
 (define-public arx-libertatis
   (package
     (name "arx-libertatis")
-    (version "1.1.2")
+    (version "1.2")
     (source
      (origin
        (method url-fetch)
@@ -8779,7 +8795,7 @@ game field is extended to 4D space, which has to filled up by the gamer with
                            version ".tar.xz"))
        (sha256
         (base32
-         "0hjfxlsmp8wwqr06snv2dlly2s79ra0d9aw49gkp6rn8m50b9bc2"))))
+         "035dflxffa98bxmxkrqfizmhvnr09wyhhmzaqxk92772qil7gkxs"))))
     (build-system cmake-build-system)
     (outputs '("out" "installer"))
     (arguments
@@ -8824,8 +8840,8 @@ game field is extended to 4D space, which has to filled up by the gamer with
                (rename-file (string-append out "/bin/arx-install-data")
                             (string-append installer "/bin/arx-install-data"))))))))
     (inputs
-     `(("sdl" ,sdl)                     ; Switch to sdl2 in >1.1.2.
-       ("mesa" ,mesa)                   ; Switch to libepoxy in >1.1.2.
+     `(("sdl2" ,sdl2)
+       ("libepoxy" ,libepoxy)
        ("glew" ,glew)
        ("openal" ,openal)
        ("zlib" ,zlib)

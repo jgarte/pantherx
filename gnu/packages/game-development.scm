@@ -1106,12 +1106,12 @@ to create fully featured games and multimedia programs in the python language.")
 (define-public python2-pygame
   (package-with-python2 python-pygame))
 
-(define-public python2-pygame-sdl2
+(define-public python-pygame-sdl2
   (let ((real-version "2.1.0")
         (renpy-version "7.4.6"))
     (package
-      (inherit python2-pygame)
-      (name "python2-pygame-sdl2")
+      (inherit python-pygame)
+      (name "python-pygame-sdl2")
       (version (string-append real-version "-for-renpy-" renpy-version))
       (source
        (origin
@@ -1124,12 +1124,12 @@ to create fully featured games and multimedia programs in the python language.")
           '(begin
              ;; drop generated sources
              (delete-file-recursively "gen")
+             (delete-file-recursively "gen3")
              (delete-file-recursively "gen-static")
              #t))))
       (build-system python-build-system)
       (arguments
        `(#:tests? #f                ; tests require pygame to be installed first
-         #:python ,python-2
          #:phases
          (modify-phases %standard-phases
            (add-after 'set-paths 'set-sdl-vars
@@ -1149,7 +1149,7 @@ to create fully featured games and multimedia programs in the python language.")
        `(("sdl-union"
           ,(sdl-union (list sdl2 sdl2-image sdl2-mixer sdl2-ttf)))))
       (native-inputs
-       `(("python2-cython" ,python2-cython)))
+       `(("python-cython" ,python-cython)))
       (home-page "https://www.renpy.org/")
       (synopsis "Reimplementation of the Pygame API using SDL2")
       (description "Pygame_SDL2 reimplements the Pygame API using SDL2,
@@ -1157,6 +1157,9 @@ staying close to the original, but also adding some SDL2-specific features.
 While it aims to be used as a drop-in replacement, it appears to be
 developed mainly for Ren'py.")
       (license (list license:lgpl2.1 license:zlib)))))
+
+(define-public python2-pygame-sdl2
+  (package-with-python2 python-pygame-sdl2))
 
 (define-public python2-renpy
   (package
@@ -1186,10 +1189,11 @@ developed mainly for Ren'py.")
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'fix-commands
-           (lambda _
+           (lambda* (#:key inputs #:allow-other-keys)
              (substitute* "renpy/editor.py"
                (("xdg-open")
-                (which "xdg-open")))
+                (string-append (assoc-ref inputs "xdg-utils")
+                               "/bin/xdg-open")))
              #t))
          (add-after 'unpack 'fix-include-paths
            (lambda* (#:key inputs #:allow-other-keys)
@@ -1199,9 +1203,10 @@ developed mainly for Ren'py.")
                                "/include/fribidi")))
              #t))
          (add-after 'set-paths 'set-build-vars
-           (lambda* (#:key inputs #:allow-other-keys)
+           (lambda* (#:key inputs native-inputs #:allow-other-keys)
              (setenv "RENPY_CYTHON"
-                     (string-append (assoc-ref inputs "python2-cython")
+                     (string-append (assoc-ref (or native-inputs inputs)
+                                               "python2-cython")
                                     "/bin/cython"))
              (setenv "RENPY_DEPS_INSTALL" (string-join (map cdr inputs) ":"))
              #t))
@@ -1230,7 +1235,8 @@ developed mainly for Ren'py.")
                (with-directory-excursion "module"
                  (apply (assoc-ref %standard-phases 'install) args))
                (copy-recursively "renpy"
-                                 (string-append out site "/renpy")))
+                                 (string-append out site "/renpy"))
+               (delete-file-recursively (string-append out site "/renpy/common")))
              #t)))))
     (inputs
      `(("ffmpeg" ,ffmpeg)
@@ -1239,18 +1245,20 @@ developed mainly for Ren'py.")
        ("glew" ,glew)
        ("libpng" ,libpng)
        ("sdl-union"
-        ,(sdl-union (list sdl2 sdl2-image sdl2-mixer sdl2-ttf)))))
+        ,(sdl-union (list sdl2 sdl2-image sdl2-mixer sdl2-ttf)))
+       ("xdg-utils" ,xdg-utils)))
     (propagated-inputs
      `(("python2-future" ,python2-future)
        ("python2-pygame" ,python2-pygame-sdl2)))
     (native-inputs
      `(("gcc" ,gcc-8) ; for const variables as initializer elements
-       ("python2-cython" ,python2-cython)
-       ("xdg-utils" ,xdg-utils)))
+       ("python2-cython" ,python2-cython)))
     (home-page "https://www.renpy.org/")
     (synopsis "Ren'py python module")
-    (description "This package contains the shared libraries and Python
-modules of Ren'py.")
+    (description "This package contains the shared libraries and Python modules
+of Ren'py.  While functional, they are not meaningful on their own without
+the launcher and common Ren'py code provided by the @code{renpy} package and
+are only used to bootstrap it.")
     (license license:expat)))
 
 (define-public renpy
@@ -1261,15 +1269,22 @@ modules of Ren'py.")
     (arguments
      `(#:tests? #f ; see python2-renpy
        #:python ,python-2
+       #:modules ((srfi srfi-1)
+                  (guix build python-build-system)
+                  (guix build utils))
+       #:imported-modules ((srfi srfi-1) ,@%python-build-system-modules)
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'fix-commands
-           (lambda* (#:key outputs #:allow-other-keys)
+           (lambda* (#:key inputs outputs #:allow-other-keys)
              (substitute* "launcher/game/choose_directory.rpy"
-               (("/usr/bin/python") (which "python2")))
+               (("/usr/bin/python")
+                (string-append (assoc-ref inputs "python2")
+                               "/bin/python2")))
              (substitute* "launcher/game/front_page.rpy"
                (("xdg-open")
-                (which "xdg-open")))
+                (string-append (assoc-ref inputs "xdg-utils")
+                               "/bin/xdg-open")))
              (substitute* "launcher/game/project.rpy"
                (("cmd = \\[ executable, \"-EO\", sys.argv\\[0\\] \\]")
                 (string-append "cmd = [ \"" (assoc-ref outputs "out")
@@ -1286,8 +1301,9 @@ modules of Ren'py.")
                ((", \"game\",") ","))
              #t))
          (add-before 'build 'start-xserver
-           (lambda* (#:key inputs #:allow-other-keys)
-             (let ((xorg-server (assoc-ref inputs "xorg-server")))
+           (lambda* (#:key inputs native-inputs #:allow-other-keys)
+             (let ((xorg-server (assoc-ref (or native-inputs inputs)
+                                           "xorg-server")))
                (setenv "HOME" (getcwd))
                (system (format #f "~a/bin/Xvfb :1 &" xorg-server))
                (setenv "DISPLAY" ":1")
@@ -1304,11 +1320,14 @@ modules of Ren'py.")
              ;; After finishing this step, "out" will have the following:
              ;; |-- bin/renpy
              ;; `-- share/renpy ; i.e. path_to_renpy_base()
-             ;;     `-- common
+             ;;     |-- common
+             ;;     `-- gui
              ;;
-             ;; Note that common is also a de facto unused directory in
-             ;; python2-renpy. On other systems, renpy_base would point to
-             ;; site-packages or even somewhere in /opt.
+             ;; Note that common shares the source files that would be installed
+             ;; by python2-renpy (which are instead deleted from that package),
+             ;; but also contains their byte-compiled versions.
+             ;; On other systems, renpy_base would point to site-packages or
+             ;; even somewhere in /opt.
              ;; The former approach is not as straightforward as it seems
              ;; -- it causes renpy to load files twice for some weird reason --
              ;; and the latter is impossible on Guix. Hence the detour through
@@ -1319,9 +1338,11 @@ modules of Ren'py.")
              ;; well. This differs from the traditional layout, which is
              ;; roughly the following:
              ;; `-- Super Awesome Game
-             ;;     |-- game      ; <- the folder we actually want
-             ;;     |-- lib       ; compiled renpy module and dependencies
-             ;;     |-- renpy     ; Ren'py python code (source + compiled)
+             ;;     |-- game       ; <- the folder we actually want
+             ;;     |-- lib        ; compiled renpy module and dependencies
+             ;;     |-- renpy      ; yet another copy of Ren'py's code
+             ;;     |   |-- common ; the common folder from above
+             ;;     |   `-- ...    ; Python code (source + compiled)
              ;;     |-- Super Awesome Game.py
              ;;     `-- Super Awesome Game.sh
              (let* ((out (assoc-ref outputs "out"))
@@ -1334,7 +1355,8 @@ modules of Ren'py.")
 
                (call-with-output-file bin/renpy
                  (lambda (port)
-                   (format port "#!~a~%" (which "python2"))
+                   (format port "#!~a/bin/python2~%"
+                           (assoc-ref inputs "python2"))
                    (format port "
 from __future__ import print_function
 
@@ -1423,15 +1445,32 @@ if __name__ == \"__main__\":
              #t))
          (replace 'wrap
            (lambda* (#:key inputs outputs #:allow-other-keys)
-             (wrap-program (string-append (assoc-ref outputs "out")
-                                          "/bin/renpy")
-               `("PYTHONPATH" = (,(getenv "PYTHONPATH"))))
-             #t)))))
+             (let ((out (assoc-ref outputs "out"))
+                   (site (string-append "/lib/python"
+                                        (python-version
+                                         (assoc-ref inputs "python"))
+                                        "/site-packages")))
+               (wrap-program (string-append out "/bin/renpy")
+                 `("PYTHONPATH" =
+                   (,@(delete-duplicates
+                       (map
+                        (lambda (store-path)
+                          (string-append store-path site))
+                        (cons (assoc-ref outputs "out")
+                              (map cdr
+                                   (filter
+                                    (lambda (input)
+                                      (string-prefix? "python2" (car input)))
+                                    inputs))))))))
+               #t))))))
     (inputs
-     `(("python2-tkinter" ,python-2 "tk")
-       ("python2-pygame" ,python2-pygame-sdl2)
-       ("python2-renpy" ,python2-renpy)
-       ("xorg-server" ,xorg-server)))
+     `(("python2-renpy" ,python2-renpy)
+       ("python2-tkinter" ,python-2 "tk")
+       ("python2" ,python-2) ; for ‘fix-commands’ and ‘wrap’
+       ("xdg-utils" ,xdg-utils)))
+    (propagated-inputs '())
+    (native-inputs
+     `(("xorg-server" ,xorg-server-for-tests)))
     (outputs
      (list "out" "tutorial" "the-question"))
     (home-page "https://www.renpy.org/")

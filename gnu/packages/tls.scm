@@ -10,7 +10,7 @@
 ;;; Copyright © 2016 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017, 2018, 2019, 2020, 2021 Marius Bakke <marius@gnu.org>
-;;; Copyright © 2017–2019, 2021 Tobias Geerinckx-Rice <me@tobias.gr>
+;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2018 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
@@ -644,13 +644,13 @@ netcat implementation that supports TLS.")
   (package
     (name "python-acme")
     ;; Remember to update the hash of certbot when updating python-acme.
-    (version "1.16.0")
+    (version "1.17.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "acme" version))
               (sha256
                (base32
-                "0mvqc8z30sxgr1m4p3yi3rm76sndnvl5khv4ybwx6zyq42403y51"))))
+                "03ij1wp7jwvppv70qbjkgdg7w824yh6j4gfb68jj20wicx08xx1a"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -698,7 +698,7 @@ netcat implementation that supports TLS.")
               (uri (pypi-uri "certbot" version))
               (sha256
                (base32
-                "0z90pcndbks8f62f47m5nkqcmkabb8r526by29lp30x4gjc0xs04"))))
+                "0wyipx6q78fmvngf1i6g50s01qpjqh07qlk1b5vyxwgl3080lhgg"))))
     (build-system python-build-system)
     (arguments
      `(,@(substitute-keyword-arguments (package-arguments python-acme)
@@ -1085,6 +1085,14 @@ coding footprint.")
     (native-inputs
      `(("gzip" ,gzip)
        ("tar" ,tar)))
+    ;; The following definition is copied from the cURL package to prevent a
+    ;; cycle between the curl and tls modules.
+    (native-search-paths
+     (list (search-path-specification
+            (variable "CURL_CA_BUNDLE")
+            (file-type 'regular)
+            (separator #f)
+            (files '("etc/ssl/certs/ca-certificates.crt")))))
     (home-page "https://dehydrated.io/")
     (synopsis "Let's Encrypt/ACME client implemented as a shell script")
     (description "Dehydrated is a client for signing certificates with an

@@ -724,7 +724,7 @@ The following systems are supported:
 (define-public mgba
   (package
     (name "mgba")
-    (version "0.9.1")
+    (version "0.9.2")
     (source
      (origin
        (method git-fetch)
@@ -733,7 +733,7 @@ The following systems are supported:
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "163azad5y4zxwzxyrb481rwfc2p86v99pf7nvdr6bavzq98x2z8h"))
+        (base32 "16kngkzf08jflqxwbgafb47091vqqb9pbhazg9cd94cy81ahz3q3"))
        (modules '((guix build utils)))
        (snippet
         ;; Make sure we don't use the bundled software.
@@ -742,29 +742,30 @@ The following systems are supported:
             (lambda (subdir)
               (let ((lib-subdir (string-append "src/third-party/" subdir)))
                 (delete-file-recursively lib-subdir)))
-            '("libpng" "lzma" "sqlite3" "zlib"))
-           #t))))
+            '("libpng" "lzma" "sqlite3" "zlib"))))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f                      ;no "test" target
        #:configure-flags
        (list "-DUSE_LZMA=OFF"           ;do not use bundled LZMA
              "-DUSE_LIBZIP=OFF")))      ;use "zlib" instead
-    (native-inputs `(("pkg-config" ,pkg-config)
-                     ("qttools" ,qttools)))
-    (inputs `(("ffmpeg" ,ffmpeg)
-              ("libedit" ,libedit)
-              ("libelf" ,libelf)
-              ("libepoxy" ,libepoxy)
-              ("libpng" ,libpng)
-              ("mesa" ,mesa)
-              ("minizip" ,minizip)
-              ("ncurses" ,ncurses)
-              ("qtbase" ,qtbase-5)
-              ("qtmultimedia" ,qtmultimedia)
-              ("sdl2" ,sdl2)
-              ("sqlite" ,sqlite)
-              ("zlib" ,zlib)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("qttools" ,qttools)))
+    (inputs
+     `(("ffmpeg" ,ffmpeg)
+       ("libedit" ,libedit)
+       ("libelf" ,libelf)
+       ("libepoxy" ,libepoxy)
+       ("libpng" ,libpng)
+       ("mesa" ,mesa)
+       ("minizip" ,minizip)
+       ("ncurses" ,ncurses)
+       ("qtbase" ,qtbase-5)
+       ("qtmultimedia" ,qtmultimedia)
+       ("sdl2" ,sdl2)
+       ("sqlite" ,sqlite)
+       ("zlib" ,zlib)))
     (home-page "https://mgba.io")
     (synopsis "Game Boy Advance emulator")
     (description
@@ -779,7 +780,7 @@ and Game Boy Color games.")
 (define-public sameboy
   (package
     (name "sameboy")
-    (version "0.14.3")
+    (version "0.14.4")
     (source
      (origin
        (method git-fetch)
@@ -788,7 +789,7 @@ and Game Boy Color games.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1dipidx12ai62hnzf0pvnsk1cgjcmw1h5x2r7ilxq0k0pkia5b7a"))))
+        (base32 "0zp11qm8b3cmx70pzczyh4vv4jyhlh4jnci8kn6b30c8lzl43g83"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("rgbds" ,rgbds)
@@ -1771,7 +1772,7 @@ This is a part of the TiLP project.")
 (define-public mame
   (package
     (name "mame")
-    (version "0.233")
+    (version "0.234")
     (source
      (origin
        (method git-fetch)
@@ -1780,7 +1781,7 @@ This is a part of the TiLP project.")
              (commit (apply string-append "mame" (string-split version #\.)))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1zq7hvss004mwczk3jvyalkj9c5v6npswhkc2wj7dxyxz770clb3"))
+        (base32 "010ing14pfwc0j7jnghjdcvq0qr7g4dplnggl545apyy61zigdkn"))
        (modules '((guix build utils)))
        (snippet
         ;; Remove bundled libraries.
@@ -1789,8 +1790,7 @@ This is a part of the TiLP project.")
              (for-each delete-file-recursively
                        '("asio" "expat" "glm" "libflac" "libjpeg" "lua"
                          "portaudio" "portmidi" "pugixml" "rapidjson" "SDL2"
-                         "SDL2-override" "sqlite3" "utf8proc" "zlib")))
-           #t))))
+                         "SDL2-override" "sqlite3" "utf8proc" "zlib")))))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -1828,16 +1828,14 @@ This is a part of the TiLP project.")
                  (install-file "uismall.bdf" fonts))
                (when (file-exists? "mame64")
                  (rename-file "mame64" "mame"))
-               (install-file "mame" (string-append out "/bin")))
-             #t))
+               (install-file "mame" (string-append out "/bin")))))
          (add-after 'install 'install-documentation
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (man (string-append out "/share/man/man1"))
                     (info (string-append out "/share/info")))
                (install-file "docs/build/man/MAME.1" man)
-               (install-file "docs/build/texinfo/MAME.info" info))
-             #t))
+               (install-file "docs/build/texinfo/MAME.info" info))))
          (add-after 'install 'install-ini-file
            ;; Generate an ini file so as to set some directories (e.g., roms)
            ;; to a writable location, i.e., "$HOME/.mame/" and "$HOME/mame/".
@@ -1896,8 +1894,7 @@ This is a part of the TiLP project.")
                             select_directory     $HOME/mame/select~@
                             icons_directory      $HOME/mame/icons~@
                             covers_directory     $HOME/mame/covers~@
-                            ui_path              $HOME/.mame/ui~%")))
-               #t)))
+                            ui_path              $HOME/.mame/ui~%"))))))
          (add-after 'install 'install-desktop-file
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
@@ -1916,8 +1913,7 @@ This is a part of the TiLP project.")
                            Type=Application~@
                            Categories=Game;Emulator;~@
                            Keywords=Game;Emulator;Arcade;~%"
-                           executable)))
-               #t))))))
+                           executable)))))))))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("sphinx" ,python-sphinx)
@@ -2485,3 +2481,90 @@ elseif(FALSE)"))
        "PPSSPP is a ``high-level'' emulator simulating the PSP operating
 system.")
       (license license:gpl2+))))
+
+(define-public exomizer
+  (package
+    (name "exomizer")
+    (version "3.1.1")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://bitbucket.org/magli143/exomizer.git")
+                     (commit "6a152b5605648f7a41eadd4b011a93ec92f74dd8")))
+              (file-name (string-append name "-" version "-checkout"))
+              (sha256
+               (base32
+                "1ynhkb5p2dypkikipc3krzif264l9rmx1wnjzzgw8n88i4zkymzg"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f  ; No target exists
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'chdir
+           (lambda _
+             (delete-file-recursively "exodecrs")
+             (delete-file-recursively "rawdecrs")
+             (chdir "src")
+             ;; Those will be regenerated.
+             (delete-file "asm.tab.h")
+             (delete-file "asm.tab.c")
+             (delete-file "lex.yy.c")
+             #t))
+         (replace 'configure
+           (lambda _
+             (setenv "CC" ,(cc-for-target))
+             #t))
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out-bin (string-append (assoc-ref outputs "out") "/bin")))
+               (install-file "exomizer" out-bin)
+               (install-file "exobasic" out-bin))
+             #t)))))
+    (native-inputs
+     `(("flex" ,flex)
+       ("bison" ,bison)))
+    (synopsis "Compressor for use on Commodore home computers")
+    (description "This program compresses files in a way that tries to be as
+efficient as possible but still allows them to be decompressed in environments
+where CPU speed and RAM are limited.  It also generate a self-extractor for use
+on a Commodore C64, C128 etc.")
+    (home-page "https://bitbucket.org/magli143/exomizer/wiki/Home")
+    ;; Some files are LGPL 2.1--but we aren't building from or installing those.
+    ;; zlib license with an (non-)advertising clause.
+    (license license:zlib)))
+
+(define-public cc65
+  (package
+    (name "cc65")
+    (version "2.19")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/cc65/cc65.git")
+                     (commit (string-append "V" version))))
+              (file-name (string-append name "-" version "-checkout"))
+              (sha256
+               (base32
+                "01a15yvs455qp20hri2pbg2wqvcip0d50kb7dibi9427hqk9cnj4"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f  ; No target exists.
+       #:make-flags
+       (list "BUILD_ID=V2.18 - Git 55528249"
+             (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'configure
+           (lambda* (#:key source #:allow-other-keys)
+             ;; We include $SOURCE/include in C_INCLUDE_PATH.  Remove it.
+             (setenv "C_INCLUDE_PATH"
+               (string-join
+                (filter (lambda (name)
+                          (not (string=? name (string-append source "/include"))))
+                        (string-split (getenv "C_INCLUDE_PATH") #\:))
+                ":"))
+             #t)))))
+    (synopsis "Development environment for 6502 systems")
+    (description "This package provides a development environment for 6502 systems, including macro assembler, C compiler, linker, librarian and several other tools.")
+    (home-page "https://cc65.github.io/")
+    (license license:zlib)))

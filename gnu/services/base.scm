@@ -12,7 +12,7 @@
 ;;; Copyright © 2019 John Soo <jsoo1@asu.edu>
 ;;; Copyright © 2019 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2020 Florian Pelz <pelzflorian@pelzflorian.de>
-;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
+;;; Copyright © 2020, 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2021 qblade <qblade@protonmail.com>
 ;;; Copyright © 2021 Hui Lu <luhuins@163.com>
 ;;;
@@ -1700,21 +1700,21 @@ proxy of 'guix-daemon'...~%")
 
 (define (guix-activation config)
   "Return the activation gexp for CONFIG."
-  (match config
-    (($ <guix-configuration> guix build-group build-accounts authorize-key? keys)
-     ;; Assume that the store has BUILD-GROUP as its group.  We could
-     ;; otherwise call 'chown' here, but the problem is that on a COW overlayfs,
-     ;; chown leads to an entire copy of the tree, which is a bad idea.
+  (match-record config <guix-configuration>
+    (guix authorize-key? authorized-keys)
+    #~(begin
+        ;; Assume that the store has BUILD-GROUP as its group.  We could
+        ;; otherwise call 'chown' here, but the problem is that on a COW overlayfs,
+        ;; chown leads to an entire copy of the tree, which is a bad idea.
 
-     ;; Generate a key pair and optionally authorize substitute server keys.
-     #~(begin
-         (unless (file-exists? "/etc/guix/signing-key.pub")
-           (system* #$(file-append guix "/bin/guix") "archive"
-                    "--generate-key"))
+        ;; Generate a key pair and optionally authorize substitute server keys.
+        (unless (file-exists? "/etc/guix/signing-key.pub")
+          (system* #$(file-append guix "/bin/guix") "archive"
+                   "--generate-key"))
 
-         #$(if authorize-key?
-               (substitute-key-authorization keys guix)
-               #~#f)))))
+        #$(if authorize-key?
+              (substitute-key-authorization authorized-keys guix)
+              #~#f))))
 
 (define* (references-file item #:optional (name "references"))
   "Return a file that contains the list of references of ITEM."
@@ -2217,23 +2217,13 @@ instance."
      (list (shepherd-service
             (requirement '(udev))
             (provision '(gpm))
-            (start #~(lambda ()
-                       ;; 'gpm' runs in the background and sets a PID file.
-                       ;; Note that it requires running as "root".
-                       (false-if-exception (delete-file "/var/run/gpm.pid"))
-                       (fork+exec-command (list #$(file-append gpm "/sbin/gpm")
-                                                #$@options))
-
-                       ;; Wait for the PID file to appear; declare failure if
-                       ;; it doesn't show up.
-                       (let loop ((i 3))
-                         (or (file-exists? "/var/run/gpm.pid")
-                             (if (zero? i)
-                                 #f
-                                 (begin
-                                   (sleep 1)
-                                   (loop (1- i))))))))
-
+            ;; 'gpm' runs in the background and sets a PID file.
+            ;; Note that it requires running as "root".
+            (start #~(make-forkexec-constructor
+                      (list #$(file-append gpm "/sbin/gpm")
+                            #$@options)
+                      #:pid-file "/var/run/gpm.pid"
+                      #:pid-file-timeout 3))
             (stop #~(lambda (_)
                       ;; Return #f if successfully stopped.
                       (not (zero? (system* #$(file-append gpm "/sbin/gpm")

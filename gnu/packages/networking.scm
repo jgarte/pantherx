@@ -36,13 +36,14 @@
 ;;; Copyright © 2019, 2020 Jan Wielkiewicz <tona_kosmicznego_smiecia@interia.pl>
 ;;; Copyright © 2019 Daniel Schaefer <git@danielschaefer.me>
 ;;; Copyright © 2019 Diego N. Barbato <dnbarbato@posteo.de>
-;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
+;;; Copyright © 2020, 2021 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020 Jesse Dowell <jessedowell@gmail.com>
 ;;; Copyright © 2020 Hamzeh Nasajpour <h.nasajpour@pantherx.org>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2021 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2021 Justin Veilleux <terramorpha@cock.li>
+;;; Copyright © 2021 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1029,7 +1030,8 @@ transparently check connection attempts against an access control list.")
        (sha256
         (base32 "1rf3jmi36ms8jh2g5cvi253h43l6xdfq0r7mvp95va7mi4d014y5"))))
     (build-system gnu-build-system)
-    (arguments '(#:configure-flags '("--disable-static")))
+    (arguments '(#:configure-flags '("--disable-static"
+                                     "--enable-drafts")))
     (home-page "https://zeromq.org")
     (synopsis "Library for message-based applications")
     (description
@@ -1443,14 +1445,14 @@ of the same name.")
 (define-public wireshark
   (package
     (name "wireshark")
-    (version "3.4.6")
+    (version "3.4.7")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.wireshark.org/download/src/wireshark-"
                            version ".tar.xz"))
        (sha256
-        (base32 "0a26kcj3n1a2kw1f3fc6s1x3rw3f3bj2cq6rp7k0kc4ciwh7i9hj"))))
+        (base32 "17d00kl0s010wg2dfhy7sdbr2qm54lsi317fmbcvjz4rxx8ywk3c"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -1463,8 +1465,7 @@ of the same name.")
            (lambda _
              (substitute* "CMakeLists.txt"
                (("suite_unittests" all) (string-append "# " all))
-               (("suite_extcaps" all) (string-append "# " all)))
-             #t)))
+               (("suite_extcaps" all) (string-append "# " all))))))
        ;; Build process chokes during `validate-runpath' phase.
        ;;
        ;; Errors are like the following:
@@ -3788,6 +3789,49 @@ simulation, and a number of other applications.")
 network.  This must be enabled on the target host, usually in the BIOS.")
     (license license:gpl2)))
 
+(define-public traceroute
+  (package
+    (name "traceroute")
+    (version "2.1.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/traceroute/traceroute/"
+                           "traceroute-" version "/traceroute-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "1dh32vcfawkl1p9g4ral1p0camds4paqr8db1kaqxwyk6hmd4s9n"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ;no test suite
+       #:make-flags
+       (list (string-append "LIBRARY_PATH="
+                            (assoc-ref %build-inputs "libc") "/lib")
+             (string-append "CFLAGS=-I"
+                            (assoc-ref %build-inputs "kernel-headers")
+                            "/include")
+             "LDFLAGS=-lm -L../libsupp"
+             (string-append "prefix=" (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-make
+           (lambda _
+             (substitute* "default.rules"
+               ((" \\$\\(LIBDEPS\\)") "$(filter-out -l%,$(LIBDEPS))"))))
+         (delete 'bootstrap)            ;no configure.ac file
+         (delete 'configure))))         ;no configure script
+    (home-page "http://traceroute.sourceforge.net/")
+    (synopsis "Tracks the route taken by packets over an IP network")
+    (description "This package provides a modern, but Linux-specific
+implementation of the @command{traceroute} command that can be used to follow
+the route taken by packets on an IP network on their way to a given host.  It
+utilizes the IP protocol's time to live (TTL) field and attempts to elicit an
+ICMP TIME_EXCEEDED response from each gateway along the path to the host.
+Compared to other implementations, this @command{traceroute} command allows
+some traces for unprivileged users.")
+    (license (list license:gpl2+
+                   license:lgpl2.1+)))) ;for the libsupp subdirectory
+
 (define-public vde2
   (package
     (name "vde2")
@@ -4100,3 +4144,36 @@ on hub/switched networks.  It is based on @acronym{ARP} packets, it will send
 @acronym{ARP} requests and sniff for replies.")
    (home-page "https://github.com/netdiscover-scanner/netdiscover")
    (license license:gpl3+)))
+
+(define-public putty
+  (package
+    (name "putty")
+    (version "0.75")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "http://www.putty.be/" version
+                           "/putty-" version ".tar.gz"))
+       (sha256
+        (base32
+         "1xgrr1fbirw79zafspg2b6crzfmlfw910y79md4r7gnxgq1kn5yk"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-before 'configure 'chdir
+           (lambda _
+             (chdir "unix")
+             #t)))))
+    (inputs
+     `(("gtk+" ,gtk+)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("python" ,python))) ; for tests
+    (synopsis "Graphical @acronym{SSH} and telnet client")
+    (description "Putty is a terminal client.  It supports @acronym{SSH},
+telnet, and raw socket connections with good terminal emulation.  It supports
+public key authentication and Kerberos single-sign-on.  It also includes
+command-line @acronym{SFTP} and @acronym{SCP} implementations.")
+    (home-page "https://www.chiark.greenend.org.uk/~sgtatham/putty/")
+    (license license:expat)))
