@@ -75,6 +75,7 @@
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-science)
+  #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages readline)
@@ -778,6 +779,59 @@ to the fix block above.
       (license license:gpl3+))))
 (deprecated-package "gnuradio-iqbalance" gr-iqbal)
 
+(define-public gr-satellites
+  (package
+    (name "gr-satellites")
+    (version "4.2.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/daniestevez/gr-satellites")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "01p9cnwjxas3pkqr9m5fnrgm45cji0sfdqqa51hzy7izx9vgzaf8"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("pybind11" ,pybind11)
+       ("python-six" ,python-six)))
+    (inputs
+     `(("boost" ,boost)
+       ("gmp" ,gmp)
+       ("gnuradio" ,gnuradio)
+       ("log4cpp" ,log4cpp)
+       ("python" ,python)
+       ("python-construct" ,python-construct)
+       ("python-numpy" ,python-numpy)
+       ("python-pyaml" ,python-pyaml)
+       ("python-pyzmq" ,python-pyzmq)
+       ("python-requests" ,python-requests)
+       ("volk" ,volk)))
+    (arguments
+     `(#:modules ((guix build cmake-build-system)
+                  ((guix build python-build-system) #:prefix python:)
+                  (guix build utils))
+       #:imported-modules (,@%cmake-build-system-modules
+                           (guix build python-build-system))
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'check 'set-test-environment
+           (lambda _
+             (setenv "HOME" "/tmp")))
+         (add-after 'install 'wrap-python
+           (assoc-ref python:%standard-phases 'wrap)))))
+    (synopsis "GNU Radio decoders for several Amateur satellites")
+    (description
+     "@code{gr-satellites} is a GNU Radio out-of-tree module encompassing
+a collection of telemetry decoders that supports many different Amateur
+satellites.")
+    (home-page "https://github.com/daniestevez/gr-satellites")
+    (license (list license:asl2.0
+                   license:gpl3+
+                   license:lgpl2.1))))
+
 (define-public gqrx
   (package
     (name "gqrx")
@@ -1317,7 +1371,7 @@ gain and standing wave ratio.")
 (define-public dump1090
   (package
     (name "dump1090")
-    (version "4.0")
+    (version "5.0")
     (source
      (origin
        (method git-fetch)
@@ -1326,12 +1380,13 @@ gain and standing wave ratio.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1zacsqaqsiapljhzw31dwc4nld2rp98jm3ivkyznrhzk9n156p42"))))
+        (base32 "1fckfcgypmplzl1lidd04jxiabczlfx9mv21d6rbsfknghsjpn03"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
-     `(("libusb" ,libusb)
+     `(("hackrf" ,hackrf)
+       ("libusb" ,libusb)
        ("ncurses" ,ncurses)
        ("rtl-sdr" ,rtl-sdr)))
     (arguments
@@ -1986,7 +2041,7 @@ voice formats.")
 (define-public sdrangel
   (package
     (name "sdrangel")
-    (version "6.10.3")
+    (version "6.16.1")
     (source
      (origin
        (method git-fetch)
@@ -1995,7 +2050,7 @@ voice formats.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0dpymjpg1x7yyrlhh8sdmf5l7il9ymx32zcpm78wwrw3df4q1w3m"))))
+        (base32 "0g9h4cy8k9dqlwkfk4lkk2d2s003bckzskm3vra87ndmgq1nfbzv"))))
     (build-system qt-build-system)
     (native-inputs
      `(("doxygen" ,doxygen)

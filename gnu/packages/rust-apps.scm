@@ -88,14 +88,14 @@ low-end hardware and serving many concurrent requests.")
 (define-public bat
   (package
     (name "bat")
-    (version "0.18.1")
+    (version "0.18.2")
     (source
      (origin
        (method url-fetch)
        (uri (crate-uri "bat" version))
        (file-name (string-append name "-" version ".tar.gz"))
        (sha256
-        (base32 "0nvqkddpjxsmd27gqn8czql07faad50mihin5ivb9sxxnni28wnc"))))
+        (base32 "01zdamn1rd6d4xwwba1a8nfh06nmg7a0lakzgq8yfj5hsdgj9rdm"))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-inputs
@@ -113,6 +113,7 @@ low-end hardware and serving many concurrent requests.")
         ("rust-error-chain" ,rust-error-chain-0.12)
         ("rust-git2" ,rust-git2-0.13)
         ("rust-globset" ,rust-globset-0.4)
+        ("rust-grep-cli" ,rust-grep-cli-0.1)
         ("rust-lazy-static" ,rust-lazy-static-1)
         ("rust-path-abs" ,rust-path-abs-0.5)
         ("rust-semver" ,rust-semver-0.11)
@@ -124,7 +125,7 @@ low-end hardware and serving many concurrent requests.")
         ("rust-wild" ,rust-wild-2))
        #:cargo-development-inputs
        (("rust-assert-cmd" ,rust-assert-cmd-1)
-        ("rust-nix" ,rust-nix-0.20)
+        ("rust-nix" ,rust-nix-0.21)
         ("rust-predicates" ,rust-predicates-1)
         ("rust-serial-test" ,rust-serial-test-0.5)
         ("rust-tempfile" ,rust-tempfile-3)
@@ -375,6 +376,67 @@ provides defaults for 80% of the use cases.")
      "This package provides a command line hex viewer.  It uses a colored output
 for distinguishing different kinds of bytes such as NULL bytes, printable ASCII
 characters, ASCII whitespace characters, other ASCII characters and non-ASCII.")
+    (license (list license:expat license:asl2.0))))
+
+(define-public hyperfine
+  (package
+    (name "hyperfine")
+    (version "1.11.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "hyperfine" version))
+        (file-name
+         (string-append name "-" version ".tar.gz"))
+        (sha256
+         (base32
+          "0m5lrvx6wwkxqdc5digm1k4diiaqcg5j4pia77s5nw1aam7k51hy"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:rust ,rust-1.46
+       #:modules ((guix build cargo-build-system)
+                  (guix build utils)
+                  (srfi srfi-26))
+       #:cargo-inputs
+       (("rust-atty" ,rust-atty-0.2)
+        ("rust-cfg-if" ,rust-cfg-if-0.1)
+        ("rust-clap" ,rust-clap-2)
+        ("rust-colored" ,rust-colored-2)
+        ("rust-csv" ,rust-csv-1)
+        ("rust-indicatif" ,rust-indicatif-0.15)
+        ("rust-libc" ,rust-libc-0.2)
+        ("rust-rand" ,rust-rand-0.7)
+        ("rust-rust-decimal" ,rust-rust-decimal-1)
+        ("rust-serde" ,rust-serde-1)
+        ("rust-serde-json" ,rust-serde-json-1)
+        ("rust-statistical" ,rust-statistical-1)
+        ("rust-version-check" ,rust-version-check-0.9)
+        ("rust-winapi" ,rust-winapi-0.3))
+       #:cargo-development-inputs
+       (("rust-approx" ,rust-approx-0.3))
+       #:phases
+       (modify-phases %standard-phases
+        (add-after 'install 'install-more
+          (lambda* (#:key outputs #:allow-other-keys)
+            (let* ((out   (assoc-ref outputs "out"))
+                   (share (string-append out "/share/"))
+                   (man   (string-append share "man/man1"))
+                   (bash  (string-append share "bash-completion/completions"))
+                   (fish  (string-append share "fish/vendor_completions.d"))
+                   (zsh   (string-append share "zsh/site-functions")))
+              (install-file "doc/hyperfine.1" man)
+              (for-each (cut install-file <> bash)
+                        (find-files "target/release/build" "^hyperfine.bash$"))
+              (rename-file (string-append bash "/hyperfine.bash")
+                           (string-append bash "/hyperfine"))
+              (for-each (cut install-file <> fish)
+                        (find-files "target/release/build" "^hyperfine.fish$"))
+              (for-each (cut install-file <> zsh)
+                        (find-files "target/release/build" "^_hyperfine$"))))))))
+    (home-page "https://github.com/sharkdp/hyperfine")
+    (synopsis "Command-line benchmarking tool")
+    (description
+     "This package provides a command-line benchmarking tool.")
     (license (list license:expat license:asl2.0))))
 
 (define-public ripgrep

@@ -85,6 +85,8 @@
   #:use-module (gnu packages emacs)
   #:use-module (gnu packages enchant)
   #:use-module (gnu packages file)
+  #:use-module (gnu packages fontutils)
+  #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages gdb)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages ghostscript)
@@ -113,11 +115,13 @@
   #:use-module (gnu packages m4)
   #:use-module (gnu packages man)
   #:use-module (gnu packages ncurses)
+  #:use-module (gnu packages nettle)
   #:use-module (gnu packages networking)
   #:use-module (gnu packages ninja)
   #:use-module (gnu packages openldap)
   #:use-module (gnu packages onc-rpc)
   #:use-module (gnu packages pcre)
+  #:use-module (gnu packages pdf)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages perl-check)
   #:use-module (gnu packages perl-web)
@@ -494,7 +498,7 @@ to run without any changes.")
 (define-public fetchmail
   (package
     (name "fetchmail")
-    (version "6.4.19")
+    (version "6.4.20")
     (source
      (origin
        (method url-fetch)
@@ -502,7 +506,7 @@ to run without any changes.")
                            (version-major+minor version) "/"
                            "fetchmail-" version ".tar.xz"))
        (sha256
-        (base32 "0pvbknpimf38ws4gskad79wd1cvy62kcsjy65sm0rr83s6ii33fd"))))
+        (base32 "0xk171sbxcwjh1ibpipryw5sv4sy7jjfvhn5n373j04g5sp428f8"))))
     (build-system gnu-build-system)
     (inputs
      `(("openssl" ,openssl)))
@@ -529,7 +533,7 @@ aliasing facilities to work just as they would on normal mail.")
 (define-public mutt
   (package
     (name "mutt")
-    (version "2.1.0")
+    (version "2.1.1")
     (source (origin
              (method url-fetch)
              (uri (list
@@ -539,7 +543,7 @@ aliasing facilities to work just as they would on normal mail.")
                                    version ".tar.gz")))
              (sha256
               (base32
-               "0dqd6gg1wwhxjgdfl8j0kf93mw43kvd6wrwrzkscq2wjrsy5p0w0"))
+               "0jjjvqkqmpj55v111p1a1i2ry7mpd1bpphn1bhvlr18rgw7xdrja"))
              (patches (search-patches "mutt-store-references.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -1602,7 +1606,7 @@ compresses it.")
 (define-public claws-mail
   (package
     (name "claws-mail")
-    (version "3.17.8")
+    (version "4.0.0")
     (source
      (origin
        (method url-fetch)
@@ -1610,15 +1614,13 @@ compresses it.")
         (string-append "https://www.claws-mail.org/releases/claws-mail-"
                        version ".tar.xz"))
        (sha256
-        (base32 "1byxmz68lnm2m8q1gnp0lpr3qp7dcwabrw5iqflz9mlm960v5dyd"))))
+        (base32 "0xg41rxxq2q5vhjzbh8p12s248kcljk6g7y0m6raq7nrllkbvwja"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:configure-flags
        (list
-        "--enable-gnutls"
-        "--enable-pgpmime-plugin"
-        "--enable-enchant"
-        "--enable-ldap")
+        "--disable-static"
+        "--enable-demo-plugin")
        #:make-flags
        ;; Disable updating icon cache since it's done by the profile hook.
        ;; Conflict with other packages in the profile would be inevitable
@@ -1627,37 +1629,76 @@ compresses it.")
         "gtk_update_icon_cache=true")
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'patch-source
+           (lambda* (#:key inputs #:allow-other-keys)
+             ;; Use absolute paths to referenced programs.
+             (let* ((mailutils (assoc-ref inputs "mailutils"))
+                    (inc (string-append mailutils "/bin/mu-mh/inc"))
+                    (send-mail (assoc-ref inputs "sendmail"))
+                    (sendmail (string-append send-mail "/usr/sbin/sendmail")))
+               (substitute* "src/common/defs.h"
+                 (("/usr/bin/mh/inc") inc)
+                 (("/usr/sbin/sendmail") sendmail)))))
          (add-before 'build 'patch-mime
            (lambda* (#:key inputs #:allow-other-keys)
              (substitute* "src/procmime.c"
                (("/usr/share/mime/globs")
-                (string-append (assoc-ref inputs "mime-info")
+                (string-append (assoc-ref inputs "shared-mime-info")
                                "/share/mime/globs"))))))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     `(("bison" ,bison)
+       ;;("docbook-utils" ,docbook-utils)
+       ("flex" ,flex)
+       ("gettext-minimal" ,gettext-minimal)
+       ("gobject-introspection" ,gobject-introspection)
+       ("intltool" ,intltool)
+       ("pkg-config" ,pkg-config)))
     (inputs
      `(("bogofilter" ,bogofilter)
+       ("cairo" ,cairo)
+       ("compface" ,compface)
        ("curl" ,curl)
+       ("dbus" ,dbus)
        ("dbus-glib" ,dbus-glib)
        ("enchant" ,enchant)
        ("expat" ,expat)
+       ("fontconfig" ,fontconfig)
+       ("gdk-pixbuf+svg" ,gdk-pixbuf+svg)
        ("ghostscript" ,ghostscript)
-       ("hicolor-icon-theme" ,hicolor-icon-theme)
+       ("glib" ,glib)
        ("gnupg" ,gnupg)
        ("gnutls" ,gnutls)
        ("gpgme" ,gpgme)
-       ("gtk" ,gtk+-2)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+       ("gtk+" ,gtk+)
+       ("gumbo-parser" ,gumbo-parser)
+       ;;("j-pilot" ,j-pilot)
        ("libarchive" ,libarchive)
        ("libcanberra" ,libcanberra)
        ("libetpan" ,libetpan)
+       ("libgdata" ,libgdata)
        ("libical" ,libical)
+       ("libindicator" ,libindicator)
        ("libnotify" ,libnotify)
+       ("librsvg" ,librsvg)
        ("libsm" ,libsm)
+       ("libsoup" ,libsoup)
        ("libxml2" ,libxml2)
+       ("mailutils" ,mailutils)
+       ("nettle" ,nettle)
+       ("network-manager" ,network-manager)
+       ("openldap" ,openldap)
        ("perl" ,perl)
-       ("python-2" ,python-2)
-       ("mime-info" ,shared-mime-info)
-       ("startup-notification" ,startup-notification)))
+       ("poppler" ,poppler)
+       ("python" ,python)
+       ("python-pygobject" ,python-pygobject)
+       ("sendmail" ,sendmail)
+       ("shared-mime-info" ,shared-mime-info)
+       ("startup-notification" ,startup-notification)
+       ;;("webkitgtk" ,webkitgtk)
+       ("ytnef" ,ytnef)))
+    (propagated-inputs
+     `(("dconf" ,dconf)))
     (synopsis "GTK-based Email client")
     (description "Claws-Mail is an email client (and news reader) based on GTK+.
 The appearance and interface are designed to be familiar to new users coming
@@ -2065,14 +2106,14 @@ hashing scheme (such as scrypt) plug-in for @code{Dovecot}.")
 (define-public isync
   (package
     (name "isync")
-    (version "1.4.2")
+    (version "1.4.3")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/isync/isync/"
                            version "/isync-" version ".tar.gz"))
        (sha256 (base32
-                "0hskfpj4r4q3959k3npyqli353daj3r5d9mfia9bbmig87nyfd8r"))))
+                "024p3glj4p7fhrssw5sr55arls9zna1igxxrspxlfd6sbds21ixl"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("perl" ,perl)))
@@ -2358,7 +2399,8 @@ be expected from a simple client.")
        (sha256
         (base32
          "1ay282rrl92h0m0m8z5zzjnwiiagi7c78aq2qvhia5mw7prwfyw2"))
-       (file-name (string-append name "-" version "-checkout"))))
+       (file-name (string-append name "-" version "-checkout"))
+       (patches (search-patches "esmtp-add-lesmtp.patch"))))
     (arguments
      `(#:phases (modify-phases %standard-phases
                   (replace 'bootstrap
@@ -4364,6 +4406,34 @@ score.")
     (description "This package provides a tool to extract, recover and
 undelete email messages from Outlook Express .dbx files.")
     (license license:gpl3+)))
+
+(define-public libpst
+  (package
+    (name "libpst")
+    (version "0.6.76")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://www.five-ten-sg.com/libpst/packages/"
+                           "libpst-" version ".tar.gz"))
+       (sha256
+        (base32
+         "0hhbbb8ddsgjhv9y1xd8s9ixlhdnjmhw12v06jwx4j6vpgp1na9x"))))
+    (build-system gnu-build-system)
+    (inputs
+     `(("boost" ,boost)
+       ("libgsf" ,libgsf)
+       ("python" ,python)
+       ("zlib" ,zlib)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (home-page "https://www.five-ten-sg.com/libpst/")
+    (synopsis "")
+    (description "The Libpst utilities include @code{readpst} which can
+convert email messages to both mbox and MH mailbox formats, @code{pst2ldif}
+which can convert the contacts to @code{.ldif} format for import into LDAP
+databases, and other tools to process Outlook email archives.")
+    (license license:gpl2+)))
 
 (define-public crm114
   (package

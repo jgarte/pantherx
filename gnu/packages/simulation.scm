@@ -41,6 +41,8 @@
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-build)
+  #:use-module (gnu packages python-science)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages readline)
   #:use-module (gnu packages tls)
@@ -48,6 +50,7 @@
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
   #:use-module (guix download)
+  #:use-module (guix git-download)
   #:use-module (guix svn-download)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
@@ -836,3 +839,144 @@ convert files from one format to another.  Formats such as cgns, h5m,
 gmsh, xdmf and vtk are supported.  The package provides command-line
 tools and a collection of Python modules for programmatic use.")
     (license license:expat)))
+
+(define-public python-pygmsh
+  (package
+    (name "python-pygmsh")
+    (version "7.1.9")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "pygmsh" version))
+        (sha256
+          (base32
+           "1q7nr0cq581wlif537y6awj7vz9jywxg14c8znmsx5ip8x24754j"))
+        (modules '((guix build utils)))
+        (snippet
+         '(begin
+            (let ((file (open-file "setup.py" "a")))
+              (display "from setuptools import setup\nsetup()" file)
+              (close-port file))
+            ;; setuptools is supplied by the build system.  An extra
+            ;; reference in the original configuration file triggers
+            ;; an attempt to download the package again.  This fails.
+            ;; The extra reference is unnecessary and is removed.
+            (substitute* "setup.cfg"
+              (("^[[:blank:]]+setuptools>=42\n") ""))
+            ;; FIXME: gmsh version 4.7.0 introduces new field option
+            ;; names.  See gmsh commit 6eab8028.  pygmsh needs to use
+            ;; one of the old option names for compatibility with gmsh
+            ;; version 4.6.0.
+            (with-directory-excursion "pygmsh/common"
+              (substitute* "size_field.py"
+                (("NumPointsPerCurve") "NNodesByEdge")))
+            #t))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("pytest" ,python-pytest)
+       ("wheel" ,python-wheel)))
+    (propagated-inputs
+     `(("importlib-metadata" ,python-importlib-metadata)
+       ("gmsh" ,gmsh)
+       ("meshio" ,python-meshio)
+       ("numpy" ,python-numpy)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               ;; The readme test is skipped.  It requires the exdown
+               ;; module which is not available.
+               (invoke "python" "-m" "pytest" "-v" "test"
+                       "--ignore" "test/test_readme.py"))
+             #t)))))
+    (home-page "https://github.com/nschloe/pygmsh")
+    (synopsis "Python frontend for Gmsh")
+    (description "The goal of @code{pygmsh} is to combine the power of
+Gmsh with the versatility of Python.  The package generalises many of
+the methods and functions that comprise the Gmsh Python API.  In this
+way the meshing of complex geometries using high-level abstractions is
+made possible.  The package provides a Python library together with a
+command-line utility for mesh optimisation.")
+    (license license:lgpl3)))
+
+(define-public python-dolfin-adjoint
+  (package
+    (name "python-dolfin-adjoint")
+    (version "2019.1.0")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+              (url "https://github.com/dolfin-adjoint/pyadjoint")
+              (commit version)))
+        (file-name (git-file-name name version))
+        (sha256
+          (base32
+           "0xhy76a5f33hz94wc9g2mc5qmwkxfccbbc6yxl7psm130afp8lhn"))
+        (modules '((guix build utils)))
+        (snippet
+         '(begin
+            ;; One of the migration tests attempts to call openmpi
+            ;; recursively and fails.  See
+            ;; https://bitbucket.org/mpi4py/mpi4py/issues/95.  Run the
+            ;; test sequentially instead.
+            (with-directory-excursion "tests/migration/optimal_control_mms"
+              (substitute* "test_optimal_control_mms.py"
+                (("\\\"mpirun\\\", \\\"-n\\\", \\\"2\\\", ") "")))
+            ;; Result files are regenerated in the check phase.
+            (delete-file-recursively
+             "tests/migration/viscoelasticity/test-results")
+            #t))))
+    (build-system python-build-system)
+    (inputs
+     `(("fenics" ,fenics)
+       ("openmpi" ,openmpi)
+       ("pybind11" ,pybind11)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("python-coverage" ,python-coverage)
+       ("python-decorator" ,python-decorator)
+       ("python-flake8" ,python-flake8)
+       ("python-pkgconfig" ,python-pkgconfig)
+       ("python-pytest" ,python-pytest)))
+    (propagated-inputs
+     `(("scipy" ,python-scipy)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'build 'mpi-setup
+                    ,%openmpi-setup)
+         (add-after 'install 'install-doc
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((doc (string-append (assoc-ref outputs "out")
+                                        "/share/doc/" ,name "-"
+                                        ,version))
+                    (examples (string-append doc "/examples")))
+               (mkdir-p examples)
+               (copy-recursively "examples" examples))
+             #t))
+         (replace 'check
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (setenv "HOME" (getcwd))
+               (and (invoke "py.test" "-v" "tests/fenics_adjoint")
+                    (invoke "py.test" "-v" "tests/migration")
+                    (invoke "py.test" "-v" "tests/pyadjoint")))
+             #t)))))
+    (home-page "http://www.dolfin-adjoint.org")
+    (synopsis "Automatic differentiation library")
+    (description "@code{python-dolfin-adjoint} is a solver of
+differential equations associated with a governing system and a
+functional of interest.  Working from the forward model the solver
+automatically derives the discrete adjoint and tangent linear models.
+These additional models are key ingredients in many algorithms such as
+data assimilation, optimal control, sensitivity analysis, design
+optimisation and error estimation.  The dolfin-adjoint project
+provides the necessary tools and data structures for cases where the
+forward model is implemented in @code{fenics} or
+@url{https://firedrakeproject.org,firedrake}.")
+    (license license:lgpl3)))

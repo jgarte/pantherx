@@ -91,6 +91,7 @@
   #:use-module (gnu packages web)
   #:use-module (gnu packages webkit)
   #:use-module (gnu packages xdisorg)
+  #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
@@ -99,7 +100,7 @@
 (define-public sbcl-alexandria
   (package
    (name "sbcl-alexandria")
-   (version "1.2")
+   (version "1.4")
    (source
     (origin
      (method git-fetch)
@@ -108,7 +109,7 @@
            (commit (string-append "v" version))))
      (sha256
       (base32
-       "0bcqs0z9xlqgjz43qzgq9i07vdlnjllpm1wwa37wpkg0w975r712"))
+       "0r1adhvf98h0104vq14q7y99h0hsa8wqwqw92h7ghrjxmsvz2z6l"))
      (file-name (git-file-name name version))))
    (build-system asdf-build-system/sbcl)
    (native-inputs
@@ -9820,6 +9821,35 @@ caching based on arguments (an expanded form of memoization).")
 (define-public ecl-function-cache
   (sbcl-package->ecl-package sbcl-function-cache))
 
+(define-public sbcl-cache-while
+  (let ((commit "38e9ffbdb2c894670c366c1e5802ffcc8cfd43a7")
+        (revision "1"))
+    (package
+      (name "sbcl-cache-while")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/charje/cache-while")
+               (commit commit)))
+         (file-name (git-file-name "cache-while" version))
+         (sha256
+          (base32 "1qil68rfn5irmkb0jk1f6g1zy80wgc3skl8cr4rfgh7ywgm5izx3"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/charje/cache-while")
+      (synopsis "Temporary / one-time caching macro for Common Lisp")
+      (description
+       "This is a Common Lisp macro for defining temporary caches that
+invalidate based on expressions evaluating to different values.")
+      (license license:llgpl))))
+
+(define-public cl-cache-while
+  (sbcl-package->cl-source-package sbcl-cache-while))
+
+(define-public ecl-cache-while
+  (sbcl-package->ecl-package sbcl-cache-while))
+
 (define-public sbcl-type-r
   (let ((commit "83c89e38f2f7a7b16f1012777ecaf878cfa6a267")
         (revision "1"))
@@ -16499,6 +16529,41 @@ for Common Lisp.")
 (define-public cl-bknr-datastore
   (sbcl-package->cl-source-package sbcl-bknr-datastore))
 
+(define-public sbcl-authentic
+  (let ((commit "4e9194dda227b98f56dda1c2a2480efcc2d1f973")
+        (revision "2"))
+    (package
+      (name "sbcl-authentic")
+      (version (git-version "0.1.2" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/charje/cl-authentic")
+               (commit commit)))
+         (file-name (git-file-name "cl-authentic" version))
+         (sha256
+          (base32 "0ncsxrybnx0pjsndv3j8w4lphlpcsld8sxg3c5b46fb3a8nd4ssf"))))
+      (build-system asdf-build-system/sbcl)
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (inputs
+       `(("clsql" ,sbcl-clsql)
+         ("ironclad" ,sbcl-ironclad)))
+      (home-page "https://github.com/charje/cl-authentic")
+      (synopsis "User/password management for Common Lisp applications")
+      (description "Authentic provides a light-weight and extendible
+solution to user/password management for Common Lisp applications.  It has
+features such as safe password storage in a database, password reset, user
+confirmation tokens, and user authentication.")
+      (license license:llgpl))))
+
+(define-public ecl-authentic
+  (sbcl-package->ecl-package sbcl-authentic))
+
+(define-public cl-authentic
+  (sbcl-package->cl-source-package sbcl-authentic))
+
 (define-public sbcl-3d-vectors
   (let ((commit "29bb9684df803590deed344af63dbf7b712aabc0")
         (revision "1"))
@@ -18246,8 +18311,8 @@ concept of a source-form to report where the error or warning is located.")
   (sbcl-package->cl-source-package sbcl-trivial-with-current-source-form))
 
 (define-public sbcl-tailrec
-  (let ((commit "a7cf91ef7bd73c118e96817e809a7ae587d4673f")
-        (revision "1"))
+  (let ((commit "6f882846d8f5bca9138df26510862e64bb15d92f")
+        (revision "2"))
     (package
       (name "sbcl-tailrec")
       (version (git-version "0" revision commit))
@@ -18259,7 +18324,7 @@ concept of a source-form to report where the error or warning is located.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "0a25xa2kqai480micv8ap5bg4pz1dg7q3lz61g1ygim96cdjpwhl"))))
+          (base32 "1h8m2npdzd2cpnl75pvv4yvvfwxa7kl6qvalc9s0y4yws0kaih3i"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("alexandia" ,sbcl-alexandria)
@@ -18432,3 +18497,186 @@ bound to whatever value was in the same place in the URL (as a string).")
 
 (define-public cl-hunchenissr-routes
   (sbcl-package->cl-source-package sbcl-hunchenissr-routes))
+
+(define-public sbcl-spinneret
+  ;; No release since 2019, no tags.
+  (let ((commit "02451b32648eda4e6e4022bbb7f91d9ea71bebbc"))
+    (package
+      (name "sbcl-spinneret")
+      (version (git-version "3.0" "4" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ruricolist/spinneret/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0jllnsi2ibw0gax9szpdrjxvw9qqibydpdbnkf683yfb1d5jlci1"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("global-vars" ,sbcl-global-vars)
+         ("parenscript" ,sbcl-parenscript)
+         ("cl-markdown" ,sbcl-cl-markdown)
+         ("ppcre" ,sbcl-cl-ppcre)
+         ("serapeum" ,sbcl-serapeum)
+         ("trivial-gray-streams" ,sbcl-trivial-gray-streams)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (home-page "https://github.com/ruricolist/spinneret")
+      (synopsis "Common Lisp HTML5 generator")
+      (description
+       "In the crowded space of Common Lisp HTML generators, Spinneret
+occupies the following coordinates:
+
+@itemize
+
+@item Modern.  Targets HTML5.  Does not treat XML and HTML as the same
+problem.  Assumes you will be serving your documents as UTF-8.
+
+@item Composable.  Makes it easy to refactor HTML generation into separate
+functions and macros.
+
+@item Pretty.  Treats HTML as a document format, not a serialization.  Output
+is idiomatic and readable, following the coding style of the HTML5
+specification.
+
+@item Aggressive.  If something can be interpreted as HTML, then it will be,
+meaning that some Lisp forms can't be mixed with HTML syntax.  In the
+trade-off between 90% convenience and 10% correctness Spinneret is on the side
+of convenience.
+
+@item Bilingual.  Spinneret (after loading @code{spinneret/ps}) has the same
+semantics in Lisp and Parenscript.
+
+@end itemize\n")
+      (license license:expat))))
+
+(define-public ecl-spinneret
+  (sbcl-package->ecl-package sbcl-spinneret))
+
+(define-public cl-spinneret
+  (sbcl-package->cl-source-package sbcl-spinneret))
+
+(define-public sbcl-cl-libxml2
+  (let ((commit "8d03110c532c1a3fe15503fdfefe82f60669e4bd"))
+    (package
+      (name "sbcl-cl-libxml2")
+      (version (git-version "0.3.4" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/archimag/cl-libxml2")
+               (commit commit)))
+         (file-name (git-file-name "cl-libxml2" version))
+         (sha256
+          (base32 "09049c13cfp5sc6x9lrw762jd7a9qkfq5jgngqgrzn4kn9qscarw"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("cffi" ,sbcl-cffi)
+         ("flexi-streams" ,sbcl-flexi-streams)
+         ("garbage-pools" ,sbcl-garbage-pools)
+         ("iterate" ,sbcl-iterate)
+         ("metabang-bind" ,sbcl-metabang-bind)
+         ("puri" ,sbcl-puri)
+         ;; Non-Lisp inputs:
+         ("libxml2" ,libxml2)
+         ("libxslt" ,libxslt)))
+      (native-inputs
+       `(("lift" ,sbcl-lift)))
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'fix-paths
+             (lambda* (#:key inputs outputs #:allow-other-keys)
+               (substitute* "tree/xtree.lisp"
+                 (("libxml2.so.2")
+                  (string-append (assoc-ref inputs "libxml2") "/lib/libxml2.so")))
+               (let ((libxslt (assoc-ref inputs "libxslt")))
+                 (substitute* "xslt/xslt.lisp"
+                   (("libxslt.so.1")
+                    (string-append libxslt "/lib/libxslt.so"))
+                   (("libexslt.so.0")
+                    (string-append libxslt "/lib/libexslt.so"))
+                   (("cllibxml2.so")
+                    (string-append (assoc-ref outputs "out") "/lib/cllibxml2.so"))))
+               #t))
+           (add-before 'build 'build-helper-library
+             (lambda* (#:key inputs outputs #:allow-other-keys)
+               (let ((prefix-dir (string-append (assoc-ref outputs "out"))))
+                 (mkdir-p (string-append prefix-dir "/lib"))
+                 (invoke "make" "-C" "foreign" "install"
+                         "INSOPTS="
+                         (string-append "PREFIX=" prefix-dir))
+                 #t)))
+           (add-after 'unpack 'fix-tests
+             (lambda _
+               (substitute* '("cl-libxml2.asd" "cl-libxslt.asd" "xfactory.asd")
+                 ((" :force t") ""))
+               #t)))))
+      (home-page "https://web.archive.org/web/20160121073421/http://cl-libxml2.googlecode.com/svn/doc/index.html")
+      (synopsis "High-level wrapper around libxml2 and libxslt libraries")
+      (description
+       "cl-libxml2 is high-level Common Lisp wrapper around the @code{libxml2}
+and @code{libxslt} libraries.
+
+@itemize
+@item Interfaces for tree manipulation (like @code{cxml-stp}).
+@item Interface for HTML 4.0 non-validating parsers.
+@item Specific APIs to process HTML trees, especially serialization.
+@item XPath API.
+@item XSLT API.
+@item Custom URL resolvers.
+@item XPath extension functions.
+@item XSLT extension elements.
+@item Translates @code{libxml2} and @code{libxslt} errors to Lisp conditions.
+@item Extends the Common Lisp @code{iterate} library with custom drivers for
+child nodes enumeration, etc.
+@item The @code{XFACTORY} system provides a simple and compact syntax for XML generation.
+@end itemize\n")
+      (license license:llgpl))))
+
+(define-public ecl-cl-libxml2
+  (sbcl-package->ecl-package sbcl-cl-libxml2))
+
+(define-public cl-libxml2
+  (sbcl-package->cl-source-package sbcl-cl-libxml2))
+
+(define-public sbcl-feeder
+  ;; No release.
+  (let ((commit "b05f517d7729564575cc809e086c262646a94d34")
+        (revision "1"))
+    (package
+      (name "sbcl-feeder")
+      (version (git-version "1.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/Shinmera/feeder")
+               (commit commit)))
+         (file-name (git-file-name "feeder" version))
+         (sha256
+          (base32 "1dpbzhycg50snl3j01c8dh8gdvhfhz0hnfl54xy55a3wbr3m6rp7"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("documentation-utils" ,sbcl-documentation-utils)
+         ("local-time" ,sbcl-local-time)
+         ("plump" ,sbcl-plump)))
+      (home-page "https://shinmera.github.io/feeder/")
+      (synopsis "RSS, Atom and general feed parsing and generating")
+      (description
+       "Feeder is a syndication feed library.  It presents a general protocol
+for representation of feed items, as well as a framework to translate these
+objects from and to external formats.  It also implements the RSS 2.0 and Atom
+formats within this framework.")
+      (license license:zlib))))
+
+(define-public ecl-feeder
+  (sbcl-package->ecl-package sbcl-feeder))
+
+(define-public cl-feeder
+  (sbcl-package->cl-source-package sbcl-feeder))

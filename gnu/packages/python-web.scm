@@ -1068,6 +1068,31 @@ Origin Resource Sharing}, making cross-origin AJAX possible.")
 into Jinja2 by default.")
     (license license:bsd-3)))
 
+(define-public python-flask-misaka
+  (package
+    (name "python-flask-misaka")
+    (version "1.0.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "Flask-Misaka" version))
+        (sha256
+          (base32
+            "12gm6hq3lvlj0ddw8p6lk5pky8jk3pw758ihffjl49shnnzc68zl"))))
+    (build-system python-build-system)
+    (native-inputs
+      `(("python-coverage" ,python-coverage)
+        ("python-mock" ,python-mock)))
+    (propagated-inputs
+      `(("python-flask" ,python-flask)
+        ("python-misaka" ,python-misaka)))
+    (home-page "https://github.com/singingwolfboy/flask-misaka/")
+    (synopsis "Flask interface to Misaka, a Markdown parsing library")
+    (description
+      "This package provides an interface between the Flask web framework and
+the Misaka Markdown parser.")
+    (license license:expat)))
+
 (define-public python-flask-session
   (package
     (name "python-flask-session")
@@ -3803,22 +3828,18 @@ CSS tidy.  Also supports URL rewriting in CSS files.")
 (define-public python-elasticsearch
   (package
     (name "python-elasticsearch")
-    (version "7.1.0")
+    (version "7.13.4")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "elasticsearch" version))
         (sha256
          (base32
-          "0rnjvlhw4v3vg14l519qliy1s1zpmx3827q0xfviwvk42rr7hh01"))))
+          "1q38w9nh2j2yi82d8rhzb57597l4lq5zx7xzfg45xf7ffrgsipaj"))))
     (build-system python-build-system)
-    (native-inputs
-     `(("python-mock" ,python-mock)
-       ("python-nosexcover" ,python-nosexcover)
-       ("python-pyaml" ,python-pyaml)
-       ("python-requests" ,python-requests)))
     (propagated-inputs
-     `(("urllib3" ,python-urllib3)))
+     `(("python-certifi" ,python-certifi)
+       ("python-urllib3" ,python-urllib3)))
     (arguments
      ;; tests require the test_elasticsearch module but it is not distributed.
      `(#:tests? #f))
@@ -5302,6 +5323,90 @@ Plus all the standard features of requests:
 @item Chunked Requests
 @end itemize")
     (license license:bsd-3)))
+
+(define-public python-wsgiprox
+  (package
+    (name "python-wsgiprox")
+    (version "1.5.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "wsgiprox" version))
+       (sha256
+        (base32
+         "11fsm199pvwbmqx2lccznvws65aam1rqqv0w79gal8hispwgd5rs"))))
+    (build-system python-build-system)
+    (arguments
+     ;; The test suite hangs (see:
+     ;; https://github.com/webrecorder/wsgiprox/issues/6).
+     `(#:tests? #f
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-pytest-argument
+           (lambda _
+             ;; See: https://github.com/webrecorder/wsgiprox/issues/7.
+             (substitute* "setup.py"
+               (("--doctest-module")
+                "--doctest-modules")))))))
+    (propagated-inputs
+     `(("python-certauth" ,python-certauth)
+       ("python-gevent" ,python-gevent)
+       ("python-websocket-client" ,python-websocket-client)))
+    (native-inputs
+     `(("python-mock" ,python-mock)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-waitress" ,python-waitress)))
+    (home-page "https://github.com/webrecorder/wsgiprox")
+    (synopsis "HTTP/S proxy with WebSockets over WSGI")
+    (description "@code{wsgiprox} is a Python WSGI (Web Server Gateway
+Interface) middle-ware for adding HTTP and HTTPS proxy support to a WSGI
+application.  The library accepts HTTP and HTTPS proxy connections, and routes
+them to a designated prefix.")
+    (license license:asl2.0)))
+
+(define-public python-warcio
+  ;; The PyPI release is missing some test support files (see:
+  ;; https://github.com/webrecorder/warcio/issues/132).
+  (let ((revision "0")
+        (commit "aa702cb321621b233c6e5d2a4780151282a778be"))
+    (package
+      (name "python-warcio")
+      (version (git-version "1.7.4" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/webrecorder/warcio")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "11afr6zy3r6rda81010iq496dazg4xid0izg3smg6ighpmvsnzf2"))))
+      (build-system python-build-system)
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'skip-problematic-tests
+             (lambda _
+               ;; These tests fail due to networking requirements.
+               (substitute* "setup.py"
+                 (("pytest.main\\(\\[" all)
+                  (string-append all "'-k', '"
+                                 (string-append "not test_post_chunked and "
+                                                "not test_remote") "'"))))))))
+      (native-inputs
+       ;; These inputs are required for the test suite.
+       `(("python-httpbin" ,python-httpbin)
+         ("python-pytest-cov" ,python-pytest-cov)
+         ("python-requests" ,python-requests)
+         ("python-wsgiprox" ,python-wsgiprox)))
+      (home-page "https://github.com/webrecorder/warcio")
+      (synopsis "Streaming web archival archive (WARC) library")
+      (description "warcio is a Python library to read and write the WARC format
+commonly used in Web archives. It is designed for fast, low-level access to
+web archival content, oriented around a stream of WARC records rather than
+files.")
+      (license license:asl2.0))))
 
 (define-public python-websockets
   (package

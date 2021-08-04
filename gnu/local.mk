@@ -450,6 +450,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/php.scm				\
   %D%/packages/piet.scm			\
   %D%/packages/pkg-config.scm			\
+  %D%/packages/plan9.scm			\
   %D%/packages/plotutils.scm			\
   %D%/packages/poedit.scm				\
   %D%/packages/polkit.scm			\
@@ -492,6 +493,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/regex.scm				\
   %D%/packages/robotics.scm			\
   %D%/packages/rpc.scm				\
+  %D%/packages/rpm.scm				\
   %D%/packages/rrdtool.scm			\
   %D%/packages/rsync.scm			\
   %D%/packages/ruby.scm				\
@@ -557,6 +559,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/tmux.scm				\
   %D%/packages/tor.scm				\
   %D%/packages/tv.scm				\
+  %D%/packages/uglifyjs.scm			\
   %D%/packages/uml.scm				\
   %D%/packages/unicode.scm			\
   %D%/packages/unrtf.scm			\
@@ -682,6 +685,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/build/chromium-extension.scm		\
   %D%/build/cross-toolchain.scm			\
   %D%/build/image.scm				\
+  %D%/build/jami-service.scm			\
   %D%/build/file-systems.scm			\
   %D%/build/hurd-boot.scm			\
   %D%/build/install.scm				\
@@ -719,6 +723,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/tests/security-token.scm			\
   %D%/tests/singularity.scm			\
   %D%/tests/ssh.scm				\
+  %D%/tests/telephony.scm		        \
   %D%/tests/version-control.scm			\
   %D%/tests/virtualization.scm			\
   %D%/tests/web.scm
@@ -784,7 +789,8 @@ dist_installer_DATA =				\
 MODULES_NOT_COMPILED +=				\
   %D%/build/locale.scm				\
   %D%/build/shepherd.scm			\
-  %D%/build/svg.scm
+  %D%/build/svg.scm				\
+  %D%/tests/data/jami-dummy-account.dat
 
 patchdir = $(guilemoduledir)/%D%/packages/patches
 dist_patch_DATA =						\
@@ -817,6 +823,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/antlr3-3_1-fix-java8-compilation.patch	\
   %D%/packages/patches/antlr3-3_3-fix-java8-compilation.patch	\
   %D%/packages/patches/apr-skip-getservbyname-test.patch	\
+  %D%/packages/patches/ark-skip-xar-test.patch			\
   %D%/packages/patches/aspell-default-dict-dir.patch		\
   %D%/packages/patches/ath9k-htc-firmware-binutils.patch	\
   %D%/packages/patches/ath9k-htc-firmware-gcc.patch		\
@@ -926,6 +933,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/combinatorial-blas-io-fix.patch		\
   %D%/packages/patches/coreutils-ls.patch			\
   %D%/packages/patches/cpufrequtils-fix-aclocal.patch		\
+  %D%/packages/patches/cpuinfo-system-libraries.patch		\
   %D%/packages/patches/crawl-upgrade-saves.patch		\
   %D%/packages/patches/crda-optional-gcrypt.patch		\
   %D%/packages/patches/clucene-contribs-lib.patch               \
@@ -994,6 +1002,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/enjarify-setup-py.patch			\
   %D%/packages/patches/enlightenment-fix-setuid-path.patch	\
   %D%/packages/patches/erlang-man-path.patch			\
+  %D%/packages/patches/esmtp-add-lesmtp.patch		\
   %D%/packages/patches/eudev-rules-directory.patch		\
   %D%/packages/patches/evilwm-lost-focus-bug.patch		\
   %D%/packages/patches/evolution-CVE-2020-11879.patch		\
@@ -1023,11 +1032,13 @@ dist_patch_DATA =						\
   %D%/packages/patches/foomatic-filters-CVE-2015-8327.patch	\
   %D%/packages/patches/foomatic-filters-CVE-2015-8560.patch	\
   %D%/packages/patches/fontconfig-hurd-path-max.patch		\
+  %D%/packages/patches/fp16-system-libraries.patch		\
   %D%/packages/patches/fpc-reproducibility.patch		\
   %D%/packages/patches/fplll-std-fenv.patch     		\
   %D%/packages/patches/freedink-engine-fix-sdl-hints.patch	\
   %D%/packages/patches/freeimage-unbundle.patch		\
   %D%/packages/patches/fuse-overlapping-headers.patch				\
+  %D%/packages/patches/fxdiv-system-libraries.patch		\
   %D%/packages/patches/gajim-honour-GAJIM_PLUGIN_PATH.patch	\
   %D%/packages/patches/ganeti-deterministic-manual.patch	\
   %D%/packages/patches/ganeti-disable-version-symlinks.patch	\
@@ -1285,6 +1296,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/jfsutils-include-systypes.patch		\
   %D%/packages/patches/jsoncpp-fix-inverted-case.patch		\
   %D%/packages/patches/julia-SOURCE_DATE_EPOCH-mtime.patch	\
+  %D%/packages/patches/julia-tracker-16-compat.patch		\
   %D%/packages/patches/kdbusaddons-kinit-file-name.patch	\
   %D%/packages/patches/libblockdev-glib-compat.patch		\
   %D%/packages/patches/libffi-3.3-powerpc-fixes.patch		\
@@ -1416,6 +1428,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/lvm2-static-link.patch			\
   %D%/packages/patches/mailutils-fix-uninitialized-variable.patch	\
   %D%/packages/patches/make-impure-dirs.patch			\
+  %D%/packages/patches/marble-qt-add-qt-headers.patch		\
   %D%/packages/patches/mariadb-CVE-2021-27928.patch		\
   %D%/packages/patches/mars-install.patch			\
   %D%/packages/patches/mars-sfml-2.3.patch			\
@@ -1502,6 +1515,10 @@ dist_patch_DATA =						\
   %D%/packages/patches/ocaml-dose3-Install-mli-cmx-etc.patch	\
   %D%/packages/patches/omake-fix-non-determinism.patch	\
   %D%/packages/patches/oneko-remove-nonfree-characters.patch	\
+  %D%/packages/patches/onnx-optimizer-system-library.patch	\
+  %D%/packages/patches/onnx-use-system-googletest.patch	\
+  %D%/packages/patches/onnx-shared-libraries.patch	\
+  %D%/packages/patches/onnx-skip-model-downloads.patch		\
   %D%/packages/patches/openbabel-fix-crash-on-nwchem-output.patch	\
   %D%/packages/patches/opencascade-oce-glibc-2.26.patch		\
   %D%/packages/patches/opencv-fix-build-of-grfmt_jpeg2000.cpp.patch	\
@@ -1530,6 +1547,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/pciutils-hurd-fix.patch			\
   %D%/packages/patches/plasma-framework-fix-KF5PlasmaMacros.cmake.patch \
   %D%/packages/patches/ppsspp-disable-upgrade-and-gold.patch		\
+  %D%/packages/patches/pthreadpool-system-libraries.patch	\
   %D%/packages/patches/samba-fix-fcntl-hint-detection.patch		\
   %D%/packages/patches/sdcc-disable-non-free-code.patch		\
   %D%/packages/patches/sdl-pango-api_additions.patch		\
@@ -1578,7 +1596,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/procmail-ambiguous-getline-debian.patch  \
   %D%/packages/patches/procmail-CVE-2014-3618.patch		\
   %D%/packages/patches/procmail-CVE-2017-16844.patch		\
-  %D%/packages/patches/proot-test-fhs.patch			\
   %D%/packages/patches/psm-arch.patch				\
   %D%/packages/patches/psm-disable-memory-stats.patch		\
   %D%/packages/patches/psm-ldflags.patch			\
@@ -1623,7 +1640,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-memcached-syntax-warnings.patch	\
   %D%/packages/patches/python-mox3-python3.6-compat.patch	\
   %D%/packages/patches/python-testtools.patch			\
-  %D%/packages/patches/python-onnx-use-system-googletest.patch	\
   %D%/packages/patches/python-packaging-test-arch.patch		\
   %D%/packages/patches/python2-parameterized-docstring-test.patch	\
   %D%/packages/patches/python-paste-remove-timing-test.patch	\
@@ -1673,7 +1689,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/ripperx-missing-file.patch		\
   %D%/packages/patches/rpcbind-CVE-2017-8779.patch		\
   %D%/packages/patches/rtags-separate-rct.patch			\
-  %D%/packages/patches/racket-sh-via-rktio.patch		\
+  %D%/packages/patches/racket-minimal-sh-via-rktio.patch	\
   %D%/packages/patches/remake-impure-dirs.patch			\
   %D%/packages/patches/retroarch-LIBRETRO_DIRECTORY.patch	\
   %D%/packages/patches/rnp-add-version.cmake.patch		\
@@ -1762,11 +1778,13 @@ dist_patch_DATA =						\
   %D%/packages/patches/tlf-support-hamlib-4.2+.patch		\
   %D%/packages/patches/transcode-ffmpeg.patch	\
   %D%/packages/patches/transmission-honor-localedir.patch	\
+  %D%/packages/patches/transmission-remote-gtk-fix-appstream.patch	\
   %D%/packages/patches/ttf2eot-cstddef.patch			\
   %D%/packages/patches/tup-unbundle-dependencies.patch		\
   %D%/packages/patches/tuxpaint-stamps-path.patch		\
   %D%/packages/patches/twinkle-bcg729.patch			\
   %D%/packages/patches/u-boot-rockchip-inno-usb.patch		\
+  %D%/packages/patches/u-boot-sifive-prevent-reloc-initrd-fdt.patch	\
   %D%/packages/patches/u-boot-riscv64-fix-extlinux.patch	\
   %D%/packages/patches/ucx-tcp-iface-ioctl.patch		\
   %D%/packages/patches/udiskie-no-appindicator.patch		\
@@ -1849,6 +1867,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/xfce4-panel-plugins.patch		\
   %D%/packages/patches/xfce4-settings-defaults.patch		\
   %D%/packages/patches/xmonad-dynamic-linking.patch		\
+  %D%/packages/patches/xnnpack-system-libraries.patch		\
   %D%/packages/patches/xplanet-1.3.1-cxx11-eof.patch		\
   %D%/packages/patches/xplanet-1.3.1-libdisplay_DisplayOutput.cpp.patch	\
   %D%/packages/patches/xplanet-1.3.1-libimage_gif.c.patch	\

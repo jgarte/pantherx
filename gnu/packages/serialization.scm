@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2015, 2017, 2019, 2021 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2017, 2019, 2020, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016 Lukas Gradl <lgradl@openmailbox.org>
 ;;; Copyright © 2016 David Craven <david@craven.ch>
 ;;; Copyright © 2016, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
@@ -10,6 +10,7 @@
 ;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017, 2018, 2019 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Joshua Sierles, Nextjournal <joshua@nextjournal.com>
+;;; Copyright © 2020 Alexandros Theodotou <alex@zrythm.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -333,6 +334,74 @@ that implements both the msgpack and msgpack-rpc specifications.")
     (inputs
      `(("lua" ,lua-5.2)))))
 
+(define-public libyaml
+  (package
+    (name "libyaml")
+    (version "0.2.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://pyyaml.org/download/libyaml/yaml-"
+                           version ".tar.gz"))
+       (sha256
+        (base32
+         "1x4fcw13r3lqy8ndydr3ili87wicplw2awbcv6r21qgyfndswhn6"))))
+    (build-system gnu-build-system)
+    (arguments
+     '(#:configure-flags '("--disable-static")))
+    (home-page "https://pyyaml.org/wiki/LibYAML")
+    (synopsis "YAML 1.1 parser and emitter written in C")
+    (description
+     "LibYAML is a YAML 1.1 parser and emitter written in C.")
+    (license license:expat)))
+
+(define-public libyaml+static
+  (package
+    (inherit libyaml)
+    (name "libyaml+static")
+    (arguments
+     '(#:configure-flags '("--enable-static")))))
+
+(define-public libcyaml
+  (package
+    (name "libcyaml")
+    (version "1.1.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/tlsa/libcyaml")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (patches (search-patches "libcyaml-libyaml-compat.patch"))
+       (sha256
+        (base32 "0428p0rwq71nhh5nzcbapsbrjxa0x5l6h6ns32nxv7j624f0zd93"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:make-flags
+       (list (string-append "PREFIX=" (assoc-ref %outputs "out"))
+             (string-append "CC=gcc"))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)            ; no configure script
+         (replace 'check
+           (lambda _
+             (setenv "CC" "gcc")
+             (invoke "make" "test"))))))
+    (inputs
+     `(("libyaml" ,libyaml)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (synopsis "C library for reading and writing YAML")
+    (description
+     "LibCYAML is a C library written in ISO C11 for reading and writing
+structured YAML documents.  The fundamental idea behind CYAML is to allow
+applications to construct schemas which describe both the permissible
+structure of the YAML documents to read/write, and the C data structure(s)
+in which the loaded data is arranged in memory.")
+    (home-page "https://github.com/tlsa/libcyaml")
+    (license license:isc)))
+
 (define-public yaml-cpp
   (package
     (name "yaml-cpp")
@@ -515,22 +584,28 @@ to generate and parse.  The two primary functions are @code{cbor.loads} and
 (define-public flatbuffers
   (package
     (name "flatbuffers")
-    (version "1.10.0")
+    (version "2.0.0")
     (source
       (origin
-        (method url-fetch)
-        (uri (string-append "https://github.com/google/flatbuffers/archive/v"
-                            version ".tar.gz"))
-        (file-name (string-append name "-" version ".tar.gz"))
+        (method git-fetch)
+        (uri (git-reference
+              (url "https://github.com/google/flatbuffers")
+              (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
         (sha256
          (base32
-          "0z4swldxs0s31hnkqdhsbfmc8vx3p7zsvmqaw4l31r2iikdy651p"))))
+          "1zbf6bdpps8369r1ql00irxrp58jnalycc8jcapb8iqg654vlfz8"))))
     (build-system cmake-build-system)
     (arguments
      '(#:build-type "Release"
        #:configure-flags
-       (list (string-append "-DCMAKE_INSTALL_LIBDIR="
-                            (assoc-ref %outputs "out") "/lib"))))
+       (list "-DFLATBUFFERS_BUILD_SHAREDLIB=ON"
+             (string-append "-DCMAKE_INSTALL_LIBDIR="
+                            (assoc-ref %outputs "out") "/lib"))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'make-writable
+           (lambda _ (for-each make-file-writable (find-files ".")))))))
     (home-page "https://google.github.io/flatbuffers/")
     (synopsis "Memory-efficient serialization library")
     (description "FlatBuffers is a cross-platform serialization library for C++,

@@ -15,6 +15,7 @@
 ;;; Copyright © 2020 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2021 aecepoglu <aecepoglu@fastmail.fm>
 ;;; Copyright © 2021 Leo Famulari <leo@famulari.name>
+;;; Copyright © 2021 Pierre Langlois <pierre.langlois@gmx.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -46,6 +47,7 @@
   #:use-module (gnu packages aspell)
   #:use-module (gnu packages assembly)
   #:use-module (gnu packages autotools)
+  #:use-module (gnu packages base)
   #:use-module (gnu packages boost)
   #:use-module (gnu packages code)
   #:use-module (gnu packages crates-io)
@@ -250,6 +252,40 @@ competitive (as in keystroke count) with Vim.")
      "kak-lsp is a Language Server Protocol client for Kakoune implemented in
 Rust.")
     (license license:unlicense)))
+
+(define-public parinfer-rust
+  (package
+    (name "parinfer-rust")
+    (version "0.4.3")
+    (source
+      (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/eraserhd/parinfer-rust")
+             (commit (string-append "v" version))))
+       (sha256
+        (base32 "0hj5in5h7pj72m4ag80ing513fh65q8xlsf341qzm3vmxm3y3jgd"))
+       (file-name (git-file-name name version))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:cargo-inputs
+       (("rust-getopts" ,rust-getopts-0.2)
+        ("rust-libc" ,rust-libc-0.2)
+        ("rust-emacs" ,rust-emacs-0.11)
+        ("rust-serde" ,rust-serde-1)
+        ("rust-serde-json" ,rust-serde-json-1)
+        ("rust-serde-derive" ,rust-serde-derive-1)
+        ("rust-unicode-segmentation" ,rust-unicode-segmentation-1)
+        ("rust-unicode-width" ,rust-unicode-width-0.1))))
+    (inputs
+     `(("clang" ,clang)))
+    (home-page "https://github.com/justinbarclay/parinfer-rust")
+    (synopsis "Infer parantheses for Clojure, Lisp and Scheme")
+    (description
+     "Parinfer is a plugin for Kakoune, Vim, Neovim and Emacs that infers
+paretheses and indentation.  This library can be called from other editors that
+can load dynamic libraries.")
+    (license license:expat)))
 
 (define-public joe
   (package
@@ -470,7 +506,7 @@ Wordstar-, EMACS-, Pico, Nedit or vi-like key bindings.  e3 can be used on
 (define-public mg
   (package
     (name "mg")
-    (version "20180927")
+    (version "20210609")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -479,42 +515,41 @@ Wordstar-, EMACS-, Pico, Nedit or vi-like key bindings.  e3 can be used on
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "14vrm8lvwksf697sqks7xfd1xaqjlqjc9afjk33sksq5p27wr203"))
+                "04c2vqxg31mk15cfrhzrivykis8fmf0m1d8h1qdjdmlfxd4qwaqf"))
               (modules '((guix build utils)))
               (snippet '(begin
                           (substitute* "GNUmakefile"
-                            (("/usr/bin/") ""))
-                          #t))))
+                            (("/usr/bin/") ""))))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
-     `(("libbsd" ,libbsd)
+     `(("diffutils" ,diffutils)
+       ("libbsd" ,libbsd)
        ("ncurses" ,ncurses)))
     (arguments
      ;; No test suite available.
-     '(#:tests? #f
+     `(#:tests? #f
        #:make-flags (list (string-append "prefix=" %output)
-                          "CC=gcc")
+                          (string-append "CC=" ,(cc-for-target))
+                          (string-append "PKG_CONFIG=" ,(pkg-config-for-target)))
        #:phases (modify-phases %standard-phases
                   (delete 'configure)   ; no configure script
-                  (add-before 'build 'correct-location-of-difftool
-                    (lambda _
+                  (add-before 'build 'correct-location-of-diff
+                    (lambda* (#:key inputs #:allow-other-keys)
                       (substitute* "buffer.c"
                         (("/usr/bin/diff")
-                         (which "diff")))
-                      #t))
+                         (string-append (assoc-ref inputs "diffutils")
+                                        "/bin/diff")))))
                   (add-before 'install 'patch-tutorial-location
                     (lambda* (#:key outputs #:allow-other-keys)
                       (substitute* "mg.1"
-                        (("/usr") (assoc-ref outputs "out")))
-                      #t))
+                        (("/usr") (assoc-ref outputs "out")))))
                   (add-after 'install 'install-tutorial
                     (lambda* (#:key outputs #:allow-other-keys)
                       (let* ((out (assoc-ref outputs "out"))
                              (doc (string-append out "/share/doc/mg")))
-                        (install-file "tutorial" doc)
-                        #t))))))
+                        (install-file "tutorial" doc)))))))
     (home-page "https://homepage.boetes.org/software/mg/")
     (synopsis "Microscopic GNU Emacs clone")
     (description
@@ -892,14 +927,14 @@ Octave.  TeXmacs is completely extensible via Guile.")
 (define-public scintilla
   (package
     (name "scintilla")
-    (version "5.1.0")
+    (version "5.1.1")
     (source
      (origin
        (method url-fetch)
        (uri (let ((v (apply string-append (string-split version #\.))))
               (string-append "https://www.scintilla.org/scintilla" v ".tgz")))
        (sha256
-        (base32 "0figd543inpi00yr6han73qd2fzx99r099vzcbg9mhpzsgxfwz4f"))))
+        (base32 "1d0yjx2wlx4fj5bccxdgfmrr7nzazkw4m08i6h4c0a54sb484yif"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags (list "GTK3=1" "CC=gcc" "-Cgtk")
