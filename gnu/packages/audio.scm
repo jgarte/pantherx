@@ -24,7 +24,7 @@
 ;;; Copyright © 2019, 2021 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2019, 2020 Alexandros Theodotou <alex@zrythm.org>
-;;; Copyright © 2019 Christopher Lemmer Webber <cwebber@dustycloud.org>
+;;; Copyright © 2019 Christine Lemmer-Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2019 Jan Wielkiewicz <tona_kosmicznego_smiecia@interia.pl>
 ;;; Copyright © 2019 Hartmt Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2019, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
@@ -571,7 +571,7 @@ streams from live audio.")
 (define-public ardour
   (package
     (name "ardour")
-    (version "6.6")
+    (version "6.8")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -589,7 +589,7 @@ namespace ARDOUR { const char* revision = \"" version "\" ; const char* date = \
                     #t)))
               (sha256
                (base32
-                "0k5rxh8b3d8si3lj01gfqj0pmd448d8sj4asnb205mwhwbfgn0cp"))
+                "16x7bkzbrk0rgywq5vrkhf2z3jj08jw1bvaq9vwlf2b4h4sd7i4s"))
               (file-name (string-append name "-" version))))
     (build-system waf-build-system)
     (arguments
@@ -2829,14 +2829,14 @@ different audio devices such as ALSA or PulseAudio.")
 (define-public qjackctl
   (package
     (name "qjackctl")
-    (version "0.9.3")
+    (version "0.9.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/qjackctl/qjackctl/"
                                   version "/qjackctl-" version ".tar.gz"))
               (sha256
                (base32
-                "065x66rr1mb2bkqr88l50rcn5c8rsiq4hp5hrlyqqg46371gzhp9"))))
+                "186rg3j67rac9ds1r7gnrib2d0smgv15cmr5gwb7v83mywcp1gzy"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f))                    ; no check target

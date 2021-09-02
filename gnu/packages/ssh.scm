@@ -5,7 +5,7 @@
 ;;; Copyright © 2015, 2016, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2019 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
-;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
+;;; Copyright © 2016 Christine Lemmer-Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
@@ -16,6 +16,7 @@
 ;;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -186,7 +187,7 @@ a server that supports the SSH-2 protocol.")
 (define-public openssh
   (package
    (name "openssh")
-   (version "8.6p1")
+   (version "8.7p1")
    (source (origin
              (method url-fetch)
              (uri (string-append "mirror://openbsd/OpenSSH/portable/"
@@ -194,7 +195,7 @@ a server that supports the SSH-2 protocol.")
              (patches (search-patches "openssh-hurd.patch"))
              (sha256
               (base32
-               "1bnpivgk98h2f9afpp88jv6g9ps83vnpxd031n2jqxi12vdf9rn3"))))
+               "090yxpi03pxxzb4ppx8g8hdpw7c4nf8p0avr6c7ybsaana5lp8vw"))))
    (build-system gnu-build-system)
    (native-inputs `(("groff" ,groff)
                     ("pkg-config" ,pkg-config)))

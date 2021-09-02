@@ -2,7 +2,7 @@
 ;;; Copyright © 2017 Ethan R. Jones <doubleplusgood23@gmail.com>
 ;;; Copyright © 2018–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Fis Trivial <ybbs.daans@hotmail.com>
-;;; Copyright © 2018 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2018, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2019, 2020 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2019 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2019 Jan Wielkiewicz <tona_kosmicznego_smiecia@interia.pl>
@@ -45,6 +45,7 @@
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system python)
   #:use-module (guix modules)
+  #:use-module (guix gexp)
   #:use-module (gnu packages)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages boost)
@@ -1211,3 +1212,41 @@ of reading and writing XML.")
     ;; incompatible with the GPL v2.  Refer to the file named FLOSSE for the
     ;; details.
     (license license:gpl2+)))
+
+(define-public jsonnet
+  (package
+    (name "jsonnet")
+    (version "0.17.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/google/jsonnet")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1ddz14699v5lqx3dh0mb7hfffr6fk5zhmzn3z8yxkqqvriqnciim"))
+       (modules '((guix build utils)))
+       (snippet
+        #~(begin
+            (rename-file "third_party/md5" ".md5")
+            (delete-file-recursively "third_party")
+            (delete-file-recursively "doc/third_party")
+            (substitute* '("core/vm.cpp")
+              (("#include \"json.hpp\"") "#include <nlohmann/json.hpp>"))
+            (mkdir "third_party")
+            (rename-file ".md5" "third_party/md5")))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:configure-flags '("-DUSE_SYSTEM_GTEST=ON" "-DUSE_SYSTEM_JSON=ON"
+                           "-DBUILD_STATIC_LIBS=OFF")))
+    (native-inputs
+     `(("googletest" ,googletest)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("json-modern-cxx" ,json-modern-cxx)))
+    (home-page "https://jsonnet.org/")
+    (synopsis "Data templating language")
+    (description "Jsonnet is a templating language extending JSON
+syntax with variables, conditions, functions and more.")
+    (license license:asl2.0)))

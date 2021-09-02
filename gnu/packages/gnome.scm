@@ -7983,7 +7983,7 @@ Cisco's AnyConnect SSL VPN.")
 (define-public network-manager-applet
   (package
     (name "network-manager-applet")
-    (version "1.20.0")
+    (version "1.22.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/network-manager-applet/"
@@ -7991,7 +7991,7 @@ Cisco's AnyConnect SSL VPN.")
                                   "network-manager-applet-" version ".tar.xz"))
               (sha256
                (base32
-                "0lsjkbv66hn7acl2pg9h6hz4b700zzv4cjwrwjvy7043blw0bcla"))))
+                "1gj6lqqi613j2m49v9i82lqg1rv7kwwc8z4nxjcwpaa0ins803f7"))))
     (build-system meson-build-system)
     (arguments
      '(#:glib-or-gtk? #t
@@ -9977,6 +9977,38 @@ characters and categories for the installed fonts, and to examine their
 detailed properties.  It is an easy way to find the character you might
 only know by its Unicode name or code point.")
       (license license:gpl3+))))
+
+(define-public gcolor3
+  (package
+    (name "gcolor3")
+    (version "2.4.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://gitlab.gnome.org/World/gcolor3")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1igqmach1vhcrvbpw346pmkbb5kabbb806ssswrvkp569n700wmc"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:glib-or-gtk? #t))
+    (native-inputs
+     `(("desktop-file-utils" ,desktop-file-utils)
+       ("gettext" ,gettext-minimal)
+       ("glib:bin" ,glib "bin")
+       ("gtk+:bin" ,gtk+ "bin")
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+       ("gtk+" ,gtk+)
+       ("libportal" ,libportal)))
+    (home-page "https://www.hjdskes.nl/projects/gcolor3/")
+    (synopsis "Simple color chooser written in GTK3")
+    (description "Color Picker is a simple color chooser written in GTK3.  It
+supports both X and Wayland display servers.")
+    (license license:gpl2+)))
 
 (define-public bluefish
   (package
@@ -12006,7 +12038,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.29.2")
+    (version "0.30.0")
     (source
      (origin
        (method git-fetch)
@@ -12016,7 +12048,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0g1whk0y3k1cy6ix20gz226ww1vzpb9hinn5d24z6j38mdgqqa5l"))))
+         "1l6iqxa497fisn64mn2qgia4y6zryfa5pbnd8609flfi9qmgrzn7"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -12054,6 +12086,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        ("python-keyring" ,python-keyring)
        ("python-lxml" ,python-lxml)
        ("python-magic" ,python-magic)
+       ("python-natsort" ,python-natsort)
        ("python-pillow" ,python-pillow)
        ("python-pure-protobuf" ,python-pure-protobuf)
        ("python-pycairo" ,python-pycairo)

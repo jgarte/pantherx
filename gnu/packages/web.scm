@@ -1381,8 +1381,7 @@ current version of any major web browser.")
                '(begin
                   ;; Remove code using the problematic JSON license (see
                   ;; <https://www.gnu.org/licenses/license-list.html#JSON>).
-                  (delete-file-recursively "bin/jsonchecker")
-                  #t))))
+                  (delete-file-recursively "bin/jsonchecker")))))
     (build-system cmake-build-system)
     (arguments
      (if (string-prefix? "aarch64" (or (%current-target-system)
@@ -1392,10 +1391,8 @@ current version of any major web browser.")
              (add-after 'unpack 'patch-aarch-march-detection
                (lambda _
                  (substitute* (find-files "." "^CMakeLists\\.txt$")
-                   (("native") "armv8-a"))
-                 #t))))
-         ;; Disable CPU optimization for reproducibility.
-         '(#:configure-flags '("-DRAPIDJSON_ENABLE_INSTRUMENTATION_OPT=OFF"))))
+                   (("native") "armv8-a"))))))
+         '()))
     (home-page "https://github.com/Tencent/rapidjson")
     (synopsis "JSON parser/generator for C++ with both SAX/DOM style API")
     (description
@@ -6613,38 +6610,6 @@ file links.")
                    license:bsd-3              ; linkcheck/colorama.py
                    license:psfl               ; linkcheck/gzip2.py
                    license:expat))))          ; linkcheck/mem.py
-
-(define-public cadaver
-  (package
-    (name "cadaver")
-    (version "0.23.3")
-    (source
-     (origin
-       (method url-fetch)
-       (uri (string-append "http://www.webdav.org/cadaver/"
-                           name "-" version ".tar.gz"))
-       (sha256
-        (base32
-         "1jizq69ifrjbjvz5y79wh1ny94gsdby4gdxwjad4bfih6a5fck7x"))))
-    (build-system gnu-build-system)
-    ;; TODO: Unbundle libneon and make build succeed with new neon.
-    (arguments
-     `(#:configure-flags (list "--with-ssl=openssl")
-       #:tests? #f)) ;No tests included
-    (native-inputs
-     `(("gettext" ,gettext-minimal)
-       ("pkg-config" ,pkg-config)
-       ("intltool" ,intltool)))
-    (inputs
-     `(("expat" ,expat)
-       ("openssl" ,openssl-1.0)))
-    (home-page "http://www.webdav.org/cadaver/")
-    (synopsis "Command-line WebDAV client")
-    (description
-     "Cadaver is a command-line WebDAV client for Unix.  It supports
-file upload, download, on-screen display, namespace operations (move/copy),
-collection creation and deletion, and locking operations.")
-    (license license:gpl2)))
 
 (define-public castor
   (package

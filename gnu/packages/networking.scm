@@ -13,7 +13,7 @@
 ;;; Copyright © 2016 Benz Schenk <benz.schenk@uzh.ch>
 ;;; Copyright © 2016, 2017 Pjotr Prins <pjotr.guix@thebird.nl>
 ;;; Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
-;;; Copyright © 2017, 2020 Leo Famulari <leo@famulari.name>
+;;; Copyright © 2017, 2020, 2021 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2017, 2018, 2019 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2017, 2019 Gábor Boskovits <boskovits@gmail.com>
@@ -1445,14 +1445,14 @@ of the same name.")
 (define-public wireshark
   (package
     (name "wireshark")
-    (version "3.4.7")
+    (version "3.4.8")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.wireshark.org/download/src/wireshark-"
                            version ".tar.xz"))
        (sha256
-        (base32 "17d00kl0s010wg2dfhy7sdbr2qm54lsi317fmbcvjz4rxx8ywk3c"))))
+        (base32 "09fpvfj4m7glisj6p4zb8wylkrjkqqw69xnwnz4ah410zs6zm9sq"))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -2595,33 +2595,6 @@ enabled due to license conflicts between the BSD advertising clause and the GPL.
     ;; distribution for clarification.
     (license (list license:bsd-3 license:bsd-4))))
 
-(define-public pidentd
-  (package
-    (name "pidentd")
-    (version "3.0.19")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-              (url "https://github.com/ptrrkssn/pidentd")
-              (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32
-         "1k4rr0b4ygxssbnsykzjvz4hjhazzz4j5arlilyc1iq7b1wzsk7i"))))
-    (build-system gnu-build-system)
-    (arguments
-     `(#:tests? #f)) ; No tests are included
-    (inputs
-     `(("openssl" ,openssl-1.0)))       ;for the DES library
-    (home-page "https://www.lysator.liu.se/~pen/pidentd/")
-    (synopsis "Small Ident Daemon")
-    (description
-     "@dfn{Pidentd} (Peter's Ident Daemon) is an identd, which implements a
-identification server.  Pidentd looks up specific TCP/IP connections and
-returns the user name and other information about the connection.")
-    (license license:public-domain)))
-
 (define-public spiped
   (package
     (name "spiped")
@@ -3401,12 +3374,11 @@ and targeted primarily for asynchronous processing of HTTP-requests.")
     (license license:bsd-3)))
 
 (define-public opendht
-  ;; Jami requires unreleased features of OpenDHT.
-  (let ((commit "c8a0b443f3117e2fa1343d2cb3c091f502b1a24e")
+  (let ((commit "6c58d4f2e9b7f1de15db8d3a736c8cf1ea5f2886")
         (revision "1"))
     (package
       (name "opendht")
-      (version (git-version "2.2.0rc7" revision commit))
+      (version (git-version "2.3.0" revision commit))
       (source (origin
                 (method git-fetch)
                 (uri (git-reference
@@ -3415,7 +3387,7 @@ and targeted primarily for asynchronous processing of HTTP-requests.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "062irb9yii66n2fzbpsjf7v2v53zzvakr1wjmi4l1jaz33fwx5by"))))
+                  "06l0z1dmxyjh8gdrmxyq4vnfnv3x400bhx0lxm7l90f8zc5r2bim"))))
       ;; Since 2.0, the gnu-build-system does not seem to work anymore, upstream bug?
       (outputs '("out" "tools" "debug"))
       (build-system cmake-build-system)
@@ -3833,22 +3805,31 @@ some traces for unprivileged users.")
                    license:lgpl2.1+)))) ;for the libsupp subdirectory
 
 (define-public vde2
+  (let ((commit "8c65ebc464b2f986d5f1f4e6ae829ef4480c9d5a")
+        (revision "0"))
   (package
     (name "vde2")
-    (version "2.3.2")
+    (version (git-version "2.3.2" revision commit))
     (source
      (origin
-       (method url-fetch)
-       (uri "mirror://sourceforge/vde/vde2/2.3.2/vde2-2.3.2.tar.gz")
+       (method git-fetch)
+       (uri (git-reference
+              (url "https://github.com/virtualsquare/vde-2")
+              (commit commit)))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "14xga0ib6p1wrv3hkl4sa89yzjxv7f1vfqaxsch87j6scdm59pr2"))))
+        (base32 "0l5xf71sv9zm5zw0wg8xgip58c0wh8zck2bazyc2a8gb67gc3s8y"))))
     (build-system gnu-build-system)
     (arguments
      `(#:parallel-build? #f))           ; Build fails if #t.
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)))
     (inputs
      `(("python" ,python)
        ("libpcap" ,libpcap)
-       ("openssl" ,openssl-1.0)))       ; Build fails with 1.1.
+       ("wolfssl" ,wolfssl)))
     (home-page "https://github.com/virtualsquare/vde-2")
     (synopsis "Virtual Distributed Ethernet")
     (description "VDE is a set of programs to provide virtual software-defined
@@ -3860,7 +3841,7 @@ cables.")
                    license:lgpl2.1       ; libvdeplug
                    (license:non-copyleft ; slirpvde
                     "file://COPYING.slirpvde"
-                    "See COPYING.slirpvde in the distribution.")))))
+                    "See COPYING.slirpvde in the distribution."))))))
 
 (define-public haproxy
   (package

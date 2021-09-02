@@ -77,6 +77,7 @@
   #:use-module (gnu packages texinfo)
   #:use-module (gnu packages time)
   #:use-module (gnu packages tls)
+  #:use-module (gnu packages version-control)
   #:use-module (gnu packages virtualization)
   #:use-module (gnu packages web)
   #:use-module (gnu packages web-browsers)
@@ -747,7 +748,7 @@ let () = String.split_on_char ':' (Sys.getenv \"OCAMLPATH\")
 (define-public ocaml-opam-file-format
   (package
     (name "ocaml-opam-file-format")
-    (version "2.0.0")
+    (version "2.1.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -756,7 +757,7 @@ let () = String.split_on_char ':' (Sys.getenv \"OCAMLPATH\")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0fqb99asnair0043hhc8r158d6krv5nzvymd0xwycr5y72yrp0hv"))))
+                "1fxhppdmrysr2nb5z3c448h17np48f3ga9jih33acj78r4rdblcs"))))
     (build-system ocaml-build-system)
     (arguments
      `(#:tests? #f; No tests
@@ -775,7 +776,7 @@ the opam file format.")
 (define-public opam
   (package
     (name "opam")
-    (version "2.0.8")
+    (version "2.1.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -784,78 +785,99 @@ the opam file format.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1z0ls6xxa4ws5xw0am5gxmh5apnmyhgkcphrncp53w34j8sfydsj"))))
-    (build-system ocaml-build-system)
+                "12l7l4pbzy71k1yc7ym5aczajszvc9bqkdnfg8xhqc8ch8j1h1lj"))))
+    (build-system dune-build-system)
     (arguments
-     `(#:configure-flags
-       (list (string-append "SHELL="
-                            (assoc-ref %build-inputs "bash")
-                            "/bin/sh"))
+     `(#:test-target "."
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'build 'pre-build
+           (lambda* (#:key inputs make-flags #:allow-other-keys)
+             (let ((bash (assoc-ref inputs "bash"))
+                   (bwrap (string-append (assoc-ref inputs "bubblewrap")
+                                         "/bin/bwrap")))
+               (substitute* "src/core/opamSystem.ml"
+                 (("\"/bin/sh\"")
+                  (string-append "\"" bash "/bin/sh\""))
+                 (("getconf")
+                  (which "getconf")))
+               ;; Use bwrap from the store directly.
+               (substitute* "src/state/shellscripts/bwrap.sh"
+                 (("-v bwrap") (string-append "-v " bwrap))
+                 (("exec bwrap") (string-append "exec " bwrap))
+                 ;; Mount /gnu and /run/current-system in the
+                 ;; isolated environment when building with opam.
+                 ;; This is necessary for packages to find external
+                 ;; dependencies, such as a C compiler, make, etc...
+                 (("^add_sys_mounts /usr")
+                  (string-append "add_sys_mounts "
+                                 (%store-directory)
+                                 " /run/current-system /usr")))
+               (substitute* "src/client/opamInitDefaults.ml"
+                 (("\"bwrap\"") (string-append "\"" bwrap "\""))))))
+         (add-before 'check 'prepare-checks
+           (lambda* (#:key inputs #:allow-other-keys)
+             ;; Opam tests need to run an isolated environment from a writable
+             ;; home directory.
+             (mkdir-p "test-home")
+             (setenv "HOME" (string-append (getcwd) "/test-home"))
 
-       ;; For some reason, 'ocp-build' needs $TERM to be set.
-       #:make-flags
-       (list "TERM=screen"
-             (string-append "SHELL="
-                            (assoc-ref %build-inputs "bash")
-                            "/bin/sh"))
-
-       #:test-target "tests"
-
-       #:phases (modify-phases %standard-phases
-                 (add-before 'build 'pre-build
-                   (lambda* (#:key inputs make-flags #:allow-other-keys)
-                     (let ((bash (assoc-ref inputs "bash"))
-                           (bwrap (string-append (assoc-ref inputs "bubblewrap")
-                                                 "/bin/bwrap")))
-                       (substitute* "src/core/opamSystem.ml"
-                         (("\"/bin/sh\"")
-                          (string-append "\"" bash "/bin/sh\""))
-                         (("getconf")
-                          (which "getconf")))
-                       ;; Use bwrap from the store directly.
-                       (substitute* "src/state/shellscripts/bwrap.sh"
-                         (("-v bwrap") (string-append "-v " bwrap))
-                         (("exec bwrap") (string-append "exec " bwrap))
-                         ;; Mount /gnu and /run/current-system in the
-                         ;; isolated environment when building with opam.
-                         ;; This is necessary for packages to find external
-                         ;; dependencies, such as a C compiler, make, etc...
-                         (("^add_sys_mounts /usr")
-                          "add_sys_mounts /gnu /run/current-system /usr"))
-                       (substitute* "src/client/opamInitDefaults.ml"
-                         (("\"bwrap\"") (string-append "\"" bwrap "\"")))
-                       ;; Generating the documentation needs write access
-                       (for-each
-                         (lambda (f) (chmod f #o644))
-                         (find-files "doc" "."))
-                       #t)))
-                 (add-before 'check 'pre-check
-                   (lambda _
-                     ;; The "repo" test attempts to open some of these files O_WRONLY
-                     ;; and fails with a bogus "OpamSystem.File_not_found" otherwise.
-                     (for-each
-                      (lambda (f) (chmod f #o644))
-                      (find-files "tests/packages" "\\.opam$"))
-
-                     (substitute* "tests/Makefile"
-                       (("/usr/bin/printf")
-                        (which "printf"))
-                       ;; By default tests run twice: once with a "local" repository
-                       ;; and once with a git repository: disable the git tests to
-                       ;; avoid the dependency.
-                       (("all: local git")
-                        "all: local"))
-                     #t)))))
+             ;; Opam tests require data from opam-repository. Instead of
+             ;; downloading them with wget from the guix environment, copy the
+             ;; content to the expected directory.
+             (substitute* "tests/reftests/dune.inc"
+               (("tar -C.*opam-archive-([0-9a-f]*)[^)]*" _ commit)
+                (string-append "rmdir %{targets}) (run cp -r "
+                               (assoc-ref inputs (string-append "opam-repo-" commit))
+                               "/ %{targets}) (run chmod +w -R %{targets}"))
+               (("wget[^)]*") "touch %{targets}")
+               ;; Disable a failing test because of different line wrapping
+               (("diff cli-versioning.test cli-versioning.out") "run true")
+               ;; Disable a failing test because it tries to clone a git
+               ;; repository from inside bwrap
+               (("diff upgrade-format.test upgrade-format.out") "run true"))
+             (substitute* "tests/reftests/dune"
+               ;; Because of our changes to the previous file, we cannot check
+               ;; it can be regenerated
+               (("diff dune.inc dune.inc.gen") "run true"))
+             ;; Ensure we can run the generated build.sh (no /bin/sh)
+             (substitute* '("tests/reftests/legacy-local.test"
+                            "tests/reftests/legacy-git.test")
+               (("#! ?/bin/sh") (string-append "#!" (assoc-ref inputs "bash")
+                                               "/bin/sh")))
+             (substitute* "tests/reftests/testing-env"
+               (("OPAMSTRICT=1")
+                (string-append "OPAMSTRICT=1\nLIBRARY_PATH="
+                               (assoc-ref inputs "libc") "/lib"))))))))
     (native-inputs
-     `(("dune" ,dune)
-       ("ocaml-cppo" ,ocaml-cppo)
+      (let ((opam-repo (lambda (commit hash)
+                         (origin
+                           (method git-fetch)
+                           (uri (git-reference
+                                  (url "https://github.com/ocaml/opam-repository")
+                                  (commit commit)))
+                           (file-name (git-file-name "opam-repo" commit))
+                           (sha256 (base32 hash))))))
+       `(("dune" ,dune)
+         ("ocaml-cppo" ,ocaml-cppo)
 
-       ;; For tests.
-       ("openssl" ,openssl)
-       ("python" ,python-wrapper)
-       ("rsync" ,rsync)
-       ("unzip" ,unzip)
-       ("which" ,which)))
+         ;; For tests.
+         ("git" ,git-minimal)
+         ("openssl" ,openssl)
+         ("python" ,python-wrapper)
+         ("rsync" ,rsync)
+         ("unzip" ,unzip)
+         ("which" ,which)
+
+         ;; Data for tests
+         ("opam-repo-009e00fa" ,(opam-repo "009e00fa86300d11c311309a2544e5c6c3eb8de2"
+                                           "1wwy0rwrsjf4q10j1rh1dazk32fbzhzy6f7zl6qmndidx9b1bq7w"))
+         ("opam-repo-ad4dd344" ,(opam-repo "ad4dd344fe5cd1cab49ced49d6758a9844549fb4"
+                                           "1a1qj47kj8xjdnc4zc50ijrix1kym1n7k20n3viki80a7518baw8"))
+         ("opam-repo-c1d23f0e" ,(opam-repo "c1d23f0e17ec83a036ebfbad1c78311b898a2ca0"
+                                           "0j9abisx3ifzm66ci3p45mngmz4f0fx7yd9jjxrz3f8w5jffc9ii"))
+         ("opam-repo-f372039d" ,(opam-repo "f372039db86a970ef3e662adbfe0d4f5cd980701"
+                                           "0ld7fcry6ss6fmrpswvr6bikgx299w97h0gwrjjh7kd7rydsjdws")))))
     (inputs
      `(("ocaml" ,ocaml)
        ("ncurses" ,ncurses)
@@ -1605,7 +1627,7 @@ full_split, cut, rcut, etc..")
 (define dune-bootstrap
   (package
     (name "dune")
-    (version "2.8.5")
+    (version "2.9.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1614,7 +1636,7 @@ full_split, cut, rcut, etc..")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0a1jj6njzsfjgklsirs6a79079wg4jhy6n888vg3dgp44awwq5jn"))))
+                "01np4jy0f3czkpzkl38k9b4lsh41qk52ldaqxl98mgigyzhx4w0b"))))
     (build-system ocaml-build-system)
     (arguments
      `(#:tests? #f; require odoc
@@ -2854,8 +2876,7 @@ without a complete in-memory representation of the data.")
           "1dvcl108ir9nqkk4mjm9xhhj4p9dx9bmg8bnms54fizs1x3x8ar3"))))
     (build-system dune-build-system)
     (arguments
-     `(#:test-target "tests"
-       #:build-flags (list "--profile=release")))
+     `(#:test-target "tests"))
     (propagated-inputs
      `(("ocaml-cmdliner" ,ocaml-cmdliner)))
     (home-page "https://www.typerex.org/ocp-indent.html")
@@ -3273,8 +3294,7 @@ build system and allows external tools to analyse your project easily.")
                   "1smcc0l6fh2n0y6bp96c69j5nw755jja99w0b206wx3yb2m4w2hs"))))
     (build-system dune-build-system)
     (arguments
-     `(#:tests? #f
-       #:build-flags (list "--profile" "release")))
+     `(#:tests? #f))
     (native-inputs
      `(("ocamlbuild" ,ocamlbuild)))
     (home-page "https://github.com/mjambon/cppo")
@@ -3342,8 +3362,7 @@ standard iterator type starting from 4.07.")
         (base32 "07ycb103mr4mrkxfd63cwlsn023xvcjp0ra0k7n2gwrg0mwxmfss"))))
     (build-system dune-build-system)
     (arguments
-     `(#:tests? #f
-       #:build-flags (list "--profile" "release")))
+     `(#:tests? #f))
     (propagated-inputs
      `(("ocaml-seq" ,ocaml-seq)))
     (native-inputs
@@ -3820,9 +3839,8 @@ the plugins facilitate extensibility, and the frontends serve as entry points.")
                 "0chn7ldqb3wyf95yhmsxxq65cif56smgz1mhhc7m0dpwmyq1k97h"))))
     (build-system dune-build-system)
     (arguments
-     `(#:build-flags (list "--profile" "release")
-       #:test-target "camomile-test"
-       #:tests? #f; Tests fail, see https://github.com/yoriyuki/Camomile/issues/82
+     `(#:test-target "camomile-test"
+       #:tests? #f ; Tests fail, see https://github.com/yoriyuki/Camomile/issues/82
        #:phases
        (modify-phases %standard-phases
          (add-before 'build 'fix-usr-share
@@ -3913,8 +3931,7 @@ connect an engine to your inputs and rendering functions to get an editor.")
         (base32 "0zcjy6fvf0d3i2ssz96asl889n3r6bplyzk7xvb2s3dkxbgcisyy"))))
     (build-system dune-build-system)
     (arguments
-     `(#:build-flags (list "--profile" "release")
-       #:tests? #f
+     `(#:tests? #f
        #:ocaml ,ocaml-4.07
        #:findlib ,ocaml4.07-findlib
        #:dune ,ocaml4.07-dune))
@@ -4477,12 +4494,7 @@ than the first one.")
     `(#:phases
       (modify-phases %standard-phases
         (add-before 'build 'make-writable
-          (lambda _
-            (for-each
-              (lambda (file)
-                (chmod file #o644))
-              (find-files "." "."))
-            #t)))))
+          (lambda _ (for-each make-file-writable (find-files "." ".")))))))
    (inputs
     `(("ocaml-easy-format" ,ocaml-easy-format)))
    (native-inputs
@@ -4930,16 +4942,6 @@ provided by companion libraries such as
         (sha256
          (base32
           "0j6xb4265jr41vw4fjzak6yr8s30qrnzapnc6rl1dxy8bjai0nir"))))
-     (arguments
-      `(#:phases
-        (modify-phases %standard-phases
-          (replace 'build
-            ;; make warnings non fatal (jbuilder behaviour)
-            (lambda _
-              (invoke "dune" "build" "@install" "--profile=release"))))
-        #:ocaml ,ocaml-4.07
-        #:findlib ,ocaml4.07-findlib
-        #:dune ,ocaml4.07-dune))
      (properties '()))))
 
 (define-public ocaml-compiler-libs
@@ -6437,7 +6439,7 @@ the full Core is not available, such as in Javascript.")
 (define-public ocaml-markup
   (package
     (name "ocaml-markup")
-    (version "1.0.0")
+    (version "1.0.2")
     (home-page "https://github.com/aantron/markup.ml")
     (source
      (origin
@@ -6448,7 +6450,7 @@ the full Core is not available, such as in Javascript.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "09hkrf9pw6hpb9j06p5bddklpnjwdjpqza3bx2179l970yl67an9"))))
+         "1kvqwrrcrys5d0kzdwxcj66jpi6sdhfas4pcg02pixx92q87vhqm"))))
     (build-system dune-build-system)
     (arguments
      `(#:package "markup"))
@@ -6541,7 +6543,7 @@ combinators.")
 (define-public ocaml-bisect-ppx
   (package
     (name "ocaml-bisect-ppx")
-    (version "1.4.2")
+    (version "2.6.1")
     (source
      (origin
        (method git-fetch)
@@ -6551,24 +6553,14 @@ combinators.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0900vli5kw7s5kdam0n4cqsfsfqb7mdb3azn3i55595gilg1vyn8"))))
+         "1knglw1b2kjr9jnd8cpfzmm581abxxdcx9l3cd2balg6gnac7qk1"))))
     (build-system dune-build-system)
     (propagated-inputs
-     `(("ocaml-migrate-parsetree" ,ocaml-migrate-parsetree-1)
-       ("ocaml-ppx-tools-versioned" ,ocaml-ppx-tools-versioned)
-       ("ocaml-ounit" ,ocaml-ounit)))
+     `(("ocaml-ppxlib" ,ocaml-ppxlib)
+       ("ocaml-cmdliner" ,ocaml-cmdliner)))
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-before 'build 'fix-deprecated
-           (lambda _
-             ;; Fixed upstream in 22dd1ad9a0c9629f60599c22d82c6488394d6d32, but
-             ;; not in a release yet.
-             (substitute* "src/ppx/instrument.ml"
-               (("module Ast = Ast_405")
-                "module Ast = Migrate_parsetree.Ast_405
-module Ast_405 = Ast"))
-             #t)))))
+     ;; Tests require ocamlformat which would lead to circular dependencies
+     '(#:tests? #f))
     (home-page "https://github.com/aantron/bisect_ppx")
     (synopsis "Code coverage for OCaml")
     (description "Bisect_ppx helps you test thoroughly.  It is a small
@@ -6619,6 +6611,34 @@ then run the Bisect_ppx report tool on the generated visitation files.")
 Text inside doc comments is marked up in ocamldoc syntax.  Odoc's main
 advantage over ocamldoc is an accurate cross-referencer, which handles the
 complexity of the OCaml module system.")
+    (license license:isc)))
+
+(define-public ocaml-odoc-parser
+  (package
+    (name "ocaml-odoc-parser")
+    (version "0.9.0")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+              (url "https://github.com/ocaml-doc/odoc-parser")
+              (commit version)))
+        (file-name (git-file-name name version))
+        (sha256
+          (base32
+           "1jlc6dp3v90r1ra7r0jfw0xs8rylwdz9gymw4rd53h0p17cw1wnj"))))
+    (build-system dune-build-system)
+    (propagated-inputs
+      `(("ocaml-astring" ,ocaml-astring)
+        ("ocaml-result" ,ocaml-result)))
+    (native-inputs
+      `(("ocaml-ppx-expect" ,ocaml-ppx-expect)))
+    (home-page "https://github.com/ocaml-doc/odoc-parser")
+    (synopsis "Parser for ocaml documentation comments")
+    (description
+     "This package provides a library for parsing the contents of OCaml
+documentation comments, formatted using Odoc syntax, an extension of the
+language understood by ocamldoc.")
     (license license:isc)))
 
 ;; version 1.5.2 requires ocaml-markdown 1.0.0 which does not compile
@@ -6972,6 +6992,196 @@ provides support to program with time varying values: declarative events and
  signals.  React doesn't define any primitive event or signal, it lets the
 client chooses the concrete timeline.")
     (license license:lgpl2.1+)))
+
+(define-public ocaml-uucd
+  (package
+    (name "ocaml-uucd")
+    (version "13.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://erratique.ch/software/uucd/releases/"
+                           "uucd-" version ".tbz"))
+       (sha256
+        (base32
+         "1fg77hg4ibidkv1x8hhzl8z3rzmyymn8m4i35jrdibb8adigi8v2"))))
+    (build-system ocaml-build-system)
+    (arguments
+     '(#:build-flags '("build" "--tests" "true")
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
+    (propagated-inputs
+     `(("ocaml-xmlm" ,ocaml-xmlm)))
+    (native-inputs
+     `(("opam" ,opam)
+       ("ocaml-findlib" ,ocaml-findlib)
+       ("ocamlbuild" ,ocamlbuild)
+       ("ocaml-topkg" ,ocaml-topkg)))
+    (home-page "https://erratique.ch/software/uucd")
+    (synopsis "Unicode character database decoder for OCaml")
+    (description "Uucd is an OCaml module to decode the data of the Unicode
+character database from its XML representation.  It provides high-level (but
+not necessarily efficient) access to the data so that efficient
+representations can be extracted.")
+    (license license:isc)))
+
+(define-public ocaml-uucp
+  (package
+    (name "ocaml-uucp")
+    (version "13.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://erratique.ch/software/uucp/releases/"
+                           "uucp-" version ".tbz"))
+       (sha256
+        (base32
+         "19kf8ypxaakacgg1dwwfzkc2zicaj88cmw11fw2z7zl24dn4gyiq"))))
+    (build-system ocaml-build-system)
+    (arguments
+     '(#:build-flags '("build" "--tests" "true")
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
+    (native-inputs
+     `(("opam" ,opam)
+       ("ocaml-findlib" ,ocaml-findlib)
+       ("ocamlbuild" ,ocamlbuild)
+       ("ocaml-topkg" ,ocaml-topkg)
+       ("ocaml-uucd" ,ocaml-uucd)
+       ("ocaml-uunf" ,ocaml-uunf)
+       ("ocaml-uutf" ,ocaml-uutf)))
+    (home-page "https://erratique.ch/software/uucp")
+    (synopsis "Unicode character properties for OCaml")
+    (description "Uucp is an OCaml library providing efficient access to a
+selection of character properties of the Unicode character database.")
+    (license license:isc)))
+
+(define-public ocaml-uuseg
+  (package
+    (name "ocaml-uuseg")
+    (version "13.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://erratique.ch/software/uuseg/releases/"
+                           "uuseg-" version ".tbz"))
+       (sha256
+        (base32
+         "1a635j8ra6p27g1ivfln3387lhwqmf6vq4r6bn7b6n1qsqyi1rls"))))
+    (build-system ocaml-build-system)
+    (arguments
+     '(#:build-flags '("build" "--tests" "true")
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))
+    (propagated-inputs
+     `(("ocaml-uucp" ,ocaml-uucp)
+       ("ocaml-uutf" ,ocaml-uutf)
+       ("ocaml-cmdliner" ,ocaml-cmdliner)))
+    (native-inputs
+     `(("opam" ,opam)
+       ("ocaml-findlib" ,ocaml-findlib)
+       ("ocamlbuild" ,ocamlbuild)
+       ("ocaml-topkg" ,ocaml-topkg)))
+    (home-page "https://erratique.ch/software/uuseg")
+    (synopsis "Unicode text segmentation for OCaml")
+    (description "Uuseg is an OCaml library for segmenting Unicode text.  It
+implements the locale independent Unicode text segmentation algorithms to
+detect grapheme cluster, word and sentence boundaries and the Unicode line
+breaking algorithm to detect line break opportunities.
+
+The library is independent from any IO mechanism or Unicode text data
+structure and it can process text without a complete in-memory
+representation.")
+    (license license:isc)))
+
+(define-public ocaml-fix
+  (package
+    (name "ocaml-fix")
+    (version "20201120")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+              (url "https://gitlab.inria.fr/fpottier/fix")
+              (commit version)))
+        (file-name (git-file-name name version))
+        (sha256
+          (base32
+            "1j40mg1gy03c0djzx3nzmpvnl984s14n04zwcmp2xnlidq48kvs4"))))
+    (build-system dune-build-system)
+    (arguments
+     ;; No tests.
+     '(#:tests? #f))
+    (home-page "https://gitlab.inria.fr/fpottier/fix")
+    (synopsis "Facilities for memoization and fixed points")
+    (description "This package provides helpers with various constructions
+that involve memoization and recursion.")
+    (license license:lgpl2.0)))
+
+(define-public ocaml-dune-build-info
+  (package
+    (inherit dune)
+    (name "ocaml-dune-build-info")
+    (build-system dune-build-system)
+    (arguments
+     '(#:package "dune-build-info"
+       ;; No separate test suite from dune.
+       #:tests? #f))
+    (propagated-inputs
+     `(("ocaml-odoc" ,ocaml-odoc)))
+    (synopsis "Embed build informations inside executable")
+    (description "This package allows one to access information about how the
+executable was built, such as the version of the project at which it was built
+or the list of statically linked libraries with their versions.  It supports
+reporting the version from the version control system during development to
+get an precise reference of when the executable was built.")))
+
+(define-public ocamlformat
+  (package
+    (name "ocamlformat")
+    (version "0.18.0")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+              (url "https://github.com/ocaml-ppx/ocamlformat")
+              (commit version)))
+        (file-name (git-file-name name version))
+        (sha256
+          (base32
+            "0n6363km8xr81pvyk453n6h2mb0256c5yxw3p1li4dn83f3lwxr1"))))
+    (build-system dune-build-system)
+    (arguments
+     '(#:package "ocamlformat"
+       ;; FIXME: The expected format is slightly different than what the
+       ;; produced format is for test/cli/stdin.t
+       #:tests? #f))
+    (propagated-inputs
+      `(("ocaml-version" ,ocaml-version)
+        ("ocaml-base" ,ocaml-base)
+        ("ocaml-cmdliner" ,ocaml-cmdliner)
+        ("ocaml-dune-build-info" ,ocaml-dune-build-info)
+        ("ocaml-fix" ,ocaml-fix)
+        ("ocaml-fpath" ,ocaml-fpath)
+        ("ocaml-menhir" ,ocaml-menhir)
+        ("ocaml-odoc" ,ocaml-odoc)
+        ("ocaml-ppxlib" ,ocaml-ppxlib)
+        ("ocaml-re" ,ocaml-re)
+        ("ocaml-stdio" ,ocaml-stdio)
+        ("ocaml-uuseg" ,ocaml-uuseg)
+        ("ocaml-uutf" ,ocaml-uutf)))
+    (native-inputs
+      `(("ocaml-alcotest" ,ocaml-alcotest)
+        ("ocaml-ocp-indent" ,ocaml-ocp-indent)
+        ("ocaml-bisect-ppx" ,ocaml-bisect-ppx)))
+    (home-page "https://github.com/ocaml-ppx/ocamlformat")
+    (synopsis "Auto-formatter for OCaml code")
+    (description "OCamlFormat is a tool to automatically format OCaml code in
+a uniform style.")
+    (license license:expat)))
 
 (define-public ocaml-bigstringaf
   (package

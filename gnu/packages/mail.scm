@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014, 2015, 2017, 2020 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2014 Ian Denhardt <ian@zenhack.net>
 ;;; Copyright © 2014 Sou Bunnbu <iyzsong@gmail.com>
@@ -9,7 +9,7 @@
 ;;; Copyright © 2015, 2016, 2018 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2015 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
+;;; Copyright © 2016 Christine Lemmer-Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2016 Al McElrath <hello@yrns.org>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016 Lukas Gradl <lgradl@openmailbox.org>
@@ -269,7 +269,8 @@ example, modify the message headers or body, or encrypt or sign the message.")
                "17smrxjdgbbzbzakik30vj46q4iib85ksqhb82jr4vjp57akszh9"))
              (patches
               ;; Fixes https://issues.guix.gnu.org/43088.
-              (search-patches "mailutils-fix-uninitialized-variable.patch"))))
+              (search-patches "mailutils-fix-uninitialized-variable.patch"
+                              "mailutils-variable-lookup.patch"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -498,7 +499,7 @@ to run without any changes.")
 (define-public fetchmail
   (package
     (name "fetchmail")
-    (version "6.4.20")
+    (version "6.4.21")
     (source
      (origin
        (method url-fetch)
@@ -506,7 +507,7 @@ to run without any changes.")
                            (version-major+minor version) "/"
                            "fetchmail-" version ".tar.xz"))
        (sha256
-        (base32 "0xk171sbxcwjh1ibpipryw5sv4sy7jjfvhn5n373j04g5sp428f8"))))
+        (base32 "07cxr5137hvrk8jfgn4wd6sq9361c3d40w8krnjxm8fpmwf9qiba"))))
     (build-system gnu-build-system)
     (inputs
      `(("openssl" ,openssl)))
@@ -1146,7 +1147,7 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
 (define-public mu
   (package
     (name "mu")
-    (version "1.4.15")
+    (version "1.6.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/djcb/mu/releases/"
@@ -1154,7 +1155,7 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
                                   "mu-" version ".tar.xz"))
               (sha256
                (base32
-                "0ailz0k5fdgq6gdl5m7jxy315b7qn5ckj6xwd49hsiq9vqblwlpp"))))
+                "0irqr1z1ljmij2vbj8dr8w9mbfalzikxr4s6340jjwmkmhaslh2h"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -1163,7 +1164,7 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
        ("tzdata" ,tzdata-for-tests)))   ; for mu/test/test-mu-query.c
     (inputs
      `(("xapian" ,xapian)
-       ("guile" ,guile-2.2)
+       ("guile" ,guile-3.0)
        ("glib" ,glib)
        ("gmime" ,gmime)))
     (arguments
@@ -1181,43 +1182,32 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
            ;; the lispdir anyway, so we have to modify "configure.ac".
            (lambda _
              (substitute* "configure"
-               (("^ +lispdir=\"\\$\\{lispdir\\}/mu4e/\".*") "")
-               ;; Use latest Guile
-               (("guile-2.0") "guile-2.2"))
-             (substitute* '("guile/Makefile.in"
-                            "guile/mu/Makefile.in")
-               (("share/guile/site/2.0/") "share/guile/site/2.2/"))
-             #t))
+               (("^ +lispdir=\"\\$\\{lispdir\\}/mu4e/\".*") ""))))
          (add-after 'unpack 'patch-bin-sh-in-tests
            (lambda _
-             (substitute* '("guile/tests/test-mu-guile.c"
-                            "mu/test-mu-cmd.c"
-                            "mu/test-mu-cmd-cfind.c"
-                            "mu/test-mu-query.c"
-                            "mu/test-mu-threads.c")
-               (("/bin/sh") (which "sh")))
-             #t))
+             (substitute* '("guile/tests/test-mu-guile.cc"
+                            "mu/test-mu-cmd.cc"
+                            "mu/test-mu-cmd-cfind.cc"
+                            "mu/test-mu-query.cc")
+               (("/bin/sh") (which "sh")))))
          (add-before 'install 'fix-ffi
            (lambda* (#:key outputs #:allow-other-keys)
              (substitute* "guile/mu.scm"
                (("\"libguile-mu\"")
                 (format #f "\"~a/lib/libguile-mu\""
-                        (assoc-ref outputs "out"))))
-             #t))
+                        (assoc-ref outputs "out"))))))
          (add-before 'check 'check-tz-setup
            (lambda* (#:key inputs #:allow-other-keys)
              ;; For mu/test/test-mu-query.c
              (setenv "TZDIR"
                      (string-append (assoc-ref inputs "tzdata")
-                                    "/share/zoneinfo"))
-             #t))
+                                    "/share/zoneinfo"))))
          (add-after 'install 'install-emacs-autoloads
            (lambda* (#:key outputs #:allow-other-keys)
              (emacs-generate-autoloads
               "mu4e"
               (string-append (assoc-ref outputs "out")
-                             "/share/emacs/site-lisp"))
-             #t)))))
+                             "/share/emacs/site-lisp")))))))
     (home-page "https://www.djcbsoftware.nl/code/mu/")
     (synopsis "Quickly find emails")
     (description
@@ -1635,7 +1625,7 @@ compresses it.")
              (let* ((mailutils (assoc-ref inputs "mailutils"))
                     (inc (string-append mailutils "/bin/mu-mh/inc"))
                     (send-mail (assoc-ref inputs "sendmail"))
-                    (sendmail (string-append send-mail "/usr/sbin/sendmail")))
+                    (sendmail (string-append send-mail "/sbin/sendmail")))
                (substitute* "src/common/defs.h"
                  (("/usr/bin/mh/inc") inc)
                  (("/usr/sbin/sendmail") sendmail)))))
@@ -1874,7 +1864,7 @@ facilities for checking incoming mail.")
   (package
     (name "dovecot")
     ;; Also update dovecot-pigeonhole when updating to a new minor version.
-    (version "2.3.15")
+    (version "2.3.16")
     (source
      (origin
        (method url-fetch)
@@ -1882,7 +1872,7 @@ facilities for checking incoming mail.")
                            (version-major+minor version) "/"
                            "dovecot-" version ".tar.gz"))
        (sha256
-        (base32 "141manrh54cy8xizr7f8fsa3vdzc2ccfgdz87l9rjylm8mfxvfr1"))))
+        (base32 "04ngqv5mml5z0i4p7fkchp4xw2awy7x7mq2mim9frnav0m9iv9q3"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -1943,7 +1933,7 @@ It supports mbox/Maildir and its own dbox/mdbox formats.")
   (let ((dovecot-version (version-major+minor (package-version dovecot))))
     (package
       (name "dovecot-pigeonhole")
-      (version "0.5.15")
+      (version "0.5.16")
       (source
        (origin
          (method url-fetch)
@@ -1951,7 +1941,7 @@ It supports mbox/Maildir and its own dbox/mdbox formats.")
                "https://pigeonhole.dovecot.org/releases/" dovecot-version "/"
                "dovecot-" dovecot-version "-pigeonhole-" version ".tar.gz"))
          (sha256
-          (base32 "1l2h0p8ddsl3ja2lnwk0mfqplqh8n0iw8k27awd3ak7prr88yjg1"))
+          (base32 "0f79qsiqnhaxn7mrrfcrnsjyv6357kzb7wa0chhfd69vwa06g8sw"))
          (modules '((guix build utils)))
          (snippet
           '(begin
@@ -2882,6 +2872,13 @@ powerful user customization features.")
              (substitute* "devtools/bin/Build"
                (("SHELL=/bin/sh") (string-append "SHELL=" (which "sh"))))
              #t))
+         (add-before 'build 'replace-/usr
+           (lambda _
+             (substitute*
+               '("devtools/OS/Linux"
+                 "cf/ostype/mklinux.m4"
+                 "cf/ostype/linux.m4")
+               (("/usr/sbin") "/sbin"))))
          (replace 'configure
            (lambda _
 
@@ -2893,6 +2890,11 @@ powerful user customization features.")
              (with-output-to-file "devtools/Site/site.config.m4"
                (lambda ()
                  (format #t "
+define(`confEBINDIR', `/sbin')
+define(`confSBINDIR', `/sbin')
+define(`confMBINDIR', `/sbin')
+define(`confUBINDIR', `/bin')
+define(`confLINKS', `')
 define(`confCC', `gcc')
 define(`confOPTIMIZE', `-g -O2')
 define(`confLIBS', `-lresolv')
@@ -2911,13 +2913,21 @@ define(`confINST_DEP', `')
          (add-before 'install 'pre-install
            (lambda _
              (let ((out (assoc-ref %outputs "out")))
-               (mkdir-p (string-append out "/usr/bin"))
-               (mkdir-p (string-append out "/usr/sbin"))
+               (mkdir-p (string-append out "/bin"))
+               (mkdir-p (string-append out "/sbin"))
                (mkdir-p (string-append out "/etc/mail"))
                (setenv "DESTDIR" out)
                (with-directory-excursion "cf/cf"
                  (invoke "sh" "Build" "install-cf"))
-               #t))))
+               #t)))
+         (add-after 'install 'post-install
+           (lambda _
+               ;; Make symbolic links manually, because build script uses
+               ;; absolute paths for them and ignores DESTDIR.
+               (for-each
+                 (lambda (name)
+                   (symlink "../sbin/sendmail" (string-append %output "/bin/" name)))
+                 '("hoststat" "newaliases" "mailq" "purgestat")))))
        ;; There is no make check.  There are some post installation tests, but those
        ;; require root privileges
        #:tests? #f))

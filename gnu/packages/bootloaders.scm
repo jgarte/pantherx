@@ -713,9 +713,6 @@ board-independent tools.")))
                   uboot-files)
                  #t)))))))))
 
-(define-public u-boot-vexpress
-  (make-u-boot-package "vexpress_ca9x4" "arm-linux-gnueabihf"))
-
 (define-public u-boot-malta
   (make-u-boot-package "malta" "mips64el-linux-gnuabi64"))
 
@@ -872,8 +869,8 @@ to Novena upstream, does not load u-boot.img from the first partition.")
                 (patches
                  (search-patches "u-boot-riscv64-fix-extlinux.patch")))))))
 
-(define-public u-boot-sifive-fu540
-  (make-u-boot-package "sifive_fu540" "riscv64-linux-gnu"))
+(define-public u-boot-sifive-unleashed
+  (make-u-boot-package "sifive_unleashed" "riscv64-linux-gnu"))
 
 (define-public u-boot-sifive-unmatched
   (make-u-boot-package "sifive_unmatched" "riscv64-linux-gnu"))
