@@ -3,13 +3,13 @@
 ;;; Copyright © 2014, 2015, 2016 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2014 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2014, 2015, 2016 Alex Kost <alezost@gmail.com>
-;;; Copyright © 2013, 2015, 2017, 2018, 2019 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013, 2015, 2017, 2018, 2019, 2021y Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015, 2016 Mathieu Lirzin <mthl@gnu.org>
 ;;; Copyright © 2015 Alexander I.Grafov <grafov@gmail.com>
 ;;; Copyright © 2015 Andy Wingo <wingo@igalia.com>
 ;;; Copyright © 2015 xd1le <elisp.vim@gmail.com>
 ;;; Copyright © 2015 Florian Paul Schmidt <mista.tapas@gmx.net>
-;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
+;;; Copyright © 2016 Christine Lemmer-Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2016, 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
@@ -32,7 +32,7 @@
 ;;; Copyright © 2020, 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2020 David Wilson <david@daviwil.com>
 ;;; Copyright © 2020 Ivan Vilata i Balaguer <ivan@selidor.net>
-;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
+;;; Copyright © 2020, 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2020 Damien Cassou <damien@cassou.me>
 ;;; Copyright © 2020 John Soo <jsoo1@asu.edu>
 ;;; Copyright © 2020 Boris A. Dekshteyn <boris.dekshteyn@gmail.com>
@@ -49,6 +49,7 @@
 ;;; Copyright © 2021 Paul A. Patience <paul@apatience.com>
 ;;; Copyright © 2021 Niklas Eklund <niklas.eklund@posteo.net>
 ;;; Copyright © 2021 Nikita Domnitskii <nikita@domnitskii.me>
+;;; Copyright © 2021 ikasero <ahmed@ikasero.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -100,6 +101,7 @@
   #:use-module (gnu packages haskell-xyz)
   #:use-module (gnu packages icu4c)
   #:use-module (gnu packages image)
+  #:use-module (gnu packages libevent)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages m4)
   #:use-module (gnu packages man)
@@ -764,7 +766,7 @@ move windows, switch between desktops, etc.).")
 (define-public scrot
   (package
     (name "scrot")
-    (version "1.5")
+    (version "1.6")
     (source
      (origin
        (method git-fetch)
@@ -774,14 +776,16 @@ move windows, switch between desktops, etc.).")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0x64b7xqi5cbq29pb8s8r2kzbxaday1f5k0j70n3s2p7sahjxy72"))))
+        (base32 "1qanx2xx9m5l995csqzfcm1ks2nhk90zga1wzbkjjl75ga4iik2h"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
        ("autoconf-archive" ,autoconf-archive)
-       ("automake" ,automake)))
+       ("automake" ,automake)
+       ("pkg-config" ,pkg-config)))
     (inputs
      `(("giblib" ,giblib)
+       ("imlib2" ,imlib2)
        ("libx11" ,libx11)
        ("libxcomposite" ,libxcomposite)
        ("libxext" ,libxext)
@@ -906,6 +910,55 @@ invisible cursor.  This allows you to see all the text in an xterm or
 xedit, for example.  The human factors crowd would agree it should make
 things less distracting.")
     (license license:public-domain)))
+
+(define-public unclutter-xfixes
+  (package
+    (name "unclutter-xfixes")
+    (version "1.5")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/Airblader/unclutter-xfixes")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "148m4wx8v57s3l2wb69y9imb00y8ca2li27hsxibwnl1wrkb7z4b"))))
+    (build-system gnu-build-system)
+    (arguments `(#:tests? #f
+                 #:make-flags
+                 (list ,(string-append "CC=" (cc-for-target))
+                       (string-append "PREFIX=" (assoc-ref %outputs "out")))
+                 #:phases
+                 (modify-phases %standard-phases
+                   (delete 'configure))))
+    (inputs
+     `(("libx11" ,libx11)
+       ("libev" ,libev)
+       ("libxfixes" ,libxfixes)
+       ("libxi" ,libxi)))
+    (native-inputs
+     `(("asciidoc" ,asciidoc)
+       ("pkg-config" ,pkg-config)))
+    (home-page "https://github.com/Airblader/unclutter-xfixes")
+    (synopsis "Hide idle mouse cursor")
+    (description
+     "unclutter-xfixes is a rewrite of the popular tool unclutter, but
+using the x11-xfixes extension.  This means that this rewrite doesn't
+use fake windows or pointer grabbing and hence causes less problems
+with window managers and/or applications.
+
+Unclutter is a program which runs permanently in the background of an
+X11 session.  It checks on the X11 pointer (cursor) position every few
+seconds, and when it finds it has not moved (and no buttons are pressed
+on the mouse, and the cursor is not in the root window) it creates a
+small sub-window as a child of the window the cursor is in.  The new
+window installs a cursor of size 1x1 but a mask of all 0, i.e. an
+invisible cursor.  This allows you to see all the text in an xterm or
+xedit, for example.  The human factors crowd would agree it should make
+things less distracting.")
+    (license license:expat)))
 
 (define-public xautomation
   (package
@@ -1036,14 +1089,14 @@ transparent text on your screen.")
 (define-public wob
   (package
     (name "wob")
-    (version "0.11")
+    (version "0.12")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/francma/wob/releases/download/"
                            version "/wob-" version ".tar.gz"))
        (sha256
-        (base32 "1vgngcg8wxn6zfg34czn9w55ia0zmhlgnpzf0gh31dc72li9353k"))))
+        (base32 "080pwz8pvqqq068lavzz48dl350iszpdswjd86bjk6zra5h5d10q"))))
     (build-system meson-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -1689,15 +1742,15 @@ connectivity of the X server running on a particular @code{DISPLAY}.")
 (define-public rofi
   (package
     (name "rofi")
-    (version "1.6.1")
+    (version "1.7.0")
     (source (origin
               (method url-fetch)
-              (uri (string-append "https://github.com/DaveDavenport/rofi/"
+              (uri (string-append "https://github.com/davatorium/rofi/"
                                   "releases/download/"
                                   version "/rofi-" version ".tar.xz"))
               (sha256
                (base32
-                "12p9z8bl1gg8k024m4a6zfz7gf1zbyffardh98raqgabn6knwk22"))))
+                "1929q3dks8fqd3pfkzs0ba06gwzhlgcrfar9fpga43f3byrrbfxa"))))
     (build-system gnu-build-system)
     (inputs
      `(("pango" ,pango)
@@ -1709,6 +1762,7 @@ connectivity of the X server running on a particular @code{DISPLAY}.")
        ("libxkbcommon" ,libxkbcommon)
        ("libxcb" ,libxcb)
        ("xcb-util" ,xcb-util)
+       ("xcb-util-cursor" ,xcb-util-cursor)
        ("xcb-util-xrm" ,xcb-util-xrm)
        ("xcb-util-wm" ,xcb-util-wm)))
     (native-inputs
@@ -1728,7 +1782,7 @@ connectivity of the X server running on a particular @code{DISPLAY}.")
                (("~") "")
                (("g_get_home_dir \\(\\)") "\"/\""))
              #t)))))
-    (home-page "https://github.com/DaveDavenport/rofi")
+    (home-page "https://github.com/davatorium/rofi")
     (synopsis "Application launcher")
     (description "Rofi is a minimalist application launcher.  It memorizes which
 applications you regularly use and also allows you to search for an application

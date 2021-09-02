@@ -43,6 +43,7 @@
 # Copyright © 2021 Philip McGrath <philip@philipmcgrath.com>
 # Copyright © 2021 Arun Isaac <arunisaac@systemreboot.net>
 # Copyright © 2021 Sharlatan Hellseher <sharlatanus@gmail.com>
+# Copyright © 2021 Dmitry Polyakov <polyakov@liltechdude.xyz>
 #
 # This file is part of GNU Guix.
 #
@@ -186,7 +187,6 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/docbook.scm			\
   %D%/packages/docker.scm			\
   %D%/packages/documentation.scm		\
-  %D%/packages/drones.scm			\
   %D%/packages/dunst.scm			\
   %D%/packages/dvtm.scm				\
   %D%/packages/easyrpg.scm			\
@@ -383,6 +383,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/mercury.scm			\
   %D%/packages/mes.scm				\
   %D%/packages/messaging.scm			\
+  %D%/packages/minetest.scm			\
   %D%/packages/mingw.scm			\
   %D%/packages/microcom.scm			\
   %D%/packages/moe.scm				\
@@ -492,6 +493,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/rednotebook.scm			\
   %D%/packages/regex.scm				\
   %D%/packages/robotics.scm			\
+  %D%/packages/rocm.scm				\
   %D%/packages/rpc.scm				\
   %D%/packages/rpm.scm				\
   %D%/packages/rrdtool.scm			\
@@ -667,6 +669,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/system/mapped-devices.scm			\
   %D%/system/nss.scm				\
   %D%/system/pam.scm				\
+  %D%/system/setuid.scm				\
   %D%/system/shadow.scm				\
   %D%/system/uuid.scm				\
   %D%/system/vm.scm				\
@@ -805,6 +808,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/abseil-cpp-fix-gtest.patch		\
   %D%/packages/patches/abseil-cpp-fix-strerror_test.patch	\
   %D%/packages/patches/adb-add-libraries.patch			\
+  %D%/packages/patches/adb-libssl_11-compatibility.patch	\
   %D%/packages/patches/aegis-constness-error.patch         	\
   %D%/packages/patches/aegis-perl-tempdir1.patch           	\
   %D%/packages/patches/aegis-perl-tempdir2.patch           	\
@@ -1261,6 +1265,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/imagemagick-WriteTHUMBNAILImage-fix.patch	\
   %D%/packages/patches/inetutils-hurd.patch			\
   %D%/packages/patches/inkscape-poppler-0.76.patch		\
+  %D%/packages/patches/instead-use-games-path.patch		\
   %D%/packages/patches/inkscape-1.1-fix-build-witch-gcc7.5.patch	\
   %D%/packages/patches/intel-xed-fix-nondeterminism.patch	\
   %D%/packages/patches/intltool-perl-compatibility.patch	\
@@ -1414,6 +1419,9 @@ dist_patch_DATA =						\
   %D%/packages/patches/llvm-9-fix-bitcast-miscompilation.patch	\
   %D%/packages/patches/llvm-9-fix-lpad-miscompilation.patch	\
   %D%/packages/patches/llvm-9-fix-scev-miscompilation.patch	\
+  %D%/packages/patches/llvm-roc-3.0.0-add_libraries.patch \
+  %D%/packages/patches/llvm-roc-4.0.0-remove-isystem-usr-include.patch \
+  %D%/packages/patches/llvm-roc-4.2.0-add_Object.patch \
   %D%/packages/patches/lm-sensors-hwmon-attrs.patch		\
   %D%/packages/patches/lrcalc-includes.patch    		\
   %D%/packages/patches/lsh-fix-x11-forwarding.patch		\
@@ -1427,6 +1435,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/luit-posix.patch				\
   %D%/packages/patches/lvm2-static-link.patch			\
   %D%/packages/patches/mailutils-fix-uninitialized-variable.patch	\
+  %D%/packages/patches/mailutils-variable-lookup.patch		\
   %D%/packages/patches/make-impure-dirs.patch			\
   %D%/packages/patches/marble-qt-add-qt-headers.patch		\
   %D%/packages/patches/mariadb-CVE-2021-27928.patch		\
@@ -1447,6 +1456,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/meson-for-build-rpath.patch		\
   %D%/packages/patches/metabat-fix-compilation.patch		\
   %D%/packages/patches/mhash-keygen-test-segfault.patch		\
+  %D%/packages/patches/minetest-add-MINETEST_MOD_PATH.patch	\
   %D%/packages/patches/mingw-w64-6.0.0-gcc.patch		\
   %D%/packages/patches/mingw-w64-dlltool-temp-prefix.patch	\
   %D%/packages/patches/mingw-w64-reproducible-gendef.patch	\
@@ -1548,7 +1558,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/plasma-framework-fix-KF5PlasmaMacros.cmake.patch \
   %D%/packages/patches/ppsspp-disable-upgrade-and-gold.patch		\
   %D%/packages/patches/pthreadpool-system-libraries.patch	\
-  %D%/packages/patches/samba-fix-fcntl-hint-detection.patch		\
   %D%/packages/patches/sdcc-disable-non-free-code.patch		\
   %D%/packages/patches/sdl-pango-api_additions.patch		\
   %D%/packages/patches/sdl-pango-blit_overflow.patch		\
@@ -1629,6 +1638,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-cross-compile.patch		\
   %D%/packages/patches/python2-larch-coverage-4.0a6-compatibility.patch \
   %D%/packages/patches/python-configobj-setuptools.patch	\
+  %D%/packages/patches/python-execnet-read-only-fix.patch	\
   %D%/packages/patches/python-flask-restful-werkzeug-compat.patch	\
   %D%/packages/patches/python-keras-integration-test.patch	\
   %D%/packages/patches/python-pep8-stdlib-tokenize-compat.patch \
@@ -1645,16 +1655,20 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-paste-remove-timing-test.patch	\
   %D%/packages/patches/python-pycrypto-CVE-2013-7459.patch	\
   %D%/packages/patches/python-pycrypto-time-clock.patch		\
+  %D%/packages/patches/python-pyan3-fix-absolute-path-bug.patch \
+  %D%/packages/patches/python-pyan3-fix-positional-arguments.patch \
   %D%/packages/patches/python-pydot-regression-test.patch	\
   %D%/packages/patches/python2-pygobject-2-deprecation.patch	\
   %D%/packages/patches/python-pygpgme-fix-pinentry-tests.patch	\
+  %D%/packages/patches/python-pytest-asyncio-python-3.8.patch	\
+  %D%/packages/patches/python-pytorch-runpath.patch		\
+  %D%/packages/patches/python-pytorch-system-libraries.patch	\
   %D%/packages/patches/python-robotframework-source-date-epoch.patch \
   %D%/packages/patches/python-seaborn-kde-test.patch		\
   %D%/packages/patches/python2-subprocess32-disable-input-test.patch	\
   %D%/packages/patches/python-unittest2-python3-compat.patch	\
   %D%/packages/patches/python-unittest2-remove-argparse.patch	\
   %D%/packages/patches/python-waitress-fix-tests.patch		\
-  %D%/packages/patches/pypy3-7.3.1-fix-tests.patch		\
   %D%/packages/patches/qemu-build-info-manual.patch		\
   %D%/packages/patches/qemu-CVE-2021-20203.patch		\
   %D%/packages/patches/qemu-meson-compat.patch			\
@@ -1691,10 +1705,16 @@ dist_patch_DATA =						\
   %D%/packages/patches/rtags-separate-rct.patch			\
   %D%/packages/patches/racket-minimal-sh-via-rktio.patch	\
   %D%/packages/patches/remake-impure-dirs.patch			\
+  %D%/packages/patches/restic-0.9.6-fix-tests-for-go1.15.patch	\
   %D%/packages/patches/retroarch-LIBRETRO_DIRECTORY.patch	\
   %D%/packages/patches/rnp-add-version.cmake.patch		\
   %D%/packages/patches/rnp-disable-ruby-rnp-tests.patch		\
   %D%/packages/patches/rnp-unbundle-googletest.patch		\
+  %D%/packages/patches/rocm-comgr-3.1.0-dependencies.patch \
+  %D%/packages/patches/rocm-opencl-runtime-3.10.0-includes.patch \
+  %D%/packages/patches/rocm-opencl-runtime-4.3-noclinfo.patch \
+  %D%/packages/patches/rocm-opencl-runtime-4.3-nocltrace.patch \
+  %D%/packages/patches/rocm-opencl-runtime-4.3-noopencl.patch \
   %D%/packages/patches/ruby-sanitize-system-libxml.patch	\
   %D%/packages/patches/rust-1.19-mrustc.patch			\
   %D%/packages/patches/rust-1.25-accept-more-detailed-gdb-lines.patch \

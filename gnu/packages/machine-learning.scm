@@ -65,10 +65,12 @@
   #:use-module (gnu packages graphviz)
   #:use-module (gnu packages gstreamer)
   #:use-module (gnu packages image)
+  #:use-module (gnu packages libffi)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages llvm)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages mpi)
+  #:use-module (gnu packages ninja)
   #:use-module (gnu packages ocaml)
   #:use-module (gnu packages onc-rpc)
   #:use-module (gnu packages parallel)
@@ -87,6 +89,7 @@
   #:use-module (gnu packages statistics)
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages swig)
+  #:use-module (gnu packages tls)
   #:use-module (gnu packages web)
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
@@ -761,23 +764,22 @@ synchronization, thread-safety, concurrent data structures, and non-blocking
 I/O.")
     (license license:asl2.0)))
 
-(define-public gemmlowp-for-tensorflow
-  ;; The commit hash is taken from "tensorflow/workspace.bzl".
-  (let ((commit "38ebac7b059e84692f53e5938f97a9943c120d98")
-        (revision "2"))
+
+(define-public gemmlowp
+  (let ((commit "f9959600daa42992baace8a49544a00a743ce1b6")
+        (version "0.1")
+        (revision "1"))
     (package
       (name "gemmlowp")
-      (version (git-version "0" revision commit))
+      (version (git-version version revision commit))
+      (home-page "https://github.com/google/gemmlowp")
       (source (origin
-                (method url-fetch)
-                (uri (string-append "https://mirror.bazel.build/"
-                                    "github.com/google/gemmlowp/archive/"
-                                    commit ".zip"))
-                (file-name (string-append "gemmlowp-" version ".zip"))
+                (method git-fetch)
+                (uri (git-reference (url home-page) (commit commit)))
+                (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0n56s2g8hrssm4w8qj1v58gfm56a04n9v992ixkmvk6zjiralzxq"))))
-      (build-system cmake-build-system)
+                  "1hzfhlhzcb827aza6a7drydc67dw5fm3qfqilb9ibskan8dsf0c6"))))
       (arguments
        `(#:configure-flags
          (list ,@(match (%current-system)
@@ -797,18 +799,15 @@ I/O.")
                       (inc (string-append out "/include/")))
                  (install-file "../build/libeight_bit_int_gemm.so" lib)
                  (for-each (lambda (dir)
-                             (let ((target (string-append inc "/" dir)))
-                               (mkdir-p target)
+                             (let ((target
+                                    (string-append inc "/gemmlowp/" dir)))
                                (for-each (lambda (h)
                                            (install-file h target))
                                          (find-files (string-append "../" dir)
                                                      "\\.h$"))))
                            '("meta" "profiling" "public" "fixedpoint"
-                             "eight_bit_int_gemm" "internal"))
-                 #t))))))
-      (native-inputs
-       `(("unzip" ,unzip)))
-      (home-page "https://github.com/google/gemmlowp")
+                             "eight_bit_int_gemm" "internal"))))))))
+      (build-system cmake-build-system)
       (synopsis "Small self-contained low-precision GEMM library")
       (description
        "This is a small self-contained low-precision @dfn{general matrix
@@ -817,6 +816,46 @@ Low-precision means that the input and output matrix entries are integers on
 at most 8 bits.  To avoid overflow, results are internally accumulated on more
 than 8 bits, and at the end only some significant 8 bits are kept.")
       (license license:asl2.0))))
+
+(define-public gemmlowp-for-tensorflow
+  ;; The commit hash is taken from "tensorflow/workspace.bzl".
+  (let ((commit "38ebac7b059e84692f53e5938f97a9943c120d98")
+        (revision "2"))
+    (package
+      (inherit gemmlowp)
+      (version (git-version "0" revision commit))
+      (source (origin
+                (method url-fetch)
+                (uri (string-append "https://mirror.bazel.build/"
+                                    "github.com/google/gemmlowp/archive/"
+                                    commit ".zip"))
+                (file-name (string-append "gemmlowp-" version ".zip"))
+                (sha256
+                 (base32
+                  "0n56s2g8hrssm4w8qj1v58gfm56a04n9v992ixkmvk6zjiralzxq"))))
+      (arguments
+       (substitute-keyword-arguments (package-arguments gemmlowp)
+         ((#:phases phases)
+          `(modify-phases ,phases
+             (replace 'install
+               (lambda* (#:key outputs #:allow-other-keys)
+                 (let* ((out (assoc-ref outputs "out"))
+                        (lib (string-append out "/lib/"))
+                        (inc (string-append out "/include/")))
+                   (install-file "../build/libeight_bit_int_gemm.so" lib)
+                   (for-each (lambda (dir)
+                               ;; Note: Install headers straight into
+                               ;; $includedir instead of $includedir/gemmlowp.
+                               (let ((target (string-append inc "/" dir)))
+                                 (for-each (lambda (h)
+                                             (install-file h target))
+                                           (find-files (string-append "../" dir)
+                                                       "\\.h$"))))
+                             '("meta" "profiling" "public" "fixedpoint"
+                               "eight_bit_int_gemm" "internal")))))))))
+      (native-inputs
+       `(("unzip" ,unzip)))
+      (properties '((hidden? . #t))))))
 
 (define-public dlib
   (package
@@ -902,7 +941,7 @@ computing environments.")
 (define-public python-scikit-learn
   (package
     (name "python-scikit-learn")
-    (version "0.24.1")
+    (version "0.24.2")
     (source
      (origin
        (method git-fetch)
@@ -912,13 +951,13 @@ computing environments.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0dd854hi9h81pa3y6gwa6r4qjwrwq5fndi312h6dkqzfh7jbvgvd"))))
+         "0hm92biqwwc87bqnr56lwa5bz77lr7k9q21rdwksnfzq3vsdp2nm"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
          (add-after 'build 'build-ext
-           (lambda _ (invoke "python" "setup.py" "build_ext" "--inplace") #t))
+           (lambda _ (invoke "python" "setup.py" "build_ext" "--inplace")))
          (replace 'check
            (lambda _
              ;; Restrict OpenBLAS threads to prevent segfaults while testing!
@@ -934,8 +973,7 @@ computing environments.")
              ;; 'reset-gzip-timestamps' phase can do its work.
              (let ((out (assoc-ref outputs "out")))
                (for-each make-file-writable
-                         (find-files out "\\.gz$"))
-               #t))))))
+                         (find-files out "\\.gz$"))))))))
     (inputs
      `(("openblas" ,openblas)))
     (native-inputs
@@ -2436,8 +2474,8 @@ that:
 
 (define-public gloo
   (let ((version "0.0.0") ; no proper version tag
-        (commit "ca528e32fea9ca8f2b16053cff17160290fc84ce")
-        (revision "0"))
+        (commit "c22a5cfba94edf8ea4f53a174d38aa0c629d070f")
+        (revision "1"))
     (package
       (name "gloo")
       (version (git-version version revision commit))
@@ -2450,18 +2488,20 @@ that:
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "1q9f80zy75f6njrzrqkmhc0g3qxs4gskr7ns2jdqanxa2ww7a99w"))))
+           "1crmqgybzkgkpbmcx16912gsl5qsj49swa0ikx6mhqgph0chrh11"))))
       (build-system cmake-build-system)
       (native-inputs
        `(("googletest" ,googletest)))
+      (inputs
+       `(("openssl" ,openssl)))
       (arguments
        `(#:configure-flags '("-DBUILD_TEST=1")
          #:phases
          (modify-phases %standard-phases
            (replace 'check
-             (lambda _
-               (invoke "make" "gloo_test")
-               #t)))))
+             (lambda* (#:key tests? #:allow-other-keys)
+               (when tests?
+                 (invoke "make" "gloo_test")))))))
       (synopsis "Collective communications library")
       (description
        "Gloo is a collective communications library.  It comes with a
@@ -2507,7 +2547,7 @@ general non-linear dimension reduction.")
     (package
       (name "xnnpack")
       (version (git-version version revision commit))
-      (home-page "https://github.com/google/XNNPACK")
+      (home-page "https://github.com/google/XNNPACK") ;fork of QNNPACK
       (source (origin
                 (method git-fetch)
                 (uri (git-reference (url home-page) (commit commit)))
@@ -2547,3 +2587,170 @@ high-level machine learning frameworks, such as TensorFlow Lite,
 TensorFlow.js, PyTorch, and MediaPipe.")
       (license license:bsd-3))))
 
+(define-public python-pytorch
+  (package
+    (name "python-pytorch")
+    (version "1.9.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/pytorch/pytorch")
+                    (commit (string-append "v" version))
+                    (recursive? #t)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0cznsh68hwk5761gv7iijb4g6jgjpvs3bbixwpzzmkbkbn2q96c1"))
+              (patches (search-patches "python-pytorch-system-libraries.patch"
+                                       "python-pytorch-runpath.patch"))
+              (modules '((guix build utils)))
+              (snippet
+               '(begin
+                  ;; XXX: Let's be clear: this package is a bundling fest.  We
+                  ;; delete as much as we can, but there's still a lot left.
+                  (for-each (lambda (directory)
+                              (delete-file-recursively
+                               (string-append "third_party/" directory)))
+                            '("benchmark" "cpuinfo" "eigen"
+
+                              ;; FIXME: QNNPACK (of which XNNPACK is a fork)
+                              ;; needs these.
+                              ;; "FP16" "FXdiv" "gemmlowp" "psimd"
+
+                              "gloo" "googletest" "ios-cmake"
+                              "onnx" "protobuf" "pthreadpool"
+                              "pybind11" "python-enum" "python-peachpy"
+                              "python-six" "tbb" "XNNPACK" "zstd"))
+
+                  ;; Adjust references to the onnx-optimizer headers.
+                  (substitute* "caffe2/onnx/backend.cc"
+                    (("onnx/optimizer/")
+                     "onnxoptimizer/"))))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases (modify-phases %standard-phases
+                  (add-before 'build 'use-system-libraries
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      ;; Tell 'setup.py' to let 'CMakeLists.txt' know that we
+                      ;; want to use "system libraries" instead of the bundled
+                      ;; ones.
+                      (setenv "USE_SYSTEM_LIBS" "1")
+
+                      ;; XXX: Disable that for simplicity for now.
+                      (setenv "USE_FBGEMM" "0")))
+                  (add-before 'build 'make-things-writable
+                    (lambda _
+                      ;; The 'build_caffe2' function in
+                      ;; 'tools/build_pytorch_libs.py', called from the
+                      ;; top-level 'setup.py', needs write access to this
+                      ;; directory.
+                      (for-each make-file-writable
+                                (find-files "caffe2/proto" "."
+                                            #:directories? #t))))
+                  (replace 'check
+                    (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+                      ;; Run the test suite following the instructions in
+                      ;; 'CONTRIBUTING.md'.  XXX: Unfortunately this doesn't
+                      ;; work, unless you set PYTHONPATH presumably.
+                      (when tests?
+                        (let ((python-site (site-packages inputs outputs)))
+                          (setenv "PYTHONPATH"
+                                  (string-append python-site ":"
+                                                 (getenv "PYTHONPATH")))
+                          (invoke "python" "test/run_test.py")))))
+                  (add-after 'install 'remove-test-executables
+                    (lambda* (#:key inputs outputs #:allow-other-keys)
+                      ;; Remove test executables, but keep other executables
+                      ;; such as 'torch_shm_manager' and and .so files such as
+                      ;; 'libtorch_global_deps.so'.
+                      (let ((python-site (site-packages inputs outputs)))
+                        (for-each delete-file
+                                  (find-files python-site
+                                              "(^test_cpp_rpc|_test)$"))))))
+
+       ;; XXX: Tests attempt to download data such as
+       ;; <https://raw.githubusercontent.com/pytorch/test-infra/master/stats/slow-tests.json>.
+       #:tests? #f))
+    (native-inputs
+     `(("cmake" ,cmake)
+       ("ninja" ,ninja)))
+    (inputs
+     `(("eigen" ,eigen)
+       ;; ("fmt" ,fmt)
+       ("fp16" ,fp16)
+       ("gemmlowp" ,gemmlowp)
+       ("googletest" ,googletest)
+       ("googlebenchmark" ,googlebenchmark)
+       ("gloo" ,gloo)
+       ("openblas" ,openblas)
+       ("openmpi" ,openmpi)
+       ("pthreadpool" ,pthreadpool)
+       ("protobuf" ,protobuf)
+       ("pybind11" ,pybind11)
+       ("sleef" ,sleef)
+       ("xnnpack" ,xnnpack)
+       ("zstd" ,zstd)))
+    (propagated-inputs
+     `(("python-astunparse" ,python-astunparse)
+       ("python-numpy" ,python-numpy)
+       ("python-pyyaml" ,python-pyyaml)
+       ("python-cffi" ,python-cffi)
+       ("python-peachpy" ,python-peachpy)
+       ("python-typing-extensions" ,python-typing-extensions)
+       ("python-future" ,python-future)
+       ("python-six" ,python-six)
+       ("python-requests" ,python-requests)
+       ("onnx" ,onnx)                       ;propagated for its Python modules
+       ("onnx-optimizer" ,onnx-optimizer)
+       ("cpuinfo" ,cpuinfo)))
+    (home-page "https://pytorch.org/")
+    (synopsis "Python library for tensor computation and deep neural networks")
+    (description
+     "PyTorch is a Python package that provides two high-level features:
+
+@itemize
+@item tensor computation (like NumPy) with strong GPU acceleration;
+@item deep neural networks (DNNs) built on a tape-based autograd system.
+@end itemize
+
+You can reuse Python packages such as NumPy, SciPy, and Cython to extend
+PyTorch when needed.
+
+Note: currently this package does not provide GPU support.")
+    (license license:bsd-3)))
+
+(define-public python-hmmlearn
+  (package
+    (name "python-hmmlearn")
+    (version "0.2.6")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "hmmlearn" version))
+       (sha256
+        (base32
+         "1my0j3rzp17438idr32ssh0j969a98yjblx5igx5kgiiigr9qa1a"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (with-directory-excursion (string-append (assoc-ref outputs "out") "/lib")
+                 (invoke "python" "-m" "pytest"))))))))
+    (propagated-inputs
+     `(("python-cython" ,python-cython)
+       ("python-numpy" ,python-numpy)
+       ("python-scikit-learn" ,python-scikit-learn)
+       ("python-scipy" ,python-scipy)
+       ("python-setuptools-scm" ,python-setuptools-scm)))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/hmmlearn/hmmlearn")
+    (synopsis "Hidden Markov Models with scikit-learn like API")
+    (description
+     "Hmmlearn is a set of algorithms for unsupervised learning and inference
+of Hidden Markov Models.")
+    (license license:bsd-3)))

@@ -9,7 +9,7 @@
 ;;; Copyright © 2015 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
 ;;; Copyright © 2016 Hartmut Goebel <h.goebel@crazy-compilers.com>
-;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
+;;; Copyright © 2016 Christine Lemmer-Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016, 2017, 2018 Roel Janssen <roel@gnu.org>
@@ -1112,38 +1112,38 @@ pictures, sounds, or video.")
   (package
     (inherit postgresql-13)
     (name "postgresql")
-    (version "11.12")
+    (version "11.13")
     (source (origin
               (inherit (package-source postgresql-13))
               (uri (string-append "https://ftp.postgresql.org/pub/source/v"
                                   version "/postgresql-" version ".tar.bz2"))
               (sha256
                (base32
-                "016bacpmqxc676ipzc1l8zv1jj44mjz7dv7jhqazg3ibdfqxiyc7"))))))
+                "0j5wnscnxa3sx8d39s55654df8aikmvkihfb0a02hrgmyygnihx0"))))))
 
 (define-public postgresql-10
   (package
     (inherit postgresql-11)
-    (version "10.17")
+    (version "10.18")
     (source (origin
               (inherit (package-source postgresql-11))
               (uri (string-append "https://ftp.postgresql.org/pub/source/v"
                                   version "/postgresql-" version ".tar.bz2"))
               (sha256
                (base32
-                "0v5jahkqm6gkq67s4bac3h7297bscn2ab6y128idi73cc1qq1wjs"))))))
+                "009qpb02bq0rx0aaw5ck70gk07xwparhfxvlfimgihw2vhp7qisp"))))))
 
 (define-public postgresql-9.6
   (package
     (inherit postgresql-10)
-    (version "9.6.22")
+    (version "9.6.23")
     (source (origin
               (inherit (package-source postgresql-10))
               (uri (string-append "https://ftp.postgresql.org/pub/source/v"
                                   version "/postgresql-" version ".tar.bz2"))
               (sha256
                (base32
-                "0c19kzrj5ib5ygmavf5d6qvxdwrxzzz6jz1r2dl5b815208cscix"))))))
+                "1fa735lrmv2vrfiixg73nh024gxlagcbrssklvgwdf0s82cgfjd8"))))))
 
 (define-public postgresql postgresql-13)
 
@@ -1396,6 +1396,15 @@ including field and record folding.")))
          (delete 'configure)
          ;; The default target is only needed for tests and built on demand.
          (delete 'build)
+         (add-before 'check 'mount-tmp
+           ;; Use the provided workspace directory for test files.
+           ;; Otherwise, /tmp is used which is a mount namespace on /gnu/store.
+           ;; This speeds up the build when the host /tmp is a proper tmpfs or
+           ;; other fast filesystem, as opposed to /gnu which may be a HDD.
+           (lambda _
+             (let ((test-dir (string-append (getcwd) "/../test")))
+               (mkdir test-dir)
+               (setenv "TEST_TMPDIR" (canonicalize-path test-dir)))))
          (add-before 'check 'disable-optimizations
            (lambda _
              ;; Prevent the build from passing '-march=native' to the compiler.
@@ -1627,14 +1636,14 @@ changes.")
 (define-public tdb
   (package
     (name "tdb")
-    (version "1.4.3")
+    (version "1.4.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://www.samba.org/ftp/tdb/tdb-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "06waz0k50c7v3chd08mzp2rv7w4k4q9isbxx3vhlfpx1vy9q61f8"))))
+                "0h8fkblws3d4vf37yhbrbw2nfxg5vk2v3i5mk04hhcbh9y4fvz5w"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases

@@ -6,7 +6,7 @@
 ;;; Copyright © 2015 Federico Beffa <beffa@fbengineering.ch>
 ;;; Copyright © 2015 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2020 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016 Christopher Allan Webber <cwebber@dustycloud.org>
+;;; Copyright © 2016 Christine Lemmer-Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2016–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2016, 2017 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016 Raymond Nicholson <rain1@openmailbox.org>
@@ -38,7 +38,7 @@
 ;;; Copyright © 2019 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2019, 2020, 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2019 Kei Kebreau <kkebreau@posteo.net>
-;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
+;;; Copyright © 2020, 2021 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2020 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2020 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
@@ -99,6 +99,7 @@
   #:use-module (gnu packages gcc)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages glib)
+  #:use-module (gnu packages gnupg)
   #:use-module (gnu packages golang)
   #:use-module (gnu packages gperf)
   #:use-module (gnu packages gstreamer)
@@ -356,15 +357,15 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The current "stable" kernels. That is, the most recently released major
 ;; versions that are still supported upstream.
-(define-public linux-libre-5.13-version "5.13.7")
+(define-public linux-libre-5.13-version "5.13.13")
 (define deblob-scripts-5.13
   (linux-libre-deblob-scripts
    linux-libre-5.13-version
-   (base32 "08xai5zqgk0y0rwhssf81lf8vivjg12wjkv7855l3ljkivgjclbf")
+   (base32 "0bdqgxpc2vnj6m1nnrw8l5jpdglm0nlvjl6g44xryhy230ds0p9l")
    (base32 "153jf5l5x4438zgxwggaky2ahjlfl48j438vhpzks6h77lzc51a5")))
 (define-public linux-libre-5.13-pristine-source
   (let ((version linux-libre-5.13-version)
-        (hash (base32 "0fg41dv62vsnv2hywym15zz0n08rhdzwqvcarspm9r5gac85c7pr")))
+        (hash (base32 "0d1lr3rivgf9j3bn2a9hpzdf74nq8kybf3rfxxvw68vr1hhd4cam")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.13)))
@@ -372,7 +373,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
-(define-public linux-libre-5.10-version "5.10.55")
+(define-public linux-libre-5.10-version "5.10.61")
 (define deblob-scripts-5.10
   (linux-libre-deblob-scripts
    linux-libre-5.10-version
@@ -380,12 +381,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0c9x07gplzajm0h5if3fpw2rvfb7psw3yp7i2n6ws7ggq1dvmki2")))
 (define-public linux-libre-5.10-pristine-source
   (let ((version linux-libre-5.10-version)
-        (hash (base32 "12c8zrbj2c578ysz6j72g4azk0wj39z4aay3bjy9b837mlyi30bm")))
+        (hash (base32 "1lci78584c0rg5m5rkylssppnv001pzh4769m9mds4fdqn6f7sl2")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.10)))
 
-(define-public linux-libre-5.4-version "5.4.137")
+(define-public linux-libre-5.4-version "5.4.143")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
    linux-libre-5.4-version
@@ -393,12 +394,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1xghbbnaisjd0k1klbyn1p7r6r4x5a1bpmkm56a3gh2zvw4s7mj8")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "0z0zlfm9jkwk3wi059q66xjx33qk2zpjk8ndhzlbvn75dhv5x7ph")))
+        (hash (base32 "090x087p8hxnc1daf2xwj7vg8hg1jhz5i4andkbhdy550l5nalq9")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.200")
+(define-public linux-libre-4.19-version "4.19.205")
 (define deblob-scripts-4.19
   (linux-libre-deblob-scripts
    linux-libre-4.19-version
@@ -406,12 +407,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1jiaw0as1ippkrjdpd52657w5mz9qczg3y2hlra7m9k0xawwiqlf")))
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "06q8ws1lsrvhssp9qwdlq47sbsf7wzzxbp97sdjfnvmlqvchjx1h")))
+        (hash (base32 "1ii9l44d6jxhyd5qkc5h83ixailma9v7hyl60wi3rskkafqnwv2m")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.241")
+(define-public linux-libre-4.14-version "4.14.245")
 (define deblob-scripts-4.14
   (linux-libre-deblob-scripts
    linux-libre-4.14-version
@@ -419,12 +420,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1qij18inijj6c3ma8hv98yjagnzxdxyn134da9fd23ky8q6hbvky")))
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "0zczi2hv6ib67niycn6s2gaw73y0nxz0c75w11xa4jqmf2xh9fxm")))
+        (hash (base32 "085jls7b2rzxlmvp0zsp4l3wi5xdrqlv2qczzwvbhzna1f4n2x0d")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.277")
+(define-public linux-libre-4.9-version "4.9.281")
 (define deblob-scripts-4.9
   (linux-libre-deblob-scripts
    linux-libre-4.9-version
@@ -432,12 +433,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0fxajshb75siq39lj5h8xvhdj8lcmddkslwlyj65rhlwk6g2r4b2")))
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "1pkjcz9llc7hkmzfyjcx20b5njnqbkwlzyy1ncc8na71nn6rvsg6")))
+        (hash (base32 "1dg70jv3bqanmjs31s0x2p7nd5g37bqzjn9rc1y6wvkgm4pwahi6")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.277")
+(define-public linux-libre-4.4-version "4.4.282")
 (define deblob-scripts-4.4
   (linux-libre-deblob-scripts
    linux-libre-4.4-version
@@ -445,7 +446,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "0hhin1jpfkd6nwrb6xqxjzl3hdxy4pn8a15hy2d3d83yw6pflbsf")))
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "1m5zkssh523f15fvy80rcvfwqzdkldz3jhny6vbaj8q0zvk3w5r5")))
+        (hash (base32 "1rgxznjb6gsi64wk7x2rylyi64y2nx5yiah5gfm40c6l2f7lb9cc")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -1298,8 +1299,8 @@ and the notification, WiFi, and Bluetooth LED.")
     (license license:gpl2)))
 
 (define-public rtl8812au-aircrack-ng-linux-module
-  (let ((commit "059e06a51be025fde5b2bec6565540b3d9981b0b")
-        (revision "4"))
+  (let ((commit "b8167e66b4ac046b3b76c2c40008d84528e91594")
+        (revision "5"))
     (package
       (name "rtl8812au-aircrack-ng-linux-module")
       (version (git-version "5.6.4.2" revision commit))
@@ -1311,7 +1312,7 @@ and the notification, WiFi, and Bluetooth LED.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "0h6l2r3yj7j9zf11dw0zcdyn50ajnjw8yvv86dzlfj80dn75n98f"))
+          (base32 "1940f2yz5c4q2fhcd91zfzl32fhdsgr297vzamm7nd8kdk0gymi2"))
          (modules '((guix build utils)))
          (snippet
           '(begin
@@ -1432,7 +1433,7 @@ graphics card on Optimus laptops.")
 (define-public ddcci-driver-linux
   (package
     (name "ddcci-driver-linux")
-    (version "0.3.3")
+    (version "0.3.4")
     (source
      (origin
        (method git-fetch)
@@ -1443,7 +1444,7 @@ graphics card on Optimus laptops.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0vkkja3ykjil783zjpwp0vz7jy2fp9ccazzi3afd4fjk8gldin7f"))))
+         "0b50hhkna6ika2vwahzb9za9b41g39ialgv5y1y0kakqi50qi0ld"))))
     (build-system linux-module-build-system)
     (arguments
      `(#:tests? #f                               ; no tests
@@ -1615,6 +1616,40 @@ at login.  Local and dynamic reconfiguration are its key features.")
     (synopsis "PAM interface using ctypes")
     (description "This package provides a PAM interface using @code{ctypes}.")
     (license license:expat)))
+
+(define-public pam-gnupg
+  (package
+    (name "pam-gnupg")
+    (version "0.3")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/cruegge/pam-gnupg")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "1bf91gi6zmfzzmczxm7pajxdlgnikasvg5xsd3j0a368rcr7lf9l"))))
+    (build-system gnu-build-system)
+    (inputs
+     `(("gnupg" ,gnupg)
+       ("linux-pam" ,linux-pam)))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("libtool" ,libtool)))
+    (arguments
+     `(#:tests? #f ;no tests suite
+       #:configure-flags
+       (list (string-append "--with-moduledir="
+                            (assoc-ref %outputs "out") "/lib/security"))))
+
+    (home-page "https://github.com/cruegge/pam-gnupg")
+    (synopsis "Unlock GnuPG keys on login")
+    (description "This package provides a PAM module that hands over your
+login password to @code{gpg-agent}.  This can be useful if you are using a
+GnuPG-based password manager like @code{pass}.")
+    (license license:gpl3+)))
 
 
 ;;;
@@ -3531,7 +3566,14 @@ from the module-init-tools project.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "16iyn51xlrsbshc7p5xl2338yyfzknaqc538sa7mamgccqwgyvvq"))))
+                "16iyn51xlrsbshc7p5xl2338yyfzknaqc538sa7mamgccqwgyvvq"))
+              (modules '((guix build utils)))
+              (snippet
+               '(begin
+                  (substitute* "Makefile"
+                    (("go test -v")
+                     "GO111MODULE=off go test -v"))
+                  #t))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
