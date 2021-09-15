@@ -1669,7 +1669,7 @@ system administrator.")
 (define-public sudo
   (package
     (name "sudo")
-    (version "1.9.7p2")
+    (version "1.9.8")
     (source (origin
               (method url-fetch)
               (uri
@@ -1679,7 +1679,7 @@ system administrator.")
                                     version ".tar.gz")))
               (sha256
                (base32
-                "1a7w99mlpa7kb7zfqkhvafli0a3xhz50kws25y2sg2dzbmrfxd98"))
+                "1rlln9nb3lvg4qlkp0c9qxjflx36rf16mflg0sps2kl0k7lmswzi"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -3527,7 +3527,7 @@ buffers.")
 (define-public igt-gpu-tools
   (package
     (name "igt-gpu-tools")
-    (version "1.25")
+    (version "1.26")
     (source
      (origin
        (method git-fetch)
@@ -3536,7 +3536,7 @@ buffers.")
              (commit (string-append "igt-gpu-tools-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1lvhkdhilw0fn4nzkpfwvrhiv8d92h811qs2v6ac3p5w7v86a9zm"))))
+        (base32 "0m124pqv7zna25jnvk566c4kk628jr0w8mgnp8mr5xqz9cprgczm"))))
     (build-system meson-build-system)
     (arguments
      `(#:tests? #f))            ; many of the tests try to load kernel modules
@@ -3972,7 +3972,7 @@ Python loading in HPC environments.")
   (let ((real-name "inxi"))
     (package
       (name "inxi-minimal")
-      (version "3.3.04-1")
+      (version "3.3.06-1")
       (source
        (origin
          (method git-fetch)
@@ -3981,7 +3981,7 @@ Python loading in HPC environments.")
                (commit version)))
          (file-name (git-file-name real-name version))
          (sha256
-          (base32 "1rrhycp8i43yf9wi80n4pq2hkfhvb2rg1srz8if28bh6fhhasjzw"))))
+          (base32 "1qk40iyrdp52vmbiqwxicvlcycm2v2bf1gg4lzq0b4619sd6d1m7"))))
       (build-system trivial-build-system)
       (inputs
        `(("bash" ,bash-minimal)

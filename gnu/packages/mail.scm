@@ -32,7 +32,7 @@
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Justus Winter <justus@sequoia-pgp.org>
 ;;; Copyright © 2020 Eric Brown <ecbrown@ericcbrown.com>
-;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2020, 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020, 2021 Alexey Abramov <levenson@mmer.org>
 ;;; Copyright © 2020 Tim Gesthuizen <tim.gesthuizen@yahoo.de>
@@ -156,6 +156,7 @@
   #:use-module (gnu packages xml)
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (guix packages)
+  #:use-module (guix deprecation)
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix svn-download)
@@ -166,6 +167,7 @@
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
   #:use-module (guix build-system guile)
+  #:use-module (guix build-system emacs)
   #:use-module (guix build-system meson)
   #:use-module (guix build-system perl)
   #:use-module (guix build-system python)
@@ -259,18 +261,16 @@ example, modify the message headers or body, or encrypt or sign the message.")
 (define-public mailutils
   (package
     (name "mailutils")
-    (version "3.10")
+    (version "3.13")
     (source (origin
              (method url-fetch)
              (uri (string-append "mirror://gnu/mailutils/mailutils-"
                                  version ".tar.xz"))
              (sha256
               (base32
-               "17smrxjdgbbzbzakik30vj46q4iib85ksqhb82jr4vjp57akszh9"))
+               "1iwl82d6aa2acsdxbqh1s5xx44sg83b4yxqik408m1s9rcfrf86r"))
              (patches
-              ;; Fixes https://issues.guix.gnu.org/43088.
-              (search-patches "mailutils-fix-uninitialized-variable.patch"
-                              "mailutils-variable-lookup.patch"))))
+              (search-patches "mailutils-variable-lookup.patch"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -294,8 +294,9 @@ example, modify the message headers or body, or encrypt or sign the message.")
              ;; The 'pipeact.at' tests generate a shell script; make
              ;; sure it uses the right shell.
              (substitute* '("sieve/tests/testsuite"
-                            "mh/tests/testsuite")
-               (("#! /bin/sh")
+                            "mh/tests/testsuite"
+                            "libmailutils/tests/lock.at")
+               (("#! ?/bin/sh")
                 (string-append "#!" (which "sh"))))
 
              (substitute* "mh/tests/testsuite"
@@ -327,8 +328,9 @@ example, modify the message headers or body, or encrypt or sign the message.")
                  (format port "Path: ~a/Mail-for-tests~%"
                          (getcwd))))
 
-             #t)))
-       ;; TODO: Add `--with-sql'.
+             (substitute* "imap4d/tests/testclient.c"
+               (("\"/bin/sh\"")
+                (string-append "\"" (which "sh") "\""))))))
        #:configure-flags
        (list "--sysconfdir=/etc"
 
@@ -340,16 +342,20 @@ example, modify the message headers or body, or encrypt or sign the message.")
                                            (package-inputs this-package))
                                (("guile" guile)
                                 (version-major+minor
-                                 (package-version guile))))))
-
-       #:parallel-tests? #f))
+                                 (package-version guile))))))))
     (native-inputs
-     `(("perl" ,perl)                           ;for 'gylwrap'
+     ;; Regeneration of the build system is triggered by touching the
+     ;; 'libmailutils/tests/lock.at' file.
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("gettext" ,gettext-minimal)
+       ("libtool" ,libtool)
+       ("m4" ,m4)
+       ("perl" ,perl)                           ;for 'gylwrap'
        ("texinfo" ,texinfo)
        ("dejagnu" ,dejagnu)))
     (inputs
-     `(("m4" ,m4)
-       ("guile" ,guile-3.0)
+     `(("guile" ,guile-3.0)
        ("gsasl" ,gsasl)
        ("gnutls" ,gnutls)
        ("ncurses" ,ncurses)
@@ -357,7 +363,6 @@ example, modify the message headers or body, or encrypt or sign the message.")
        ("linux-pam" ,linux-pam)
        ("libltdl" ,libltdl)
        ("gdbm" ,gdbm)
-
        ;; Required for SEARCH CHARSET.
        ("libiconv" ,libiconv)
        ("libunistring" ,libunistring)))
@@ -368,7 +373,24 @@ example, modify the message headers or body, or encrypt or sign the message.")
 processing electronic mail.  It contains both utilities and server daemons
 and all operate in a protocol-agnostic way.  The underlying libraries are
 also available, simplifying the addition of mail capabilities to new
-software.")
+software.  GNU Mailutils provides the following commands:
+@itemize @command
+@item dotlock
+@item decodemail
+@item frm
+@item from
+@item guimb
+@item mail
+@item mailutils
+@item mailutils-config
+@item messages
+@item mimeview
+@item movemail
+@item popauth
+@item putmail
+@item readmsg
+@item sieve
+@end itemize")
     (license
      ;; Libraries are under LGPLv3+, and programs under GPLv3+.
      (list license:gpl3+ license:lgpl3+))))
@@ -1045,53 +1067,58 @@ content (body).  The program is able to learn from the user's classifications
 and corrections.  It is based on a Bayesian filter.")
     (license license:gpl3+)))
 
-(define-public offlineimap
-  (package
-    (name "offlineimap")
-    (version "7.3.3")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/OfflineIMAP/offlineimap")
-                    (commit (string-append "v" version))))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "1gg8ry67i20qapj4z20am9bm67m2q28kixcj7ja75m897vhzarnq"))))
-    (build-system python-build-system)
-    (native-inputs
-     `(("asciidoc" ,asciidoc)))
-    (inputs
-     `(("python2-pysqlite" ,python2-pysqlite)
-       ("python2-rfc6555" ,python2-rfc6555)
-       ("python2-six" ,python2-six)))
-    (arguments
-     ;; The setup.py script expects python-2.
-     `(#:python ,python-2
-      ;; Tests require a modifiable IMAP account.
-       #:tests? #f
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'build 'build-documentation
-           (lambda _
-             (substitute* "docs/Makefile"
-               ;; Prevent xmllint and xsltproc from downloading a DTD file.
-               (("a2x -v") "a2x --no-xmllint --xsltproc-opts=--nonet -v"))
-             (invoke "make" "-C" "docs" "man")))
-         (add-after 'install 'install-documentation
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (man (string-append out "/share/man")))
-               (install-file "docs/offlineimap.1" (string-append man "/man1"))
-               (install-file "docs/offlineimapui.7" (string-append man "/man7"))
-               #t))))))
-    (home-page "https://www.offlineimap.org")
-    (synopsis "Sync emails between two repositories")
-    (description
-     "OfflineImap synchronizes emails between two repositories, so that you
+(define-public offlineimap3
+  ;; The OfflineIMAP3 fork does not yet have a release, but it's likely to be
+  ;; 8.0.0 but the source still reports 7.3.0, see
+  ;; https://github.com/OfflineIMAP/offlineimap3/issues/10.
+  (let ((commit "4ca9c75c6f9a0cc8dc7b69dd6abf073e494cc0e5")
+        (revision "0"))
+    (package
+      (name "offlineimap3")
+      (version (git-version "7.3.0" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/OfflineIMAP/offlineimap3")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "0nzh5dcc559jfw4yy12gc98s17w82b15zxikspc6apd8filmk9xg"))))
+      (build-system python-build-system)
+      (native-inputs
+       `(("asciidoc" ,asciidoc)))
+      (inputs
+       `(("python-distro" ,python-distro)
+         ("python-imaplib2" ,python-imaplib2)
+         ("python-rfc6555" ,python-rfc6555)))
+      (arguments
+       `(;; Tests require a modifiable IMAP account.
+         #:tests? #f
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'build 'build-documentation
+             (lambda _
+               (substitute* "docs/Makefile"
+                 ;; Prevent xmllint and xsltproc from downloading a DTD file.
+                 (("a2x -v") "a2x --no-xmllint --xsltproc-opts=--nonet -v"))
+               (invoke "make" "-C" "docs" "man")))
+           (add-after 'install 'install-documentation
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let* ((out (assoc-ref outputs "out"))
+                      (man (string-append out "/share/man")))
+                 (install-file "docs/offlineimap.1" (string-append man "/man1"))
+                 (install-file "docs/offlineimapui.7" (string-append man "/man7"))))))))
+      (home-page "https://www.offlineimap.org")
+      (synopsis "Sync emails between two repositories")
+      (description
+       "OfflineImap synchronizes emails between two repositories, so that you
 can read the same mailbox from multiple computers.  It supports IMAP as REMOTE
 repository and Maildir/IMAP as LOCAL repository.")
-    (license license:gpl2+)))
+      (license license:gpl2+))))
+
+(define-public offlineimap
+  (deprecated-package "offlineimap" offlineimap3))
 
 (define-public emacs-mew
   (package
@@ -1336,31 +1363,18 @@ invoking @command{notifymuch} from the post-new hook.")
                 "1myylb19hj5nb1vriqng252vfjwwkgbi3gxj93pi2q1fzyw7w2lf"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:modules ((guix build gnu-build-system)
-                  ((guix build emacs-build-system) #:prefix emacs:)
-                  (guix build utils))
-       #:imported-modules (,@%gnu-build-system-modules
-                           (guix build emacs-build-system)
-                           (guix build emacs-utils))
-       #:make-flags
+     `(#:make-flags
        (list "V=1"                      ; verbose test output
              "NOTMUCH_TEST_TIMEOUT=1h") ; don't fail on slow machines
        #:phases (modify-phases %standard-phases
-                  (add-after 'unpack 'patch-notmuch-lib.el
-                    (lambda _
-                      (substitute* "emacs/notmuch-lib.el"
-                        (("/bin/sh") (which "sh")))))
                   (replace 'configure
                     (lambda* (#:key outputs #:allow-other-keys)
-                      (setenv "CC" "gcc")
+                      (setenv "CC" ,(cc-for-target))
                       (setenv "CONFIG_SHELL" (which "sh"))
-
-                      (let* ((out (assoc-ref outputs "out"))
-                             (elisp (emacs:elpa-directory out)))
+                      (let* ((out (assoc-ref outputs "out")))
                         (invoke "./configure"
                                 (string-append "--prefix=" out)
-                                (string-append "--emacslispdir=" elisp)
-                                (string-append "--emacsetcdir=" elisp)))))
+                                "--without-emacs"))))
                   (add-before 'check 'disable-failing-tests
                     ;; FIXME: Investigate why these tests are failing,
                     ;; and try removing this for notmuch versions > 0.31.
@@ -1369,21 +1383,20 @@ invoking @command{notifymuch} from the post-new hook.")
                         (("\\$NOTMUCH_GMIME_X509_CERT_VALIDITY") "0"))))
                   (add-before 'check 'prepare-test-environment
                     (lambda _
-                      (setenv "TEST_CC" "gcc")
+                      (setenv "TEST_CC" ,(cc-for-target))
                       ;; Patch various inline shell invocations.
                       (substitute* (find-files "test" "\\.sh$")
-                        (("/bin/sh") (which "sh")))))
-                  (add-after 'install 'make-autoloads
-                    (assoc-ref emacs:%standard-phases 'make-autoloads)))))
+                        (("/bin/sh") (which "sh"))))))))
     (native-inputs
      `(("bash-completion" ,bash-completion)
-       ("emacs" ,emacs-no-x)    ; -minimal lacks libxml, needed for some tests
        ("pkg-config" ,pkg-config)
        ("python" ,python)
        ("python-docutils" ,python-docutils)
        ("sphinx" ,python-sphinx)
+       ("texinfo" ,texinfo)
 
        ;; The following are required for tests only.
+       ("emacs" ,emacs-no-x)    ; -minimal lacks libxml, needed for some tests
        ("which" ,which)
        ("dtach" ,dtach)
        ("gnupg" ,gnupg)
@@ -1401,6 +1414,32 @@ invoking @command{notifymuch} from the post-new hook.")
      "Notmuch is a command-line based program for indexing, searching, read-
 ing, and tagging large collections of email messages.")
     (license license:gpl3+)))
+
+(define-public emacs-notmuch
+  (package
+    (inherit notmuch)
+    (name "emacs-notmuch")
+    (build-system emacs-build-system)
+    (native-inputs '())
+    (inputs
+     `(("notmuch" ,notmuch)))
+    (arguments
+     `(#:exclude (cons* "make-deps.el" "rstdoc.el" %default-exclude)
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'chdir
+           (lambda _
+             (chdir "emacs")))
+         (add-after 'chdir 'patch-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((notmuch (assoc-ref inputs "notmuch")))
+               (substitute* "notmuch-lib.el"
+                 (("\"notmuch\"")
+                  (string-append "\"" notmuch "/bin/notmuch\"")))))))))
+    (synopsis "Run Notmuch within Emacs")
+    (description
+     "This package provides an Emacs-based interface to the Notmuch mail
+system.")))
 
 (define-public notmuch-addrlookup-c
   (package
@@ -3754,14 +3793,14 @@ tools and applications:
 (define-public balsa
   (package
     (name "balsa")
-    (version "2.6.2")
+    (version "2.6.3")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://pawsa.fedorapeople.org/balsa/"
-                           "balsa-" version ".tar.bz2"))
+                           "balsa-" version ".tar.xz"))
        (sha256
-        (base32 "1w0239i01mw4wwwy7xh8gz7zgl5khwvfm5wy35x0swvvax021mai"))))
+        (base32 "1m0x3rk7cp7slr47rmg4y91rbxgs652v706lyxj600m5r5v4bl6l"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -4359,6 +4398,24 @@ DKIM and ARC sign messages and output the corresponding signature headers.")
 based on asyncio.")
     (license (list license:asl2.0
                    license:lgpl3))))    ; only for setup_helpers.py
+
+(define-public python-imaplib2
+  (package
+    (name "python-imaplib2")
+    (version "3.6")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "imaplib2" version))
+       (sha256
+        (base32
+         "0nqyb274hq30agg1c0zkb5ijmcirgg35sp4dp4n292l665dlijwn"))))
+    (build-system python-build-system)
+    (home-page "https://github.com/jazzband/imaplib2/")
+    (synopsis "Threaded Python IMAP4 client")
+    (description "This package provides a threaded Python IMAP4 client, based
+on RFC 3501 and original @code{imaplib} module.")
+    (license license:expat)))
 
 (define-public rspamd
   (package

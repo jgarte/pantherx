@@ -131,6 +131,10 @@
   (libvirt
    (package libvirt)
    "Libvirt package.")
+  (qemu
+   (package qemu)
+   "Qemu package.")
+
   (listen-tls?
    (boolean #t)
    "Flag listening for secure TLS connections on the public TCP/IP port.
@@ -168,7 +172,7 @@ stopping the Avahi daemon.")
    "Default mDNS advertisement name. This must be unique on the
 immediate broadcast network.")
   (unix-sock-group
-   (string "root")
+   (string "libvirt")
    "UNIX domain socket group ownership. This can be used to
 allow a 'trusted' set of users access to management capabilities
 without becoming root.")
@@ -485,7 +489,7 @@ potential infinite waits blocking libvirt."))
                                      (lambda (config)
                                        (list
                                         (libvirt-configuration-libvirt config)
-                                        qemu)))
+                                        (libvirt-configuration-qemu config))))
                   (service-extension activation-service-type
                                      %libvirt-activation)
                   (service-extension shepherd-root-service-type

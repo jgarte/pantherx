@@ -43,6 +43,7 @@
 ;;; Copyright © 2021 Ekaitz Zarraga <ekaitz@elenq.tech>
 ;;; Copyright © 2021 Greg Hogan <code@greghogan.com>
 ;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
+;;; Copyright © 2021 Pradana Aumars <paumars@courrier.dev>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -4150,28 +4151,33 @@ addon modules.")
 (define-public python-wtforms
   (package
     (name "python-wtforms")
-    (version "2.1")
+    (version "2.3.3")
     (source
      (origin
        (method url-fetch)
-       (uri (pypi-uri "WTForms" version ".zip"))
+       (uri (pypi-uri "WTForms" version ".tar.gz"))
        (sha256
         (base32
-         "0vyl26y9cg409cfyj8rhqxazsdnd0jipgjw06civhrd53yyi1pzz"))))
+         "17427m7p9nn9byzva697dkykykwcp2br3bxvi8vciywlmkh5s6c1"))))
     (build-system python-build-system)
     (arguments
-     '(#:phases
+     `(#:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'remove-django-test
-           ;; Don't fail the tests when the inputs for the optional tests cannot be found.
-           (lambda _
-             (substitute*
-               "tests/runtests.py"
-               (("'ext_django.tests', 'ext_sqlalchemy', 'ext_dateutil', 'locale_babel'") "")
-               (("sys.stderr.write(\"### Disabled test '%s', dependency not found\n\" % name)") ""))
-             #t)))))
+         (replace 'check
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "python" "setup.py" "compile_catalog")
+               (invoke "coverage" "run" "tests/runtests.py" "--with-pep8")))))))
     (native-inputs
-     `(("unzip" ,unzip)))
+     `(("python-coverage" ,python-coverage)
+       ("python-dateutil" ,python-dateutil)
+       ("python-pep8" ,python-pep8)
+       ("python-sqlalchemy" ,python-sqlalchemy)))
+    (propagated-inputs
+     `(("python-babel" ,python-babel)
+       ("python-email-validator" ,python-email-validator)
+       ("python-markupsafe" ,python-markupsafe)))
     (home-page "http://wtforms.simplecodes.com/")
     (synopsis
      "Form validation and rendering library for Python web development")
@@ -6205,3 +6211,25 @@ your code non-blocking and speedy.")
      "This project provides a client library in Python that makes it easy to
 communicate with Microsoft Azure Storage services.")
     (license license:expat)))
+
+(define-public python-w3lib
+  (package
+    (name "python-w3lib")
+    (version "1.22.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "w3lib" version))
+       (sha256
+        (base32
+         "1pv02lvvmgz2qb61vz1jkjc04fgm4hpfvaj5zm4i3mjp64hd1mha"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("python-six" ,python-six)))
+    (home-page "https://github.com/scrapy/w3lib")
+    (synopsis "Python library of web-related functions")
+    (description
+     "This is a Python library of web-related functions, such as: remove comments,
+or tags from HTML snippets, extract base url from HTML snippets, translate entites
+on HTML strings, among other things.")
+    (license license:bsd-3)))

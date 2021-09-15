@@ -1027,7 +1027,7 @@ shows it again when the mouse cursor moves or a mouse button is pressed.")
 (define-public xlockmore
   (package
     (name "xlockmore")
-    (version "5.66")
+    (version "5.67")
     (source (origin
              (method url-fetch)
              (uri (list (string-append "http://sillycycle.com/xlock/"
@@ -1038,7 +1038,7 @@ shows it again when the mouse cursor moves or a mouse button is pressed.")
                                        "xlockmore-" version ".tar.xz")))
              (sha256
               (base32
-               "0wdb7gpyjw3sigmhiplgg1bqxz6wipr0c3n9492x2a18cv1saxjr"))))
+               "0k13gxgnk4i041g1fzixfwlf3l5hrvvkhfvxf27szx0d1qbpwq58"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags (list (string-append "--enable-appdefaultdir="
@@ -2208,7 +2208,7 @@ to automatically turn it on on login.")
 (define-public xrandr-invert-colors
   (package
     (name "xrandr-invert-colors")
-    (version "0.01")
+    (version "0.02")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2217,7 +2217,7 @@ to automatically turn it on on login.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1br3x9vr6xm4ika06n8cfxx1b3wdchdqvyzjl4y1chmivrml8x9h"))))
+                "0gk1fgxb2kjyr78xn8m0ckjdic99ras7msa67piwnhj3j4scg1ih"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags (list ,(string-append "CC=" (cc-for-target)))
@@ -2226,11 +2226,14 @@ to automatically turn it on on login.")
        (modify-phases %standard-phases
          (delete 'configure)
          (replace 'install
+           ;; It's simpler to install the single binary ourselves than to patch
+           ;; the Makefile's install target into working.
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out  (assoc-ref outputs "out"))
                     (bin  (string-append out "/bin")))
-               (install-file "xrandr-invert-colors.bin" bin)
-               #t))))))
+               (mkdir-p bin)
+               (copy-file "xrandr-invert-colors.bin"
+                          (string-append bin "/xrandr-invert-colors"))))))))
     (inputs
      `(("libxrandr" ,libxrandr)))
     (home-page "https://github.com/zoltanp/xrandr-invert-colors")
@@ -2449,7 +2452,7 @@ can optionally use some appearance settings from XSettings, tint2 and GTK.")
 (define-public xwallpaper
   (package
     (name "xwallpaper")
-    (version "0.6.6")
+    (version "0.7.3")
     (source
      (origin
        (method git-fetch)
@@ -2458,7 +2461,7 @@ can optionally use some appearance settings from XSettings, tint2 and GTK.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "10klm81rs3k3l2i7whpvcsg95x51ja11l86fmwbrvg3kq705p2sr"))))
+        (base32 "1rsv42cl0s149sbpdxz9yqqjip3si95jv3dglwzrcm7pjfg7519v"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)

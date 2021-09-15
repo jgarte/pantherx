@@ -62,7 +62,7 @@
 ;;; Copyright © 2019 Jack Hill <jackhill@jackhill.us>
 ;;; Copyright © 2019, 2020, 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2019, 2020 Alex Griffin <a@ajgrf.com>
-;;; Copyright © 2019, 2020 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2019, 2020, 2021 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2019 Jacob MacDonald <jaccarmac@gmail.com>
 ;;; Copyright © 2019, 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2019 Wiktor Żelazny <wzelazny@vurv.cz>
@@ -107,6 +107,9 @@
 ;;; Copyright © 2021 Hugo Lecomte <hugo.lecomte@inria.fr>
 ;;; Copyright © 2021 Franck Pérignon <franck.perignon@univ-grenoble-alpes.fr>
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
+;;; Copyright © 2021 Simon Streit <simon@netpanic.org>
+;;; Copyright © 2021 Daniel Meißner <daniel.meissner-i4k@ruhr-uni-bochum.de>
+;;; Copyright © 2021 Pradana Aumars <paumars@courrier.dev>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -5384,7 +5387,7 @@ readable format.")
        ("texlive" ,(texlive-union (list texlive-fonts-cm-super
                                         texlive-fonts-ec
                                         texlive-generic-ifxetex
-                                        texlive-generic-pdftex
+                                        texlive-pdftex
                                         texlive-amsfonts/patched
                                         texlive-latex-capt-of
                                         texlive-latex-cmap
@@ -5927,7 +5930,7 @@ toolkits.")
                                         texlive-latex-type1cm
                                         texlive-latex-ucs
 
-                                        texlive-generic-pdftex
+                                        texlive-pdftex
 
                                         texlive-fonts-ec
                                         texlive-fonts-adobe-times
@@ -7096,13 +7099,13 @@ PNG, PostScript, PDF, and SVG file output.")
 (define-public python-decorator
   (package
     (name "python-decorator")
-    (version "4.3.0")
+    (version "5.0.9")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "decorator" version))
        (sha256
-        (base32 "0308djallnh00v112y5b7nadl657ysmkp6vc8xn51d6yzc9zm7n3"))))
+        (base32 "1mcy64hllgm938v8k1x2a4g0q9swsnrfnsvhz59kr28a6ajgpv3j"))))
     (build-system python-build-system)
     (home-page "https://pypi.org/project/decorator/")
     (synopsis "Python module to simplify usage of decorators")
@@ -8262,7 +8265,7 @@ computing.")
        ("texlive" ,(texlive-union (list texlive-amsfonts/patched
                                         texlive-fonts-ec
                                         texlive-generic-ifxetex
-                                        texlive-generic-pdftex
+                                        texlive-pdftex
                                         texlive-latex-capt-of
                                         texlive-latex-cmap
                                         texlive-latex-environ
@@ -13669,16 +13672,15 @@ way.")
 (define-public python-munkres
   (package
     (name "python-munkres")
-    (version "1.0.8")
+    (version "1.1.4")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "munkres" version))
               (sha256
                (base32
-                "0mbspx4zv8id4x6pim6ybsa1xh96qwpbqj7skbqz4c9c9nf1lpqq"))))
+                "00yvj8bxmhhhhd74v7j0x673is7vizmxwgb3dd5xmnkr74ybyi7w"))))
     (build-system python-build-system)
-    (arguments
-     '(#:tests? #f)) ; no test suite
+    (native-inputs `(("python-pytest" ,python-pytest-6)))
     (home-page "https://software.clapper.org/munkres/")
     (synopsis "Implementation of the Munkres algorithm")
     (description "The Munkres module provides an implementation of the Munkres
@@ -13807,29 +13809,30 @@ ambiguities (forward vs. backward slashes, etc.).
 (define-public python-jellyfish
   (package
     (name "python-jellyfish")
-    (version "0.5.6")
+    (version "0.8.8")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "jellyfish" version))
               (sha256
                (base32
-                "1j9rplb16ba2prjj6mip46z0w9pnhnqpwgiwi0x93vnas14rlyl8"))))
+                "0p2s6b30sfffx8sya2i8kz0i0riw9fq1fi0k89s8kdgrmjf0h1h5"))))
     (build-system python-build-system)
+    (arguments
+     `(#:tests? #f ; XXX: Tests cannot find C coded version.
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest" "-vv" "jellyfish/test.py")))))))
     (native-inputs
      `(("python-pytest" ,python-pytest)))
     (home-page "https://github.com/jamesturk/jellyfish")
     (synopsis "Approximate and phonetic matching of strings")
     (description "Jellyfish uses a variety of string comparison and phonetic
 encoding algorithms to do fuzzy string matching.")
-    (license license:bsd-2)
-    (properties `((python2-variant . ,(delay python2-jellyfish))))))
-
-(define-public python2-jellyfish
-  (let ((jellyfish (package-with-python2
-                     (strip-python2-variant python-jellyfish))))
-    (package/inherit jellyfish
-      (native-inputs `(("python2-unicodecsv" ,python2-unicodecsv)
-                       ,@(package-native-inputs jellyfish))))))
+    (license license:bsd-2)))
 
 (define-public python2-unicodecsv
   (package
@@ -13909,32 +13912,38 @@ can also be used to get the exact location, font or color of the text.")
 (define-public python-rarfile
   (package
     (name "python-rarfile")
-    (version "2.8")
+    (version "4.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "rarfile" version))
               (sha256
                (base32
-                "0qfad483kcbga0bn4qmcz953xjk16r52fahiy46zzn56v80y89ra"))))
+                "1882wv9szcm29mnyhjmspyflyr2l7z73srn14w4dlnww49lqfm37"))))
     (build-system python-build-system)
     (arguments
-     '(#:phases
+     `(#:tests? #f ;; The bsdtar utility is very limited and most tests fail.
+       #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'patch
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "rarfile.py"
+               ;; Disable unrar and unar, which are unavailable on Guix.
+               (("(unrar|unar)=True" all tool) (string-append tool "=False"))
+               ;; Hardcode path to bsdtar
+               (("\"bsdtar\"")
+                (string-append "\"" (assoc-ref inputs "libarchive") "/bin/bsdtar\"")))
+             #t))
          (replace 'check
-           ;; Many tests fail, but the installation proceeds.
-           (lambda _ (invoke "make" "-C" "test" "test"))))))
-    (native-inputs
-     `(("which" ,which))) ; required for tests
-    (propagated-inputs
-     `(("libarchive" ,libarchive)))
+           (lambda* (#:key inputs tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest" "-vv")))))))
+    (native-inputs `(("python-pytest" ,python-pytest)))
+    (inputs `(("libarchive" ,libarchive)))
     (home-page "https://github.com/markokr/rarfile")
     (synopsis "RAR archive reader for Python")
     (description "This is Python module for RAR archive reading.  The interface
 is made as zipfile like as possible.")
     (license license:isc)))
-
-(define-public python2-rarfile
-  (package-with-python2 python-rarfile))
 
 (define-public python-rich
   (package
@@ -14318,29 +14327,6 @@ to occurrences in strings and comments.")
 functionality in a modular way, allowing you to extend your panel with your
 own code, responding to click events and updating clock every second.")
     (license license:bsd-3)))
-
-(define-public python2-selectors2
-  (package
-    (name "python2-selectors2")
-    (version "2.0.1")
-    (source (origin
-              (method url-fetch)
-              (uri (pypi-uri "selectors2" version))
-              (sha256
-               (base32
-                "110qr00b9axz1f1jm12b495jkvrz80smknxvssqlhwk0dx67rdw1"))))
-    (build-system python-build-system)
-    (arguments
-     `(#:python ,python-2))
-    (native-inputs
-     `(("python2-mock" ,python2-mock)
-       ("python2-psutil" ,python2-psutil)))
-    (home-page "https://www.github.com/SethMichaelLarson/selectors2")
-    (synopsis "Backport of the selectors module from Python 3.5+")
-    (description
-     "This package provides a drop-in replacement for the @code{selectors}
-module in Python 3.5 and later.")
-    (license license:expat)))
 
 (define-public python-tblib
   (package
@@ -18335,15 +18321,7 @@ validation of URIs (see RFC 3986) and IRIs (see RFC 3987).")
        "Python implementation of the Happy Eyeballs Algorithm described in RFC
 6555.  Provided with a single file and dead-simple API to allow easy vendoring
 and integration into other projects.")
-      (properties `((python2-variant . ,(delay python2-rfc6555))))
       (license license:asl2.0))))
-
-(define-public python2-rfc6555
-  (let ((base (package-with-python2
-               (strip-python2-variant python-rfc6555))))
-    (package/inherit base
-      (propagated-inputs
-       `(("python2-selectors2" ,python2-selectors2))))))
 
 (define-public python-bagit
   (package
@@ -22457,6 +22435,28 @@ processes may share the same data.")
 format.")
     (license license:expat)))
 
+(define-public python-crontab
+  (package
+    (name "python-crontab")
+    (version "2.5.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri name version))
+       (sha256
+        (base32 "0cccrqc10r8781ba81x8r2frs3pl2m4hkm599k5358ak0xr7xgjb"))))
+    (build-system python-build-system)
+    (arguments
+     ;; Comptability tests fail so they are disabled.
+     `(#:tests? #f))
+    (inputs
+     `(("python-dateutil" ,python-dateutil)))
+    (home-page "https://gitlab.com/doctormo/python-crontab/")
+    (synopsis "Module for reading and writing crontab files")
+    (description "This Python module can read, write crontab files, and
+access the system cron automatically and simply using a direct API.")
+    (license license:lgpl3+)))
+
 (define-public python-pylzma
   (package
     (name "python-pylzma")
@@ -25940,20 +25940,19 @@ Qt applications.")
 (define-public python-confuse
   (package
     (name "python-confuse")
-    (version "1.4.0")
+    (version "1.5.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "confuse" version))
        (sha256
         (base32
-         "0r74djc8r6lfx6ldsqnhpvfsn256gsfzbl33qcm77hp2qr8h9z4j"))))
+         "0bh2kyj8wd7h9gg4nsvrbykl5ly0f70f0wi3fbm204b1f0fcmywj"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("python-pathlib" ,python-pathlib)
-       ("python-pyyaml" ,python-pyyaml)))
+     `(("python-pyyaml" ,python-pyyaml)))
     (home-page "https://github.com/beetbox/confuse")
-    (synopsis "Painless YAML configuration.")
+    (synopsis "Painless YAML configuration")
     (description "Confuse is a configuration library for Python that uses
 YAML.  It takes care of defaults, overrides, type checking, command-line
 integration, human-readable errors, and standard OS-specific locations.")
