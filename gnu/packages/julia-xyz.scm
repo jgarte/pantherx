@@ -22,11 +22,15 @@
 (define-module (gnu packages julia-xyz)
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (gnu packages)
+  #:use-module (guix utils)
   #:use-module (guix packages)
   #:use-module (guix git-download)
   #:use-module (guix build-system julia)
   #:use-module (gnu packages gcc)
-  #:use-module (gnu packages julia-jll))
+  #:use-module (gnu packages julia-jll)
+  #:use-module (gnu packages python)
+  #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages version-control))
 
 (define-public julia-abstractffts
   (package
@@ -96,6 +100,26 @@ in this package.")
 acts like @code{convert(T, x)}, but without the restriction of returning a
 @code{T}.  This allows you to \"convert\" wrapper types like @code{Adjoint} to
 be GPU compatible without throwing away the wrapper.")
+    (license license:expat)))
+
+(define-public julia-ansicoloredprinters
+  (package
+    (name "julia-ansicoloredprinters")
+    (version "0.0.1")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/JuliaDocs/ANSIColoredPrinters.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "0dp5agljr0g50s5gn0pr70wrz01ggck6pb40ay3l4szhswq7mqzf"))))
+    (build-system julia-build-system)
+    (home-page "https://github.com/JuliaDocs/ANSIColoredPrinters.jl")
+    (synopsis "ANSI escape code translator")
+    (description "@code{ANSIColoredPrinters.jl} converts a text qualified by
+ANSI escape codes to another format.")
     (license license:expat)))
 
 (define-public julia-aqua
@@ -968,6 +992,127 @@ Julia's built-in docsystem.  These are features that are not yet mature enough
 to be considered for inclusion in Base, or that have sufficiently niche use
 cases that including them with the default Julia installation is not seen as
 valuable enough at this time.")
+    (license license:expat)))
+
+;; By removing all the javascript and css downloads any HTML documentation
+;; produced by this package will not be very useful.
+(define-public julia-documenter
+  (package
+    (name "julia-documenter")
+    (version "0.27.7")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/JuliaDocs/Documenter.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "00ai3c24i3fkn5plmavampcxm0ijhwk0v5cn9xwm7rvbjnnvaaam"))))
+    (build-system julia-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-source
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "src/Deps.jl"
+               (("pip install")
+                (string-append (assoc-ref inputs "python")
+                               "/bin/pip install")))
+             #t))
+         (add-after 'unpack 'remove-javascript-downloads
+           (lambda _
+             (substitute* "src/Writers/HTMLWriter.jl"
+               (("cdnjs.cloudflare.com") "example.com"))
+             ;; Removing the javascript downloads causes these tests fail.
+             (substitute* "test/examples/tests.jl"
+               ((".*Main\\.examples_html_doc.*") "")
+               ((".*Main\\.examples_html_mathjax3_doc.*") ""))
+             #t)))))
+    (propagated-inputs
+     `(("julia-ansicoloredprinters" ,julia-ansicoloredprinters)
+       ("julia-docstringextensions" ,julia-docstringextensions)
+       ("julia-iocapture" ,julia-iocapture)
+       ("julia-json" ,julia-json)))
+    (inputs
+     `(("python" ,python-wrapper)))
+    (native-inputs
+     `(("git" ,git-minimal)
+       ("julia-documentermarkdown" ,julia-documentermarkdown)
+       ("julia-documentertools" ,julia-documentertools)))
+    (home-page "https://juliadocs.github.io/Documenter.jl")
+    (synopsis "Documentation generator for Julia")
+    (description "This package provides a documentation generator for Julia.")
+    (license license:expat)))
+
+(define julia-documenter-bootstrap
+  (package
+    (inherit julia-documenter)
+    (name "julia-documenter-bootstrap")
+    (arguments
+     (substitute-keyword-arguments (package-arguments julia-documenter)
+       ((#:phases phases)
+        `(modify-phases ,phases
+           (delete 'patch-source)))
+       ;; Not all dependencies available in bootstrap version.
+       ((#:tests? _ #f) #f)))
+    (inputs `())
+    (native-inputs `())))
+
+(define-public julia-documentermarkdown
+  (package
+    (name "julia-documentermarkdown")
+    (version "0.2.2")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/JuliaDocs/DocumenterMarkdown.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "0sx89hi5p2f8zi2rp5qrv06m270d90pxj5d2y5cxls1spax7wqx8"))))
+    (build-system julia-build-system)
+    (inputs
+     ;; We don't want to propagate the bootstrap version.
+     ;; Cycle with Documenter.jl in later versions.
+     `(("julia-documenter" ,julia-documenter-bootstrap)))
+    (home-page "https://github.com/JuliaDocs/DocumenterMarkdown.jl")
+    (synopsis "Documenter's Markdown")
+    (description "This package enables the Markdown / MkDocs backend of
+@code{Documenter.jl}.")
+    (license license:expat)))
+
+(define-public julia-documentertools
+  (package
+    (name "julia-documentertools")
+    (version "0.1.13")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/JuliaDocs/DocumenterTools.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "05p57p8xlkn42m1lv9gq4hl96vp7hpj19d51p828ai1rbpcpi3a6"))))
+    (build-system julia-build-system)
+    (arguments
+     `(#:tests? #f))    ; Tests require network.
+    (inputs
+     ;; We don't want to propagate the bootstrap version.
+     ;; Cycle with Documenter.jl in later versions.
+     `(("julia-documenter" ,julia-documenter-bootstrap)))
+    (propagated-inputs
+     `(("julia-docstringextensions" ,julia-docstringextensions)
+       ("julia-gumbo" ,julia-gumbo)
+       ("julia-sass" ,julia-sass)))
+    (native-inputs
+     `(("julia-example" ,julia-example)))
+    (home-page "https://github.com/JuliaDocs/DocumenterTools.jl")
+    (synopsis "Extra tools for setting up Documenter.jl")
+    (description "This package contains utilities for setting up documentation
+generation with @code{Documenter.jl}.")
     (license license:expat)))
 
 (define-public julia-diffresults
@@ -2433,6 +2578,37 @@ may include other factorizations such as the LQ factorization.")
 TLS} and cryptography C library for Julia.")
     (license license:expat)))
 
+(define-public julia-measurements
+  (package
+    (name "julia-measurements")
+    (version "2.6.0")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/JuliaPhysics/Measurements.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "05p3f0gr4sv4maq8cix5fi8ldq0zagswqsd43xn6fhy046f936mz"))))
+    (build-system julia-build-system)
+    (propagated-inputs
+     `(("julia-calculus" ,julia-calculus)
+       ("julia-recipesbase" ,julia-recipesbase)
+       ("julia-requires" ,julia-requires)))
+    (native-inputs
+     `(("julia-quadgk" ,julia-quadgk)
+       ("julia-specialfunctions" ,julia-specialfunctions)
+       ("julia-unitful" ,julia-unitful)))
+    (home-page "https://juliaphysics.github.io/Measurements.jl/stable/")
+    (synopsis "Error propagation calculator and library")
+    (description "@code{Measurements.jl} is an error propagation calculator and
+library for physical measurements.  It supports real and complex numbers with
+uncertainty, arbitrary precision calculations, operations with arrays, and
+numerical integration.  The linear error propagation theory is employed to
+propagate the errors.")
+    (license license:expat)))
+
 (define-public julia-measures
   (package
     (name "julia-measures")
@@ -2475,6 +2651,28 @@ resolving them into absolute units.")
     (synopsis "Additional missing value support for Julia")
     (description "This package provides additional functionality for working
 with @code{missing} values in Julia.")
+    (license license:expat)))
+
+(define-public julia-mlstyle
+  (package
+    (name "julia-mlstyle")
+    (version "0.4.10")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/thautwarm/MLStyle.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "0h1cd7cr4c4cnpqyj3180113gdbvcc047lqphp8a8gq5smp3c059"))))
+    (build-system julia-build-system)
+    (native-inputs
+     `(("julia-datastructures" ,julia-datastructures)))
+    (home-page "https://thautwarm.github.io/MLStyle.jl/latest/")
+    (synopsis "Julia functional programming infrastructures")
+    (description "This package provides consistent and extensible functional
+programming infrastructures, and metaprogramming facilities.")
     (license license:expat)))
 
 (define-public julia-mocking
@@ -2985,6 +3183,106 @@ everything from run time algorithm choice to code generation at compile time.")
 human-readable format.")
     (license license:expat)))
 
+(define-public julia-pycall
+  (package
+    (name "julia-pycall")
+    (version "1.92.3")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/JuliaPy/PyCall.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32
+          "07r99ni6nkxpyrp3wsb5qg4jxz7i2r08dyqbiffy2zm3g0bn88jq"))))
+    (build-system julia-build-system)
+    (arguments
+     `(#:imported-modules ((guix build python-build-system)
+                           ,@%julia-build-system-modules)
+       #:modules ((guix build julia-build-system)
+                  (guix build utils)
+                  ((guix build python-build-system) #:prefix python:))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'remove-conda
+           (lambda _
+             (substitute* "Project.toml"
+               ((".*Conda.*") ""))
+             (substitute* (list "src/PyCall.jl"
+                                "test/runtests.jl")
+               (("import Conda") ""))
+             (substitute* "deps/depsutils.jl"
+               (("Conda.PYTHONDIR") "\"/\""))
+             #t))
+         (add-after 'unpack 'set-python
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let ((python (assoc-ref inputs "python")))
+               (setenv "PYCALL_JL_RUNTIME_PYTHON"
+                       (string-append python "/bin/python3"))
+               (with-output-to-file "deps/deps.jl"
+                 (lambda _
+                   (format #t
+                           "const python = \"~a/bin/python3\"~@
+                           const pyprogramname = \"~a/bin/python3\"~@
+                           const libpython = \"~a/lib/libpython~a.so.1.0\"~@
+                           const PYTHONHOME = \"~a\"~@
+                           const pyversion_build = v\"~a\"~@
+                           const conda = false~%"
+                           python
+                           python
+                           python
+                           (python:python-version python)
+                           python
+                           ,(package-version python))))
+               #t)))
+         (add-before 'check 'pre-check
+           (lambda _
+             (setenv "CI" "true")
+             (setenv "JULIA_PKGEVAL" "true")
+             #t)))))
+    (propagated-inputs
+     `(("julia-macrotools" ,julia-macrotools)
+       ("julia-versionparsing" ,julia-versionparsing)))
+    (inputs
+     `(("python" ,python)))
+    (native-inputs
+     `(("python-numpy" ,python-numpy)))
+    (home-page "https://github.com/JuliaPy/PyCall.jl")
+    (synopsis "Call Python functions from the Julia language")
+    (description "This package provides the ability to directly call and fully
+interoperate with Python from the Julia language.  You can import arbitrary
+Python modules from Julia, call Python functions (with automatic conversion of
+types between Julia and Python), define Python classes from Julia methods, and
+share large data structures between Julia and Python without copying them.")
+    (license license:expat)))
+
+(define-public julia-quadgk
+  (package
+    (name "julia-quadgk")
+    (version "2.4.1")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/JuliaMath/QuadGK.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "1hy0629yai6xflgxaflk9764lzr1lzhlghimxk1aqi212q9c6n33"))))
+    (build-system julia-build-system)
+    (propagated-inputs
+     `(("julia-datastructures" ,julia-datastructures)))
+    (home-page "https://github.com/JuliaMath/QuadGK.jl")
+    (synopsis "Adaptive 1d numerical Gauss–Kronrod integration")
+    (description "This package provides support for one-dimensional numerical
+integration in Julia using adaptive Gauss-Kronrod quadrature.  The code was
+originally part of Base Julia.  It supports integration of arbitrary numeric
+types, including arbitrary precision (@code{BigFloat}), and even integration of
+arbitrary normed vector spaces (e.g. matrix-valued integrands).")
+    (license license:expat)))
+
 (define-public julia-quadmath
   (package
     (name "julia-quadmath")
@@ -3402,6 +3700,28 @@ through matrix-vector multiplication.")
       (description "This package contains the testset from Julia, packaged into
 a loadable module.")
       (license license:expat))))
+
+(define-public julia-sass
+  (package
+    (name "julia-sass")
+    (version "0.2.0")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/piever/Sass.jl")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "0y7kkkj717h5cj659ssry89i5r64symr6pvhr6vv4qmaxrnjxj92"))))
+    (build-system julia-build-system)
+    (propagated-inputs
+     `(("julia-libsass-jll" ,julia-libsass-jll)))
+    (home-page "https://github.com/piever/Sass.jl")
+    (synopsis "Compile scss and sass file to css")
+    (description "This package provides a simple Julian API to use the
+@code{libsass} library to compile scss and sass files to css.")
+    (license license:expat)))
 
 (define-public julia-scratch
   (package

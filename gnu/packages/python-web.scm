@@ -376,13 +376,13 @@ WSGI.  This package includes libraries for implementing ASGI servers.")
 (define-public python-aws-sam-translator
   (package
     (name "python-aws-sam-translator")
-    (version "1.36.0")
+    (version "1.38.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "aws-sam-translator" version))
               (sha256
                (base32
-                "115mcbb4r205c1hln199llqrvvbijfqz075rwx991l99jc6rj6zs"))))
+                "1djwlsjpbh13m4biglimrm9lq7hmla0k29giay7k3cjsrylxvjhf"))))
     (build-system python-build-system)
     (arguments
      `(;; XXX: Tests are not distributed with the PyPI archive, and would
@@ -479,7 +479,7 @@ emit information from within their applications to the AWS X-Ray service.")
 (define-public python-cfn-lint
   (package
     (name "python-cfn-lint")
-    (version "0.51.0")
+    (version "0.54.1")
     (home-page "https://github.com/aws-cloudformation/cfn-python-lint")
     (source (origin
               (method git-fetch)
@@ -489,7 +489,7 @@ emit information from within their applications to the AWS X-Ray service.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1027s243sik25c6sqw6gla7k7vl3jdicrik5zdsa8pafxh2baja4"))))
+                "161mzzlpbi85q43kwzrj39qb32l6wg6xhnbbd4z860yrfbymsn87"))))
     (build-system python-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -507,7 +507,7 @@ emit information from within their applications to the AWS X-Ray service.")
                                                (getenv "PYTHONPATH")))
                         (setenv "PATH" (string-append out "/bin:"
                                                       (getenv "PATH")))
-                        (invoke "python" "-m" "unittest" "discover"
+                        (invoke "python" "-m" "unittest" "discover" "-v"
                                 "-s" "test")))))))
     (native-inputs
      `(("python-pydot" ,python-pydot)
@@ -2819,14 +2819,14 @@ supports url redirection and retries, and also gzip and deflate decoding.")
 (define python-urllib3/fixed
   (package
     (inherit python-urllib3)
-    (version "1.26.4")
+    (version "1.26.7")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "urllib3" version))
        (sha256
         (base32
-         "0dw9w9bs3hmr5dp3r3h43jyzzb1g1046ag7lj8pqf58i4kvj3c77"))))))
+         "1kkf6gi8a1fs0dqkf6kpmdpsy97iirvliz8q1krxp8ppaiawd1s9"))))))
 
 ;; Some software requires an older version of urllib3, notably Docker.
 (define-public python-urllib3-1.24
@@ -2838,7 +2838,6 @@ supports url redirection and retries, and also gzip and deflate decoding.")
                      (sha256
                       (base32
                        "1x0slqrv6kixkbcdnxbglvjliwhc1payavxjvk8fvbqjrnasd4r3"))))))
-
 
 (define-public python2-urllib3
   (let ((base (package-with-python2 (strip-python2-variant python-urllib3))))
@@ -3551,13 +3550,13 @@ applications.")
 (define-public python-flask-sqlalchemy
   (package
     (name "python-flask-sqlalchemy")
-    (version "2.4.4")
+    (version "2.5.1")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "Flask-SQLAlchemy" version))
               (sha256
                (base32
-                "1rgsj49gnx361hnb3vn6c1h17497qh22yc3r70l1r6w0mw71bixz"))))
+                "04jrx4sjrz1b20j38qk4qin975xwz30krzq59rfv3b3w7ss49nib"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-flask" ,python-flask)
@@ -4155,7 +4154,7 @@ addon modules.")
     (source
      (origin
        (method url-fetch)
-       (uri (pypi-uri "WTForms" version ".tar.gz"))
+       (uri (pypi-uri "WTForms" version))
        (sha256
         (base32
          "17427m7p9nn9byzva697dkykykwcp2br3bxvi8vciywlmkh5s6c1"))))
@@ -4163,16 +4162,20 @@ addon modules.")
     (arguments
      `(#:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'delete-bundled-test
+           (lambda _
+             ;; Delete test copied from a third party package that fails
+             ;; with newer SQLAlchemy.  This can be removed for 3.0.
+             ;; See <https://github.com/wtforms/wtforms/issues/696>.
+             (delete-file "tests/ext_sqlalchemy.py")))
          (replace 'check
            (lambda* (#:key inputs outputs tests? #:allow-other-keys)
              (when tests?
                (add-installed-pythonpath inputs outputs)
                (invoke "python" "setup.py" "compile_catalog")
-               (invoke "coverage" "run" "tests/runtests.py" "--with-pep8")))))))
+               (invoke "python" "tests/runtests.py")))))))
     (native-inputs
-     `(("python-coverage" ,python-coverage)
-       ("python-dateutil" ,python-dateutil)
-       ("python-pep8" ,python-pep8)
+     `(("python-dateutil" ,python-dateutil)
        ("python-sqlalchemy" ,python-sqlalchemy)))
     (propagated-inputs
      `(("python-babel" ,python-babel)
@@ -4186,9 +4189,6 @@ addon modules.")
 for Python web development.  It is very similar to the web form API
 available in Django, but is a standalone package.")
     (license license:bsd-3)))
-
-(define-public python2-wtforms
-  (package-with-python2 python-wtforms))
 
 (define-public python-paste
   (package
@@ -6229,7 +6229,7 @@ communicate with Microsoft Azure Storage services.")
     (home-page "https://github.com/scrapy/w3lib")
     (synopsis "Python library of web-related functions")
     (description
-     "This is a Python library of web-related functions, such as: remove comments,
-or tags from HTML snippets, extract base url from HTML snippets, translate entites
-on HTML strings, among other things.")
+     "This is a Python library of web-related functions, such as: remove
+comments, or tags from HTML snippets, extract base url from HTML snippets,
+translate entities on HTML strings, among other things.")
     (license license:bsd-3)))

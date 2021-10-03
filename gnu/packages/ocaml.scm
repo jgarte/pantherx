@@ -2219,14 +2219,14 @@ functions.")
 (define-public ocaml-astring
   (package
     (name "ocaml-astring")
-    (version "0.8.3")
+    (version "0.8.5")
     (source
       (origin
         (method url-fetch)
         (uri (string-append "http://erratique.ch/software/astring/releases/astring-"
                             version ".tbz"))
         (sha256 (base32
-                  "0ixjwc3plrljvj24za3l9gy0w30lsbggp8yh02lwrzw61ls4cri0"))))
+                  "1ykhg9gd3iy7zsgyiy2p9b1wkpqg9irw5pvcqs3sphq71iir4ml6"))))
     (build-system ocaml-build-system)
     (native-inputs
      `(("ocamlbuild" ,ocamlbuild)
@@ -3350,7 +3350,7 @@ standard iterator type starting from 4.07.")
 (define-public ocaml-re
   (package
     (name "ocaml-re")
-    (version "1.9.0")
+    (version "1.10.3")
     (source
      (origin
        (method git-fetch)
@@ -3359,10 +3359,10 @@ standard iterator type starting from 4.07.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "07ycb103mr4mrkxfd63cwlsn023xvcjp0ra0k7n2gwrg0mwxmfss"))))
+        (base32 "1lj94y3zj6qff1yizf311h5ww15djbmnb1g43wd0jz3afa9gk59m"))))
     (build-system dune-build-system)
     (arguments
-     `(#:tests? #f))
+     `(#:test-target "."))
     (propagated-inputs
      `(("ocaml-seq" ,ocaml-seq)))
     (native-inputs
@@ -3408,7 +3408,7 @@ big- and little-endian, with their unsafe counter-parts.")
 (define-public ocaml-cstruct
   (package
     (name "ocaml-cstruct")
-    (version "4.0.0")
+    (version "6.0.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3417,11 +3417,13 @@ big- and little-endian, with their unsafe counter-parts.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0m4bz0digcsc8l2msfikwcbi1y371kccx6xnkwrz212mf5mp98bv"))))
+                "0gpyr3cf393j1ir7i2m2qhx75l21w6ad7imdd73xn0jy3pjg4wsj"))))
     (build-system dune-build-system)
     (arguments
      `(#:package "cstruct"
        #:test-target "."))
+    (propagated-inputs
+     `(("ocaml-bigarray-compat" ,ocaml-bigarray-compat)))
     (native-inputs
      `(("ocaml-alcotest" ,ocaml-alcotest)))
     (home-page "https://github.com/mirage/ocaml-cstruct")
@@ -6802,7 +6804,7 @@ variants.")
 (define-public ocaml-mdx
   (package
     (name "ocaml-mdx")
-    (version "1.9.0")
+    (version "1.11.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -6811,7 +6813,7 @@ variants.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0fhwaci8j73fx9xqapa9iv9xwjx73r6p8wh9xg6brnfbqkc38d5b"))))
+                "1w2vx4my9z6n57vjvsa3b9vwkbdzs1kq0cc58rf088qrh2lrx2ba"))))
     (build-system dune-build-system)
     (inputs
      `(("ocaml-fmt" ,ocaml-fmt)
@@ -6822,6 +6824,7 @@ variants.")
        ("ocaml-result" ,ocaml-result)
        ("ocaml-migrate-parsetree" ,ocaml-migrate-parsetree-1)
        ("ocaml-odoc" ,ocaml-odoc)
+       ("ocaml-odoc-parser" ,ocaml-odoc-parser)
        ("ocaml-version" ,ocaml-version)))
     (native-inputs
      `(("ocaml-cppo" ,ocaml-cppo)
@@ -7139,7 +7142,7 @@ that involve memoization and recursion.")
        #:tests? #f))
     (propagated-inputs
      `(("ocaml-odoc" ,ocaml-odoc)))
-    (synopsis "Embed build informations inside executable")
+    (synopsis "Embed build information inside an executable")
     (description "This package allows one to access information about how the
 executable was built, such as the version of the project at which it was built
 or the list of statically linked libraries with their versions.  It supports

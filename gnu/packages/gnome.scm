@@ -44,7 +44,7 @@
 ;;; Copyright © 2019 David Wilson <david@daviwil.com>
 ;;; Copyright © 2019, 2020 Raghav Gururajan <raghavgururajan@disroot.org>
 ;;; Copyright © 2019, 2020 Jonathan Brielmaier <jonathan.brielmaier@web.de>
-;;; Copyright © 2019, 2020, 2021 Leo Prikler <leo.prikler@student.tugraz.at>
+;;; Copyright © 2019, 2020, 2021 Liliana Marie Prikler <liliana.prikler@gmail.com>
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2020 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2020 raingloom <raingloom@riseup.net>
@@ -60,6 +60,7 @@
 ;;; Copyright © 2020, 2021 Sébastien Lerique <sl@eauchat.org>
 ;;; Copyright © 2021 Trevor Hass <thass@okstate.edu>
 ;;; Copyright © 2021 Solene Rapenne <solene@perso.pw>
+;;; Copyright © 2021 Mathieu Othacehe <othacehe@gnu.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -10855,7 +10856,7 @@ functionality.")
 (define-public gthumb
   (package
     (name "gthumb")
-    (version "3.10.3")
+    (version "3.12.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/gthumb/"
@@ -10863,7 +10864,7 @@ functionality.")
                                   "gthumb-" version ".tar.xz"))
               (sha256
                (base32
-                "04n2sgasc03kiczyzkq362pjilj12hq2r5qj07lynqr9rivkzdys"))))
+                "0grqiq6v26z8avl7mj24xy4i9bl1niwpqhqw6rblprl40c1zrvrx"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -10876,23 +10877,27 @@ functionality.")
                             (assoc-ref %outputs "out")
                             "/lib/gthumb/extensions"))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
+     `(("desktop-file-utils" ,desktop-file-utils) ; for update-desktop-database
        ("glib:bin" ,glib "bin")                   ; for glib-compile-resources
        ("gtk+:bin" ,gtk+ "bin")                   ; for gtk-update-icon-cache
-       ("desktop-file-utils" ,desktop-file-utils) ; for update-desktop-database
        ("intltool" ,intltool)
-       ("itstool" ,itstool)))
+       ("itstool" ,itstool)
+       ("pkg-config" ,pkg-config)))
     (inputs
-     `(("exiv2" ,exiv2)
-       ("gtk" ,gtk+)
-       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
-       ("gstreamer" ,gstreamer)
-       ("clutter" ,clutter)
+     `(("clutter" ,clutter)
        ("clutter-gst" ,clutter-gst)
        ("clutter-gtk" ,clutter-gtk)
+       ("colord" ,colord)
+       ("exiv2" ,exiv2)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+       ("gstreamer" ,gstreamer)
+       ("gtk" ,gtk+)
+       ("libheif" ,libheif)
        ("libjpeg" ,libjpeg-turbo)
+       ("libraw" ,libraw)
+       ("librsvg" ,librsvg)
        ("libtiff" ,libtiff)
-       ("libraw" ,libraw)))
+       ("libwebp" ,libwebp)))
     (home-page "https://wiki.gnome.org/Apps/Gthumb")
     (synopsis "GNOME image viewer and browser")
     (description "GThumb is an image viewer, browser, organizer, editor and
@@ -12069,7 +12074,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.31.0")
+    (version "0.34.1")
     (source
      (origin
        (method git-fetch)
@@ -12079,7 +12084,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0vldcjq24y4xxg8dzlyhfpqxbqn5g160lz1lmmkp7g9im2zrxh52"))))
+         "1mz9jz62ifpg7pxkbaglw98v0d94wi6y459f0r4qr7kjxhnfq3km"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -12329,3 +12334,32 @@ world.")
     (description "OCRFeeder is a complete Optical Character Recognition and
 Document Analysis and Recognition program.")
     (license license:gpl3+)))
+
+(define-public gnome-power-manager
+  (package
+    (name "gnome-power-manager")
+    (version "3.32.0")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://gnome/sources/" name "/"
+                                  (version-major+minor version) "/"
+                                  name "-" version ".tar.xz"))
+              (sha256
+               (base32
+                "0drfn3wcc8l4n07qwv6p0rw2dwcd00hwzda282q62l6sasks2b2g"))))
+    (build-system meson-build-system)
+    (inputs
+     `(("upower" ,upower)
+       ("gtk+" ,gtk+)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+       ("adwaita-icon-theme" ,adwaita-icon-theme)))
+    (native-inputs
+     `(("desktop-file-utils" ,desktop-file-utils)
+       ("glib:bin" ,glib "bin")
+       ("gettext" ,gettext-minimal)
+       ("pkg-config" ,pkg-config)))
+    (home-page "https://gitlab.gnome.org/GNOME/gnome-power-manager")
+    (synopsis "Power management daemon for the GNOME desktop")
+    (description "@code{gnome-power-manager} is a tool for viewing present and
+historical battery usage and related statistics.")
+    (license license:gpl2)))

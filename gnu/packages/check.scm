@@ -35,7 +35,7 @@
 ;;; Copyright © 2020 Josh Marshall <joshua.r.marshall.1991@gmail.com>
 ;;; Copyright © 2020 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2020 Tanguy Le Carrour <tanguy@bioneland.org>
-;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2020, 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Hugo Lecomte <hugo.lecomte@inria.fr>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -1014,6 +1014,14 @@ and many external plugins.")
     (arguments
      `(#:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'fix-version
+           ;; The version string is usually derived via setuptools-scm, but
+           ;; without the git metadata available, the version string is set to
+           ;; '0.0.0'.
+           (lambda _
+             (substitute* "setup.py"
+               (("setup\\(\\)")
+                (format #f "setup(version=~s)" ,version)))))
          (replace 'check
            (lambda* (#:key (tests? #t) #:allow-other-keys)
              (setenv "TERM" "dumb")     ;attempt disabling markup tests
@@ -1114,6 +1122,39 @@ and many external plugins.")
         ("python-py" ,python2-py)
         ("python-wcwidth" ,python2-wcwidth))))))
 
+(define-public python-pytest-assume
+  (package
+    (name "python-pytest-assume")
+    (version "2.4.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pytest-assume" version))
+       (sha256
+        (base32 "0zilqsy9fcjr6l2f9qzfxpkp40h24csnjm5mifhpmzb0fr9r0glq"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'check
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (when tests?
+                        (invoke "pytest")))))))
+    (propagated-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-six" ,python-six)))
+    (home-page "https://github.com/astraw38/pytest-assume")
+    (synopsis "Pytest plugin that allows multiple failures per test")
+
+    (description "This package provides a Pytest plugin that allows multiple
+failures per test.  This is a fork from pytest-expect which includes the
+following improvements:
+@itemize
+@item showlocals support (the Pytest option)
+@item global usage support (a fixture is not required)
+@item output refinements and tweaks.
+@end itemize")
+    (license license:expat)))
+
 (define-public python-pytest-cov
   (package
     (name "python-pytest-cov")
@@ -1178,6 +1219,36 @@ supports coverage of subprocesses.")
     (synopsis "HTTP server for pytest")
     (description "Pytest plugin library to test http clients without
 contacting the real http server.")
+    (license license:expat)))
+
+(define-public python-pytest-random-order
+  (package
+    (name "python-pytest-random-order")
+    (version "1.0.4")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pytest-random-order" version))
+       (sha256
+        (base32 "0lpzl218l04vjy4gckrbrcacc3w9xrjnvz64bf2i132c58s5j8bb"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'check
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (when tests?
+                        (invoke "python" "-m" "pytest" "--random-order")))))))
+    (propagated-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/jbasko/pytest-random-order")
+    (synopsis "Pytest plugin to randomize the order of tests")
+    (description "@code{pytest-random-order} is a Pytest plugin that
+randomizes the order of tests.  This can be useful to detect a test that
+passes just because it happens to run after an unrelated test that leaves the
+system in a favourable state.  The plugin allows user to control the level of
+randomness they want to introduce and to disable reordering on subsets of
+tests.  Tests can be rerun in a specific order by passing a seed value
+reported in a previous test run.")
     (license license:expat)))
 
 (define-public python-pytest-runner
@@ -1301,11 +1372,21 @@ same arguments.")
 
 (define-public python2-pytest-mock
   (let ((base (package-with-python2
-                (strip-python2-variant python-pytest-mock))))
+               (strip-python2-variant python-pytest-mock))))
     (package/inherit base
+      (version "1.10.1")
+      (source
+       (origin
+         (method url-fetch)
+         (uri (pypi-uri "pytest-mock" version))
+         (sha256
+          (base32
+           "1i5mg3ff1qk0wqfcxfz60hwy3q5dskdp36i10ckigkzffg8hc3ad"))))
+      (arguments
+       `(#:python ,python-2))
       (propagated-inputs
        `(("python2-mock" ,python2-mock)
-         ,@(package-propagated-inputs base))))))
+         ("python2-pytest" ,python2-pytest))))))
 
 (define-public python-pytest-xdist
   (package
@@ -2702,48 +2783,32 @@ retried.")
   (package-with-python2 python-flaky))
 
 (define-public python-pyhamcrest
-  ;; The latest release was in 2016 and its test suite does not work with recent
-  ;; versions of Pytest.  Just take the master branch for now, which seems stable.
-  (let ((commit "25fdc5f00bdf3084335353bc9247253098ec4cf2")
-        (revision "0"))
-    (package
-      (name "python-pyhamcrest")
-      (version (git-version "1.9.0" revision commit))
-      (source (origin
-                ;; Tests not distributed from pypi release.
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://github.com/hamcrest/PyHamcrest")
-                      (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "1miqmhhi68vaix8sqc1lvpvbm27bacffxh5anm5cbfsvk7g9n6f3"))))
-      (native-inputs                    ;all native inputs are for tests
-       `(("python-pytest-cov" ,python-pytest-cov)
-         ("python-mock" ,python-mock)
-         ("python-pytest" ,python-pytest)
-         ("python-hypothesis" ,python-hypothesis)))
-      (propagated-inputs
-       `(("python-six" ,python-six)))
-      (build-system python-build-system)
-      (arguments
-       `(#:phases (modify-phases %standard-phases
-                    (replace 'check
-                      (lambda _
-                        (setenv "PYTHONPATH"
-                                (string-append "build/lib:"
-                                               (getenv "PYTHONPATH")))
-                        (invoke "pytest" "-vv"))))))
-      (home-page "http://hamcrest.org/")
-      (synopsis "Hamcrest matchers for Python")
-      (description
-       "PyHamcrest is a framework for writing matcher objects,
- allowing you to declaratively define \"match\" rules.")
-      (license license:bsd-3))))
-
-(define-public python2-pyhamcrest
-  (package-with-python2 python-pyhamcrest))
+  (package
+    (name "python-pyhamcrest")
+    (version "2.0.2")
+    (source (origin
+              (method git-fetch)        ;no tests in PyPI archive
+              (uri (git-reference
+                    (url "https://github.com/hamcrest/PyHamcrest")
+                    (commit (string-append "V" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "05kdzlhs2kvj82pfca13qszszcj6dyrk4b9pbr46x06sq2s4qyls"))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'check
+                    (lambda* (#:key inputs outputs #:allow-other-keys)
+                      (add-installed-pythonpath inputs outputs)
+                      (invoke "pytest" "-vv"))))))
+    (home-page "http://hamcrest.org/")
+    (synopsis "Hamcrest matchers for Python")
+    (description "PyHamcrest is a framework for writing matcher objects,
+allowing you to declaratively define \"match\" rules.")
+    (license license:bsd-3)))
 
 (define-public unittest-cpp
   (package

@@ -21,6 +21,7 @@
 ;;; Copyright © 2020 Bonface Munyoki Kilyungi <bonfacemunyoki@gmail.com>
 ;;; Copyright © 2021 Tim Howes <timhowes@lavabit.com>
 ;;; Copyright © 2021 Hong Li <hli@mdc-berlin.de>
+;;; Copyright © 2021 Simon Tournier <zimon.toutoune@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -105,7 +106,6 @@
   #:use-module (gnu packages jemalloc)
   #:use-module (gnu packages jupyter)
   #:use-module (gnu packages linux)
-  #:use-module (gnu packages lisp-xyz)
   #:use-module (gnu packages logging)
   #:use-module (gnu packages lsof)
   #:use-module (gnu packages machine-learning)
@@ -147,6 +147,7 @@
   #:use-module (gnu packages textutils)
   #:use-module (gnu packages time)
   #:use-module (gnu packages tls)
+  #:use-module (gnu packages uglifyjs)
   #:use-module (gnu packages vim)
   #:use-module (gnu packages web)
   #:use-module (gnu packages wget)
@@ -7417,6 +7418,39 @@ sequence.")
     (supported-systems '("i686-linux" "x86_64-linux"))
     (license license:bsd-3)))
 
+(define-public r-presto
+  (let ((commit "052085db9c88aa70a28d11cc58ebc807999bf0ad")
+        (revision "0"))
+    (package
+      (name "r-presto")
+      (version (git-version "1.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/immunogenomics/presto")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1c3fmag4r4p2lvbvxlxyck9dvfw1prbwcl9665mmlx4a35750hk8"))))
+      (properties `((upstream . "presto")))
+      (build-system r-build-system)
+      (propagated-inputs
+       `(("r-data-table" ,r-data-table)
+         ("r-deseq2" ,r-deseq2)
+         ("r-dplyr" ,r-dplyr)
+         ("r-matrix" ,r-matrix)
+         ("r-rcpp" ,r-rcpp)
+         ("r-rcpparmadillo" ,r-rcpparmadillo)
+         ("r-reshape2" ,r-reshape2)
+         ("r-rlang" ,r-rlang)
+         ("r-tidyr" ,r-tidyr)))
+      (home-page "https://github.com/immunogenomics/presto")
+      (synopsis "Fast Functions for Differential Expression using Wilcox and AUC")
+      (description "This package performs a fast Wilcoxon rank sum test and
+auROC analysis.")
+      (license license:gpl3))))
+
 (define-public r-snapatac
   (package
     (name "r-snapatac")
@@ -9284,7 +9318,7 @@ Browser.")
            (lambda* (#:key inputs #:allow-other-keys)
              (let* ((file (assoc-ref inputs "plotly.js"))
                     (installed "plotly/plotly.js"))
-               (let ((minified (open-pipe* OPEN_READ "uglify-js" file)))
+               (let ((minified (open-pipe* OPEN_READ "uglifyjs" file)))
                  (call-with-output-file installed
                    (cut dump-port minified <>))))
              #t))
@@ -9342,7 +9376,7 @@ Browser.")
                                "v1.39.4/dist/plotly.js"))
            (sha256
             (base32 "138mwsr4nf5qif4mrxx286mpnagxd1xwl6k8aidrjgknaqg88zyr"))))
-       ("uglify-js" ,uglify-js)))
+       ("uglifyjs" ,node-uglify-js)))
     (home-page "https://www.bioinformatics.babraham.ac.uk/projects/bismark/")
     (synopsis "Map bisulfite treated sequence reads and analyze methylation")
     (description "Bismark is a program to map bisulfite treated sequencing
@@ -10526,7 +10560,7 @@ expression report comparing samples in an easily configurable manner.")
 (define-public pigx-chipseq
   (package
     (name "pigx-chipseq")
-    (version "0.0.52")
+    (version "0.0.53")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/BIMSBbioinfo/pigx_chipseq/"
@@ -10534,7 +10568,7 @@ expression report comparing samples in an easily configurable manner.")
                                   "/pigx_chipseq-" version ".tar.gz"))
               (sha256
                (base32
-                "097cvc8kr3r1nq0sgjpirzmixwjl074qp4qq3sx4ngfqi06af6r9"))))
+                "0c6npx35sszycf059w1x1k4k9hq1qqxny0i4p57q1188czr4561h"))))
     (build-system gnu-build-system)
     ;; parts of the tests rely on access to the network
     (arguments '(#:tests? #f))
@@ -10558,6 +10592,7 @@ expression report comparing samples in an easily configurable manner.")
        ("r-ggrepel" ,r-ggrepel)
        ("r-gprofiler2" ,r-gprofiler2)
        ("r-heatmaply" ,r-heatmaply)
+       ("r-hexbin" ,r-hexbin)
        ("r-htmlwidgets" ,r-htmlwidgets)
        ("r-jsonlite" ,r-jsonlite)
        ("r-pheatmap" ,r-pheatmap)
