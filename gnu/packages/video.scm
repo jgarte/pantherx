@@ -4,15 +4,14 @@
 ;;; Copyright © 2014, 2015, 2016, 2018, 2020 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2015 Andy Patterson <ajpatter@uwaterloo.ca>
+;;; Copyright © 2015, 2016 Andy Patterson <ajpatter@uwaterloo.ca>
 ;;; Copyright © 2015, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019 Alex Vong <alexvong1995@gmail.com>
 ;;; Copyright © 2016, 2017 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2016 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2016 Dmitry Nikolaev <cameltheman@gmail.com>
-;;; Copyright © 2016 Andy Patterson <ajpatter@uwaterloo.ca>
 ;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
-;;; Copyright © 2016, 2018, 2019, 2020 Eric Bavier <bavier@posteo.net>
+;;; Copyright © 2016, 2018, 2019, 2020, 2021 Eric Bavier <bavier@posteo.net>
 ;;; Copyright © 2016 Jan Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2017 Feng Shu <tumashu@163.com>
 ;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
@@ -3652,7 +3651,7 @@ supported players in addition to this package.")
 (define-public handbrake
   (package
     (name "handbrake")
-    (version "1.3.3")
+    (version "1.4.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/HandBrake/HandBrake/"
@@ -3660,7 +3659,7 @@ supported players in addition to this package.")
                                   "HandBrake-" version "-source.tar.bz2"))
               (sha256
                (base32
-                "11bzhyp052bmng5119x74xvdj5632smx6qsk537ygda8bzckg2i1"))
+                "1xhq9jjmf854jf7sg4m754hgajnavwwhmjnaikcf2vgjr35ax81r"))
               (modules '((guix build utils)))
               (snippet
                ;; Remove "contrib" and source not necessary for
@@ -3701,6 +3700,7 @@ supported players in addition to this package.")
        ("libdvdnav" ,libdvdnav)
        ("libdvdread" ,libdvdread)
        ("libgudev" ,libgudev)
+       ("libjpeg-turbo" ,libjpeg-turbo)
        ("libmpeg2" ,libmpeg2)
        ("libnotify" ,libnotify)
        ("libnuma" ,numactl)
@@ -3714,6 +3714,7 @@ supported players in addition to this package.")
        ("libx264" ,libx264)
        ("speex" ,speex)
        ("x265" ,x265)
+       ("zimg" ,zimg)
        ("zlib" ,zlib)))
     (arguments
      `(#:tests? #f             ;tests require Ruby and claim to be unsupported
@@ -4676,7 +4677,7 @@ transitions, and effects and then export your film to many common formats.")
 (define-public shotcut
   (package
     (name "shotcut")
-    (version "21.08.29")
+    (version "21.09.13")
     (source
      (origin
        (method git-fetch)
@@ -4685,7 +4686,7 @@ transitions, and effects and then export your film to many common formats.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0lj3ini0fymvcwxk8l1l8ms5519n5n87gdvh0yfhilwp0zqyqkc6"))))
+        (base32 "0dwf9kbx52zdjm3m8sp7dxmlnz3v1lhyaw1kaw8imnjpdbyx30p1"))))
     (build-system qt-build-system)
     (arguments
      `(#:tests? #f ;there are no tests

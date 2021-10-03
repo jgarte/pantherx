@@ -44,6 +44,7 @@
 # Copyright © 2021 Arun Isaac <arunisaac@systemreboot.net>
 # Copyright © 2021 Sharlatan Hellseher <sharlatanus@gmail.com>
 # Copyright © 2021 Dmitry Polyakov <polyakov@liltechdude.xyz>
+# Copyright © 2021 Andrew Tropin <andrew@trop.in>
 #
 # This file is part of GNU Guix.
 #
@@ -72,6 +73,16 @@ GNU_SYSTEM_MODULES =				\
   %D%/bootloader/u-boot.scm                     \
   %D%/bootloader/depthcharge.scm                \
   %D%/ci.scm					\
+  %D%/home.scm					\
+  %D%/home-services.scm			\
+  %D%/home-services/symlink-manager.scm	\
+  %D%/home-services/fontutils.scm		\
+  %D%/home-services/configuration.scm		\
+  %D%/home-services/shells.scm			\
+  %D%/home-services/shepherd.scm		\
+  %D%/home-services/mcron.scm			\
+  %D%/home-services/utils.scm			\
+  %D%/home-services/xdg.scm			\
   %D%/image.scm					\
   %D%/packages.scm				\
   %D%/packages/abduco.scm			\
@@ -434,6 +445,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/parallel.scm			\
   %D%/packages/pascal.scm			\
   %D%/packages/password-utils.scm		\
+  %D%/packages/patool.scm			\
   %D%/packages/patchutils.scm			\
   %D%/packages/pciutils.scm			\
   %D%/packages/pcre.scm				\
@@ -903,6 +915,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/calibre-remove-test-unrar.patch		\
   %D%/packages/patches/casync-renameat2-declaration.patch	\
   %D%/packages/patches/catdoc-CVE-2017-11110.patch		\
+  %D%/packages/patches/ccache-fix-basedir-test.patch		\
   %D%/packages/patches/circos-remove-findbin.patch		\
   %D%/packages/patches/cdparanoia-fpic.patch			\
   %D%/packages/patches/cdrtools-3.01-mkisofs-isoinfo.patch 	\
@@ -920,7 +933,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/clang-9.0-libc-search-path.patch		\
   %D%/packages/patches/clang-10.0-libc-search-path.patch	\
   %D%/packages/patches/clang-11.0-libc-search-path.patch	\
-  %D%/packages/patches/clang-12-tools-extra-directory.patch	\
   %D%/packages/patches/clang-runtime-asan-build-fixes.patch	\
   %D%/packages/patches/clang-runtime-esan-build-fixes.patch	\
   %D%/packages/patches/clang-runtime-9-libsanitizer-mode-field.patch	\
@@ -1504,11 +1516,11 @@ dist_patch_DATA =						\
   %D%/packages/patches/ngircd-handle-zombies.patch		\
   %D%/packages/patches/network-manager-plugin-path.patch	\
   %D%/packages/patches/nginx-socket-cloexec.patch		\
+  %D%/packages/patches/nnpack-system-libraries.patch		\
   %D%/packages/patches/nsis-env-passthru.patch			\
   %D%/packages/patches/nsis-source-date-epoch.patch		\
   %D%/packages/patches/nss-increase-test-timeout.patch		\
   %D%/packages/patches/nss-3.56-pkgconfig.patch			\
-  %D%/packages/patches/ntfs-3g-CVE-2019-9755.patch		\
   %D%/packages/patches/nvi-assume-preserve-path.patch		\
   %D%/packages/patches/nvi-dbpagesize-binpower.patch		\
   %D%/packages/patches/nvi-db4.patch				\
@@ -1569,7 +1581,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/smalltalk-multiplication-overflow.patch	\
   %D%/packages/patches/sqlite-hurd.patch			\
   %D%/packages/patches/sunxi-tools-remove-sys-io.patch	\
-  %D%/packages/patches/patchutils-test-perms.patch		\
   %D%/packages/patches/patch-hurd-path-max.patch		\
   %D%/packages/patches/perl-autosplit-default-time.patch	\
   %D%/packages/patches/perl-cross.patch				\
@@ -1730,7 +1741,9 @@ dist_patch_DATA =						\
   %D%/packages/patches/rust-reproducible-builds.patch		 \
   %D%/packages/patches/rust-openssl-sys-no-vendor.patch	\
   %D%/packages/patches/sbc-fix-build-non-x86.patch		\
+  %D%/packages/patches/sbcl-burgled-batteries3-fix-signals.patch	\
   %D%/packages/patches/sbcl-clml-fix-types.patch		\
+  %D%/packages/patches/sbcl-png-fix-sbcl-compatibility.patch	\
   %D%/packages/patches/scalapack-blacs-mpi-deprecations.patch	\
   %D%/packages/patches/scheme48-tests.patch			\
   %D%/packages/patches/scotch-build-parallelism.patch		\
@@ -1811,6 +1824,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/ucx-tcp-iface-ioctl.patch		\
   %D%/packages/patches/udiskie-no-appindicator.patch		\
   %D%/packages/patches/ungoogled-chromium-extension-search-path.patch	\
+  %D%/packages/patches/ungoogled-chromium-ffmpeg-compat.patch	\
+  %D%/packages/patches/ungoogled-chromium-system-nspr.patch	\
   %D%/packages/patches/unison-fix-ocaml-4.08.patch		\
   %D%/packages/patches/unknown-horizons-python-3.8-distro.patch	\
   %D%/packages/patches/unzip-CVE-2014-8139.patch		\
@@ -1888,6 +1903,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/xf86-video-voodoo-pcitag.patch		\
   %D%/packages/patches/xfce4-panel-plugins.patch		\
   %D%/packages/patches/xfce4-settings-defaults.patch		\
+  %D%/packages/patches/xgboost-use-system-dmlc-core.patch       \
   %D%/packages/patches/xmonad-dynamic-linking.patch		\
   %D%/packages/patches/xnnpack-system-libraries.patch		\
   %D%/packages/patches/xplanet-1.3.1-cxx11-eof.patch		\

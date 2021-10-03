@@ -31,7 +31,7 @@
 ;;; Copyright © 2020, 2021 Masaya Tojo <masaya@tojo.tokyo>
 ;;; Copyright © 2020 Jesse Gibbons <jgibbons2357@gmail.com>
 ;;; Copyright © 2020 Mike Rosset <mike.rosset@gmail.com>
-;;; Copyright © 2020 Leo Prikler <leo.prikler@student.tugraz.at>
+;;; Copyright © 2020 Liliana Marie Prikler <liliana.prikler@gmail.com>
 ;;; Copyright © 2020, 2021 pukkamustard <pukkamustard@posteo.net>
 ;;; Copyright © 2021 Bonface Munyoki Kilyungi <me@bonfacemunyoki.com>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
@@ -255,6 +255,33 @@ frameworks, session management, URL-remapping for RESTful, page caching, and
 more.")
     (home-page "https://www.gnu.org/software/artanis/")
     (license (list license:gpl3+ license:lgpl3+)))) ;dual license
+
+;; There are no releases yet of this package.
+(define-public guile-pipe
+  (let ((commit "0746ec38d19d844dff0c6f62f209b2b6c8d8872e")
+        (revision "0"))
+    (package
+      (name "guile-pipe")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/joshwalters/guile-pipe")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "038gwrhfywgs8372q478wn4623lhcmkknfj4p8yaa93bykfc0fml"))))
+      (build-system guile-build-system)
+      (native-inputs
+       `(("guile" ,guile-3.0)))
+      (home-page "https://github.com/joshwalters/guile-pipe")
+      (synopsis "Guile pipe macros for functional chaining")
+      (description
+       "This package provides macros for functional chaining in Guile, similar
+to UNIX pipes (@code{|}), Clojure's threading macros (@code{->} and
+@code{->>}).")
+      (license license:gpl3+))))
 
 (define-public guile-f-scm
   (package

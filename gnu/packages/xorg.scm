@@ -21,7 +21,7 @@
 ;;; Copyright © 2019 nee <nee@cock.li>
 ;;; Copyright © 2019 Yoshinori Arai <kumagusu08@gmail.com>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
-;;; Copyright © 2020 Leo Prikler <leo.prikler@student.tugraz.at>
+;;; Copyright © 2020 Liliana Marie Prikler <liliana.prikler@gmail.com>
 ;;; Copyright © 2020 Florian Pelz <pelzflorian@pelzflorian.de>
 ;;; Copyright © 2020, 2021 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Maxim Cournoyer <maxim.cournoyer@gmail.com>
@@ -6691,7 +6691,7 @@ output.")
 (define-public console-setup
   (package
     (name "console-setup")
-    (version "1.203")
+    (version "1.205")
     (source
      (origin
        (method git-fetch)
@@ -6699,7 +6699,7 @@ output.")
              (url "https://salsa.debian.org/installer-team/console-setup.git")
              (commit version)))
        (sha256
-        (base32 "1bavb8h4j1za2h7mxr109imicjmh7fp4099lvzfgavhjr3l3vsab"))
+        (base32 "0sf560s14firyvzpgww79ydzc6p3jvjkbvsi8zsr5m3hr833w0ba"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments

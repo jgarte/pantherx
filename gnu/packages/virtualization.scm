@@ -20,6 +20,10 @@
 ;;; Copyright © 2021 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2021 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2021 Dion Mendel <guix@dm9.info>
+;;; Copyright © 2021 Andrew Whatson <whatson@gmail.com>
+;;; Copyright © 2021 Vincent Legoll <vincent.legoll@gmail.com>
+;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
+;;; Copyright © 2021 Raghav Gururajan <rg@raghavgururajan.name>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -49,6 +53,7 @@
   #:use-module (gnu packages bison)
   #:use-module (gnu packages build-tools)
   #:use-module (gnu packages check)
+  #:use-module (gnu packages cluster)
   #:use-module (gnu packages cmake)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages cross-base)
@@ -102,6 +107,7 @@
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages readline)
+  #:use-module (gnu packages rsync)
   #:use-module (gnu packages selinux)
   #:use-module (gnu packages sdl)
   #:use-module (gnu packages sphinx)
@@ -433,6 +439,74 @@ server and embedded PowerPC, and S390 guests.")
     (string-append "qemu-system-" (match (string-split system #\-)
                                     ((arch kernel) arch)
                                     (_ system))))))
+
+(define-public libx86emu
+  (package
+    (name "libx86emu")
+    (version "3.1")
+    (home-page "https://github.com/wfeldt/libx86emu")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url home-page)
+         (commit version)))
+       (file-name (git-file-name name version))
+       (modules
+        '((guix build utils)))
+       (snippet
+        `(begin
+           ;; Remove git2log program file.
+           (delete-file "git2log")
+           ;; Remove variables that depends on git2log.
+           (substitute* "Makefile"
+             (("GIT2LOG.*=.*$") "")
+             (("GITDEPS.*=.*$") "")
+             (("BRANCH.*=.*$") ""))
+           #t))
+       (sha256
+        (base32 "104xqc6nj9rpi7knl3dfqvasf087hlz2n5yndb1iycw35a6j509b"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:test-target "test"
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (include (string-append out "/include"))
+                    (lib (string-append out "/lib")))
+               ;; Correct the values of version and install directories.
+               (substitute* "Makefile"
+                 (("VERSION.*=.*$")
+                  (string-append "VERSION := "
+                                 ,version "\n"))
+                 (("PREFIX.*=.*$")
+                  (string-append "PREFIX := " out "\n"))
+                 (("MAJOR_VERSION.*=.*$")
+                  (string-append "MAJOR_VERSION := "
+                                 ,(version-major version) "\n"))
+                 (("LIBDIR.*=.*$")
+                  (string-append "LIBDIR = " lib "\n"))
+                 (("/usr/include") include)))))
+         (delete 'configure))))         ; no configure script
+    (native-inputs
+     `(("nasm" ,nasm)
+       ("perl" ,perl)))
+    (synopsis "Library for x86 emulation")
+    (description "Libx86emu is a small library to emulate x86 instructions.  The
+focus here is not a complete emulation but to cover enough for typical
+firmware blobs.  You can
+@enumerate
+@item intercept any memory access or directly map real memory ranges
+@item intercept any i/o access, map real i/o ports, or block any real i/o
+@item intercept any interrupt
+@item add a hook to run after each instruction
+@item recognize a special x86 instruction that can trigger logging
+@item use integrated logging
+@end enumerate")
+    (license license:x11-style)))
 
 (define-public ganeti
   (package
@@ -1003,7 +1077,7 @@ all common programming languages.  Vala bindings are also provided.")
 (define-public lxc
   (package
     (name "lxc")
-    (version "4.0.6")
+    (version "4.0.10")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -1011,7 +1085,7 @@ all common programming languages.  Vala bindings are also provided.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "0qz4l7mlhq7hx53q606qgvkyzyr01glsw290v8ppzvxn1fydlrci"))))
+                "1sgsic9dzj3wv2k5bx2vhcgappivhp1glkqfc2yrgr6jas052351"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -1051,7 +1125,7 @@ manage system or application containers.")
 (define-public lxcfs
   (package
     (name "lxcfs")
-    (version "4.0.8")
+    (version "4.0.9")
     (home-page "https://github.com/lxc/lxcfs")
     (source (origin
               (method git-fetch)
@@ -1060,7 +1134,7 @@ manage system or application containers.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1f74wy88si2ia035pcvciq5821kc8jcb75w1f8vhbp0cd29rqdpi"))))
+                "0zx58lair8hwi4bxm5h7i8n1j5fcdgw5cr6f4wk9qhks0sr5dip5"))))
     (arguments
      '(#:configure-flags '("--localstatedir=/var")))
     (native-inputs
@@ -1076,6 +1150,116 @@ manage system or application containers.")
 of making Linux containers feel more like a virtual machine.
 It started as a side project of LXC but can be used by any run-time.")
     (license license:lgpl2.1+)))
+
+(define-public lxd
+  (package
+    (name "lxd")
+    (version "4.17")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append
+                    "https://github.com/lxc/lxd/releases/download/"
+                    "lxd-" version "/lxd-" version ".tar.gz"))
+              (sha256
+               (base32
+                "1kzmgyg5kw3zw9qa6jabld6rmb53b6yy69h7y9znsdlf74jllljl"))))
+    (build-system go-build-system)
+    (arguments
+     `(#:import-path "github.com/lxc/lxd"
+       #:tests? #f ;; tests fail due to missing /var, cgroups, etc.
+       #:modules ((guix build go-build-system)
+                  (guix build union)
+                  (guix build utils)
+                  (srfi srfi-1))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'unpack-dist
+           (lambda* (#:key import-path #:allow-other-keys)
+             (with-directory-excursion (string-append "src/" import-path)
+               ;; remove the link back to the top level
+               (delete-file (string-append "_dist/src/" import-path))
+               ;; move all the deps into the src directory
+               (copy-recursively "_dist/src" "../../.."))
+             #t))
+         (replace 'build
+           (lambda* (#:key import-path #:allow-other-keys)
+             (with-directory-excursion (string-append "src/" import-path)
+               (invoke "make" "build" "CC=gcc" "TAG_SQLITE3=libsqlite3")
+               #t)))
+         (replace 'check
+           (lambda* (#:key tests? import-path #:allow-other-keys)
+             (when tests?
+               (with-directory-excursion (string-append "src/" import-path)
+                 (invoke "make" "check" "CC=gcc" "TAG_SQLITE3=libsqlite3")))
+             #t))
+         (replace 'install
+           (lambda* (#:key inputs outputs import-path #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin-dir
+                     (string-append out "/bin/"))
+                    (doc-dir
+                     (string-append out "/share/doc/lxd-" ,version))
+                    (completions-dir
+                     (string-append out "/share/bash-completion/completions")))
+               (with-directory-excursion (string-append "src/" import-path)
+                 ;; wrap lxd with runtime dependencies
+                 (wrap-program (string-append bin-dir "lxd")
+                   `("PATH" ":" prefix
+                     ,(fold (lambda (input paths)
+                              (let* ((in (assoc-ref inputs input))
+                                     (bin (string-append in "/bin"))
+                                     (sbin (string-append in "/sbin")))
+                                (append (filter file-exists?
+                                                (list bin sbin)) paths)))
+                            '()
+                            '("bash" "acl" "rsync" "tar" "xz" "btrfs-progs"
+                              "gzip" "dnsmasq" "squashfs-tools" "iproute2"
+                              "criu" "iptables"))))
+                 ;; remove unwanted binaries
+                 (for-each (lambda (prog)
+                             (delete-file (string-append bin-dir prog)))
+                           '("deps" "macaroon-identity" "generate"))
+                 ;; install documentation
+                 (for-each (lambda (file)
+                             (install-file file doc-dir))
+                           (find-files "doc"))
+                 ;; install bash completion
+                 (rename-file "scripts/bash/lxd-client" "scripts/bash/lxd")
+                 (install-file "scripts/bash/lxd" completions-dir)))
+             #t)))))
+    (native-inputs
+     `(;; test dependencies:
+       ;; ("go-github-com-rogpeppe-godeps" ,go-github-com-rogpeppe-godeps)
+       ;; ("go-github-com-tsenart-deadcode" ,go-github-com-tsenart-deadcode)
+       ;; ("go-golang-org-x-lint" ,go-golang-org-x-lint)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("acl" ,acl)
+       ("eudev" ,eudev)
+       ("libdqlite" ,libdqlite)
+       ("libraft" ,libraft)
+       ("libcap" ,libcap)
+       ("lxc" ,lxc)
+       ;; runtime dependencies:
+       ("bash" ,bash-minimal)
+       ("rsync" ,rsync)
+       ("tar" ,tar)
+       ("xz" ,xz)
+       ("btrfs-progs" ,btrfs-progs)
+       ("gzip" ,gzip)
+       ("dnsmasq" ,dnsmasq)
+       ("squashfs-tools" ,squashfs-tools)
+       ("iproute2" ,iproute)
+       ("criu" ,criu)
+       ("iptables" ,iptables)))
+    (synopsis "Daemon based on liblxc offering a REST API to manage containers")
+    (home-page "https://linuxcontainers.org/lxd/")
+    (description "LXD is a next generation system container manager.  It
+offers a user experience similar to virtual machines but using Linux
+containers instead.  It's image based with pre-made images available for a
+wide number of Linux distributions and is built around a very powerful, yet
+pretty simple, REST API.")
+    (license license:asl2.0)))
 
 (define-public libvirt
   (package

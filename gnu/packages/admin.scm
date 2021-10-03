@@ -637,7 +637,7 @@ console.")
 (define-public htop
   (package
     (name "htop")
-    (version "3.0.5")
+    (version "3.1.0")
     (source
      (origin
        (method git-fetch)
@@ -645,7 +645,7 @@ console.")
              (url "https://github.com/htop-dev/htop")
              (commit version)))
        (sha256
-        (base32 "10lp6cbfvigzp6pq5nwj3s3l4vs7cv92krz2r08nwrz8vl6rqdzp"))
+        (base32 "1ngvidaka6xbfb3l4zxmlksk2ms93fy3sb76w7917kjgn9mh53zz"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (inputs
@@ -1669,7 +1669,7 @@ system administrator.")
 (define-public sudo
   (package
     (name "sudo")
-    (version "1.9.8")
+    (version "1.9.8p2")
     (source (origin
               (method url-fetch)
               (uri
@@ -1679,12 +1679,11 @@ system administrator.")
                                     version ".tar.gz")))
               (sha256
                (base32
-                "1rlln9nb3lvg4qlkp0c9qxjflx36rf16mflg0sps2kl0k7lmswzi"))
+                "0b8gd15l2g22w4fhhz0gzmq5c8370klanmy2c1p3px6yly6qnfwy"))
               (modules '((guix build utils)))
               (snippet
                '(begin
-                  (delete-file-recursively "lib/zlib")
-                  #t))))
+                  (delete-file-recursively "lib/zlib")))))
     (build-system gnu-build-system)
     (outputs (list "out"))
     (arguments
@@ -1737,8 +1736,7 @@ system administrator.")
              ;; not the task of the build system, and fails.
              (substitute* "plugins/sudoers/Makefile.in"
                (("^pre-install:" match)
-                (string-append match "\ndisabled-" match)))
-             #t)))
+                (string-append match "\ndisabled-" match))))))
 
        ;; XXX: The 'testsudoers' test series expects user 'root' to exist, but
        ;; the chroot's /etc/passwd doesn't have it.  Turn off the tests.
@@ -2146,15 +2144,15 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
 (define-public acpica
   (package
     (name "acpica")
-    (version "20210604")
+    (version "20210730")
     (source (origin
               (method url-fetch)
               (uri (string-append
                     "https://acpica.org/sites/acpica/files/acpica-unix2-"
-                    version ".tar_0.gz"))
+                    version ".tar.gz"))
               (sha256
                (base32
-                "1wsgg6fx7bhbpfzhbpbq2r7jpmv4c4n7v0zidbh25swrz7kfgpwz"))))
+                "02z0492vrpk001m7xcy72lp7sd968lja3wp6jn3q6k9nm46h4v7h"))))
     (build-system gnu-build-system)
     (native-inputs `(("flex" ,flex)
                      ("bison" ,bison)))
@@ -2229,7 +2227,7 @@ system is under heavy load.")
 (define-public detox
   (package
     (name "detox")
-    (version "1.4.2")
+    (version "1.4.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2238,7 +2236,7 @@ system is under heavy load.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0q16dvjbry573j4ayh9dwskdh1dxx8dk4rj94w6f2dcv4ww37is1"))))
+                "116bgpbkh3c96h6vq0880rmnpb5kbnnlvvkpsrcib6928bj8lfvi"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -4416,7 +4414,7 @@ file-types for easier parsing in scripts.")
 (define-public jtbl
   (package
     (name "jtbl")
-    (version "1.1.6")
+    (version "1.1.7")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4425,7 +4423,7 @@ file-types for easier parsing in scripts.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1zzd7rd63xva50f22d1rfja4r302aizrafarhwm67vv181swvdya"))))
+                "19i21fqz2m40cds9pb17brjxkczqagmx2f7mfb0xdvbygaply5wz"))))
     (build-system python-build-system)
     (inputs
      `(("python-tabulate" ,python-tabulate)))

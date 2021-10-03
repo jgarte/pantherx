@@ -13,7 +13,6 @@
 ;;; Copyright © 2016, 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
-;;; Copyright © 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016, 2017, 2019, 2020 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2016 Petter <petter@mykolab.ch>
 ;;; Copyright © 2017 Mekeor Melire <mekeor.melire@gmail.com>
@@ -3015,3 +3014,31 @@ System.  This includes such features as MouseKeys, AccessX, StickyKeys,
 BounceKeys, and SlowKeys.  It includes a graphical program to help with
 MouseKeys-acceleration management.")
     (license license:bsd-3)))
+
+(define-public wlsunset
+  (package
+    (name "wlsunset")
+    (version "0.2.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://git.sr.ht/~kennylevinsen/wlsunset/")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0hhsddh3rs066rbsjksr8kcwg8lvglbvs67dq0r5wx5c1xcwb51w"))))
+    (build-system meson-build-system)
+    (inputs
+     `(("wayland" ,wayland)
+       ("wayland-protocols" ,wayland-protocols)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (synopsis "Day/night gamma adjustments for Wayland compositors")
+    (home-page "https://sr.ht/~kennylevinsen/wlsunset/")
+    (description
+     "wlunset adjusts gamma based on day-night cycles on Wayland compositors
+that support @samp{wlr-gamma-control-unstable-v1}.  It is also known as a blue
+light filter or night light.")
+    (license license:expat)))
