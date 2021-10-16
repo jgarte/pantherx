@@ -909,7 +909,7 @@ This package allows you to create and extract such file systems.")
 (define-public squashfs-tools-ng
   (package
     (name "squashfs-tools-ng")
-    (version "1.1.2")
+    (version "1.1.3")
     (source
      (origin
        (method git-fetch)
@@ -918,7 +918,7 @@ This package allows you to create and extract such file systems.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "13gx6mc57wjjnrpnkb74zi2wiqazz2q715y1zz7rff02wh1vb5k9"))
+        (base32 "12ipqmjp10574sz64ls8qbgzkxz5dcbzk0l2fxyh2yrrhnjp34mi"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -2169,9 +2169,9 @@ single-member files which can't be decompressed in parallel.")
 non-Windows systems without running the actual installer using wine.")
    (license license:zlib)))
 
-(define-public google-brotli
+(define-public brotli
   (package
-    (name "google-brotli")
+    (name "brotli")
     (version "1.0.9")
     (source
      (origin
@@ -2222,20 +2222,21 @@ with @code{deflate} but offers more dense compression.
 The specification of the Brotli Compressed Data Format is defined in RFC 7932.")
     (license license:expat)))
 
-(define-public brotli
-  ;; We used to provide an older version under the name "brotli".
-  (deprecated-package "brotli" google-brotli))
+(define-public google-brotli
+  (deprecated-package "google-brotli" brotli))
 
-(define-public python-google-brotli
+(define-public python-brotli
   (package
-    (inherit google-brotli)
-    (name "python-google-brotli")
+    (inherit brotli)
+    (name "python-brotli")
     (build-system python-build-system)
     (arguments '())
-    (synopsis "Python interface to google-brotli")
-    (description "@code{python-google-brotli} provides a Python interface to
-@code{google-brotli}, an implementation of the Brotli lossless compression
-algorithm.")))
+    (synopsis "Python interface to Brotli")
+    (description "This package provides a Python interface to the @code{brotli}
+package, an implementation of the Brotli lossless compression algorithm.")))
+
+(define-public python-google-brotli
+  (deprecated-package "python-google-brotli" python-brotli))
 
 (define-public ucl
   (package
@@ -2310,7 +2311,7 @@ libraries by around 50%--70%, thus reducing disk space, network load times,
 download times, and other distribution and storage costs.")
     (license license:gpl2+)))
 
-(define-public quazip
+(define-public quazip-0
   (package
     (name "quazip")
     (version "0.9.1")
@@ -2346,6 +2347,21 @@ reading from and writing to ZIP archives. ")
     ;; Project is distributed under LGPL, but "quazip/z*" "quazip/unzip.*" are
     ;; distributed under zlib terms.
     (license (list license:lgpl2.1+ license:zlib))))
+
+(define-public quazip
+  (package
+    (inherit quazip-0)
+    (name "quazip")
+    (version "1.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/stachenov/quazip")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "06srglrj6jvy5ngmidlgx03i0d5w91yhi7sf846wql00v8rvhc5h"))))))
 
 (define-public zchunk
   (package
@@ -2500,7 +2516,7 @@ possibly untrusted extraction shell script.")
 (define-public ncompress
   (package
     (name "ncompress")
-    (version "4.2.4.6")
+    (version "5.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2510,13 +2526,13 @@ possibly untrusted extraction shell script.")
               (file-name (string-append name "-" version ".tar.gz"))
               (sha256
                (base32
-                "1a4yir1ilafz0nzxdwigj204j4yy2zljbc501nsaqqm3dxdap8zn"))))
+                "090kksxrlqnsdc76fzz2j2ajc98mhmfwyn163ca2ia9niqmlpcm0"))))
     (arguments
-     '(#:make-flags (list "CC=gcc"
+     `(#:make-flags (list (string-append "CC=" ,(cc-for-target))
                           (string-append "BINDIR=" %output "/bin")
                           (string-append "MANDIR=" %output "/share/man/man1"))
        #:phases (modify-phases %standard-phases
-                  (delete 'configure))))
+                  (delete 'configure)))) ; no configure script
     (build-system gnu-build-system)
     (home-page "https://github.com/vapier/ncompress/")
     (synopsis "Original Lempel-Ziv compress/uncompress programs")

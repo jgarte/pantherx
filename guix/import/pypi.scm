@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2014 David Thompson <davet@gnu.org>
 ;;; Copyright © 2015 Cyril Roelandt <tipecaml@gmail.com>
-;;; Copyright © 2015, 2016, 2017, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2015, 2016, 2017, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2017 Mathieu Othacehe <m.othacehe@gmail.com>
 ;;; Copyright © 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2019 Maxim Cournoyer <maxim.cournoyer@gmail.com>
@@ -426,7 +426,7 @@ return the unaltered list of upstream dependency names."
   "Return the `package' s-expression for a python package with the given NAME,
 VERSION, SOURCE-URL, HOME-PAGE, SYNOPSIS, DESCRIPTION, and LICENSE."
   (define (maybe-upstream-name name)
-    (if (string-match ".*\\-[0-9]+" (pk name))
+    (if (string-match ".*\\-[0-9]+" name)
         `((properties ,`'(("upstream-name" . ,name))))
         '()))
   
@@ -540,9 +540,12 @@ VERSION, SOURCE-URL, HOME-PAGE, SYNOPSIS, DESCRIPTION, and LICENSE."
                   (url     (distribution-url
                             (latest-source-release pypi-package))))
              (upstream-source
+              (urls (list url))
+              (input-changes
+               (changed-inputs package
+                               (pypi->guix-package pypi-name)))
               (package (package-name package))
-              (version version)
-              (urls (list url))))))))
+              (version version)))))))
 
 (define %pypi-updater
   (upstream-updater

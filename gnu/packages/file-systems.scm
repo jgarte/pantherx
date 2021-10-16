@@ -416,8 +416,8 @@ from a mounted file system.")
     (license license:gpl2+)))
 
 (define-public bcachefs-tools
-  (let ((commit "d214908864b3d245a265f029a29a1eb731834e3c")
-        (revision "10"))
+  (let ((commit "37850436dd7dfbe67738749c4d4a2506ffff1ec3")
+        (revision "11"))
     (package
       (name "bcachefs-tools")
       (version (git-version "0.1" revision commit))
@@ -429,7 +429,7 @@ from a mounted file system.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "0w0678lp4crwxdsxih7j653sj8yp6dinmw68kmdbagdspgcv00g9"))))
+          (base32 "040vgxrimahmfs9rhlggfwg0bzl7h9j2ksx3563rh63asjwlhnhi"))))
       (build-system gnu-build-system)
       (arguments
        `(#:make-flags
@@ -1533,11 +1533,15 @@ Dropbox API v2.")
     (version "1.0.51")
     (source
       (origin
-        (method url-fetch)
-        (uri (pypi-uri "dbxfs" version))
+        ;; Release tarball contains files not in git repository.
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://thelig.ht/code/dbxfs")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
         (sha256
          (base32
-          "1zz82d0mnql55397x4jx7z5rn857rf9zhjv895j93wpxdq10xwvk"))
+          "0bidb1gg5lqa1561f20qnj7gy323q65qwzfrb8h8gs6dsl3g6yfg"))
         (patches (search-patches "dbxfs-remove-sentry-sdk.patch"))))
     (build-system python-build-system)
     (arguments
@@ -1550,7 +1554,7 @@ Dropbox API v2.")
        ("python-keyrings.alt" ,python-keyrings.alt)
        ("python-privy" ,python-privy)
        ("python-userspacefs" ,python-userspacefs)))
-  (home-page "https://github.com/rianhunter/dbxfs")
+  (home-page "https://thelig.ht/code/dbxfs/")
   (synopsis "User-space file system for Dropbox")
   (description
    "@code{dbxfs} allows you to mount your Dropbox folder as if it were a

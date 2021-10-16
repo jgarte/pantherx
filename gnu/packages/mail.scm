@@ -603,7 +603,7 @@ operating systems.")
 (define-public neomutt
   (package
     (name "neomutt")
-    (version "20210205")
+    (version "20211015")
     (source
      (origin
        (method git-fetch)
@@ -612,7 +612,7 @@ operating systems.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "15kr9nvb4j8lx5rl2yapv231rbp4sbn709vv82pfhx5717x3yf00"))))
+        (base32 "06rjx81ahrwcl1zhpdgqngr99l0cx1i4fwaaxd6rsn9zsj3ixdir"))))
     (build-system gnu-build-system)
     (inputs
      `(("cyrus-sasl" ,cyrus-sasl)
@@ -841,7 +841,7 @@ mailpack.  What can alterMIME do?
 (define-public astroid
   (package
     (name "astroid")
-    (version "0.15")
+    (version "0.16")
     (source
      (origin
        (method git-fetch)
@@ -850,14 +850,13 @@ mailpack.  What can alterMIME do?
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "11cxbva9ni98gii59xmbxh4c6idcg3mg0pgdsp1c3j0yg7ix0lj3"))
+        (base32 "17m99llggkg7xg72k8xaf7iipax7sgfhqa2a1qnlylndwa42f57b"))
        (modules '((guix build utils)))
        (snippet
         '(begin
            ;; https://github.com/astroidmail/astroid/pull/685
            (substitute* "tests/test_composed_message.cc"
-             (("\\\\n\\.\\.\\.") "\\n...\\n"))
-           #t))))
+             (("\\\\n\\.\\.\\.") "\\n...\\n"))))))
     (build-system cmake-build-system)
     (arguments
      `(#:modules ((guix build cmake-build-system)
@@ -876,8 +875,7 @@ mailpack.  What can alterMIME do?
            ;; ValueError: Namespace Astroid not available
            (lambda _
              (substitute* "tests/CMakeLists.txt"
-               ((".*markdown.*") ""))
-             #t))
+               ((".*markdown.*") ""))))
          (replace 'build
            (lambda _
              (invoke "ninja" "-j" (number->string (parallel-job-count)))))
@@ -886,14 +884,12 @@ mailpack.  What can alterMIME do?
              (let ((xorg-server (assoc-ref inputs "xorg-server")))
                (setenv "HOME" (getcwd))
                (system (format #f "~a/bin/Xvfb :1 &" xorg-server))
-               (setenv "DISPLAY" ":1")
-               #t)))
+               (setenv "DISPLAY" ":1"))))
          (replace 'check
            (lambda* (#:key tests? #:allow-other-keys)
              (when tests?
                (setenv "CTEST_OUTPUT_ON_FAILURE" "1")
-               (invoke "ctest" "."))
-             #t))
+               (invoke "ctest" "."))))
          (replace 'install
            (lambda _
              (invoke "ninja" "install")))
@@ -910,8 +906,7 @@ mailpack.  What can alterMIME do?
                                         #f))))
                                inputs)))
                (wrap-program (string-append out "/bin/astroid")
-                 `("GI_TYPELIB_PATH" ":" prefix ,(filter identity paths))))
-             #t))
+                 `("GI_TYPELIB_PATH" ":" prefix ,(filter identity paths))))))
          (add-after 'install 'glib-or-gtk-compile-schemas
            (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-compile-schemas))
          (add-after 'install 'glib-or-gtk-wrap
@@ -1353,14 +1348,14 @@ invoking @command{notifymuch} from the post-new hook.")
 (define-public notmuch
   (package
     (name "notmuch")
-    (version "0.33.1")
+    (version "0.33.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://notmuchmail.org/releases/notmuch-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "1lhhkg9aw2ychj8lvkmk4bnj7rjz3v9w9r7sdp8bqjpfv41mz41d"))))
+                "1bic1f2va136aygfy53bsgziwiidcpb7qf1v05mlza2jmgv94j14"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -3713,7 +3708,7 @@ operators and scripters.")
 (define-public alpine
   (package
     (name "alpine")
-    (version "2.24.2")
+    (version "2.25")
     (source
      (origin
        (method git-fetch)
@@ -3726,13 +3721,14 @@ operators and scripters.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ibwss04j4qbhpd3jcw3d4xjf8jnmb9fi3sz58a99xw3awkfjabd"))
+        (base32 "0z6dp3cpz1dmbxw41ravsx1bxychafp0ij8gvj96mzz7rm9pdnq3"))
        (modules '((guix build utils)))
        (snippet
         '(begin
            ;; Remove pre-built binaries scattered across the source repository.
-           (for-each delete-file (find-files "." "\\.(dll|exe)"))
-           #t))))
+           (for-each delete-file (find-files "." "\\.(dll|exe)"))))
+       (patches
+        (search-patches "alpine-fix-privacy-policy-crash.patch"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -3758,14 +3754,12 @@ operators and scripters.")
            ;; ‘/etc/shadow exists in the build environment’.  It does not.
            (lambda _
              (substitute* "configure"
-               (("test -f /etc/shadow") "true"))
-             #t))
+               (("test -f /etc/shadow") "true"))))
          (add-after 'unpack 'make-reproducible
            (lambda _
              ;; This removes time-dependent code to make alpine reproducible.
              (substitute* "pico/blddate.c"
-               (("%02d-%s-%d") "1970-01-01"))
-             #t)))))
+               (("%02d-%s-%d") "1970-01-01")))))))
     (inputs
      `(("ncurses" ,ncurses)
        ("openssl" ,openssl)

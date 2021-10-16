@@ -170,7 +170,6 @@
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
-  #:use-module (gnu packages python-compression)
   #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
@@ -280,7 +279,7 @@
 (define-public brasero
   (package
     (name "brasero")
-    (version "3.12.2")
+    (version "3.12.3")
     (source (origin
              (method url-fetch)
              (uri (string-append "mirror://gnome/sources/brasero/"
@@ -288,7 +287,7 @@
                                  "brasero-" version ".tar.xz"))
              (sha256
               (base32
-               "0h90y674j26rvjahb8cc0w79zx477rb6zaqcj26wzvq8kmpic8k8"))))
+               "05gabybkl7xfinwx97i4scp9hic0dlxj7gh03dyj0hd16fp9wx47"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:configure-flags (list
@@ -300,11 +299,12 @@
                                          "/lib/girepository-1.0"))
        #:phases
        (modify-phases %standard-phases
-         (add-before 'configure 'embed-growisofs
+         (add-before 'configure 'embed-growisofs-reference
            (lambda* (#:key inputs #:allow-other-keys)
-             (substitute* "plugins/growisofs/burn-growisofs.c"
-               (("\"growisofs") (string-append "\"" (which "growisofs"))))
-             #t)))))
+             (let ((dvd+rw-tools (assoc-ref inputs "dvd+rw-tools")))
+               (substitute* "plugins/growisofs/burn-growisofs.c"
+                 (("(\")(growisofs)" _ prefix command)
+                  (string-append prefix dvd+rw-tools "/bin/" command)))))))))
     (propagated-inputs
      `(("hicolor-icon-theme" ,hicolor-icon-theme)))
     (native-inputs
@@ -4871,7 +4871,7 @@ libxml to ease remote use of the RESTful API.")
        ("httpd" ,httpd)))
     (propagated-inputs
      ;; libsoup-2.4.pc refers to all of these (except where otherwise noted)
-     `(("brotli" ,google-brotli)
+     `(("brotli" ,brotli)
        ("glib" ,glib)
        ("glib-networking" ,glib-networking)       ; for GIO runtime modules
        ("libpsl" ,libpsl)
@@ -8320,15 +8320,15 @@ usage and information about running processes.")
 (define-public gnome-bluetooth
   (package
     (name "gnome-bluetooth")
-    (version "3.34.2")
+    (version "3.34.5")
     (source (origin
               (method url-fetch)
-              (uri (string-append "mirror://gnome/sources/" name "/"
+              (uri (string-append "mirror://gnome/sources/gnome-bluetooth/"
                                   (version-major+minor version) "/"
-                                  name "-" version ".tar.xz"))
+                                  "gnome-bluetooth-" version ".tar.xz"))
               (sha256
                (base32
-                "0lmjvb49vgr4jjplrisv6pi29jsn1q42715i6c5a0p9ad3gawyyv"))))
+                "1a9ynlwwkb3wpg293ym517vmrkk63y809mmcv9a21k5yr199x53c"))))
     (build-system meson-build-system)
     (native-inputs
      `(("glib:bin" ,glib "bin") ; for gdbus-codegen, etc.
@@ -8336,6 +8336,8 @@ usage and information about running processes.")
        ("gobject-introspection" ,gobject-introspection)
        ("intltool" ,intltool)
        ("pkg-config" ,pkg-config)
+       ("python" ,python)
+       ("python-dbus" ,python-dbus)
        ("xmllint" ,libxml2)))
     (propagated-inputs
      ;; gnome-bluetooth-1.0.pc refers to all these.
@@ -9240,7 +9242,7 @@ world.")
        ;; Packages not part of GNOME proper but that are needed for a good
        ;; experience.  See <https://bugs.gnu.org/39646>.
        ;; XXX: Find out exactly which ones are needed and why.
-       ("font-cantarell"            ,font-cantarell)
+       ("font-abattis-cantarell"            ,font-abattis-cantarell)
        ("font-dejavu"               ,font-dejavu)
        ("at-spi2-core"              ,at-spi2-core)
        ("dbus"                      ,dbus)
@@ -9388,23 +9390,22 @@ Features:
 (define-public gsound
   (package
     (name "gsound")
-    (version "1.0.2")
+    (version "1.0.3")
     (source (origin
               (method url-fetch)
-              (uri (string-append "mirror://gnome/sources/" name "/"
+              (uri (string-append "mirror://gnome/sources/gsound/"
                                   (version-major+minor version) "/"
-                                  name "-" version ".tar.xz"))
+                                  "gsound-" version ".tar.xz"))
               (sha256
                (base32
-                "0lwfwx2c99qrp08pfaj59pks5dphsnxjgrxyadz065d8xqqgza5v"))))
-    (build-system glib-or-gtk-build-system)
+                "06l80xgykj7x1kqkjvcq06pwj2rmca458zvs053qc55x3sg06bfa"))))
+    (build-system meson-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("gobject-introspection" ,gobject-introspection)
        ("vala" ,vala)))
-    (inputs
-     `(("glib" ,glib)
-       ("libcanberra" ,libcanberra)))
+    (propagated-inputs
+     `(("libcanberra" ,libcanberra)))   ; in Requires.private of gsound.pc
     (home-page "https://wiki.gnome.org/Projects/GSound")
     (synopsis "GObject wrapper for libcanberra")
     (description
@@ -11633,7 +11634,7 @@ GTK+.  It integrates well with the GNOME desktop environment.")
 (define-public apostrophe
   (package
     (name "apostrophe")
-    (version "2.4")
+    (version "2.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -11642,7 +11643,7 @@ GTK+.  It integrates well with the GNOME desktop environment.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1qzy3zhi18wf42m034s8kcmx9gl05j620x3hf6rnycq2fvy7g4gz"))))
+                "06yfiflmj3ip7ppcz41nb3xpgb5ggw5h74w0v87yaqqkq7qh31lp"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -11686,10 +11687,11 @@ GTK+.  It integrates well with the GNOME desktop environment.")
     (native-inputs
      `(("gettext" ,gettext-minimal)
        ("glib:bin" ,glib "bin")
-       ("pkg-config" ,pkg-config)))
+       ("pkg-config" ,pkg-config)
+       ("sassc" ,sassc)))
     (home-page "https://gitlab.gnome.org/somas/apostrophe")
     (synopsis "Markdown editor written in Python with GTK+")
-    (description "Apostrophe is a GTK+ based distraction free Markdown editor.
+    (description "Apostrophe is a GTK+ based distraction-free Markdown editor.
 It uses pandoc as back-end for parsing Markdown.")
     (license license:gpl3)))
 
@@ -12074,7 +12076,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.34.1")
+    (version "0.35.1")
     (source
      (origin
        (method git-fetch)
@@ -12084,7 +12086,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1mz9jz62ifpg7pxkbaglw98v0d94wi6y459f0r4qr7kjxhnfq3km"))))
+         "0975c55lmiwaqm0wj0ci91a90syjan3i99akrp0hl9m7r73jnfh9"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t

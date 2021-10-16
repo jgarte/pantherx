@@ -2,6 +2,7 @@
 ;;; Copyright © 2021 Andrew Tropin <andrew@trop.in>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
 ;;; Copyright © 2021 Pierre Langlois <pierre.langlois@gmx.com>
+;;; Copyright © 2021 Oleg Pykhalov <go.wigust@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -23,7 +24,7 @@
   #:use-module ((gnu services) #:hide (delete))
   #:use-module (gnu packages)
   #:use-module (gnu home)
-  #:use-module (gnu home-services)
+  #:use-module (gnu home services)
   #:use-module (guix channels)
   #:use-module (guix derivations)
   #:use-module (guix ui)
@@ -111,6 +112,9 @@ Some ACTIONS support additional ARGS.\n"))
                  (lambda args
                    (show-help)
                    (exit 0)))
+         (option '(#\n "dry-run") #f #f
+                 (lambda (opt name arg result)
+                   (alist-cons 'dry-run? #t result)))
          (option '(#\V "version") #f #f
                  (lambda args
                    (show-version-and-exit "guix show")))
@@ -186,6 +190,7 @@ ACTION must be one of the sub-commands that takes a home environment
 declaration as an argument (a file name.)  OPTS is the raw alist of options
 resulting from command-line parsing."
   (define (ensure-home-environment file-or-exp obj)
+    (ensure-profile-directory)
     (unless (home-environment? obj)
       (leave (G_ "'~a' does not return a home environment ~%")
              file-or-exp))

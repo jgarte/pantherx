@@ -547,7 +547,7 @@ of programming tools as well as libraries with equivalent functionality.")
 (define-public clang-12
   (clang-from-llvm llvm-12 clang-runtime-12
                    "0px4gl27az6cdz6adds89qzdwb1cqpjsfvrldbz9qvpmphrj34bf"
-                   #:patches '("clang-11.0-libc-search-path.patch")
+                   #:patches '("clang-12.0-libc-search-path.patch")
                    #:tools-extra
                    (origin
                      (method url-fetch)
@@ -681,7 +681,7 @@ of programming tools as well as libraries with equivalent functionality.")
 (define-public clang-8
   (clang-from-llvm llvm-8 clang-runtime-8
                    "0svk1f70hvpwrjp6x5i9kqwrqwxnmcrw5s7f4cxyd100mdd12k08"
-                   #:patches '("clang-7.0-libc-search-path.patch")))
+                   #:patches '("clang-8.0-libc-search-path.patch")))
 
 (define-public clang-toolchain-8
   (make-clang-toolchain clang-8))

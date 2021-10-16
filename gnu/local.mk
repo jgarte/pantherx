@@ -20,7 +20,7 @@
 # Copyright © 2018, 2019, 2020, 2021 Oleg Pykhalov <go.wigust@gmail.com>
 # Copyright © 2018 Stefan Stefanović <stefanx2ovic@gmail.com>
 # Copyright © 2018, 2020, 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
-# Copyright © 2019, 2020 Guillaume Le Vaillant <glv@posteo.net>
+# Copyright © 2019, 2020, 2021 Guillaume Le Vaillant <glv@posteo.net>
 # Copyright © 2019, 2020 John Soo <jsoo1@asu.edu>
 # Copyright © 2019 Jonathan Brielmaier <jonathan.brielmaier@web.de>
 # Copyright © 2019 Evan Straw <evan.straw99@gmail.com>
@@ -74,16 +74,16 @@ GNU_SYSTEM_MODULES =				\
   %D%/bootloader/depthcharge.scm                \
   %D%/ci.scm					\
   %D%/home.scm					\
-  %D%/home-services.scm			\
-  %D%/home-services/symlink-manager.scm	\
-  %D%/home-services/fontutils.scm		\
-  %D%/home-services/configuration.scm		\
-  %D%/home-services/shells.scm			\
-  %D%/home-services/shepherd.scm		\
-  %D%/home-services/mcron.scm			\
-  %D%/home-services/utils.scm			\
-  %D%/home-services/xdg.scm			\
+  %D%/home/services.scm			\
+  %D%/home/services/symlink-manager.scm		\
+  %D%/home/services/fontutils.scm		\
+  %D%/home/services/shells.scm			\
+  %D%/home/services/shepherd.scm		\
+  %D%/home/services/mcron.scm			\
+  %D%/home/services/utils.scm			\
+  %D%/home/services/xdg.scm			\
   %D%/image.scm					\
+  %D%/platform.scm				\
   %D%/packages.scm				\
   %D%/packages/abduco.scm			\
   %D%/packages/abiword.scm			\
@@ -613,6 +613,9 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/zile.scm				\
   %D%/packages/zwave.scm			\
 						\
+  %D%/platforms/arm.scm		                \
+  %D%/platforms/hurd.scm	                \
+						\
   %D%/services.scm				\
   %D%/services/admin.scm			\
   %D%/services/audio.scm                        \
@@ -834,6 +837,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/akonadi-not-relocatable.patch		\
   %D%/packages/patches/akonadi-timestamps.patch		\
   %D%/packages/patches/allegro-mesa-18.2.5-and-later.patch	\
+  %D%/packages/patches/alpine-fix-privacy-policy-crash.patch	\
   %D%/packages/patches/anki-mpv-args.patch			\
   %D%/packages/patches/antiword-CVE-2014-8123.patch			\
   %D%/packages/patches/antlr3-3_1-fix-java8-compilation.patch	\
@@ -865,11 +869,24 @@ dist_patch_DATA =						\
   %D%/packages/patches/avahi-localstatedir.patch		\
   %D%/packages/patches/avidemux-install-to-lib.patch		\
   %D%/packages/patches/awesome-reproducible-png.patch		\
+  %D%/packages/patches/aws-c-auth-cmake-prefix.patch		\
+  %D%/packages/patches/aws-c-auth-disable-networking-tests.patch\
   %D%/packages/patches/aws-c-cal-cmake-prefix.patch		\
+  %D%/packages/patches/aws-c-compression-cmake-prefix.patch	\
   %D%/packages/patches/aws-c-event-stream-cmake-prefix.patch  \
+  %D%/packages/patches/aws-c-http-cmake-prefix.patch		\
+  %D%/packages/patches/aws-c-http-disable-networking-tests.patch\
+  %D%/packages/patches/aws-c-mqtt-cmake-prefix.patch		\
   %D%/packages/patches/aws-c-io-cmake-prefix.patch		\
-  %D%/packages/patches/aws-c-io-disable-networking-tests.patch		\
+  %D%/packages/patches/aws-c-io-disable-networking-tests.patch	\
+  %D%/packages/patches/aws-c-s3-cmake-prefix.patch		\
+  %D%/packages/patches/aws-c-s3-disable-networking-tests.patch	\
   %D%/packages/patches/aws-checksums-cmake-prefix.patch		\
+  %D%/packages/patches/aws-crt-cpp-cmake-prefix.patch		\
+  %D%/packages/patches/aws-crt-cpp-disable-networking-tests.patch	\
+  %D%/packages/patches/aws-sdk-cpp-cmake-prefix.patch		\
+  %D%/packages/patches/aws-sdk-cpp-disable-networking-tests.patch	\
+  %D%/packages/patches/aws-sdk-cpp-disable-werror.patch		\
   %D%/packages/patches/azr3.patch				\
   %D%/packages/patches/bash-reproducible-linux-pgrp-pipe.patch	\
   %D%/packages/patches/bash-completion-directories.patch	\
@@ -908,6 +925,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/blender-2.79-python-3.8-fix.patch	\
   %D%/packages/patches/bpftrace-disable-bfd-disasm.patch	\
   %D%/packages/patches/byobu-writable-status.patch		\
+  %D%/packages/patches/cabal-install-base16-bytestring1.0.patch		\
+  %D%/packages/patches/cabal-install-ghc8.10.patch		\
   %D%/packages/patches/cairo-CVE-2018-19876.patch		\
   %D%/packages/patches/cairo-CVE-2020-35492.patch		\
   %D%/packages/patches/calibre-no-updates-dialog.patch		\
@@ -915,11 +934,11 @@ dist_patch_DATA =						\
   %D%/packages/patches/calibre-remove-test-unrar.patch		\
   %D%/packages/patches/casync-renameat2-declaration.patch	\
   %D%/packages/patches/catdoc-CVE-2017-11110.patch		\
-  %D%/packages/patches/ccache-fix-basedir-test.patch		\
   %D%/packages/patches/circos-remove-findbin.patch		\
   %D%/packages/patches/cdparanoia-fpic.patch			\
   %D%/packages/patches/cdrtools-3.01-mkisofs-isoinfo.patch 	\
   %D%/packages/patches/ceph-disable-cpu-optimizations.patch	\
+  %D%/packages/patches/ceph-fix-snappy-breaking-change.patch	\
   %D%/packages/patches/chez-scheme-build-util-paths-backport.patch      \
   %D%/packages/patches/chmlib-inttypes.patch			\
   %D%/packages/patches/cl-asdf-config-directories.patch		\
@@ -930,9 +949,11 @@ dist_patch_DATA =						\
   %D%/packages/patches/clang-3.8-libc-search-path.patch		\
   %D%/packages/patches/clang-6.0-libc-search-path.patch		\
   %D%/packages/patches/clang-7.0-libc-search-path.patch		\
+  %D%/packages/patches/clang-8.0-libc-search-path.patch		\
   %D%/packages/patches/clang-9.0-libc-search-path.patch		\
   %D%/packages/patches/clang-10.0-libc-search-path.patch	\
   %D%/packages/patches/clang-11.0-libc-search-path.patch	\
+  %D%/packages/patches/clang-12.0-libc-search-path.patch	\
   %D%/packages/patches/clang-runtime-asan-build-fixes.patch	\
   %D%/packages/patches/clang-runtime-esan-build-fixes.patch	\
   %D%/packages/patches/clang-runtime-9-libsanitizer-mode-field.patch	\
@@ -947,7 +968,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/combinatorial-blas-awpm.patch		\
   %D%/packages/patches/combinatorial-blas-io-fix.patch		\
   %D%/packages/patches/coreutils-ls.patch			\
-  %D%/packages/patches/cpufrequtils-fix-aclocal.patch		\
   %D%/packages/patches/cpuinfo-system-libraries.patch		\
   %D%/packages/patches/crawl-upgrade-saves.patch		\
   %D%/packages/patches/crda-optional-gcrypt.patch		\
@@ -976,6 +996,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/desmume-gcc6-fixes.patch			\
   %D%/packages/patches/desmume-gcc7-fixes.patch			\
   %D%/packages/patches/dfu-programmer-fix-libusb.patch		\
+  %D%/packages/patches/diffoscope-fix-test_item3_deflate_llvm_bitcode.patch	\
   %D%/packages/patches/diffutils-gets-undeclared.patch		\
   %D%/packages/patches/disarchive-cross-compilation.patch	\
   %D%/packages/patches/dkimproxy-add-ipv6-support.patch		\
@@ -1055,14 +1076,13 @@ dist_patch_DATA =						\
   %D%/packages/patches/fuse-overlapping-headers.patch				\
   %D%/packages/patches/fxdiv-system-libraries.patch		\
   %D%/packages/patches/gajim-honour-GAJIM_PLUGIN_PATH.patch	\
-  %D%/packages/patches/ganeti-deterministic-manual.patch	\
   %D%/packages/patches/ganeti-disable-version-symlinks.patch	\
-  %D%/packages/patches/ganeti-drbd-compat.patch			\
+  %D%/packages/patches/ganeti-haskell-compat.patch		\
   %D%/packages/patches/ganeti-haskell-pythondir.patch		\
-  %D%/packages/patches/ganeti-os-disk-size.patch		\
   %D%/packages/patches/ganeti-preserve-PYTHONPATH.patch		\
   %D%/packages/patches/ganeti-shepherd-master-failover.patch	\
   %D%/packages/patches/ganeti-shepherd-support.patch		\
+  %D%/packages/patches/ganeti-sphinx-compat.patch		\
   %D%/packages/patches/gash-utils-ls-test.patch			\
   %D%/packages/patches/gawk-shell.patch				\
   %D%/packages/patches/gcc-arm-bug-71399.patch			\
@@ -1112,13 +1132,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/geoclue-config.patch			\
   %D%/packages/patches/ghc-8.0-fall-back-to-madv_dontneed.patch	\
   %D%/packages/patches/ghc-testsuite-dlopen-pie.patch		\
-  %D%/packages/patches/ghc-diff-swap-cover-args.patch		\
-  %D%/packages/patches/ghc-haddock-api-fix-haddock.patch	\
-  %D%/packages/patches/ghc-hpack-fix-tests.patch		\
-  %D%/packages/patches/ghc-microlens-aeson-fix-tests.patch	\
+  %D%/packages/patches/ghc-language-haskell-extract-ghc-8.10.patch	\
   %D%/packages/patches/ghc-monad-par-fix-tests.patch		\
-  %D%/packages/patches/ghc-pandoc-fix-html-tests.patch		\
-  %D%/packages/patches/ghc-pandoc-fix-latex-test.patch		\
   %D%/packages/patches/ghostscript-CVE-2020-15900.patch		\
   %D%/packages/patches/ghostscript-freetype-compat.patch	\
   %D%/packages/patches/ghostscript-no-header-id.patch		\
@@ -1254,7 +1269,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/hdf-eos5-remove-gctp.patch		\
   %D%/packages/patches/hdf-eos5-fix-szip.patch			\
   %D%/packages/patches/hdf-eos5-fortrantests.patch		\
-  %D%/packages/patches/hexchat-add-libera-chat.patch		\
+  %D%/packages/patches/hedgewars-network-bsd.patch		\
   %D%/packages/patches/http-parser-CVE-2020-8287.patch		\
   %D%/packages/patches/hubbub-sort-entities.patch		\
   %D%/packages/patches/hurd-cross.patch				\
@@ -1271,6 +1286,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/id3lib-CVE-2007-4460.patch			\
   %D%/packages/patches/id3lib-UTF16-writing-bug.patch			\
   %D%/packages/patches/idris-disable-test.patch			\
+  %D%/packages/patches/idris-build-with-haskeline-0.8.patch	\
+  %D%/packages/patches/idris-build-with-megaparsec-9.patch	\
   %D%/packages/patches/ilmbase-fix-tests.patch			\
   %D%/packages/patches/imagemagick-CVE-2020-27829.patch		\
   %D%/packages/patches/imagemagick-ReadDCMImage-fix.patch	\
@@ -1367,7 +1384,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/libbonobo-activation-test-race.patch	\
   %D%/packages/patches/libcaca-CVE-2021-3410-pt1.patch		\
   %D%/packages/patches/libcaca-CVE-2021-3410-pt2.patch		\
-  %D%/packages/patches/libcacard-unknown-variable.patch		\
   %D%/packages/patches/libcanberra-sound-theme-freedesktop.patch \
   %D%/packages/patches/libcanberra-wayland-crash.patch \
   %D%/packages/patches/libcroco-CVE-2020-12825.patch		\
@@ -1514,6 +1530,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/nettle-3.5-CVE-2021-3580-pt2.patch	\
   %D%/packages/patches/nfs4-acl-tools-0.3.7-fixpaths.patch	\
   %D%/packages/patches/ngircd-handle-zombies.patch		\
+  %D%/packages/patches/ngless-unliftio.patch		\
   %D%/packages/patches/network-manager-plugin-path.patch	\
   %D%/packages/patches/nginx-socket-cloexec.patch		\
   %D%/packages/patches/nnpack-system-libraries.patch		\
@@ -1527,7 +1544,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/nyacc-binary-literals.patch		\
   %D%/packages/patches/obs-modules-location.patch		\
   %D%/packages/patches/ocaml-bitstring-fix-configure.patch \
-  %D%/packages/patches/ocaml-cairo2-caml_ba_array-fix.patch     \
   %D%/packages/patches/ocaml-CVE-2015-8869.patch		\
   %D%/packages/patches/ocaml-Add-a-.file-directive.patch	\
   %D%/packages/patches/ocaml-enable-ocamldoc-reproducibility.patch	\
@@ -1596,9 +1612,15 @@ dist_patch_DATA =						\
   %D%/packages/patches/perl-reproducible-build-date.patch	\
   %D%/packages/patches/perl-www-curl-fix-struct-void.patch	\
   %D%/packages/patches/perl-www-curl-remove-symbol.patch	\
+  %D%/packages/patches/php-bug-74093-test.patch \
   %D%/packages/patches/picard-fix-id3-rename-test.patch		\
   %D%/packages/patches/picprog-non-intel-support.patch		\
   %D%/packages/patches/pidgin-add-search-path.patch		\
+  %D%/packages/patches/pigx-bsseq-no-citeproc.patch		\
+  %D%/packages/patches/pigx-chipseq-no-citeproc.patch		\
+  %D%/packages/patches/pigx-rnaseq-no-citeproc.patch		\
+  %D%/packages/patches/pigx-sars-cov2-ww-no-citeproc.patch	\
+  %D%/packages/patches/pigx-scrnaseq-no-citeproc.patch		\
   %D%/packages/patches/pinball-system-ltdl.patch		\
   %D%/packages/patches/pingus-boost-headers.patch		\
   %D%/packages/patches/pingus-sdl-libs-config.patch		\
@@ -1624,7 +1646,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/pulseaudio-fix-mult-test.patch		\
   %D%/packages/patches/pulseaudio-longer-test-timeout.patch	\
   %D%/packages/patches/pulseview-qt515-compat.patch		\
-  %D%/packages/patches/purescript-relax-dependencies.patch	\
   %D%/packages/patches/pybugz-encode-error.patch		\
   %D%/packages/patches/pybugz-stty.patch			\
   %D%/packages/patches/pygpgme-disable-problematic-tests.patch  \
@@ -1682,8 +1703,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/python-waitress-fix-tests.patch		\
   %D%/packages/patches/qemu-build-info-manual.patch		\
   %D%/packages/patches/qemu-CVE-2021-20203.patch		\
-  %D%/packages/patches/qemu-meson-compat.patch			\
-  %D%/packages/patches/qemu-sphinx-compat.patch			\
   %D%/packages/patches/qemu-glibc-2.27.patch 			\
   %D%/packages/patches/qemu-glibc-2.30.patch 			\
   %D%/packages/patches/qpdfview-qt515-compat.patch		\

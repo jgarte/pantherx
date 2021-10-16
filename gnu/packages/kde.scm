@@ -11,7 +11,7 @@
 ;;; Copyright © 2020 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2020, 2021 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Prafulla Giri <pratheblackdiamond@gmail.com>
-;;; Copyright © 2020 Zheng Junjie <873216071@qq.com>
+;;; Copyright © 2020, 2021 Zheng Junjie <873216071@qq.com>
 ;;; Copyright © 2021 Alexandros Theodotou <alex@zrythm.org>
 ;;; Copyright © 2021 la snesne <lasnesne@lagunposprasihopre.org>
 ;;; Copyright © 2021 Vinicius Monego <monego@posteo.net>
@@ -219,7 +219,7 @@ browser for easy news reading.")
     (license license:gpl2+)))
 
 (define-public kdenlive
-  (let ((version "21.08.1"))
+  (let ((version "21.08.2"))
     (package
       (name "kdenlive")
       (version version)
@@ -231,7 +231,7 @@ browser for easy news reading.")
                (commit (string-append "v" version))))
          (file-name (string-append name "-" version "-checkout"))
          (sha256
-          (base32 "1fvy2aa86pn4crk8lgxjh1kdn2lxzi66krnrr9m91mp89mmc760k"))))
+          (base32 "1l78xjdf1bmj3s8kysaqqgh67mb3vrc96rsdnp0i4awlyfsh89d7"))))
       (build-system qt-build-system)
       (native-inputs
        `(("extra-cmake-modules" ,extra-cmake-modules)
@@ -269,7 +269,10 @@ browser for easy news reading.")
          ("qtwebkit" ,qtwebkit)
          ("shared-mime-info" ,shared-mime-info)))
       (arguments
-       `(#:tests? #f                    ;TODO needs X
+       ;; XXX: there is a single test that spawns other tests and
+       ;; 1/3 tests failed and 1/327 assertions failed.  It seems
+       ;; that individual tests can't be skipped.
+       `(#:tests? #f
          #:phases
          (modify-phases %standard-phases
            (add-after 'install 'wrap-executable
@@ -451,7 +454,7 @@ illustrate project schedules.")
 (define-public krita
   (package
     (name "krita")
-    (version "4.4.5")
+    (version "4.4.8")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -459,7 +462,7 @@ illustrate project schedules.")
                     "/krita-" version ".tar.gz"))
               (sha256
                (base32
-                "0s3mzgkxb316y1wncrr8l3w5nnqszhvdh8qi1nh6040dhy075zab"))))
+                "1y0d8gnxfdg5nfwk8dgx8fc2bwskvnys049napb1a9fr25bqmimw"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f
@@ -527,7 +530,7 @@ illustrate project schedules.")
        ("qtmultimedia" ,qtmultimedia)
        ("qtsvg" ,qtsvg)
        ("qtx11extras" ,qtx11extras)
-       ("quazip" ,quazip)
+       ("quazip" ,quazip-0)
        ("zlib" ,zlib)))
     (home-page "https://krita.org")
     (synopsis "Digital painting application")

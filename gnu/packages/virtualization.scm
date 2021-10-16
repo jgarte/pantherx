@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2020 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015, 2016, 2017, 2018 Mark H Weaver <mhw@netris.org>
-;;; Copyright © 2016, 2017, 2018. 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2017, 2018. 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Alex Vong <alexvong1995@gmail.com>
 ;;; Copyright © 2017 Andy Patterson <ajpatter@uwaterloo.ca>
@@ -14,7 +14,7 @@
 ;;; Copyright © 2020 Jakub Kądziołka <kuba@kadziolka.net>
 ;;; Copyright © 2020, 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2020 Mathieu Othacehe <m.othacehe@gmail.com>
-;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2020, 2021 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2020, 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2020 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2021 Leo Famulari <leo@famulari.name>
@@ -149,7 +149,7 @@
 (define-public qemu
   (package
     (name "qemu")
-    (version "6.0.0")
+    (version "6.1.0")
     (source
      (origin
        (method url-fetch)
@@ -157,10 +157,8 @@
                            version ".tar.xz"))
        (sha256
         (base32
-         "1f9hz8rf12jm8baa7kda34yl4hyl0xh0c4ap03krfjx23i3img47"))
+         "15iw7982g6vc4jy1l9kk1z9sl5bm1bdbwr74y7nvwjs1nffhig7f"))
        (patches (search-patches "qemu-CVE-2021-20203.patch"
-                                "qemu-meson-compat.patch"
-                                "qemu-sphinx-compat.patch"
                                 "qemu-build-info-manual.patch"))
        (modules '((guix build utils)))
        (snippet
@@ -218,12 +216,10 @@
              ;; Ensure the executables created by these source files reference
              ;; /bin/sh from the store so they work inside the build container.
              (substitute* '("block/cloop.c" "migration/exec.c"
-                            "net/tap.c" "tests/qtest/libqtest.c")
+                            "net/tap.c" "tests/qtest/libqtest.c"
+                            "tests/qtest/vhost-user-blk-test.c")
                (("/bin/sh") (which "sh")))
-             (substitute* "Makefile"
-               (("SHELL = /usr/bin/env bash -o pipefail")
-                "SHELL = bash -o pipefail"))
-             (substitute* "tests/qemu-iotests/check"
+             (substitute* "tests/qemu-iotests/testenv.py"
                (("#!/usr/bin/env python3")
                 (string-append "#!" (which "python3"))))))
          (add-before 'configure 'fix-optionrom-makefile
@@ -345,6 +341,7 @@ exec smbd $@")))
                      ("pkg-config" ,pkg-config)
                      ("python-wrapper" ,python-wrapper)
                      ("python-sphinx" ,python-sphinx)
+                     ("python-sphinx-rtd-theme" ,python-sphinx-rtd-theme)
                      ("texinfo" ,texinfo)
                      ;; The following static libraries are required to build
                      ;; the static output of QEMU.
@@ -506,27 +503,24 @@ firmware blobs.  You can
 @item recognize a special x86 instruction that can trigger logging
 @item use integrated logging
 @end enumerate")
-    (license license:x11-style)))
+    (license (license:x11-style "file://LICENSE"))))
 
 (define-public ganeti
   (package
     (name "ganeti")
-    ;; Note: we use a pre-release for Python 3 compatibility as well as many
-    ;; other fixes.
-    (version "3.0.0beta1-24-g024cc9fa2")
+    (version "3.0.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/ganeti/ganeti")
                     (commit (string-append "v" version))))
               (sha256
-               (base32 "1ll34qd2mifni3bhg7cnir3xfnkafig8ch33qndqwrsby0y5ssia"))
+               (base32 "1i7gx0sdx9316fnldbv738s0ihym1370nhc1chk0biandkl8vvq0"))
               (file-name (git-file-name name version))
               (patches (search-patches "ganeti-shepherd-support.patch"
                                        "ganeti-shepherd-master-failover.patch"
-                                       "ganeti-deterministic-manual.patch"
-                                       "ganeti-drbd-compat.patch"
-                                       "ganeti-os-disk-size.patch"
+                                       "ganeti-sphinx-compat.patch"
+                                       "ganeti-haskell-compat.patch"
                                        "ganeti-haskell-pythondir.patch"
                                        "ganeti-disable-version-symlinks.patch"
                                        "ganeti-preserve-PYTHONPATH.patch"))))
@@ -538,6 +532,9 @@ firmware blobs.  You can
        #:modules (,@%gnu-build-system-modules
                   ((guix build haskell-build-system) #:prefix haskell:)
                   ((guix build python-build-system) #:select (python-version))
+                  (srfi srfi-1)
+                  (srfi srfi-26)
+                  (ice-9 match)
                   (ice-9 rdelim))
 
        ;; The default test target includes a lot of checks that are only really
@@ -576,6 +573,14 @@ firmware blobs.  You can
                             ,(system->qemu-target (%current-system))))
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'patch-version-constraints
+           (lambda _
+             ;; Loosen version constraints for compatibility with Stackage 18.10.
+             (substitute* "cabal/ganeti.template.cabal"
+               (("(.*base64-bytestring.*) < 1\\.1" _ match)
+                (string-append match " < 1.2"))
+               (("(.*QuickCheck.*) < 2\\.14" _ match)
+                (string-append match " < 2.15")))))
          (add-after 'unpack 'create-vcs-version
            (lambda _
              ;; If we are building from a git checkout, we need to create a
@@ -584,8 +589,7 @@ firmware blobs.  You can
              (unless (file-exists? "vcs-version")
                (call-with-output-file "vcs-version"
                  (lambda (port)
-                   (format port "v~a~%" ,version))))
-             #t))
+                   (format port "v~a~%" ,version))))))
          (add-after 'unpack 'patch-absolute-file-names
            (lambda _
              (substitute* '("lib/utils/process.py"
@@ -611,8 +615,7 @@ firmware blobs.  You can
                (("ndisc6") (which "ndisc6"))
                (("fping") (which "fping"))
                (("grep") (which "grep"))
-               (("ip addr") (string-append (which "ip") " addr")))
-             #t))
+               (("ip addr") (string-append (which "ip") " addr")))))
          (add-after 'unpack 'override-builtin-PATH
            (lambda _
              ;; Ganeti runs OS install scripts and similar with a built-in
@@ -620,8 +623,7 @@ firmware blobs.  You can
              (substitute* "src/Ganeti/Constants.hs"
                (("/sbin:/bin:/usr/sbin:/usr/bin")
                 "/run/setuid-programs:/run/current-system/profile/sbin:\
-/run/current-system/profile/bin"))
-             #t))
+/run/current-system/profile/bin"))))
          (add-after 'bootstrap 'patch-sphinx-version-detection
            (lambda _
              ;; The build system runs 'sphinx-build --version' to verify that
@@ -629,8 +631,7 @@ firmware blobs.  You can
              ;; .sphinx-build-real executable name created by the Sphinx wrapper.
              (substitute* "configure"
                (("\\$SPHINX --version 2>&1")
-                "$SPHINX --version 2>&1 | sed 's/.sphinx-build-real/sphinx-build/g'"))
-             #t))
+                "$SPHINX --version 2>&1 | sed 's/.sphinx-build-real/sphinx-build/g'"))))
 
          ;; The build system invokes Cabal and GHC, which do not work with
          ;; GHC_PACKAGE_PATH: <https://github.com/haskell/cabal/issues/3728>.
@@ -644,13 +645,11 @@ firmware blobs.  You can
                (("\\$\\(CABAL\\)")
                 "$(CABAL) --package-db=../package.conf.d")
                (("\\$\\(GHC\\)")
-                "$(GHC) -package-db=../package.conf.d"))
-             #t))
+                "$(GHC) -package-db=../package.conf.d"))))
          (add-after 'configure 'make-ghc-use-shared-libraries
            (lambda _
              (substitute* "Makefile"
-               (("HFLAGS =") "HFLAGS = -dynamic -fPIC"))
-             #t))
+               (("HFLAGS =") "HFLAGS = -dynamic -fPIC"))))
          (add-after 'configure 'fix-installation-directories
            (lambda _
              (substitute* "Makefile"
@@ -660,8 +659,7 @@ firmware blobs.  You can
                ;; Similarly, do not attempt to install the sample ifup scripts
                ;; to /etc/ganeti.
                (("\\$\\(DESTDIR\\)\\$\\(ifupdir\\)")
-                "$(DESTDIR)${prefix}$(ifupdir)"))
-             #t))
+                "$(DESTDIR)${prefix}$(ifupdir)"))))
          (add-before 'build 'adjust-tests
            (lambda _
              ;; Disable tests that can not run.  Do it early to prevent
@@ -686,15 +684,13 @@ firmware blobs.  You can
              ;; the Python interpreter, which does not work very well for us.
              (substitute* "Makefile"
                (("PYTHONPATH=")
-                (string-append "PYTHONPATH=" (getenv "PYTHONPATH") ":")))
-             #t))
+                (string-append "PYTHONPATH=" (getenv "PYTHONPATH") ":")))))
          (add-after 'build 'build-bash-completions
            (lambda _
              (let ((orig-pythonpath (getenv "PYTHONPATH")))
                (setenv "PYTHONPATH" (string-append ".:" orig-pythonpath))
                (invoke "./autotools/build-bash-completion")
-               (setenv "PYTHONPATH" orig-pythonpath)
-               #t)))
+               (setenv "PYTHONPATH" orig-pythonpath))))
          (add-before 'check 'pre-check
            (lambda* (#:key inputs #:allow-other-keys)
              ;; Set TZDIR so that time zones are found.
@@ -732,15 +728,14 @@ firmware blobs.  You can
                (for-each (lambda (file)
                            (symlink "../../src/htools" file))
                          '("hspace" "hscan" "hinfo" "hbal" "hroller"
-                           "hcheck" "hail" "hsqueeze")))
-             #t))
+                           "hcheck" "hail" "hsqueeze")))))
          (add-after 'install 'install-bash-completions
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (compdir (string-append out "/etc/bash_completion.d")))
                (mkdir-p compdir)
                (copy-file "doc/examples/bash_completion"
-                             (string-append compdir "/ganeti"))
+                          (string-append compdir "/ganeti"))
                ;; The one file contains completions for many different
                ;; executables.  Create symlinks for found completions.
                (with-directory-excursion compdir
@@ -759,11 +754,10 @@ firmware blobs.  You can
                                       ;; Note that 'burnin' is listed with the
                                       ;; absolute file name, which is why we
                                       ;; run everything through 'basename'.
-                                      (cons (basename (car (reverse (string-split
-                                                                     line #\ ))))
-                                            progs))
-                                (loop (read-line port) progs))))))))
-               #t)))
+                                      (match (string-split line #\ )
+                                        ((commands ... prog)
+                                         (cons (basename prog) progs))))
+                                (loop (read-line port) progs)))))))))))
          ;; Wrap all executables with PYTHONPATH.  We can't borrow the phase
          ;; from python-build-system because we also need to wrap the scripts
          ;; in $out/lib/ganeti such as "node-daemon-setup".
@@ -786,7 +780,7 @@ firmware blobs.  You can
                             (or (string-contains shebang "/bin/bash")
                                 (string-contains shebang "/bin/sh")))))))
 
-               (define (wrap? file)
+               (define* (wrap? file #:rest _)
                  ;; Do not wrap shell scripts because some are meant to be
                  ;; sourced, which breaks if they are wrapped.  We do wrap
                  ;; the Haskell executables because some call out to Python
@@ -798,10 +792,9 @@ firmware blobs.  You can
                (for-each (lambda (file)
                            (wrap-program file
                              `("PYTHONPATH" ":" prefix (,PYTHONPATH))))
-                         (filter wrap?
-                                 (append (find-files (string-append lib "/ganeti"))
-                                         (find-files sbin))))
-               #t))))))
+                         (append-map (cut find-files <> wrap?)
+                                     (list (string-append lib "/ganeti")
+                                           sbin)))))))))
     (native-inputs
      `(("haskell" ,ghc)
        ("cabal" ,cabal-install)
@@ -1551,14 +1544,14 @@ domains, their live performance and resource utilization statistics.")
 (define-public criu
   (package
     (name "criu")
-    (version "3.15")
+    (version "3.16")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.openvz.org/criu/criu-"
                                   version ".tar.bz2"))
               (sha256
                (base32
-                "09d0j24x0cyc7wkgi7cnxqgfjk7kbdlm79zxpj8d356sa3rw2z24"))))
+                "13x4s7nms3ckb016d03icdsrw4k6f7i33qz9n84fzhmibm0grj70"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -1579,8 +1572,7 @@ domains, their live performance and resource utilization statistics.")
              (setenv "C_INCLUDE_PATH"
                      (string-append (assoc-ref inputs "libnl")
                                     "/include/libnl3:"
-                                    (or (getenv "C_INCLUDE_PATH") "")))
-             #t))
+                                    (or (getenv "C_INCLUDE_PATH") "")))))
          (add-after 'configure 'fix-documentation
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (substitute* "Documentation/Makefile"
@@ -1590,8 +1582,7 @@ domains, their live performance and resource utilization statistics.")
                  (assoc-ref inputs "docbook-xsl") "/xml/xsl/"
                  ,(package-name docbook-xsl) "-"
                  ,(package-version docbook-xsl)
-                 "/manpages/docbook.xsl")))
-             #t))
+                 "/manpages/docbook.xsl")))))
          (add-after 'unpack 'hardcode-variables
            (lambda* (#:key inputs #:allow-other-keys)
              ;; Hardcode arm version detection
@@ -1603,8 +1594,7 @@ domains, their live performance and resource utilization statistics.")
              (substitute* "lib/Makefile"
                (("\\$\\(PYTHON\\)")
                 (string-append (assoc-ref inputs "python")
-                               "/bin/python")))
-             #t))
+                               "/bin/python")))))
          (add-before 'build 'fix-symlink
            (lambda* (#:key inputs #:allow-other-keys)
              ;; The file 'images/google/protobuf/descriptor.proto' points to
@@ -1614,8 +1604,7 @@ domains, their live performance and resource utilization statistics.")
                     (source (string-append (assoc-ref inputs "protobuf")
                                            "/include/" file)))
                (delete-file target)
-               (symlink source target)
-               #t)))
+               (symlink source target))))
          (add-after 'install 'wrap
            (lambda* (#:key inputs outputs #:allow-other-keys)
              ;; Make sure 'crit' runs with the correct PYTHONPATH.
@@ -1627,8 +1616,12 @@ domains, their live performance and resource utilization statistics.")
                                          "/site-packages:"
                                          (getenv "PYTHONPATH"))))
                (wrap-program (string-append out "/bin/crit")
-                 `("PYTHONPATH" ":" prefix (,path))))
-             #t)))))
+                 `("PYTHONPATH" ":" prefix (,path))))))
+         (add-after 'install 'delete-static-libraries
+           ;; Not building/installing these at all doesn't seem to be supported.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (for-each delete-file (find-files out "\\.a$"))))))))
     (inputs
      `(("protobuf" ,protobuf)
        ("python" ,python-2)
@@ -2264,14 +2257,14 @@ administrators and developers in managing the database.")
 (define-public osinfo-db
   (package
     (name "osinfo-db")
-    (version "20210809")
+    (version "20210903")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://releases.pagure.org/libosinfo/osinfo-db-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "16gas6ahxwim1vdjlc4p1gm6q5gfy25h82ngykcm94x69sl6qsan"))))
+                "0d08ffvwdzwr16gv7pz2r7brds5gciirz8ixs97s5ly03grd7rrh"))))
     (build-system trivial-build-system)
     (arguments
      `(#:modules ((guix build utils))
@@ -2285,8 +2278,7 @@ administrators and developers in managing the database.")
                  (string-append (assoc-ref %build-inputs "osinfo-db-tools")
                                 "/bin/osinfo-db-import")))
            (mkdir-p osinfo-dir)
-           (invoke osinfo-db-import "--dir" osinfo-dir source)
-           #t))))
+           (invoke osinfo-db-import "--dir" osinfo-dir source)))))
     (native-inputs
      `(("intltool" ,intltool)
        ("osinfo-db-tools" ,osinfo-db-tools)))

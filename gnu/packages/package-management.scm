@@ -142,8 +142,8 @@
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
   (let ((version "1.3.0")
-        (commit "e9ca32ed185d5024539d28c211944f13100df6f2")
-        (revision 7))
+        (commit "c3c502896b1454b345ee9f17d20063853652a35a")
+        (revision 10))
     (package
       (name "guix")
 
@@ -159,7 +159,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "0lkdjdcllk1sa25gg0vmmq87ifyc1d75ci20gjpp6qr2403m4wcx"))
+                  "037nlr5z8qmq2zp0slcg5lyhcdp7v6vxl1f36wkqrw9xzgq8k6kf"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -1189,8 +1189,8 @@ environments.")
     (license (list license:gpl3+ license:agpl3+ license:silofl1.1))))
 
 (define-public guix-build-coordinator
-  (let ((commit "c2f0c5b36f8294bb4c699806f9e8c576ae9b9f90")
-        (revision "33"))
+  (let ((commit "a4d0ec6bc564bbe98d3e6c03be41de16edbda928")
+        (revision "35"))
     (package
       (name "guix-build-coordinator")
       (version (git-version "0" revision commit))
@@ -1201,7 +1201,7 @@ environments.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "0nlh1cyvpbsfy9pk22xmgx0vb625j7qgv79y527q91c9fjn7g37v"))
+                  "0qa7qkskp9xzhyl0fgbm98f8apy8cn2yc9gpxhw0dfc9bkbs1pb9"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments

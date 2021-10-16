@@ -42,6 +42,7 @@
   #:use-module (gnu packages bash)
   #:use-module (gnu packages certs)
   #:use-module (gnu packages check)
+  #:use-module (gnu packages curl)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages compression)
@@ -69,6 +70,7 @@
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages ragel)
+  #:use-module (gnu packages serialization)
   #:use-module (gnu packages shells)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages swig)
@@ -82,10 +84,61 @@
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix utils)
+  #:use-module (guix build-system copy)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system meson)
   #:use-module (guix build-system trivial))
+
+(define-public cloudflare-cli
+  (let ((commit "2d986d3ec1b0e3158c4bd40e8918947cb74aa392")
+        (revision "1"))
+    (package
+      (name "cloudflare-cli")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/earlchew/cloudflare-cli")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "0f86g6n86kwykl3jnhqjrdfy8ybkp03ghr3dlr70q2552qw4axw2"))))
+      (build-system copy-build-system)
+      (arguments
+       `(#:install-plan '(("cloudflare-cli" "bin/") ("cloudflare-cli.sh" "bin/"))
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'find-jsonsh
+             (lambda* (#:key inputs #:allow-other-keys)
+               (substitute* "cloudflare-cli.sh"
+                 (("\\$\\{0%/\\*\\}/jsonsh")
+                  (string-append (assoc-ref inputs "json.sh") "/bin/JSON.sh")))
+               #t))
+           (add-after 'install 'wrap-program
+             (lambda* (#:key inputs outputs #:allow-other-keys)
+               (wrap-program (string-append (assoc-ref outputs "out") "/bin/cloudflare-cli")
+                 `("PATH" ":" prefix
+                   (,(string-join
+                      (map (lambda (in) (string-append (assoc-ref inputs in) "/bin"))
+                           '("grep" "curl"))
+                      ":"))))
+               #t)))))
+      (inputs
+       `(("bash-minimal" ,bash-minimal)
+         ("curl" ,curl)
+         ("grep" ,grep)
+         ("json.sh" ,json.sh)))
+      (synopsis
+        "CLI to edit Cloudflare DNS records")
+      (description
+        "This command line tool to update Cloudfare DNS records is useful for tasks
+such as updating dynamic DNS records or updating DNS records for the ACME DNS-01
+protocol.")
+      (home-page "https://github.com/earlchew/cloudflare-cli")
+      (license license:expat))))
 
 (define-public ldns
   (package
@@ -278,7 +331,7 @@ prompt the user with the option to go with insecure DNS only.")
 (define-public dnsmasq
   (package
     (name "dnsmasq")
-    (version "2.85")
+    (version "2.86")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -286,7 +339,7 @@ prompt the user with the option to go with insecure DNS only.")
                     version ".tar.xz"))
               (sha256
                (base32
-                "1yhjwgz8g5qrqvxh6bbmg3443zi8qqjks3q872wyb1zn7n0d765d"))))
+                "027b0ycw8h8yvvkq46vnr7dv8iqn5srm4kr7hm7sq110kvy2rm98"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -296,7 +349,7 @@ prompt the user with the option to go with insecure DNS only.")
      `(#:phases
        (modify-phases %standard-phases (delete 'configure))
        #:make-flags (list (string-append "PREFIX=" (assoc-ref %outputs "out"))
-                          "CC=gcc"
+                          (string-append "CC=" ,(cc-for-target))
                           "COPTS=\"-DHAVE_DBUS\"")
        #:tests? #f))                    ; no ‘check’ target
     (home-page "http://www.thekelleys.org.uk/dnsmasq/doc.html")
@@ -606,6 +659,60 @@ run in a @code{chroot} jail, thus making any security flaws in NSD less likely
 to result in system-wide compromise.")
     (license (list license:bsd-3))))
 
+(define-public rbldnsd
+  (package
+    (name "rbldnsd")
+    (version "0.998b")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/spamhaus/rbldnsd")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0jj3kyir43qnjgd9rk0wz13iggf3p4p1779v0wgmx3ci0ypnglcr"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'configure
+           ;; The ./configure is hand-written and doesn't ignore unknown
+           ;; standard autotools options like CONFIG_SHELL.
+           (lambda _
+             (invoke "./configure")))
+         (replace 'install
+           ;; There is no Makefile ‘install’ target.  contrib/debian/rules has
+           ;; one but relies on Debian-specific helpers, so install manually.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out  (assoc-ref outputs "out"))
+                    (sbin (string-append out "/sbin"))
+                    (man8 (string-append out "/share/man/man8")))
+               (install-file "rbldnsd" sbin)
+               (install-file "rbldnsd.8" man8)))))))
+    (inputs
+     `(("zlib" ,zlib)))
+    (native-inputs
+     ;; For running the test suite.  Python 3 is not yet supported by a release:
+     ;; see <https://github.com/spamhaus/rbldnsd/issues/16>.
+     `(("python" ,python-2)))
+    (home-page "https://rbldnsd.io/")
+    (synopsis
+     "Small nameserver to efficiently serve @acronym{DNSBL, DNS blocklists}")
+    (description
+     "This package contains a small DNS daemon especially made to handle queries
+of @acronym{DNSBL, DNS blocklists}, a simple way to publish IP addresses and/or
+(domain) names which are somehow notable.  Such lists are frequently used to
+refuse e-mail service to clients known to send unwanted (spam) messages.
+
+@command{rbldnsd} is not a general-purpose nameserver.  It answers to a limited
+variety of queries.  This makes it extremely fast---greatly outperforming both
+BIND and djbdns---whilst using relatively little memory.")
+    (license
+     (list license:bsd-3                ; btrie.[ch]
+           license:lgpl2.1+             ; qsort.c
+           license:gpl2+))))            ; the rest
+
 (define-public unbound
   (package
     (name "unbound")
@@ -769,16 +876,16 @@ served by AS112.  Stub and forward zones are supported.")
 (define-public yadifa
   (package
     (name "yadifa")
-    (version "2.5.0")
+    (version "2.5.1")
     (source
-     (let ((build "10188"))
+     (let ((build "10306"))
        (origin
          (method url-fetch)
          (uri
           (string-append "https://www.yadifa.eu/sites/default/files/releases/"
                          "yadifa-" version "-" build ".tar.gz"))
          (sha256
-          (base32 "05ps6fif3sqn6yzkprnp1cm81f3ja4vqc0r6vh7nvzl73gv4rp2w")))))
+          (base32 "051h4pmh9llwj0w6h0v8fl2f146fb26cv3w5an9dmfh845sv6hzr")))))
     (build-system gnu-build-system)
     (native-inputs
      `(("which" ,which)))
@@ -817,7 +924,7 @@ Extensions} (DNSSEC).")
 (define-public knot
   (package
     (name "knot")
-    (version "3.0.7")
+    (version "3.1.2")
     (source
      (origin
        (method git-fetch)
@@ -826,7 +933,7 @@ Extensions} (DNSSEC).")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ihd0lfh0r1nzz2di2rqkrx5j1017xv7m54irlhccx21inwv6g3y"))
+        (base32 "1kyjf6d1jx8q0zjzwy06f4d3ar5cbbqxka8cc7ckwmbpf1n6cij5"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -834,8 +941,7 @@ Extensions} (DNSSEC).")
            (for-each delete-file (find-files "." "\\.c\\.[gt]."))
            (delete-file "src/libknot/yparser/ypbody.c")
            ;; Remove bundled library to ensure we always use the system's.
-           (delete-file-recursively "src/contrib/libbpf")
-           #t))))
+           (delete-file-recursively "src/contrib/libbpf")))))
     (build-system gnu-build-system)
     (outputs (list "out" "doc" "lib" "tools"))
     (arguments
@@ -847,9 +953,10 @@ Extensions} (DNSSEC).")
              (string-append "--libdir=" (assoc-ref %outputs "lib") "/lib")
              "--sysconfdir=/etc"
              "--localstatedir=/var"
+             "--disable-static"         ; static libraries are built by default
              "--enable-dnstap"          ; let tools read/write capture files
              "--enable-fastparser"      ; disabled by default when .git/ exists
-             "--enable-xdp=auto"        ; XXX [=yes] currently means =embedded
+             "--enable-xdp=yes"
              "--with-module-dnstap=yes") ; detailed query capturing & logging
        #:phases
        (modify-phases %standard-phases
@@ -859,8 +966,7 @@ Extensions} (DNSSEC).")
            (lambda _
              (substitute* "configure.ac"
                (("enable_xdp=yes" match)
-                (string-append match "\nlibbpf_LIBS=\"$libbpf_LIBS -lz\"")))
-             #true))
+                (string-append match "\nlibbpf_LIBS=\"$libbpf_LIBS -lz\"")))))
          (add-before 'bootstrap 'update-parser
            (lambda _
              (with-directory-excursion "src"
@@ -869,22 +975,32 @@ Extensions} (DNSSEC).")
            (lambda _
              ;; Don't install empty directories like ‘/etc’ outside the store.
              ;; This is needed even when using ‘make config_dir=... install’.
-             (substitute* "src/Makefile.in" (("\\$\\(INSTALL\\) -d") "true"))
-             #t))
+             (substitute* "src/Makefile.in" (("\\$\\(INSTALL\\) -d") "true"))))
          (add-after 'build 'build-info
-           (lambda _
-             (invoke "make" "info")))
+           (lambda* (#:key make-flags parallel-build? #:allow-other-keys)
+             (apply invoke "make" "info"
+                    `(,@(if parallel-build?
+                            `("-j" ,(number->string (parallel-job-count)))
+                            '())
+                      ,@make-flags))))
          (replace 'install
-           (lambda* (#:key outputs #:allow-other-keys)
+           (lambda* (#:key make-flags outputs parallel-build? #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (doc (string-append out "/share/doc/" ,name "-" ,version))
                     (etc (string-append doc "/examples/etc")))
-               (invoke "make"
-                       (string-append "config_dir=" etc)
-                       "install"))))
+               (apply invoke "make" "install"
+                      (string-append "config_dir=" etc)
+                      `(,@(if parallel-build?
+                              `("-j" ,(number->string (parallel-job-count)))
+                              '())
+                        ,@make-flags)))))
          (add-after 'install 'install-info
-           (lambda _
-             (invoke "make" "install-info")))
+           (lambda* (#:key make-flags parallel-build? #:allow-other-keys)
+             (apply invoke "make" "install-info"
+                    `(,@(if parallel-build?
+                            `("-j" ,(number->string (parallel-job-count)))
+                            '())
+                      ,@make-flags))))
          (add-after 'install 'break-circular-:lib->:out-reference
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((lib (assoc-ref outputs "lib")))
@@ -892,8 +1008,7 @@ Extensions} (DNSSEC).")
                            (substitute* file
                              (("(prefix=).*" _ assign)
                               (string-append assign lib "\n"))))
-                         (find-files lib "\\.pc$"))
-               #true)))
+                         (find-files lib "\\.pc$")))))
          (add-after 'install 'split-:tools
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out   (assoc-ref outputs "out"))
@@ -902,8 +1017,7 @@ Extensions} (DNSSEC).")
                (rename-file (string-append out   "/bin")
                             (string-append tools "/bin"))
                (rename-file (string-append out   "/share/man/man1")
-                            (string-append tools "/share/man/man1"))
-               #true))))))
+                            (string-append tools "/share/man/man1"))))))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
@@ -921,6 +1035,7 @@ Extensions} (DNSSEC).")
        ("libedit" ,libedit)
        ("libelf" ,libelf)
        ("libidn" ,libidn)
+       ("libmnl" ,libmnl)
        ("libnghttp2" ,nghttp2 "lib")
        ("liburcu" ,liburcu)
        ("lmdb" ,lmdb)

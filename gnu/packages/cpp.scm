@@ -144,7 +144,7 @@ use by the C++ Core Guidelines maintained by the Standard C++ Foundation.")
 (define-public libzen
   (package
     (name "libzen")
-    (version "0.4.38")
+    (version "0.4.39")
     (source (origin
               (method url-fetch)
               ;; Warning: This source has proved unreliable 1 time at least.
@@ -155,7 +155,7 @@ use by the C++ Core Guidelines maintained by the Standard C++ Foundation.")
                                   "libzen_" version ".tar.bz2"))
               (sha256
                (base32
-                "1nkygc17sndznpcf71fdrhwpm8z9a3hc9csqlafwswh49axhfkjr"))))
+                "1rwaxmid9iv65n0y6xlcyxxydsvihjni9ldxpg6pbqz43amp49xx"))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
@@ -167,8 +167,7 @@ use by the C++ Core Guidelines maintained by the Standard C++ Foundation.")
        (modify-phases %standard-phases
          (add-after 'unpack 'pre-configure
            (lambda _
-             (chdir "Project/GNU/Library")
-             #t)))))
+             (chdir "Project/GNU/Library"))))))
     (home-page "https://github.com/MediaArea/ZenLib")
     (synopsis "C++ utility library")
     (description "ZenLib is a C++ utility library.  It includes classes for handling
@@ -836,7 +835,7 @@ standard GNU style syntax for options.")
 (define-public folly
   (package
     (name "folly")
-    (version "2021.04.26.00")
+    (version "2021.10.04.00")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -845,7 +844,7 @@ standard GNU style syntax for options.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0s3jb02qjl9f4gfj01pa01cilkfpc4p0gbpn6bg5vcicyj76garg"))))
+                "1h7apl42idymqra0xgw7s5ys3dxrqd8gq0f99g048k4g5fxl64s9"))))
     (build-system cmake-build-system)
     (arguments
      '(;; Tests must be explicitly enabled
@@ -882,10 +881,49 @@ of C++14 components that complements @code{std} and Boost.")
     (supported-systems '("aarch64-linux" "x86_64-linux"))
     (license license:asl2.0)))
 
+(define-public aws-crt-cpp
+  (let* ((commit "c2d6ffa5597825111cc76ad71ffc6aef664d0f25")
+         (revision "1"))
+    (package
+      (name "aws-crt-cpp")
+      (version (git-version "0.14.2" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://github.com/awslabs/aws-crt-cpp")
+                      (commit commit)))
+                (file-name (git-file-name name version))
+                (sha256
+                 (base32
+                  "0l7iwynk2rgzjnr1hi1raazghmk4m7pj47vdq2kf2cfz0b6v9jf5"))
+                (patches
+                 (search-patches
+                  "aws-crt-cpp-cmake-prefix.patch"
+                  "aws-crt-cpp-disable-networking-tests.patch"))))
+      (build-system cmake-build-system)
+      (arguments
+       '(#:configure-flags
+         '("-DBUILD_SHARED_LIBS=ON"
+           "-DBUILD_DEPS=OFF")))
+      (propagated-inputs
+       `(("aws-c-auth" ,aws-c-auth)
+         ("aws-c-cal" ,aws-c-cal)
+         ("aws-c-event-stream" ,aws-c-event-stream)
+         ("aws-c-http" ,aws-c-http)
+         ("aws-c-mqtt" ,aws-c-mqtt)
+         ("aws-c-s3" ,aws-c-s3)))
+      (synopsis "C++ wrapper for Amazon Web Services C libraries")
+      (description "The AWS Common Runtime (CRT) library provides a C++ wrapper
+implementation for the following @acronym{AWS,Amazon Web Services} C libraries:
+aws-c-auth, aws-c-cal, aws-c-common, aws-c-compression, aws-c-event-stream,
+aws-c-http, aws-c-io, aws-c-mqtt, aws-checksums, and s2n.")
+      (home-page "https://github.com/awslabs/aws-crt-cpp")
+      (license license:asl2.0))))
+
 (define-public aws-sdk-cpp
   (package
     (name "aws-sdk-cpp")
-    (version "1.8.159")
+    (version "1.9.92")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -894,7 +932,12 @@ of C++14 components that complements @code{std} and Boost.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0jpfv9x82nq7hcix9in7qgrc8009dwpg6gr96hlgmcvqrqckd2r9"))))
+                "0nbq1qivykfg8jmrn8d0k6fcfa5dw9s90wnwddh7ia4zafmby7pd"))
+              (patches
+               (search-patches
+                "aws-sdk-cpp-cmake-prefix.patch"
+                "aws-sdk-cpp-disable-networking-tests.patch"
+                "aws-sdk-cpp-disable-werror.patch"))))
     (build-system cmake-build-system)
     (arguments
      '(;; Tests are run during the build phase.
@@ -903,11 +946,9 @@ of C++14 components that complements @code{std} and Boost.")
        '("-DBUILD_SHARED_LIBS=ON"
          "-DBUILD_DEPS=OFF")))
     (propagated-inputs
-     `(("aws-c-common" ,aws-c-common)
-       ("aws-c-event-stream" ,aws-c-event-stream)))
+     `(("aws-crt-cpp" ,aws-crt-cpp)))
     (inputs
-     `(("aws-checksums" ,aws-checksums)
-       ("curl" ,curl)
+     `(("curl" ,curl)
        ("openssl" ,openssl)
        ("zlib" ,zlib)))
     (synopsis "Amazon Web Services SDK for C++")
@@ -1030,7 +1071,7 @@ feature set with a simple and intuitive interface.")
 (define-public caf
   (package
     (name "caf")
-    (version "0.18.0")
+    (version "0.18.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1039,7 +1080,7 @@ feature set with a simple and intuitive interface.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1c3spd6vm1h9qhlk5c4fdwi6nbqx5vwz2zvv6qp0rj1hx6xpq3cx"))))
+                "04b4kjisb5wzq6pilh8xzbxn7qcjgppl8k65hfv0zi0ja8fyp1xk"))))
     (build-system cmake-build-system)
     (arguments
      '(#:configure-flags
@@ -1054,8 +1095,8 @@ computation.")
     (license license:bsd-3)))
 
 (define-public pcg-cpp
-  (let ((commit "5b5cac8d61339e810c5dbb4692d868a1d7ca1b2d")
-        (revision "1"))
+  (let ((commit "ffd522e7188bef30a00c74dc7eb9de5faff90092")
+        (revision "2"))
     (package
       (name "pcg-cpp")
       (version (git-version "0.98.1" revision commit))
@@ -1067,7 +1108,7 @@ computation.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "1s9dcd4iydlc1xj9m6f7c52nlyx99klk043sk7arqy6kp7gdaa33"))))
+                  "0yxyqaphcc38zilpwpmssrl8ly1v6dimscqk2f4rcv1h22dinnqx"))))
       (build-system gnu-build-system)
       (arguments
        `(#:test-target "test"
@@ -1309,4 +1350,30 @@ of reading and writing XML.")
     (synopsis "Data templating language")
     (description "Jsonnet is a templating language extending JSON
 syntax with variables, conditions, functions and more.")
+    (license license:asl2.0)))
+
+(define-public simdjson
+  (package
+    (name "simdjson")
+    (version "1.0.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/simdjson/simdjson")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "08qpsw0i8481xlyyghzyszb1vh4c8i7krzzghvr9m4yg394vf6zn"))))
+    (build-system cmake-build-system)
+    (arguments
+     '(#:tests? #f                      ; tests require downloading dependencies
+       #:configure-flags
+       '("-DBUILD_SHARED_LIBS=ON")))
+    (synopsis "JSON parser for C++ using SIMD instructions")
+    (description
+     "The simdjson library uses commonly available SIMD instructions and
+microparallel algorithms to implement a strict JSON parser with UTF-8
+validation.")
+    (home-page "https://github.com/simdjson/simdjson")
     (license license:asl2.0)))

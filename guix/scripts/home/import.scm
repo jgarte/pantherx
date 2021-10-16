@@ -41,22 +41,20 @@
   (let ((rc (string-append (getenv "HOME") "/.bashrc"))
         (profile (string-append (getenv "HOME") "/.bash_profile"))
         (logout (string-append (getenv "HOME") "/.bash_logout")))
-    `((gnu home-services bash)
+    `((gnu home services bash)
       (service home-bash-service-type
                  (home-bash-configuration
                   ,@(if (file-exists? rc)
                         `((bashrc
-                           (list (slurp-file-gexp (local-file ,rc)))))
+                           (list (local-file ,rc))))
                         '())
                   ,@(if (file-exists? profile)
                         `((bash-profile
-                           (list (slurp-file-gexp
-                                  (local-file ,profile)))))
+                           (list (local-file ,profile))))
                         '())
                   ,@(if (file-exists? logout)
                         `((bash-logout
-                           (list (slurp-file-gexp
-                                  (local-file ,logout)))))
+                           (list (local-file ,logout))))
                         '()))))))
 
 

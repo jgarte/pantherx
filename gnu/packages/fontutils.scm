@@ -309,7 +309,7 @@ work with most software requiring Type 1 fonts.")
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
-     `(("brotli" ,google-brotli)))
+     `(("brotli" ,brotli)))
     (synopsis "Libraries and tools for WOFF2 font format")
     (description "WOFF2 provides libraries and tools to handle the Web Open
 Font Format (WOFF).")
@@ -800,7 +800,7 @@ maintain the Noto Fonts project.")
 (define-public fcft
   (package
     (name "fcft")
-    (version "2.4.1")
+    (version "2.4.5")
     (home-page "https://codeberg.org/dnkl/fcft")
     (source (origin
               (method git-fetch)
@@ -808,7 +808,7 @@ maintain the Noto Fonts project.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "00rwh5qfayihrq0wjx8pxqw5ah6g5ym6raxvdbqb6g6rk7m2j423"))))
+                "0z4bqap88pydkgcxrsvm3fmcyhi9x7z8knliarvdcvqlk7qnyzfh"))))
     (build-system meson-build-system)
     (arguments
      `(#:meson ,meson-0.55))

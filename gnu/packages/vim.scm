@@ -73,7 +73,7 @@
 (define-public vim
   (package
     (name "vim")
-    (version "8.2.2689")
+    (version "8.2.3487")
     (source (origin
              (method git-fetch)
              (uri (git-reference
@@ -82,7 +82,7 @@
              (file-name (git-file-name name version))
              (sha256
               (base32
-               "0l0hkr8cw7fdsfc5zzcxx3q1wmv9k3hrgalvffq0l69lviqdgh0p"))))
+               "1s09jvr1vv9zjk352vbfidfy5fidbf83kz2vk0kk6zv24j1yck24"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -98,6 +98,7 @@
              (substitute* '("src/testdir/Makefile"
                             "src/testdir/test_normal.vim"
                             "src/testdir/test_popupwin.vim"
+                            "src/testdir/test_shell.vim"
                             "src/testdir/test_system.vim"
                             "src/testdir/test_terminal.vim"
                             "src/testdir/test_terminal2.vim")
@@ -474,7 +475,7 @@ trouble using them, because you do not have to remember each snippet name.")
 (define-public vim-fugitive
   (package
     (name "vim-fugitive")
-    (version "3.3")
+    (version "3.4")
     (source
       (origin
         (method git-fetch)
@@ -484,13 +485,14 @@ trouble using them, because you do not have to remember each snippet name.")
         (file-name (git-file-name name version))
         (sha256
          (base32
-          "1ybmy2dk9zsmd3kyyj40qn20gzgd16n5p77sjxp8bspx3zb7km5y"))))
+          "0vgyp0rabrxjy9mpdnf221vjk3q38pls7az884gvnjjzdly18xmp"))))
     (build-system copy-build-system)
     (arguments
      '(#:install-plan
        '(("autoload" "share/vim/vimfiles/")
          ("doc" "share/vim/vimfiles/")
          ("ftdetect" "share/vim/vimfiles/")
+         ("ftplugin" "share/vim/vimfiles/")
          ("plugin" "share/vim/vimfiles/")
          ("syntax" "share/vim/vimfiles/"))))
     (home-page "https://github.com/tpope/vim-fugitive")
@@ -1067,3 +1069,32 @@ your code every time you make a change.  @code{Vim-slime} is an attempt at
 getting some of these features into Vim.  It works with any REPL and isn't tied
 to Lisp.")
       (license license:expat))))
+
+(define-public vim-paredit
+  ;; The last tagged version is from August 2013.
+  (let ((commit "97d51d099523b37bb35cbcf3564cbfb46e66e4ec")
+        (revision "1"))
+    (package
+      (name "vim-paredit")
+      (version (git-version "0.9.11" revision commit))
+      (source
+        (origin
+          (method git-fetch)
+          (uri (git-reference
+                 (url "https://github.com/kovisoft/paredit")
+                 (commit commit)))
+          (file-name (git-file-name name version))
+          (sha256
+           (base32 "07d5s20r0ssd7rir45vy0fqlci44gha1a81rcilgar227f3nw328"))))
+      (build-system copy-build-system)
+      (arguments
+       '(#:install-plan
+         '(("doc" "share/vim/vimfiles/")
+           ("plugin" "share/vim/vimfiles/"))))
+      (home-page "https://github.com/kovisoft/paredit")
+      (synopsis "Vim plugin for structured editing of Lisp S-expressions")
+      (description
+       "Paredit performs structured editing of Lisp S-expressions in Vim.
+@code{Paredit.vim} is similar to @code{paredit.el} for Emacs.")
+      ;; License listed in plugin/paredit.vim.
+      (license license:public-domain))))

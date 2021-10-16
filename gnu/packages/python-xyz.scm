@@ -51,7 +51,7 @@
 ;;; Copyright © 2016, 2018 Tomáš Čech <sleep_walker@gnu.org>
 ;;; Copyright © 2018, 2019, 2020, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2018 Oleg Pykhalov <go.wigust@gmail.com>
-;;; Copyright © 2018, 2019 Clément Lassieur <clement@lassieur.org>
+;;; Copyright © 2018, 2019, 2021 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2018, 2019, 2020, 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2018 Luther Thompson <lutheroto@gmail.com>
 ;;; Copyright © 2018 Vagrant Cascadian <vagrant@debian.org>
@@ -108,6 +108,7 @@
 ;;; Copyright © 2021 Simon Streit <simon@netpanic.org>
 ;;; Copyright © 2021 Daniel Meißner <daniel.meissner-i4k@ruhr-uni-bochum.de>
 ;;; Copyright © 2021 Pradana Aumars <paumars@courrier.dev>
+;;; Copyright © 2021 Felix Gruber <felgru@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -3098,14 +3099,14 @@ code introspection, and logging.")
 (define-public python-pbr-minimal
   (package
     (name "python-pbr-minimal")
-    (version "3.0.1")
+    (version "5.5.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "pbr" version))
        (sha256
         (base32
-         "14fs5acnalnb3h62s7q7av239j541fk0n0z0lawh4h09b1s93s6p"))))
+         "1j8k5d4rdhy5bw5ai1vkjzln2albah94in3vvyvxa0n42fv81baz"))))
     (build-system python-build-system)
     (arguments
      `(#:tests? #f))
@@ -3307,6 +3308,30 @@ with sensible defaults out of the box.")
        (sha256
         (base32 "0njsm0wn31l21bi118g5825ma5sa3rwn7v2x4wjd7yiiahkri337"))))
     (arguments `())))
+
+(define-public python-cligj
+  (package
+    (name "python-cligj")
+    (version "0.7.2")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "cligj" version))
+        (sha256
+          (base32
+            "09vbkik6kyn6yrqzl2r74vaybjk8kjykvi975hy3fsrm4gb17g54"))))
+    (build-system python-build-system)
+    (propagated-inputs
+      `(("python-click" ,python-click)))
+    (native-inputs
+      `(("python-pytest-cov" ,python-pytest-cov)))
+    (home-page "https://github.com/mapbox/cligj")
+    (synopsis "Click params for commmand line interfaces to GeoJSON")
+    (description
+      "cligj is for Python developers who create command line interfaces
+for geospatial data.  cligj allows you to quickly build consistent,
+well-tested and interoperable CLIs for handling GeoJSON.")
+    (license license:bsd-3)))
 
 (define-public python-vcversioner
   (package
@@ -4340,7 +4365,7 @@ ecosystem, but can naturally be used also by other projects.")
 (define-public python-robotframework
   (package
     (name "python-robotframework")
-    (version "3.2.2")
+    (version "4.1.2")
     ;; There are no tests in the PyPI archive.
     (source
      (origin
@@ -4350,7 +4375,7 @@ ecosystem, but can naturally be used also by other projects.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0if0h3myb9m3hgmn1phrhq8pfp89kfqsaq32vmfdjkyjdj7y59ds"))
+        (base32 "0s6lakbd8h1pa4lfdj18sm13gpywszgpcns4hz026a4kam787kby"))
        (patches (search-patches
                  "python-robotframework-source-date-epoch.patch"))))
     (build-system python-build-system)
@@ -4364,23 +4389,24 @@ ecosystem, but can naturally be used also by other projects.")
                         (invoke "invoke" "library-docs" "all")
                         (mkdir-p doc)
                         (copy-recursively "doc/libraries"
-                                          (string-append doc "/libraries"))
-                        #t)))
+                                          (string-append doc "/libraries")))))
                   (replace 'check
-                    (lambda* (#:key inputs #:allow-other-keys)
-                      ;; Some tests require timezone data.  Otherwise, they
-                      ;; look up /etc/localtime, which doesn't exist, and fail
-                      ;; with:
-                      ;;
-                      ;; OverflowError: mktime argument out of range
-                      (setenv "TZDIR"
-                              (string-append (assoc-ref inputs "tzdata")
-                                             "/share/zoneinfo"))
-                      (setenv "TZ" "Europe/Paris")
-
-                      (invoke "python" "utest/run.py"))))))
+                    (lambda* (#:key inputs tests? #:allow-other-keys)
+                      (when tests?
+                        ;; Some tests require timezone data.  Otherwise, they
+                        ;; look up /etc/localtime, which doesn't exist, and
+                        ;; fail with:
+                        ;;
+                        ;; OverflowError: mktime argument out of range
+                        (setenv "TZDIR"
+                                (string-append (assoc-ref inputs "tzdata")
+                                               "/share/zoneinfo"))
+                        (setenv "TZ" "Europe/Paris")
+                        (invoke "python" "utest/run.py")))))))
     (native-inputs
-     `(("python-invoke" ,python-invoke)
+     `(("python-docutils" ,python-docutils)
+       ("python-jsonschema" ,python-jsonschema)
+       ("python-invoke" ,python-invoke)
        ("python-rellu" ,python-rellu)
        ("python:tk" ,python "tk")             ;used when building the HTML doc
        ("tzdata" ,tzdata-for-tests)))
@@ -4432,7 +4458,7 @@ utility, a static analysis tool (linter) for Robot Framework source files.")
 (define-public python-robotframework-sshlibrary
   (package
     (name "python-robotframework-sshlibrary")
-    (version "3.3.0")
+    (version "3.7.0")
     ;; There are no tests in the PyPI archive.
     (source
      (origin
@@ -4443,7 +4469,7 @@ utility, a static analysis tool (linter) for Robot Framework source files.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1mk6dz2jqqndbx4yji09012q6rmadnqdywi7czvj62b0s07dr3r2"))))
+         "09ak22rh9qa9wlpvhkliyybcp4xafjhxsps28wz0pf0030771xav"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -4457,14 +4483,14 @@ utility, a static analysis tool (linter) for Robot Framework source files.")
                (invoke "invoke" "kw-docs" "project-docs")
                (mkdir-p doc)
                (for-each delete-file (find-files "docs" "\\.rst"))
-               (copy-recursively "docs" doc)
-               #t)))
+               (copy-recursively "docs" doc))))
          (replace 'check
-           (lambda _
-             ;; Some tests require an SSH server; we remove them.
-             (delete-file "utest/test_client_api.py")
-             (delete-file "utest/test_scp.py")
-             (invoke "python" "utest/run.py"))))))
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               ;; Some tests require an SSH server; we remove them.
+               (delete-file "utest/test_client_api.py")
+               (delete-file "utest/test_scp.py")
+               (invoke "python" "utest/run.py")))))))
     (propagated-inputs
      `(("python-robotframework" ,python-robotframework)
        ("python-paramiko" ,python-paramiko)
@@ -4489,6 +4515,94 @@ for SSH and SFTP.  It has the following main usages:
 @item Ensuring that files and directories exist on the remote machine.
 @end itemize")
     (license license:asl2.0)))
+
+(define-public python-robotframework-pythonlibcore
+  (package
+    (name "python-robotframework-pythonlibcore")
+    (version "3.0.0")
+    (source
+     (origin
+       (method git-fetch)               ;no tests in pypi archive
+       (uri (git-reference
+             (url "https://github.com/robotframework/PythonLibCore")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0v89v8va65l6inh0fb34qgxawx6p29pnrmw4n5941yzdi3804rc4"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'check
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (when tests?
+                        (invoke "utest/run.py")))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-pytest-mockito" ,python-pytest-mockito)
+       ("python-robotframework" ,python-robotframework)))
+    (home-page "https://github.com/robotframework/PythonLibCore")
+    (synopsis "Robot Framework Python library tools")
+    (description "PythonLibCore provides tools for creating larger test
+libraries for Robot Framework using Python.  The Robot Framework hybrid and
+dynamic library APIs give more flexibility for library than the static library
+API, but they also set requirements for libraries which need to be implemented
+in the library side.  PythonLibCore eases the problem by providing a simpler
+interface and by handling all the requirements towards the Robot Framework
+library APIs.")
+    (license license:asl2.0)))
+
+(define-public python-robotframework-seleniumlibrary
+  (package
+    (name "python-robotframework-seleniumlibrary")
+    (version "5.1.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "robotframework-seleniumlibrary" version))
+       (sha256
+        (base32 "1dihrbcid9i7daw2qy6h3xsvwaxzmyip820jw5z11n60qrl006pm"))))
+    (build-system python-build-system)
+    ;; XXX: Tests require ungoogled-chromium, but the chromium module would
+    ;; introduce a cycle if imported here.
+    (propagated-inputs
+     `(("python-robotframework" ,python-robotframework)
+       ("python-robotframework-pythonlibcore"
+        ,python-robotframework-pythonlibcore)
+       ("python-selenium" ,python-selenium)))
+    (home-page "https://github.com/robotframework/SeleniumLibrary")
+    (synopsis "Web testing library for Robot Framework")
+    (description "SeleniumLibrary is a web testing library for Robot Framework
+that utilizes the Selenium tool internally.")
+    (license license:asl2.0)))
+
+(define-public python-robotframework-seleniumscreenshots
+  (package
+    (name "python-robotframework-seleniumscreenshots")
+    (version "0.9.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "robotframework-seleniumscreenshots" version))
+       (sha256
+        (base32 "05qv323hvjmy62h33ryrjaa9k1hyvp8hq5qnj8j1x3ap2ci3q3s0"))))
+    (build-system python-build-system)
+    (arguments
+    ;; XXX: The tests require a relatively complicated setup configured in
+    ;; their CI with Nix (!).
+     `(#:tests? #f))
+    (propagated-inputs
+     `(("python-robotframework" ,python-robotframework)
+       ("python-robotframework-seleniumlibrary"
+        ,python-robotframework-seleniumlibrary)))
+    (home-page "https://github.com/MarketSquare/robotframework-seleniumscreenshots")
+    (synopsis "Robot Framework library for annotating and cropping screenshots")
+    (description "The SeleniumScreenshots library for Robot Framework provides
+keywords for annotating and cropping screenshots taken with SeleniumLibrary.
+It is useful for scripting automatically updated screenshots for documentation
+or for visual regression testing purposes.")
+    (license license:bsd-3)))
 
 (define-public python-rstr
   (package
@@ -4912,27 +5026,29 @@ interested parties to subscribe to events, or \"signals\".")
 (define-public pelican
   (package
     (name "pelican")
-    (version "4.2.0")
+    (version "4.7.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "pelican" version))
        (sha256
         (base32
-         "0mp7hjyhs38ag1hyfcy882g400z0babqi72pnli46dqijfhajzmy"))))
+         "0g1sbzlz5mfc70gwgnj3lz4kf4psdjl96n6ywklv8z817m1khxdd"))))
     (build-system python-build-system)
-    (propagated-inputs
+    (inputs
      `(("python-blinker" ,python-blinker)
        ("python-dateutil" ,python-dateutil)
+       ;; Ignoring `guix lint` warning as python-docutils is used to support
+       ;; reStructuredText processing at runtime.
        ("python-docutils" ,python-docutils)
        ("python-feedgenerator" ,python-feedgenerator)
        ("python-jinja2" ,python-jinja2)
        ("python-markdown" ,python-markdown)
        ("python-pygments" ,python-pygments)
        ("python-pytz" ,python-pytz)
-       ("python-six" ,python-six)
+       ("python-rich" ,python-rich)
        ("python-unidecode" ,python-unidecode)))
-    (home-page "https://getpelican.com/")
+    (home-page "https://blog.getpelican.com/")
     (arguments
      `(;; XXX Requires a lot more packages to do unit tests :P
        #:tests? #f))
@@ -6847,7 +6963,7 @@ def customize_build(EXTENSIONS, OPTIONS):
     (inputs
       `(("c-blosc" ,c-blosc)
         ("giflib" ,giflib)
-        ("google-brotli" ,google-brotli)
+        ("brotli" ,brotli)
         ("libjpeg-turbo" ,libjpeg-turbo)
         ("libpng" ,libpng)
         ("libtiff" ,libtiff)
@@ -22194,13 +22310,13 @@ decisions with any given backend.")
 (define-public python-dask
   (package
     (name "python-dask")
-    (version "2021.7.1")
+    (version "2021.9.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "dask" version))
        (sha256
-        (base32 "131c1bp193d7wp4gx09j6wark1c322c8sqjy22i0jaafl5rqfbz7"))))
+        (base32 "0p6nd8wi30l29g5hdwk0453w6fxg4zvxq1y1ix0fa2f8rbr2n7z1"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -24774,13 +24890,13 @@ tbutils
 (define-public python-eliot
   (package
     (name "python-eliot")
-    (version "1.12.0")
+    (version "1.13.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "eliot" version))
        (sha256
-        (base32 "0wabv7hk63l12881f4zw02mmj06583qsx2im0yywdjlj8f56vqdn"))))
+        (base32 "1xzzhsjrrw430dc84vamf683bwp9i0nr86xf2iav6yla615ijq2p"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -24796,6 +24912,16 @@ tbutils
            ;; be installed and these tests should pass.
            (lambda _
              (delete-file "eliot/tests/test_prettyprint.py")
+             #t))
+         (add-after 'remove-eliot-prettyprint-tests 'remove-failing-tests
+           (lambda _
+             ;; These tests started to fail after updating python-pandas to
+             ;; 1.3.3 and python-dask to 2021.9.1.
+             (substitute* "eliot/tests/test_validation.py"
+               (("test_omitLoggerFromActionType")
+                "_test_omitLoggerFromActionType")
+               (("test_logCallsDefaultLoggerWrite")
+                "_test_logCallsDefaultLoggerWrite"))
              #t)))))
     (propagated-inputs
      `(("python-boltons" ,python-boltons)
@@ -25387,14 +25513,14 @@ and delegating behavior.")
 (define-public python-lazr-config
   (package
     (name "python-lazr-config")
-    (version "2.2.2")
+    (version "2.2.3")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "lazr.config" version))
         (sha256
          (base32
-          "11xpddgyhyj7sf27wbmrq5lnqk21wnprx3ajycgwlxjamh6sgffd"))))
+          "1qdbrzl61q7cjhbnxvw9y3frcr935y7diwy15xrwcv9ynvw76jmp"))))
     (build-system python-build-system)
     (arguments
      '(#:phases
@@ -25684,23 +25810,23 @@ By default it uses the open Python vulnerability database Safety DB.")
 (define-public python-pypandoc
   (package
     (name "python-pypandoc")
-    (version "1.5")
+    (version "1.6.4")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "pypandoc" version))
        (sha256
         (base32
-         "1zvn9764cf7kkjkmr9gw6wc8adpk06qxr1rhxwa9pg0zmdvrk90l"))))
+         "149basv4pvzg9zm74cjz68x8s2n5fykyj7prgysb0qfmja73r83f"))))
     (build-system python-build-system)
     (inputs
-     `(("pandoc" ,pandoc)
-       ("pandoc-citeproc" ,pandoc-citeproc)))
+     `(("pandoc" ,pandoc)))
     (propagated-inputs
      `(("wheel" ,python-wheel)))
     (native-inputs
      `(("texlive" ,(texlive-union (list texlive-amsfonts/patched
                                         texlive-fonts-ec
+                                        texlive-iftex
                                         texlive-latex-hyperref
                                         texlive-latex-oberdiek
                                         texlive-lm

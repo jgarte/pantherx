@@ -490,14 +490,14 @@ mapping from string keys to string values.")
 (define-public memcached
   (package
     (name "memcached")
-    (version "1.6.9")
+    (version "1.6.12")
     (source
      (origin
        (method url-fetch)
        (uri (string-append
              "https://memcached.org/files/memcached-" version ".tar.gz"))
        (sha256
-        (base32 "1lcjy1b9krnb2gk72qd1fvivlfiyfvknfi3wngyvyk9ifzijr9nm"))))
+        (base32 "0ii3z2mhjrimc6mv5z5x6bwp1s2bbzppja4m3pnmd5zgh9gs74gj"))))
     (build-system gnu-build-system)
     (inputs
      `(("libevent" ,libevent)
@@ -2221,19 +2221,18 @@ similar to BerkeleyDB, LevelDB, etc.")
 (define-public redis
   (package
     (name "redis")
-    (version "6.2.4")
+    (version "6.2.6")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://download.redis.io/releases/redis-"
                                   version".tar.gz"))
               (sha256
                (base32
-                "0vp1d9mlfsppry3nsj9f7bmh9wjgsy3jggp24sac1hhgl43c8cms"))
+                "1ariw5x33hmmm3d5al0j3307l5kf3vhmn78wpyaz67hia1x8nasv"))
               (modules '((guix build utils)))
               (snippet
                ;; Delete bundled jemalloc, as the package will use the libc one
-               '(begin (delete-file-recursively "deps/jemalloc")
-                       #t))))
+               '(begin (delete-file-recursively "deps/jemalloc")))))
     (build-system gnu-build-system)
     (native-inputs
      `(("procps" ,procps)               ; for tests
@@ -2248,8 +2247,7 @@ similar to BerkeleyDB, LevelDB, etc.")
                (("^TCLSH=.*")
                 (string-append "TCLSH="
                                (assoc-ref inputs "tcl")
-                               "/bin/tclsh")))
-             #t))
+                               "/bin/tclsh")))))
          (add-after 'unpack 'adjust-tests
            (lambda _
              ;; Disable failing tests
@@ -2257,8 +2255,7 @@ similar to BerkeleyDB, LevelDB, etc.")
                (("integration/failover") "")
                (("integration/replication-4") "")
                (("integration/replication-psync") "")
-               (("integration/replication[^-]") ""))
-             #t)))
+               (("integration/replication[^-]") "")))))
        #:make-flags `("CC=gcc"
                       "MALLOC=libc"
                       "LDFLAGS=-ldl"
@@ -3801,7 +3798,7 @@ the SQL language using a syntax that reflects the resulting query.")
     (inputs
      `(("apache-thrift" ,apache-thrift "lib")
        ("boost" ,boost)
-       ("brotli" ,google-brotli)
+       ("brotli" ,brotli)
        ("bzip2" ,bzip2)
        ("double-conversion" ,double-conversion)
        ("gflags" ,gflags)
@@ -4064,7 +4061,7 @@ connecting to MS SQL and Sybase servers over TCP/IP.")
 (define-public sequeler
   (package
     (name "sequeler")
-    (version "0.8.1")
+    (version "0.8.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4073,7 +4070,7 @@ connecting to MS SQL and Sybase servers over TCP/IP.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1q1vzc3likpiwfh6blkyiz0wr0aarj9xrm8gbi7m3p1wslkpah7c"))))
+                "0biggmsn8k7j6pdrwk29whl56qlfgvf5d9vjpgz4nyqih56wgh9j"))))
     (build-system meson-build-system)
     (arguments
      '(#:glib-or-gtk? #t
@@ -4084,8 +4081,7 @@ connecting to MS SQL and Sybase servers over TCP/IP.")
            (lambda _
              (substitute* "build-aux/meson_post_install.py"
                (("gtk-update-icon-cache") "true")
-               (("update-desktop-database") "true"))
-             #t)))))
+               (("update-desktop-database") "true")))))))
     (native-inputs
      `(;("appstream-glib" ,appstream-glib)  ; validation fails for lack of network
        ("gettext-minimal" ,gettext-minimal)
