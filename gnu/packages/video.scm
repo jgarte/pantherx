@@ -52,6 +52,7 @@
 ;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2020 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2021 Raghav Gururajan <rg@raghavgururajan.name>
+;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -445,6 +446,51 @@ as a joint effort between the BBC and Fluendo.")
 library.")
     (home-page "http://libquicktime.sourceforge.net/")
     (license license:lgpl2.1+)))
+
+(define-public mjpg-streamer
+  (package
+    (name "mjpg-streamer")
+    (version "1.0.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/jacksonliam/mjpg-streamer")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0w81pg228154blzbzr590xwhcll9baxyqxl6wxrgqsi9cd7pzq23"))
+              (modules '((guix build utils)))
+              (snippet
+               '(begin
+                  (with-directory-excursion "mjpg-streamer-experimental/www"
+                    (for-each delete-file-recursively
+                              '("cambozola.jar"
+                                "JQuerySpinBtn.css"
+                                "JQuerySpinBtn.js"
+                                "jquery.js"
+                                "jquery.rotate.js"
+                                "jquery.ui.core.min.js"
+                                "jquery.ui.custom.css"
+                                "jquery.ui.tabs.min.js"
+                                "jquery.ui.widget.min.js")))))))
+    (build-system cmake-build-system)
+    (arguments
+     '(#:tests? #f                                ; no test suite
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'chdir
+           (lambda* _
+             (chdir "mjpg-streamer-experimental"))))))
+    (inputs `(("libjpeg-turbo" ,libjpeg-turbo)))
+    (synopsis "Stream JPEG over IP network")
+    (description "Command line application that copies JPEG frames from one or
+more input plugins to multiple output plugins.  It can be used to stream JPEG
+files over an IP-based network from a webcam to various types of viewers such
+as Chrome, Firefox, Cambozola, VLC, mplayer, and other software capable of
+receiving MJPG streams.")
+    (home-page "https://github.com/jacksonliam/mjpg-streamer")
+    (license license:gpl2+)))
 
 (define-public mjpegtools
   (package
@@ -4677,7 +4723,7 @@ transitions, and effects and then export your film to many common formats.")
 (define-public shotcut
   (package
     (name "shotcut")
-    (version "21.09.13")
+    (version "21.09.20")
     (source
      (origin
        (method git-fetch)
@@ -4686,7 +4732,7 @@ transitions, and effects and then export your film to many common formats.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0dwf9kbx52zdjm3m8sp7dxmlnz3v1lhyaw1kaw8imnjpdbyx30p1"))))
+        (base32 "1y46n5gmlayfl46l0vhg5g5dbbc0sg909mxb68sia0clkaas8xrh"))))
     (build-system qt-build-system)
     (arguments
      `(#:tests? #f ;there are no tests

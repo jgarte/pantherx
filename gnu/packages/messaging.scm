@@ -85,6 +85,7 @@
   #:use-module (gnu packages kerberos)
   #:use-module (gnu packages less)
   #:use-module (gnu packages libcanberra)
+  #:use-module (gnu packages libffi)
   #:use-module (gnu packages libidn)
   #:use-module (gnu packages libreoffice)
   #:use-module (gnu packages linux)
@@ -709,15 +710,14 @@ used by Pidgin and Bitlbee, among others, to access
 (define-public hexchat
   (package
     (name "hexchat")
-    (version "2.14.3")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://dl.hexchat.net/hexchat/hexchat-"
-                                  version ".tar.xz"))
-              (patches (search-patches "hexchat-add-libera-chat.patch"))
-              (sha256
-               (base32
-                "10p829jm1r6kidkgf5lhqhyqc5mxdcq96q3zhadsckasvc9rs6lh"))))
+    (version "2.16.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://dl.hexchat.net/hexchat/hexchat-"
+                           version ".tar.xz"))
+       (sha256
+        (base32 "0dnwhb2gi08i5v79vq0y2izs89wyk3by96jv99kgkidjic3k2bj1"))))
     (build-system meson-build-system)
     (native-inputs `(("gettext" ,gettext-minimal)
                      ("glib:bin" ,glib "bin")       ;need glib-genmarshal
@@ -728,14 +728,16 @@ used by Pidgin and Bitlbee, among others, to access
               ("enchant" ,enchant)
               ("gtk" ,gtk+-2)
               ("libcanberra" ,libcanberra)
-              ("libnotify" ,libnotify)
-              ("libproxy" ,libproxy)
               ("openssl" ,openssl)
 
               ;; Bindings for add-on scripts.
               ("luajit" ,luajit)
               ("perl-xml-parser" ,perl-xml-parser)
-              ("python-2" ,python-2)))
+              ("python" ,python)
+              ("python-cffi" ,python-cffi)
+
+              ;; For the ensuing WRAP-PROGRAM.
+              ("bash-minimal" ,bash-minimal)))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -747,8 +749,14 @@ used by Pidgin and Bitlbee, among others, to access
              ;; just skip this code.
              (substitute* "meson_post_install.py"
                (("if 'DESTDIR' not in os.environ:")
-                 "if False:"))
-             #t)))))
+                "if False:"))))
+         (add-after 'install 'wrap-program
+           ;; Let it ‘initialize the Python-CFFI embedding logic’ at run time.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin")))
+               (wrap-program (string-append bin "/hexchat")
+                 `("PYTHONPATH" ":" prefix (,(getenv "PYTHONPATH"))))))))))
     (synopsis "Graphical IRC client")
     (description
      "HexChat lets you connect to multiple IRC networks at once.  The main
@@ -1257,7 +1265,7 @@ Encryption to Gajim.")
 (define-public dino
   (package
     (name "dino")
-    (version "0.2.1")
+    (version "0.2.2")
     (source
      (origin
        (method url-fetch)
@@ -1265,7 +1273,7 @@ Encryption to Gajim.")
         (string-append "https://github.com/dino/dino/releases/download/v"
                        version "/dino-" version ".tar.gz"))
        (sha256
-        (base32 "13rk8b0sj35az32c0ii173g9ww231awmyb4jlk56jy38hpyp7x1g"))))
+        (base32 "0r5qn9k88d5rh8zzj9gs3bk3dsm795r0pgxs3kawyrsrqr8ny1ry"))))
     (build-system cmake-build-system)
     (outputs '("out" "debug"))
     (arguments

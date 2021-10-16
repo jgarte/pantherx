@@ -2761,8 +2761,7 @@ certain criterion, e.g., it contains a certain regular file.")
        ("r-tinytex" ,r-tinytex)
        ("r-xfun" ,r-xfun)
        ("r-yaml" ,r-yaml)
-       ("pandoc" ,pandoc)
-       ("pandoc-citeproc" ,pandoc-citeproc)))
+       ("pandoc" ,pandoc)))
     (native-inputs
      `(("r-knitr" ,r-knitr)))
     (home-page "https://rmarkdown.rstudio.com")
@@ -3531,7 +3530,7 @@ using the multicore functionality of the parallel package.")
                              ((url hash dir)
                               (let* ((input (string-append "js:" (basename url)))
                                      (source (assoc-ref inputs input))
-                                     (target (string-append dir "/"
+                                     (target (string-append dir "/js/"
                                                             (basename url ".js")
                                                             ".min.js")))
                                 (mkdir-p dir)

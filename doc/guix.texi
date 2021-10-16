@@ -97,6 +97,7 @@ Copyright @copyright{} 2021 Hui Lu@*
 Copyright @copyright{} 2021 pukkamustard@*
 Copyright @copyright{} 2021 Alice Brenon@*
 Copyright @copyright{} 2021 Andrew Tropin@*
+Copyright @copyright{} 2021 Sarah Morgensen@*
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -26799,9 +26800,6 @@ A list of acl identifiers.
 @item @code{semantic-checks?} (default: @code{#f})
 When set, this adds more semantic checks to the zone.
 
-@item @code{disable-any?} (default: @code{#f})
-When set, this forbids queries of the ANY type.
-
 @item @code{zonefile-sync} (default: @code{0})
 The delay between a modification in memory and on disk.  0 means immediate
 synchronization.
@@ -30226,7 +30224,7 @@ It takes a @code{ganeti-luxid-configuration} object.
 @end defvr
 
 @deftp {Data Type} ganeti-luxid-configuration
-This is the configuration for the @code{ganeti-wconfd} service.
+This is the configuration for the @code{ganeti-luxid} service.
 
 @table @asis
 @item @code{ganeti} (default: @code{ganeti})
@@ -32968,7 +32966,7 @@ designated like this:
 
 @example
 (setuid-program
-  (program (file-append #$shadow "/bin/passwd")))
+  (program (file-append shadow "/bin/passwd")))
 @end example
 
 @deftp {Data Type} setuid-program
@@ -35555,9 +35553,9 @@ services)}.
 
 @node Essential Home Services
 @subsection Essential Home Services
-There are a few essential services defined in @code{(gnu
-home-services)}, they are mostly for internal use and are required to
-build a home environment, but some of them will be useful for the end
+There are a few essential home services defined in
+@code{(gnu services)}, they are mostly for internal use and are required
+to build a home environment, but some of them will be useful for the end
 user.
 
 @cindex environment variables
@@ -35810,7 +35808,7 @@ for example).
 @cindex mcron
 @cindex scheduling jobs
 
-The @code{(gnu home-services mcron)} module provides an interface to
+The @code{(gnu home services mcron)} module provides an interface to
 GNU@tie{}mcron, a daemon to run jobs at scheduled times (@pxref{Top,,,
 mcron, GNU@tie{}mcron}).  The information about system's mcron is
 applicable here (@pxref{Scheduled Job Execution}), the only difference
@@ -35890,7 +35888,7 @@ guix home @var{options}@dots{} @var{action} @var{file}
 
 @var{file} must be the name of a file containing a
 @code{home-environment} declaration.  @var{action} specifies how the
-home environment is instantiated, but there are few auxuliary actions
+home environment is instantiated, but there are few auxiliary actions
 which don't instantiate it.  Currently the following values are
 supported:
 
@@ -35906,7 +35904,7 @@ regular expressions, sorted by relevance:
 @example
 $ guix home search shell
 name: home-shell-profile
-location: gnu/home-services/shells.scm:73:2
+location: gnu/home/services/shells.scm:73:2
 extends: home-files
 description: Create `~/.profile', which is used for environment initialization
 + of POSIX compatible login shells.  Can be extended with a list of strings or
@@ -35914,20 +35912,20 @@ description: Create `~/.profile', which is used for environment initialization
 relevance: 6
 
 name: home-zsh-plugin-manager
-location: gnu/home-services/shellutils.scm:28:2
+location: gnu/home/services/shellutils.scm:28:2
 extends: home-zsh home-profile
 description: Install plugins in profile and configure Zsh to load them.
 relevance: 1
 
 name: home-zsh-direnv
-location: gnu/home-services/shellutils.scm:69:2
+location: gnu/home/services/shellutils.scm:69:2
 extends: home-profile home-zsh
 description: Enables `direnv' for `zsh'.  Adds hook to `.zshrc' and installs a
 + package in the profile.
 relevance: 1
 
 name: home-zsh-autosuggestions
-location: gnu/home-services/shellutils.scm:43:2
+location: gnu/home/services/shellutils.scm:43:2
 extends: home-zsh-plugin-manager home-zsh
 description: Enables Fish-like fast/unobtrusive autosuggestions for `zsh' and
 + sets reasonable default values for some plugin's variables to improve perfomance
@@ -35936,13 +35934,13 @@ description: Enables Fish-like fast/unobtrusive autosuggestions for `zsh' and
 relevance: 1
 
 name: home-zsh
-location: gnu/home-services/shells.scm:236:2
+location: gnu/home/services/shells.scm:236:2
 extends: home-files home-profile
 description: Install and configure Zsh.
 relevance: 1
 
 name: home-bash
-location: gnu/home-services/shells.scm:388:2
+location: gnu/home/services/shells.scm:388:2
 extends: home-files home-profile
 description: Install and configure Bash.
 relevance: 1

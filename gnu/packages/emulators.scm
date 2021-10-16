@@ -47,10 +47,11 @@
   #:use-module (gnu packages audio)
   #:use-module (gnu packages autogen)
   #:use-module (gnu packages autotools)
+  #:use-module (gnu packages backup)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bison)
   #:use-module (gnu packages boost)
-  #:use-module (gnu packages backup)
+  #:use-module (gnu packages build-tools)
   #:use-module (gnu packages cdrom)
   #:use-module (gnu packages check)
   #:use-module (gnu packages compression)
@@ -102,6 +103,7 @@
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
+  #:use-module (guix build-system meson)
   #:use-module (guix build-system python))
 
 (define-public vice
@@ -398,7 +400,7 @@ older games.")
   ;; This is not a patch staging area for DOSBox, but an unaffiliated fork.
   (package
     (name "dosbox-staging")
-    (version "0.76.0")
+    (version "0.77.1")
     (source
      (origin
        (method git-fetch)
@@ -407,34 +409,20 @@ older games.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "14zlkm9qmaq2x4zdiadczsxvdnrf35w13ccvkxzd8cwrzxv84fvd"))))
-    (build-system gnu-build-system)
+        (base32 "07jwmmm1bhfxavlhl854cj8l5iy5hqx5hpwkkjbcwqg7yh9jfs2x"))))
+    (build-system meson-build-system)
     (arguments
-     `(#:configure-flags
-       (let* ((flags (list "-O3"
-                           ;; From scripts/automator/build/gcc-defaults.
-                           "-fstrict-aliasing"
-                           "-fno-signed-zeros"
-                           "-fno-trapping-math"
-                           "-fassociative-math"
-                           "-frename-registers"
-                           "-ffunction-sections"
-                           "-fdata-sections"))
-              (CFLAGS (string-join flags " ")))
-         ;; Several files #include <SDL_net.h> instead of <SDL2/SDL_net.h>,
-         ;; including configure.ac itself.
-         (list (string-append "CPPFLAGS=-I" (assoc-ref %build-inputs "sdl2")
-                              "/include/SDL2")
-               (string-append "CFLAGS=" CFLAGS)
-               (string-append "CXXFLAGS=-DNDEBUG " CFLAGS)))))
+     `(#:meson ,meson-0.55 #:configure-flags
+       ;; These both try to git clone subprojects.
+       (list "-Dunit_tests=disabled"     ; gtest
+             "-Duse_mt32emu=false")))    ; mt32emu
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("pkg-config" ,pkg-config)))
+     `(("pkg-config" ,pkg-config)))
     (inputs
      `(("alsa-lib" ,alsa-lib)
        ("fluidsynth" ,fluidsynth)
        ("libpng" ,libpng)
+       ("mesa" ,mesa)
        ("opusfile" ,opusfile)
        ("sdl2" ,(sdl-union (list sdl2 sdl2-net)))
        ("zlib" ,zlib)))
@@ -781,7 +769,7 @@ and Game Boy Color games.")
 (define-public sameboy
   (package
     (name "sameboy")
-    (version "0.14.4")
+    (version "0.14.5")
     (source
      (origin
        (method git-fetch)
@@ -790,7 +778,7 @@ and Game Boy Color games.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0zp11qm8b3cmx70pzczyh4vv4jyhlh4jnci8kn6b30c8lzl43g83"))))
+        (base32 "0qqribyksm51fhq923rdhrzb9c4yf16szymprbw8fsz0nzv8frm3"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("rgbds" ,rgbds)
@@ -815,8 +803,7 @@ and Game Boy Color games.")
                (with-directory-excursion "build/bin/SDL"
                  (install-file "sameboy" bin)
                  (delete-file "sameboy")
-                 (copy-recursively "." data))
-               #t))))))
+                 (copy-recursively "." data))))))))
     (home-page "https://sameboy.github.io/")
     (synopsis "Accurate Game Boy, Game Boy Color and Super Game Boy emulator")
     (description "SameBoy is a user friendly Game Boy, Game Boy Color
@@ -1445,7 +1432,7 @@ as RetroArch.")
 (define-public retroarch
   (package
     (name "retroarch")
-    (version "1.9.4")
+    (version "1.9.11")
     (source
      (origin
        (method git-fetch)
@@ -1454,7 +1441,7 @@ as RetroArch.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1wky28y52nsjmannks3y1hbjgw0dvqh85gxrllr98f9y7kvk1cvf"))
+        (base32 "0hd77kw1f655s40qcz1righdhd9czqyy40rf7gigdag1bkchdx6z"))
        (patches
         (search-patches "retroarch-LIBRETRO_DIRECTORY.patch"))))
     (build-system gnu-build-system)
@@ -1537,14 +1524,14 @@ multi-system game/emulator system.")
 (define-public scummvm
   (package
     (name "scummvm")
-    (version "2.2.0")
+    (version "2.5.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://downloads.scummvm.org/frs/scummvm/" version
                            "/scummvm-" version ".tar.xz"))
        (sha256
-        (base32 "11vknasm5dna2vqr6gk343qynh7nhsq3kf60zayarn1vb5z6as8l"))))
+        (base32 "08ynw1cmld41p4bwrw84gb1nv229va70i91qiqsjr3c2jnqy8zml"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                                 ;require "git"
@@ -1571,6 +1558,8 @@ multi-system game/emulator system.")
        ("fluidsynth" ,fluidsynth)
        ("freetype" ,freetype)
        ("fribidi" ,fribidi)
+       ("glew" ,glew)
+       ("giflib" ,giflib)
        ("liba52" ,liba52)
        ("libflac" ,flac)
        ("libjpeg-turbo" ,libjpeg-turbo)

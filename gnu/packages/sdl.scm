@@ -626,19 +626,19 @@ sound and device input (keyboards, joysticks, mice, etc.).")
 (define-public guile-sdl2
   (package
     (name "guile-sdl2")
-    (version "0.6.0")
+    (version "0.7.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://files.dthompson.us/guile-sdl2/"
                                   "guile-sdl2-" version ".tar.gz"))
               (sha256
                (base32
-                "06vrknn4iz0ag932rb4almyhi9cvdkn081shvsi0h4skd6ry8bdl"))))
+                "197dzkxw8nv92da56iv2r8ih5r3pr4pd5c5j2q83aqb78h4jqjl7"))))
     (build-system gnu-build-system)
     (arguments
      '(#:make-flags '("GUILE_AUTO_COMPILE=0")))
     (native-inputs
-     `(("guile" ,guile-2.2)
+     `(("guile" ,guile-3.0)
        ("pkg-config" ,pkg-config)))
     (inputs
      `(("sdl2" ,sdl2)
@@ -653,12 +653,15 @@ The bindings are written in pure Scheme using Guile's foreign function
 interface.")
     (license lgpl3+)))
 
-(define-public guile3.0-sdl2
+(define-public guile2.2-sdl2
   (package/inherit guile-sdl2
-    (name "guile3.0-sdl2")
+    (name "guile2.2-sdl2")
     (native-inputs
-     `(("guile" ,guile-3.0)
+     `(("guile" ,guile-2.2)
        ("pkg-config" ,pkg-config)))))
+
+(define-public guile3.0-sdl2
+  (deprecated-package "guile3.0-sdl2" guile-sdl2))
 
 (define-public sdl2-cs
   (let ((commit "1a3556441e1394eb0b5d46aeb514b8d1090b93f8"))

@@ -30,6 +30,7 @@
 ;;; Copyright © 2021 Raghav Gururajan <rg@raghavgururajan.name>
 ;;; Copyright © 2021 jgart <jgart@dismail.de>
 ;;; Copyright © 2021 Bonface Munyoki Kilyungi <me@bonfacemunyoki.com>
+;;; Copyright © 2021 Chadwain Holness <chadwainholness@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -2667,6 +2668,41 @@ time.")
       (description
        "This package holds the transition packages for the new Go 1.13 error values.")
       (home-page "https://godoc.org/golang.org/x/xerrors")
+      (license license:bsd-3))))
+
+(define-public go-golang-org-x-mod
+  (let ((commit "0f08993efd8a8ec67e75bcccf86b0e1569b0ab0a")
+        (revision "0"))
+    (package
+      (name "go-golang-org-x-mod")
+      (version (git-version "0.5.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://go.googlesource.com/x/mod")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0pl0jc5jvg7hxj4z66zg6kglnq5g7li09f3k9klwvyr4jx5dw88k"))))
+      (build-system go-build-system)
+      (arguments
+       '(#:import-path "golang.org/x/mod/"
+         #:tests? #f
+         #:phases
+         (modify-phases %standard-phases
+           ;; Source-only package
+           (delete 'build))))
+      (home-page "https://golang.org/x/mod")
+      (synopsis "Tools to work directly with Go module mechanics")
+      (description
+       "This repository holds packages for writing tools that work directly
+with Go module mechanics.  That is, it is for direct manipulation of Go modules
+themselves.
+
+The specific case of loading packages should still be done by invoking the
+@command{go} command, which remains the single point of truth for package
+loading algorithms.")
       (license license:bsd-3))))
 
 (define-public go-github-com-burntsushi-toml
@@ -8780,4 +8816,26 @@ line.  @code{csvdiff} supports
 @item Several output formats including colored git style output or
 JSON for post-processing
 @end itemize")
+    (license license:expat)))
+
+(define-public go-gopkg-in-djherbis-times-v1
+  (package
+    (name "go-gopkg-in-djherbis-times-v1")
+    (version "1.5.0")
+    (home-page "https://gopkg.in/djherbis/times.v1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url home-page)
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1xvl3rgjif5yf62p16yk05kxrsmzhz1kkqisvw4k02svzq10qbfy"))))
+    (build-system go-build-system)
+    (arguments
+     '(#:import-path "gopkg.in/djherbis/times.v1"))
+    (synopsis "Go library for getting file times")
+    (description
+     "Provides a platform-independent way to get atime, mtime, ctime and btime for files.")
     (license license:expat)))

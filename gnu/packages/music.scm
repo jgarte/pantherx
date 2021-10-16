@@ -1529,7 +1529,7 @@ Guile.")
 (define-public abjad
   (package
     (name "abjad")
-    (version "3.3")
+    (version "3.4")
     (source
      (origin
        (method git-fetch)
@@ -1539,7 +1539,7 @@ Guile.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1dzf5v7pawbzkb4qxp4s5z4r3gibkk705pag83yvgzkx6fd6jf2g"))))
+         "0s63vk9fifp0im9c31kb9ck39mbaxhrls993d8fvg0nkg41z1jnz"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -1584,7 +1584,7 @@ typographic detail of symbols on the page.")
 (define-public abjad-ext-rmakers
   (package
     (name "abjad-ext-rmakers")
-    (version "3.3")
+    (version "3.4")
     (source
      (origin
        (method git-fetch)
@@ -1594,7 +1594,7 @@ typographic detail of symbols on the page.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "03nry8lzh3s81yq4lw8y6j63m7zdsl20q7rvx9cfmp3rmbvlaycs"))))
+         "0wma9vzn42h1rhbzh2dwjsrzjhsi1yqdgn6wx1dfk78vaki6prd8"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -1626,7 +1626,7 @@ and manipulating rhythms such as accelerandi, taleas, and more.")
 (define-public abjad-ext-nauert
   (package
     (name "abjad-ext-nauert")
-    (version "3.3")
+    (version "3.4")
     (source
      (origin
        (method git-fetch)
@@ -1636,7 +1636,7 @@ and manipulating rhythms such as accelerandi, taleas, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "07vgfjh32vmf652lcl2vrbzr0h6nld00qbgwbf9i1kk3xwhvklc9"))))
+         "05hr2lr6myzi493k8vc19cqzraxxnbdwlckwbnras19l5g5ns38x"))))
     (build-system python-build-system)
     (arguments
      `(#:phases

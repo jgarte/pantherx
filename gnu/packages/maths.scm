@@ -5776,7 +5776,7 @@ reduction.")
                     version ".tar.gz"))
               (sha256
                (base32
-                "0db9wgy9spwm76mgfisnifrlg69y9cadjgxjr4gdwzfgg6wgqf6d"))))
+                "1xgx3cd57vc7gbjic24j1q2za6j3ybz6nk4afvvpbwsf33xnlf4v"))))
     (inputs
      `(("boost" ,boost)
        ("glu" ,glu)
@@ -6903,17 +6903,21 @@ numeric differences and differences in numeric formats.")
 (define-public why3
   (package
     (name "why3")
-    (version "1.3.3")
+    (version "1.4.0")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://gforge.inria.fr/frs/download.php/file"
-                                  "/38367/why3-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://gitlab.inria.fr/why3/why3")
+                     (commit version)))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1n0a2nn1gnk0zg339lh698g4wpk7m8m1vyi2yvifd5adqvk4milw"))))
+                "0pfsiddnk26f384wbazfpgzh1n1ibf3xq101q74mxvczi7z0a791"))))
     (build-system ocaml-build-system)
     (native-inputs
-     `(("coq" ,coq)
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("coq" ,coq)
        ("ocaml" ,ocaml)
        ("which" ,which)))
     (propagated-inputs
@@ -6929,10 +6933,12 @@ numeric differences and differences in numeric formats.")
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         (add-before 'configure 'fix-configure
+         (add-before 'configure 'bootstrap
            (lambda _
+             (invoke "./autogen.sh")
              (setenv "CONFIG_SHELL" (which "sh"))
              (substitute* "configure"
+               (("#! /bin/sh") (string-append "#!" (which "sh")))
                ;; find ocaml-num in the correct directory
                (("\\$DIR/nums.cma") "$DIR/num.cma")
                (("\\$DIR/num.cmi") "$DIR/core/num.cmi"))
@@ -6964,14 +6970,14 @@ of C, Java, or Ada programs.")
 (define-public frama-c
   (package
     (name "frama-c")
-    (version "22.0")
+    (version "23.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://frama-c.com/download/frama-c-"
-                                  version "-Titanium.tar.gz"))
+                                  version "-Vanadium.tar.gz"))
               (sha256
                (base32
-                "1mq1fijka95ydrla486yr4w6wdl9l7vmp512s1q00b0p6lmfwmkh"))))
+                "1rgkq9sg436smw005ag0j6y3xryhjn18a07m5wjfrfp0s1438nnj"))))
     (build-system ocaml-build-system)
     (arguments
      `(#:tests? #f; no test target in Makefile

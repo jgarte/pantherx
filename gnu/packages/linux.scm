@@ -346,17 +346,17 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The current "stable" kernels. That is, the most recently released major
 ;; versions that are still supported upstream.
-(define-public linux-libre-5.14-version "5.14.9")
+(define-public linux-libre-5.14-version "5.14.12")
 (define-public linux-libre-5.14-gnu-revision "gnu")
 (define deblob-scripts-5.14
   (linux-libre-deblob-scripts
    linux-libre-5.14-version
    linux-libre-5.14-gnu-revision
    (base32 "00vv2a51cvw2nx8iazmiy9i4h3jj9gvvpwz9gxp2v1hcmrsxq935")
-   (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
+   (base32 "024rz0bp3n3r5nkwbib7byx10d72c2fh5cw9iv00diyzgnp819g7")))
 (define-public linux-libre-5.14-pristine-source
   (let ((version linux-libre-5.14-version)
-        (hash (base32 "1rl77k40xp9j0y8q5bgmhfmwiwbrdxjcsaw8dris456mjbdhg3xs")))
+        (hash (base32 "0dswxf1qk70lms5lph15i7nz3ybwiia58v8zzrmi71ajviwjc9wd")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.14)))
@@ -364,22 +364,22 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
-(define-public linux-libre-5.10-version "5.10.70")
+(define-public linux-libre-5.10-version "5.10.73")
 (define-public linux-libre-5.10-gnu-revision "gnu1")
 (define deblob-scripts-5.10
   (linux-libre-deblob-scripts
    linux-libre-5.10-version
    linux-libre-5.10-gnu-revision
    (base32 "19d1pdsilq1ycnx1zw3vhf9mwdxbi5nmgzm0g1kj1lkkf1y4i1mv")
-   (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
+   (base32 "024rz0bp3n3r5nkwbib7byx10d72c2fh5cw9iv00diyzgnp819g7")))
 (define-public linux-libre-5.10-pristine-source
   (let ((version linux-libre-5.10-version)
-        (hash (base32 "0cmj5l425c6kkaplcp1y692j123lhyqq2jgfi642jzqxf4rnqwvm")))
+        (hash (base32 "0xhf0g5pra27hnavpy0y3mn05m5hqn5rd3d6fx0a3vr35c1jicpd")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.10)))
 
-(define-public linux-libre-5.4-version "5.4.150")
+(define-public linux-libre-5.4-version "5.4.153")
 (define-public linux-libre-5.4-gnu-revision "gnu1")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
@@ -389,12 +389,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "18iaqsbqlvk0j71d4q4h99ah300s0i7jwspr2x6g01shn2xsj97l")))
+        (hash (base32 "0jaz57sd51xqc7w8k3f43bfc5mdsh1413mdngqqsgr8isv4hg7vd")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.208")
+(define-public linux-libre-4.19-version "4.19.211")
 (define-public linux-libre-4.19-gnu-revision "gnu1")
 (define deblob-scripts-4.19
   (linux-libre-deblob-scripts
@@ -404,12 +404,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "1556bk46v7pjd2xrvkldq254yc18cn9jll25ba8zig57562ahkg7")))
+        (hash (base32 "1m3y5gsf5s8bb4jxkri20dlxi8aiqabzaijj2h1svz4r19ca8j7v")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.248")
+(define-public linux-libre-4.14-version "4.14.250")
 (define-public linux-libre-4.14-gnu-revision "gnu1")
 (define deblob-scripts-4.14
   (linux-libre-deblob-scripts
@@ -419,12 +419,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "0m5nsd41b08xppcf7vvx8zgj3h3sp3n6xrgxfkccn6n4bk7yx4y9")))
+        (hash (base32 "0zbf6gxm8iwf7cra310gfd0zyj8l9ckdahky9w6wb9wlznwkvd54")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.284")
+(define-public linux-libre-4.9-version "4.9.286")
 (define-public linux-libre-4.9-gnu-revision "gnu1")
 (define deblob-scripts-4.9
   (linux-libre-deblob-scripts
@@ -434,12 +434,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "0054b0cm0h2mbf6rxzdgd3c2rfz7xa32qkyr5lv58l2852hf0ri8")))
+        (hash (base32 "0id62p43dmkl9ir278p0dsfg3q7m1d8rlxv0c9qi1pzalkygv8p2")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.285")
+(define-public linux-libre-4.4-version "4.4.288")
 (define-public linux-libre-4.4-gnu-revision "gnu1")
 (define deblob-scripts-4.4
   (linux-libre-deblob-scripts
@@ -449,7 +449,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "0h8jzb2cg0wg4s07iqkghfxkxrnlxadwk3i3gvg2xs3ra0wrisp1")))
+        (hash (base32 "028w3yzmzymy7l1nf3n1pfbg95hfi4ilphkyl00ddgj8sfm542c7")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -2916,37 +2916,21 @@ Linux-based operating systems.")
 (define-public bridge-utils
   (package
     (name "bridge-utils")
-    (version "1.7")
+    (version "1.7.1")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "mirror://kernel.org/linux/kernel/people/shemminger/"
+       (uri (string-append "mirror://kernel.org/linux/utils/net/"
                            "bridge-utils/bridge-utils-" version ".tar.xz"))
        (sha256
-        (base32 "0zlrigizac2nfwgvksm92v4wafrpgxlbci3gwimc795ib7k8g6ck"))))
+        (base32 "03p6cmhm6cqhnfsfa1wv7frhb361y12daf7gr1h5qh51y7j8n7d6"))))
     (build-system gnu-build-system)
 
     ;; The tarball lacks all the generated files.
     (native-inputs `(("autoconf" ,autoconf)
                      ("automake" ,automake)))
     (arguments
-     '(#:phases
-       (modify-phases %standard-phases
-         (add-before 'bootstrap 'patch-stuff
-           (lambda _
-             ;; Fix "field ‘ip6’ has incomplete type" errors.
-             (substitute* "libbridge/libbridge.h"
-               (("#include <linux/if_bridge.h>")
-                "#include <linux/in6.h>\n#include <linux/if_bridge.h>"))
-
-             ;; Ensure that the entire build fails if one of the
-             ;; sub-Makefiles fails.
-             (substitute* "Makefile.in"
-               (("\\$\\(MAKE\\) \\$\\(MFLAGS\\) -C \\$\\$x ;")
-                "$(MAKE) $(MFLAGS) -C $$x || exit 1;"))
-
-             #t)))
-       #:tests? #f))                              ; no 'check' target
+     '(#:tests? #f))                    ; no 'check' target
 
     (home-page "https://wiki.linuxfoundation.org/networking/bridge")
     (synopsis "Manipulate Ethernet bridges")
@@ -3259,7 +3243,7 @@ user-space processes.")
 (define-public unionfs-fuse
   (package
     (name "unionfs-fuse")
-    (version "2.1")
+    (version "2.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3268,7 +3252,7 @@ user-space processes.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0bwx70x834qgqh53vqp18bhbxbsny80hz922rbgj8k9wj7cbfilm"))))
+                "1yigh8z1q6iq6yjyq7kl7vpbpjnxjld32apvjaw2bl44pqqg56hh"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("python" ,python)))
@@ -4644,7 +4628,7 @@ Translation (@dfn{SAT}) are also supported.")
 (define-public nvme-cli
   (package
     (name "nvme-cli")
-    (version "1.14")
+    (version "1.15")
     (home-page "https://github.com/linux-nvme/nvme-cli")
     (source (origin
               (method git-fetch)
@@ -4652,7 +4636,7 @@ Translation (@dfn{SAT}) are also supported.")
                     (url home-page)
                     (commit (string-append "v" version))))
               (sha256
-               (base32 "0dpadz945482srqpsbfx1bh7rc499fgpyzz1flhk9g9xjbpapkzc"))
+               (base32 "0qr1wa163cb7z6g083nl3zcc28mmlbxh1m97pd54bp3gyrhmdhhr"))
               (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -4725,14 +4709,14 @@ about ACPI devices.")
 (define-public acpid
   (package
     (name "acpid")
-    (version "2.0.32")
+    (version "2.0.33")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/acpid2/acpid-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "0zhmxnhnhg4v1viw82yjr22kram6k5k1ixznhayk8cnw7q5x7lpj"))))
+                "1s6vf8lqwrcqi14k0ww47pk1kifbvxin73ha7mk1njmk7qdzfmh8"))))
     (build-system gnu-build-system)
     (home-page "https://sourceforge.net/projects/acpid2/")
     (synopsis "Daemon for delivering ACPI events to user-space programs")
@@ -4768,50 +4752,40 @@ also contains the libsysfs library.")
     ;; The rest is mostly gpl2, with a few files indicating gpl2+.
     (license (list license:gpl2 license:gpl2+ license:lgpl2.1+))))
 
-(define-public sysfsutils-1
-  (package
-    (inherit sysfsutils)
-    (version "1.3.0")
-    (source
-     (origin
-       (method url-fetch)
-       (uri
-        (string-append
-         "mirror://sourceforge/linux-diag/sysfsutils/sysfsutils-" version
-         "/sysfsutils-" version ".tar.gz"))
-       (sha256
-        (base32 "0kdhs07fm8263pxwd5blwn2x211cg4fk63fyf9ijcdkvzmwxrqq3"))
-       (modules '((guix build utils)))
-       (snippet
-        '(begin
-           (substitute* "Makefile.in"
-             (("includedir = /usr/include/sysfs")
-              "includedir = @includedir@"))
-           (substitute* "configure"
-             (("includedir='(\\$\\{prefix\\}/include)'" all orig)
-              (string-append "includedir='" orig "/sysfs'")))
-           #t))))
-    (synopsis "System utilities based on Linux sysfs (version 1.x)")))
-
 (define-public cpufrequtils
   (package
     (name "cpufrequtils")
-    (version "0.3")
+    (version "008")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://kernel.org/linux/utils/kernel/cpufreq/"
                            "cpufrequtils-" version ".tar.gz"))
        (sha256
-        (base32 "0qfqv7nqmjfr3p0bwrdlxkiqwqr7vmx053cadaa548ybqbghxmvm"))
-       (patches (search-patches "cpufrequtils-fix-aclocal.patch"))))
+        (base32 "0xjs8j44hh0cz6qpig1n0iw8xjpr6s5qmcmwh965ngapxgarr7af"))))
     (build-system gnu-build-system)
-    (native-inputs
-     `(("sysfsutils" ,sysfsutils-1)))
     (arguments
-     '(#:make-flags (list (string-append "LDFLAGS=-Wl,-rpath="
-                                         (assoc-ref %outputs "out") "/lib"))))
-    (home-page "https://www.kernel.org/pub/linux/utils/kernel/cpufreq/")
+     `(#:tests? #f                      ; no test suite
+       #:make-flags
+       (let ((out (assoc-ref %outputs "out")))
+         (list "PROC=false"             ; obsoleted by sysfs in Linux 2.6(!)
+               (string-append "CC=" ,(cc-for-target))
+               (string-append "LDFLAGS=-Wl,-rpath=" out "/lib")
+               "INSTALL=install"
+               (string-append "bindir=" out "/bin")
+               (string-append "sbindir=" out "/sbin")
+               (string-append "mandir=" out "/share/man")
+               (string-append "includedir=" out "/include")
+               (string-append "libdir=" out "/lib")
+               (string-append "localedir=" out "/share/locale")
+               (string-append "docdir=" out "/share/doc/" ,name)))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))))         ; no configure script
+    (native-inputs
+     `(("gettext" ,gettext-minimal)))
+    (home-page
+     "http://ftp.be.debian.org/pub/linux/utils/kernel/cpufreq/cpufrequtils.html")
     (synopsis "Utilities to get and set CPU frequency on Linux")
     (description
      "The cpufrequtils suite contains utilities to retrieve CPU frequency
@@ -5361,7 +5335,7 @@ and copy/paste text in the console and in xterm.")
 (define-public btrfs-progs
   (package
     (name "btrfs-progs")
-    (version "5.14")
+    (version "5.14.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://kernel.org/linux/kernel/"
@@ -5369,7 +5343,7 @@ and copy/paste text in the console and in xterm.")
                                   "btrfs-progs-v" version ".tar.xz"))
               (sha256
                (base32
-                "0mwxhwws6scjjpfws5xp7988wwwfa46jp5y3kn6jjmjpxiqm85da"))))
+                "1afpa8izagkr9sn5fqrm6687idiqdkcz08ks2j07972kd0rm5il5"))))
     (build-system gnu-build-system)
     (outputs '("out"
                "static"))      ; static versions of the binaries in "out"
@@ -5380,8 +5354,7 @@ and copy/paste text in the console and in xterm.")
                       (substitute* "Makefile"
                         (("\\$\\(DESTDIR\\)\\$\\(udevruledir\\)")
                          (string-append (assoc-ref outputs "out")
-                                        "/lib/udev/rules.d")))
-                      #t))
+                                        "/lib/udev/rules.d")))))
                  (add-after 'build 'build-static
                    (lambda _ (invoke "make" "static")))
                  (add-after 'install 'install-bash-completion
@@ -5390,8 +5363,7 @@ and copy/paste text in the console and in xterm.")
                             (bashcomp (string-append out "/etc/bash_completion.d")))
                        (mkdir-p bashcomp)
                        (copy-file "btrfs-completion"
-                                  (string-append bashcomp "/btrfs"))
-                       #t)))
+                                  (string-append bashcomp "/btrfs")))))
                  (add-after 'install 'install-static
                    (let ((staticbin (string-append (assoc-ref %outputs "static")
                                                   "/bin")))
@@ -5965,6 +5937,52 @@ commonly found on Microsoft Windows.  It is implemented as a FUSE file system.
 The package provides additional NTFS tools.")
     (license license:gpl2+)))
 
+(define-public ntfs-3g/static
+  (static-package
+   (package
+     (inherit ntfs-3g)
+     (name "ntfs-3g-static")
+     (arguments
+      (substitute-keyword-arguments (package-arguments ntfs-3g)
+        ((#:configure-flags flags)
+         `(append ,flags
+                  (list "--enable-really-static"
+                        ;; The FUSE driver isn't currently used by our initrd.
+                        "--disable-ntfs-3g")))
+        ((#:phases phases)
+         `(modify-phases ,phases
+            (add-after 'unpack 'make-really-static-really-static
+              (lambda _
+                (substitute* "ntfsprogs/Makefile.in"
+                  ((" -static") " -all-static"))))
+            (delete 'install-link))))))))
+
+(define-public ntfsfix/static
+  (package
+    (name "ntfsfix-static")
+    (version (package-version ntfs-3g/static))
+    (source #f)
+    (build-system trivial-build-system)
+    (arguments
+     `(#:modules ((guix build utils))
+       #:builder
+       (begin
+         (use-modules (guix build utils))
+         (let* ((ntfs-3g (assoc-ref %build-inputs "ntfs-3g"))
+                (out     (assoc-ref %outputs "out"))
+                (bin     (string-append out "/bin")))
+           (install-file (string-append ntfs-3g "/bin/ntfsfix") bin)
+           (with-directory-excursion bin
+             (remove-store-references "ntfsfix"))))))
+    (inputs
+     `(("ntfs-3g" ,ntfs-3g/static)))
+    (home-page (package-home-page ntfs-3g/static))
+    (synopsis "Statically linked @command{ntfsfix} from ntfs-3g")
+    (description
+     "This package provides a statically linked @command{ntfsfix} taken
+from the ntfs-3g package.  It is meant to be used in initrds.")
+    (license (package-license ntfs-3g/static))))
+
 (define-public rdma-core
   (package
     (name "rdma-core")
@@ -6080,7 +6098,7 @@ The collection contains a set of bandwidth and latency benchmark such as:
   (package
     (name "rng-tools")
     (home-page "https://github.com/nhorman/rng-tools")
-    (version "6.13")
+    (version "6.14")
     (source (origin
               (method git-fetch)
               (uri (git-reference (url home-page)
@@ -6088,7 +6106,7 @@ The collection contains a set of bandwidth and latency benchmark such as:
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0m4895f44a668r0z7md5ifq7syndsb2by2dfhk794vmhprsk1406"))))
+                "1hrbm4y7fbzkg5j2f7vpj19ri2ff2lp77al17fhi4mv0bvdfjd9m"))))
     (build-system gnu-build-system)
     (arguments
      `(;; Disable support for various hardware entropy sources as they need
@@ -6189,7 +6207,7 @@ cpufreq sub-system is enabled or not.")
 (define-public haveged
   (package
     (name "haveged")
-    (version "1.9.14")
+    (version "1.9.15")
     (source
      (origin
        (method git-fetch)
@@ -6198,8 +6216,11 @@ cpufreq sub-system is enabled or not.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "050hmnh5s2s4mb83f4d1fk23mk27pprg840c1aagc6v1sz6x5dhq"))))
+        (base32 "1zb790adsmqq3r26zlaxfrk2hpgxjcjz8l73hn3hli3l3javykvd"))))
     (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags
+       (list "--disable-static")))
     (home-page "https://www.issihosts.com/haveged")
     (synopsis "Entropy source for the Linux random number generator")
     (description
@@ -6441,7 +6462,7 @@ of flash storage.")
 (define-public libseccomp
   (package
     (name "libseccomp")
-    (version "2.5.1")
+    (version "2.5.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/seccomp/libseccomp/"
@@ -6449,7 +6470,7 @@ of flash storage.")
                                   "/libseccomp-" version ".tar.gz"))
               (sha256
                (base32
-                "0m8dlg1v7kflcxvajs4p76p275qwsm2abbf5mfapkakp7hw7wc7f"))))
+                "1pw7rd4gwqpmraipgdqkdkhnx4ql35wrn3lnjgl6pncinkgm59hp"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--disable-static")
@@ -6458,8 +6479,7 @@ of flash storage.")
                     (lambda _
                       ;; This test does a native system call and fails when
                       ;; run under QEMU user-mode emulation.  Just skip it.
-                      (delete-file "tests/52-basic-load.tests")
-                      #t)))))
+                      (delete-file "tests/52-basic-load.tests"))))))
     (native-inputs
      `(("gperf" ,gperf)
        ("which" ,which)))
@@ -6786,6 +6806,7 @@ interface in sysfs, which can be accomplished with the included udev rules.")
                (setenv "TLP_NO_INIT" "1")
                (setenv "TLP_NO_PMUTILS" "1")
                (setenv "TLP_SBIN" (string-append out "/bin"))
+               (setenv "TLP_BATD" (string-append out "/share/tlp/bat.d"))
                (setenv "TLP_BIN" (string-append out "/bin"))
                (setenv "TLP_TLIB" (string-append out "/share/tlp"))
                (setenv "TLP_FLIB" (string-append out "/share/tlp/func.d"))
@@ -7806,68 +7827,80 @@ the superuser to make device nodes.")
 (define-public fakeroot
   (package
     (name "fakeroot")
-    (version "1.25.3")
-    (source (origin
-              ;; There are no tags in the repository, so take this snapshot.
-              (method url-fetch)
-              (uri (string-append "https://deb.debian.org/debian/pool/main/f/"
-                                  "fakeroot/fakeroot_" version ".orig.tar.gz"))
-              (file-name (string-append name "-" version ".tar.gz"))
-              (sha256
-               (base32
-                "0v4m3v1bdqvblwj3vqsb3mllgbci6dsgsydq6765nzvz6n1kd44f"))))
+    (version "1.26")
+    (source
+     (origin
+       ;; There are no tags in the repository, so take this snapshot.
+       (method url-fetch)
+       (uri (string-append "https://deb.debian.org/debian/pool/main/f/"
+                           "fakeroot/fakeroot_" version ".orig.tar.gz"))
+       (file-name (string-append name "-" version ".tar.gz"))
+       (sha256
+        (base32
+         "1sg8inv1zzp4h9ncbbmxip3svd11sd86j22cvxrjwnf5zn7mf2j8"))
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        `(begin
+           ;; Delete pregenerated man page translations, but not the originals.
+           (with-directory-excursion "doc"
+             (for-each (lambda (language)
+                         (for-each delete-file
+                                   (find-files language "\\.[0-9]$")))
+                       (scandir "."
+                                (lambda (file)
+                                  (and (not (string-prefix? "." file))
+                                       (eq? 'directory
+                                            (stat:type (lstat file))))))))))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases
+     `(#:configure-flags
+       (list "--disable-static")
+       #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'patch-Makefile.am
+           (lambda _
+             (substitute* "Makefile.am"
+               (("/bin/sh") (which "sh")))))
+         (add-after 'unpack 'patch-script
+           (lambda*  (#:key inputs #:allow-other-keys)
+             (substitute* "scripts/fakeroot.in"
+               (("getopt")
+                (string-append (assoc-ref inputs "util-linux")
+                               "/bin/getopt"))
+               (("sed")
+                (string-append (assoc-ref inputs "sed")
+                               "/bin/sed"))
+               (("cat|cut" command)
+                (string-append (assoc-ref inputs "coreutils")
+                               "/bin/" command)) )))
          (replace 'bootstrap
            (lambda _
              ;; The "preroll" script takes care of Autoconf and also
              ;; prepares the translated manuals.
              (invoke "sh" "./preroll")))
-        (add-after 'configure 'patch-Makefile
-          (lambda _
-            ;; Note: The root of the problem is already in "Makefile.am".
-            (substitute* "Makefile"
-             (("/bin/sh") (which "sh")))
-            #t))
-        (add-after 'unpack 'patch-script
-          (lambda*  (#:key inputs #:allow-other-keys)
-            (substitute* "scripts/fakeroot.in"
-             (("getopt")
-              (string-append (assoc-ref inputs "util-linux")
-                             "/bin/getopt"))
-             (("sed")
-              (string-append (assoc-ref inputs "sed")
-                             "/bin/sed"))
-             (("cut")
-              (string-append (assoc-ref inputs "coreutils")
-                             "/bin/cut")) )
-            #t))
-        (add-before 'configure 'setenv
-          (lambda _
-            (setenv "LIBS" "-lacl")
-            #t))
-        (add-before 'check 'prepare-check
-          (lambda _
-            (setenv "SHELL" (which "bash"))
-            (setenv "VERBOSE" "1")
-            (substitute* "test/t.touchinstall"
-             ;; We don't have the name of the root user, so use ID=0.
-             (("grep root") "grep \"\\<0\\>\""))
-            (substitute* "test/tartest"
-             ;; We don't have the name of the root group, so use ID=0.
-             (("ROOTGROUP=root") "ROOTGROUP=0")
-             ;; We don't have the name of the daemon user, so use IDs.
-             (("daemon:sys") "1:3")
-             (("daemon:") "1:"))
-            ;; We don't have an /etc/passwd entry for "root" - use numeric IDs.
-            (substitute* "test/compare-tar"
-             (("tar -tvf") "tar --numeric-owner -tvf"))
-            #t)))))
+         (add-before 'configure 'setenv
+           (lambda _
+             (setenv "LIBS" "-lacl")))
+         (add-before 'check 'prepare-check
+           (lambda _
+             (setenv "SHELL" (which "bash"))
+             (setenv "VERBOSE" "1")
+             (substitute* "test/t.touchinstall"
+               ;; We don't have the name of the root user, so use ID=0.
+               (("grep root") "grep \"\\<0\\>\""))
+             (substitute* "test/tartest"
+               ;; We don't have the name of the root group, so use ID=0.
+               (("ROOTGROUP=root") "ROOTGROUP=0")
+               ;; We don't have the name of the daemon user, so use IDs.
+               (("daemon:sys") "1:3")
+               (("daemon:") "1:"))
+             ;; We don't have an /etc/passwd entry for "root" - use numeric IDs.
+             (substitute* "test/compare-tar"
+               (("tar -tvf") "tar --numeric-owner -tvf")))))))
     (native-inputs
      `(;; For bootstrapping the package.
-       ("autoconf" ,autoconf)
+       ("autoconf" ,autoconf-2.71)
        ("automake" ,automake)
        ("libtool" ,libtool)
        ("gettext" ,gettext-minimal)
@@ -7882,14 +7915,17 @@ the superuser to make device nodes.")
        ("util-linux" ,util-linux)
        ("sed" ,sed)
        ("coreutils" ,coreutils)))
-    (synopsis "Provides a fake root environment")
-    (description "@command{fakeroot} runs a command in an environment where
-it appears to have root privileges for file manipulation. This is useful
-for allowing users to create archives (tar, ar, .deb etc.) with files in
-them with root permissions/ownership. Without fakeroot one would have to
-have root privileges to create the constituent files of the archives with
-the correct permissions and ownership, and then pack them up, or one would
-have to construct the archives directly, without using the archiver.")
+    (synopsis "Run commands in an environment with fake root privileges")
+    (description
+     "@command{fakeroot} runs a command in an environment where it appears to
+have root privileges for file manipulation.  This is useful for allowing users
+to create archives (@file{tar}, @file{ar}, @file{deb}, etc.)  with files in
+them with root permissions and/or ownership.
+
+Without fakeroot, one would have to have root privileges to create the
+constituent files of the archives with the correct permissions and ownership,
+and then pack them up, or one would have to construct the archives directly,
+without using the archiver.")
     (home-page "http://freshmeat.sourceforge.net/projects/fakeroot")
     (license license:gpl3+)))
 

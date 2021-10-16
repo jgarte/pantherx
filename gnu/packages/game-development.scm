@@ -92,6 +92,7 @@
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages readline)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages sdl)
   #:use-module (gnu packages sphinx)
@@ -559,16 +560,16 @@ clone.")
 (define-public tsukundere
   (package
     (name "tsukundere")
-    (version "0.3.2")
+    (version "0.4.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://gitlab.com/leoprikler/tsukundere")
+                    (url "https://gitlab.com/lilyp/tsukundere")
                     (commit version)))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "05y3nj8vpn40hfr2y29p8pa9hhpzibhbvfzpm0dlphjh9crq3ii4"))))
+                "11glghnff27rqh2s34g51afg93g3f5ryfz9mkyb7qj35ngl8vw5f"))))
     (build-system gnu-build-system)
     (arguments
      `(#:modules ((ice-9 match)
@@ -598,9 +599,12 @@ clone.")
                          ((label . pkg)
                           (and (string-prefix? "guile-" label) pkg)))
                        inputs))))
-               (substitute* "bin/tsukundere"
+               (substitute* "tsukundere.scm"
                  (("exec guile (.*)" _ args)
                   (string-append
+                   ;; XXX: Prevent Guile-SDL2 from blowing up by not knowing
+                   ;;      where the SDL2 libaries are.
+                   "unset LD_LIBRARY_PATH\n"
                    (format #f "export GUILE_LOAD_PATH=\"~@?\"~%"
                            "~{~a~^:~}" (map scm pkgs))
                    (format #f "export GUILE_LOAD_COMPILED_PATH=\"~@?\"~%"
@@ -614,12 +618,15 @@ clone.")
        ("automake" ,automake)
        ("gettext" ,gettext-minimal)
        ("guile" ,guile-3.0)
+       ("libtool" ,libtool)
        ("pkg-config" ,pkg-config)
        ("texinfo" ,texinfo)))
     (inputs
      `(("guile-sdl2" ,guile3.0-sdl2)
-       ("guile" ,guile-3.0)))
-    (home-page "https://gitlab.com/leoprikler/tsukundere")
+       ("guile" ,guile-3.0)
+       ("pango" ,pango)
+       ("sdl2" ,sdl2)))
+    (home-page "https://gitlab.com/lilyp/tsukundere")
     (synopsis "Visual novel engine")
     (description "Tsukundere is a game engine geared heavily towards the
 development of visual novels, written on top of Guile-SDL2.  It is still
@@ -2031,28 +2038,30 @@ a 2D editor view.")
 (define-public guile-chickadee
   (package
     (name "guile-chickadee")
-    (version "0.7.0")
+    (version "0.8.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://files.dthompson.us/chickadee/"
                                   "chickadee-" version ".tar.gz"))
               (sha256
                (base32
-                "199y4kc28va6klfs19h998sfh7vx9spnrvjw7p92i47q5a7jdcp6"))))
+                "1k2dml2z57lnc36wrmwhh7avnpczxgxnshlfhpbk174vg6v609n0"))))
     (build-system gnu-build-system)
     (arguments
      '(#:make-flags '("GUILE_AUTO_COMPILE=0")))
     (propagated-inputs
      `(("guile-opengl" ,guile3.0-opengl)
-       ("guile-sdl2" ,guile3.0-sdl2)))
+       ("guile-sdl2" ,guile-sdl2)))
     (inputs
      `(("freetype" ,freetype)
-       ("guile" ,guile-3.0)
+       ("guile" ,guile-3.0-latest)
        ("libvorbis" ,libvorbis)
        ("mpg123" ,mpg123)
-       ("openal" ,openal)))
+       ("openal" ,openal)
+       ("readline" ,readline)))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
+     `(("guile" ,guile-3.0-latest)
+       ("pkg-config" ,pkg-config)
        ("texinfo" ,texinfo)))
     (home-page "https://dthompson.us/projects/chickadee.html")
     (synopsis "Game development toolkit for Guile Scheme with SDL2 and OpenGL")

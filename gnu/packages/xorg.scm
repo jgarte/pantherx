@@ -6119,7 +6119,7 @@ to answer a question.  Xmessage can also exit after a specified time.")
 (define-public xterm
   (package
     (name "xterm")
-    (version "368")
+    (version "369")
     (source
      (origin
        (method url-fetch)
@@ -6129,7 +6129,7 @@ to answer a question.  Xmessage can also exit after a specified time.")
              (string-append "ftp://ftp.invisible-island.net/xterm/"
                             "xterm-" version ".tgz")))
        (sha256
-        (base32 "04p7db3j3n5dk1vvlas4231rh6jgr4qi6ppvpbq9xd5n62cidx9g"))))
+        (base32 "09jffsd46qsg6vfxlljds9pljwx9h4kh06kl94hkv2b4s146mvbi"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--enable-wide-chars" "--enable-load-vt-fonts"
@@ -6325,14 +6325,14 @@ basic eye-candy effects.")
 (define-public xpra
   (package
     (name "xpra")
-    (version "4.2.1")
+    (version "4.2.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.xpra.org/src/xpra-"
                            version ".tar.gz"))
        (sha256
-        (base32 "0gqdcw5cfk919jk8g0g4xjxbsvr5j9gskn8q3cmrz388pvfvm8x7"))
+        (base32 "0nky9j07zq8d5ifx568dima7a0jgs8kwhcqbg8p6gsxlgq5zdw96"))
        (patches (search-patches "xpra-4.2-systemd-run.patch"))))
     (build-system python-build-system)
     ;; see also http://xpra.org/trac/wiki/Dependencies

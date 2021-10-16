@@ -96,6 +96,7 @@ MODULES =					\
   guix/discovery.scm				\
   guix/android-repo-download.scm		\
   guix/bzr-download.scm            		\
+  guix/extracting-download.scm			\
   guix/git-download.scm				\
   guix/hg-download.scm				\
   guix/swh.scm					\
@@ -546,6 +547,7 @@ SH_TESTS =					\
   tests/guix-package-aliases.sh			\
   tests/guix-package-net.sh			\
   tests/guix-system.sh				\
+  tests/guix-home.sh				\
   tests/guix-archive.sh				\
   tests/guix-authenticate.sh			\
   tests/guix-environment.sh			\

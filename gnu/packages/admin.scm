@@ -2144,7 +2144,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
 (define-public acpica
   (package
     (name "acpica")
-    (version "20210730")
+    (version "20210930")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -2152,7 +2152,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
                     version ".tar.gz"))
               (sha256
                (base32
-                "02z0492vrpk001m7xcy72lp7sd968lja3wp6jn3q6k9nm46h4v7h"))))
+                "06wsrl1118sl9z76p9sh53zvzv5hpm82qks896d8slx5dgnzrrll"))))
     (build-system gnu-build-system)
     (native-inputs `(("flex" ,flex)
                      ("bison" ,bison)))
@@ -2201,15 +2201,18 @@ utilization, temperature and power.")
 (define-public stress
   (package
     (name "stress")
-    (version "1.0.4")
+    (version "1.0.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://debian/pool/main/s/stress/stress_"
                                   version ".orig.tar.gz"))
               (sha256
                (base32
-                "0nw210jajk38m3y7h8s130ps2qsbz7j75wab07hi2r3hlz14yzh5"))))
+                "09shpd85g8dvpiw0mnwykss676g0s7lbi8ab37xjinb5lfff960p"))))
     (build-system gnu-build-system)
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)))
     (home-page "https://packages.debian.org/sid/stress")
     (synopsis "Impose load on and stress test a computer system")
     (description
@@ -3022,14 +3025,14 @@ done with the @code{auditctl} utility.")
 (define-public nmap
   (package
     (name "nmap")
-    (version "7.91")
+    (version "7.92")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nmap.org/dist/nmap-" version
                                   ".tar.bz2"))
               (sha256
                (base32
-                "001kb5xadqswyw966k2lqi6jr6zz605jpp9w4kmm272if184pk0q"))
+                "18bifn67kz2wxkbnfwcrin2xrhc6qf4p2bvxfqb2a2vbi8pryix5"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -3040,8 +3043,7 @@ done with the @code{auditctl} utility.")
                               "libpcap"
                               "libpcre"
                               ;; Remove pre-compiled binares.
-                              "mswin32"))
-                  #t))))
+                              "mswin32"))))))
     (build-system gnu-build-system)
     (inputs
      `(("openssl" ,openssl)
@@ -3063,8 +3065,7 @@ done with the @code{auditctl} utility.")
            (lambda _
              (substitute* "Makefile"
                ;; Do not attempt to build lua.
-               (("build-dnet build-lua") "build-dnet"))
-             #t))
+               (("build-dnet build-lua") "build-dnet"))))
          (replace 'install
            (lambda* (#:key outputs #:allow-other-keys)
              (define (make out . args)
@@ -3087,8 +3088,7 @@ done with the @code{auditctl} utility.")
                (make ndiff "install-ndiff")
                (wrap-program (string-append ndiff "/bin/ndiff")
                  `("PYTHONPATH" prefix
-                   (,(python-path ndiff)))))
-             #t))
+                   (,(python-path ndiff)))))))
          ;; These are the tests that do not require network access.
          (replace 'check
            (lambda _ (invoke "make"
@@ -3105,7 +3105,7 @@ tool.  It is also useful for tasks such as network inventory, managing service
 upgrade schedules, and monitoring host or service uptime.  It also provides an
 advanced netcat implementation (ncat), a utility for comparing scan
 results (ndiff), and a packet generation and response analysis tool (nping).")
-    ;; See <https://github.com/nmap/nmap/issues/2199#issuecomment-792048244>.
+    ;; See <https://github.com/nmap/nmap/issues/2199#issuecomment-894812634>.
     ;; This package uses nmap's bundled versions of libdnet and liblinear, which
     ;; both use a 3-clause BSD license.
     (license (list license:nmap license:bsd-3))))
@@ -4218,7 +4218,7 @@ Logitech Unifying Receiver.")
   (package
     (name "lynis")
     ;; Also update the ‘lynis-sdk’ input to the commit matching this release.
-    (version "3.0.5")
+    (version "3.0.6")
     (source
      (origin
        (method git-fetch)
@@ -4227,15 +4227,14 @@ Logitech Unifying Receiver.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "11kl54hbvjl7q2i1jz8a726vlkdmknvbp4zac3j4fgljg27qp410"))
+        (base32 "1a1n8alcq6zil1rwk9940cg3x2nz3igcxfad99505pdh7ccz9324"))
        (modules '((guix build utils)))
        (snippet
         '(begin
            ;; Remove proprietary plugins. As of now, all plugins supplied with
            ;; lynis are proprietary. In the future, if free plugins are
            ;; provided, whitelist them from deletion.
-           (for-each delete-file (find-files "plugins"))
-           #t))))
+           (for-each delete-file (find-files "plugins"))))))
     (build-system gnu-build-system)
     (native-inputs
      `(;; For tests
@@ -4244,10 +4243,10 @@ Logitech Unifying Receiver.")
            (method git-fetch)
            (uri (git-reference
                  (url "https://github.com/CISOfy/lynis-sdk")
-                 (commit "99f79c4deb4cb2221d7fccfe82baf58c0a55b9e7")))
+                 (commit "1c4e5f60a03e29a1525ca9ec17c793461058253d")))
            (file-name (git-file-name "lynis-sdk" version))
            (sha256
-            (base32 "1nc2rhzj6l08d2mnjrzkm4mxla1mjkddcxl8n05c1kdz9ycn6cpl"))))))
+            (base32 "060k8k1q4c7nvrv3cwscxq8md2v75q3nrwwim1hgfw20divw3npy"))))))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -4258,8 +4257,7 @@ Logitech Unifying Receiver.")
                 (string-append (assoc-ref outputs "out") "/share/lynis")))
              (substitute* "include/functions"
                (("/usr/local/etc/lynis")
-                (string-append (assoc-ref outputs "out") "/etc/lynis")))
-             #t))
+                (string-append (assoc-ref outputs "out") "/etc/lynis")))))
          (delete 'build)
          (replace 'install
            (lambda* (#:key outputs #:allow-other-keys)
@@ -4270,8 +4268,7 @@ Logitech Unifying Receiver.")
                 (lambda (dir)
                   (copy-recursively dir (string-append out "/share/lynis/" dir)))
                 (list "db" "include" "plugins"))
-               (install-file "lynis.8" (string-append out "/share/man/man8"))
-               #t)))
+               (install-file "lynis.8" (string-append out "/share/man/man8")))))
          (replace 'check
            (lambda* (#:key inputs #:allow-other-keys)
              (copy-recursively (assoc-ref inputs "lynis-sdk") "../lynis-sdk")
@@ -4797,3 +4794,31 @@ setup, maintenance, supervision, or any long-running processes.")
       (description "Utility to convert @code{lsof} output to a graph showing
 FIFO and UNIX interprocess communication.")
       (license license:bsd-2))))
+
+(define-public runitor
+  (package
+    (name "runitor")
+    (version "0.8.0")
+    (source
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/bdd/runitor")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+          (base32 "0vjfbyrbp5ywgzdz9j3x0qgjvnq7nw7193x8v9yy6k2cih1zsacn"))))
+    (build-system go-build-system)
+    (arguments
+     `(#:unpack-path "bdd.fi/x/runitor"
+       #:go ,go-1.17
+       #:build-flags '(,(string-append "-ldflags=-X main.Version=" version))
+       #:import-path "bdd.fi/x/runitor/cmd/runitor"
+       #:install-source? #f))
+    (home-page "https://github.com/bdd/runitor")
+    (synopsis "Command runner with healthchecks.io integration")
+    (description
+      "Runitor runs the supplied command, captures its output, and based on its
+exit code reports successful or failed execution to
+@url{https://healthchecks.io,https://healthchecks.io} or your private instance.")
+    (license license:bsd-0)))

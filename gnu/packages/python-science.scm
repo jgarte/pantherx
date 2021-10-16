@@ -14,6 +14,7 @@
 ;;; Copyright © 2021 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2021 Paul Garlick <pgarlick@tourbillion-technology.com>
 ;;; Copyright © 2021 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2021 Felix Gruber <felgru@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -329,13 +330,13 @@ of the SGP4 satellite tracking algorithm.")
 (define-public python-pandas
   (package
     (name "python-pandas")
-    (version "1.3.0")
+    (version "1.3.3")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "pandas" version))
        (sha256
-        (base32 "1qi2cv450m05dwccx3p1s373k5b4ncvwi74plnms2pidrz4ycm65"))))
+        (base32 "1pq1nwj2kysy2g3p18wjb1xn8vk1jhcyisxilsnkwyd99aqqqb17"))))
     (build-system python-build-system)
     (arguments
      `(#:modules ((guix build utils)
@@ -899,7 +900,7 @@ and more
 (define-public python-distributed
   (package
     (name "python-distributed")
-    (version "2021.07.1")
+    (version "2021.09.1")
     (source
      (origin
        ;; The test files are not included in the archive on pypi
@@ -910,7 +911,7 @@ and more
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0i55zf3k55sqjxnwlzsyj3h3v1588fn54ng4mj3dfiqzh3nlj0dg"))))
+         "05djzza3f72nw1i1c9qyamgaf93pbf6jxx0migpp1wvvfl0v2j9z"))))
     (build-system python-build-system)
     (arguments
      '(#:phases
@@ -939,9 +940,11 @@ and more
                        "-m" "not slow and not gpu and not ipython and not avoid_ci"
                        "-k"
                        ;; TODO: These tests fail for unknown reasons:
-                       ;; Assertion error.
                        (string-append
-                        "not test_version_option"
+                        ;; TimeoutExpired
+                        "not test_text"
+                        ;; AssertionError
+                        " and not test_version_option"
                         ;; "The 'distributed' distribution was not found"
                         " and not test_register_backend_entrypoint"
                         ;; "AttributeError: module 'distributed.dashboard' has no attribute 'scheduler'"
