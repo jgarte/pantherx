@@ -159,7 +159,8 @@
         (base32
          "15iw7982g6vc4jy1l9kk1z9sl5bm1bdbwr74y7nvwjs1nffhig7f"))
        (patches (search-patches "qemu-CVE-2021-20203.patch"
-                                "qemu-build-info-manual.patch"))
+                                "qemu-build-info-manual.patch"
+                                "qemu-fix-agent-paths.patch"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -440,7 +441,7 @@ server and embedded PowerPC, and S390 guests.")
 (define-public libx86emu
   (package
     (name "libx86emu")
-    (version "3.1")
+    (version "3.4")
     (home-page "https://github.com/wfeldt/libx86emu")
     (source
      (origin
@@ -460,10 +461,9 @@ server and embedded PowerPC, and S390 guests.")
            (substitute* "Makefile"
              (("GIT2LOG.*=.*$") "")
              (("GITDEPS.*=.*$") "")
-             (("BRANCH.*=.*$") ""))
-           #t))
+             (("BRANCH.*=.*$") ""))))
        (sha256
-        (base32 "104xqc6nj9rpi7knl3dfqvasf087hlz2n5yndb1iycw35a6j509b"))))
+        (base32 "0f8mwpgfyid26i9q77n2rlcr4zzc75jnjzmy2hc38gk3q71ijmwh"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -1257,14 +1257,14 @@ pretty simple, REST API.")
 (define-public libvirt
   (package
     (name "libvirt")
-    (version "7.5.0")
+    (version "7.6.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://libvirt.org/sources/libvirt-"
                            version ".tar.xz"))
        (sha256
-        (base32 "15987ihnsjvcgi11dzcf1k3zp1si2d4wcxj0r0i30brc0d4pn44h"))
+        (base32 "0hb1fq0yx41n36c3n1a54b5p37n0m7abs917d76v7aqas03735lg"))
        (patches (search-patches "libvirt-add-install-prefix.patch"))))
     (build-system meson-build-system)
     (arguments
@@ -1544,14 +1544,16 @@ domains, their live performance and resource utilization statistics.")
 (define-public criu
   (package
     (name "criu")
-    (version "3.16")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://download.openvz.org/criu/criu-"
-                                  version ".tar.bz2"))
-              (sha256
-               (base32
-                "13x4s7nms3ckb016d03icdsrw4k6f7i33qz9n84fzhmibm0grj70"))))
+    (version "3.16.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/checkpoint-restore/criu")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1riw15197fnrs254jl7wks9x8bdml76kf1vnqkkgyypr13dnq55g"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
@@ -1562,18 +1564,13 @@ domains, their live performance and resource utilization statistics.")
                             "/lib")
              (string-append "ASCIIDOC=" (assoc-ref %build-inputs "asciidoc")
                             "/bin/asciidoc")
+             (string-append "PYTHON=python3")
              (string-append "XMLTO=" (assoc-ref %build-inputs "xmlto")
                             "/bin/xmlto"))
        #:phases
        (modify-phases %standard-phases
-         (replace 'configure
-           (lambda* (#:key inputs #:allow-other-keys)
-             ;; The includes for libnl are located in a sub-directory.
-             (setenv "C_INCLUDE_PATH"
-                     (string-append (assoc-ref inputs "libnl")
-                                    "/include/libnl3:"
-                                    (or (getenv "C_INCLUDE_PATH") "")))))
-         (add-after 'configure 'fix-documentation
+         (delete 'configure)            ; no configure script
+         (add-after 'unpack 'fix-documentation
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (substitute* "Documentation/Makefile"
                (("-m custom.xsl")
@@ -1587,14 +1584,7 @@ domains, their live performance and resource utilization statistics.")
            (lambda* (#:key inputs #:allow-other-keys)
              ;; Hardcode arm version detection
              (substitute* "Makefile"
-               (("ARMV.*:=.*") "ARMV := 7\n"))
-             ;; We are currently using python-2
-             (substitute* "crit/Makefile"
-               (("\\$\\(PYTHON\\)") "python2"))
-             (substitute* "lib/Makefile"
-               (("\\$\\(PYTHON\\)")
-                (string-append (assoc-ref inputs "python")
-                               "/bin/python")))))
+               (("ARMV.*:=.*") "ARMV := 7\n"))))
          (add-before 'build 'fix-symlink
            (lambda* (#:key inputs #:allow-other-keys)
              ;; The file 'images/google/protobuf/descriptor.proto' points to
@@ -1608,15 +1598,14 @@ domains, their live performance and resource utilization statistics.")
          (add-after 'install 'wrap
            (lambda* (#:key inputs outputs #:allow-other-keys)
              ;; Make sure 'crit' runs with the correct PYTHONPATH.
-             (let* ((out (assoc-ref outputs "out"))
-                    (path (string-append out
-                                         "/lib/python"
-                                         (string-take (string-take-right
-                                                       (assoc-ref inputs "python") 5) 3)
-                                         "/site-packages:"
-                                         (getenv "PYTHONPATH"))))
+             (let* ((out  (assoc-ref outputs "out"))
+                    (site (string-append out "/lib/python"
+                                         ,(version-major+minor
+                                           (package-version python))
+                                         "/site-packages"))
+                    (path (getenv "PYTHONPATH")))
                (wrap-program (string-append out "/bin/crit")
-                 `("PYTHONPATH" ":" prefix (,path))))))
+                 `("PYTHONPATH" ":" prefix (,site ,path))))))
          (add-after 'install 'delete-static-libraries
            ;; Not building/installing these at all doesn't seem to be supported.
            (lambda* (#:key outputs #:allow-other-keys)
@@ -1624,9 +1613,8 @@ domains, their live performance and resource utilization statistics.")
                (for-each delete-file (find-files out "\\.a$"))))))))
     (inputs
      `(("protobuf" ,protobuf)
-       ("python" ,python-2)
-       ("python2-protobuf" ,python2-protobuf)
-       ("python2-ipaddr" ,python2-ipaddr)
+       ("python" ,python)
+       ("python-protobuf" ,python-protobuf)
        ("iproute" ,iproute)
        ("libaio" ,libaio)
        ("libcap" ,libcap)
@@ -2020,11 +2008,11 @@ DOS or Microsoft Windows.")
 (define-public xen
   (package
     (name "xen")
-    (version "4.14.1")
+    (version "4.14.1")               ; please update the mini-os input as well
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "git://xenbits.xenproject.org/xen.git")
+                    (url "https://xenbits.xen.org/git-http/xen.git")
                     (commit (string-append "RELEASE-" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -2196,11 +2184,13 @@ override CC = " (assoc-ref inputs "cross-gcc") "/bin/i686-linux-gnu-gcc"))
        ,(origin
          (method git-fetch)
          (uri (git-reference
-               (url "http://xenbits.xen.org/git-http/mini-os.git")
-               (commit (string-append "xen-RELEASE-" version))))
+               (url "https://xenbits.xen.org/git-http/mini-os.git")
+               ;; This corresponds to (string-append "xen-RELEASE-" version))
+               ;; at time of packaging, but upstream has unfortunately modified
+               ;; existing tags in the past.
+               (commit "0b4b7897e08b967a09bed2028a79fabff82342dd")))
          (sha256
-          (base32
-           "1i8pcl19n60i2m9vlg79q3nknpj209c9ic5x10wxaicx45kc107f"))
+          (base32 "1i8pcl19n60i2m9vlg79q3nknpj209c9ic5x10wxaicx45kc107f"))
          (file-name "mini-os-git-checkout")))
        ("perl" ,perl)
        ; TODO: markdown

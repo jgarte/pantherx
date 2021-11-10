@@ -109,6 +109,8 @@
 ;;; Copyright © 2021 Daniel Meißner <daniel.meissner-i4k@ruhr-uni-bochum.de>
 ;;; Copyright © 2021 Pradana Aumars <paumars@courrier.dev>
 ;;; Copyright © 2021 Felix Gruber <felgru@posteo.net>
+;;; Copyright © 2021 Sébastien Lerique <sl@eauchat.org>
+;;; Copyright © 2021 Raphaël Mélotte <raphael.melotte@mind.be>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -229,6 +231,83 @@
   #:use-module (guix build-system trivial)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26))
+
+(define-public python-janus
+  (package
+    (name "python-janus")
+    (version "0.6.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "janus" version))
+       (sha256
+        (base32 "030xvl2vghi5ispfalhvch1rl6i2jsy5bf1dgjafa7vifppy04j7"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest" "--cov=janus" "--cov=tests")))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-pytest-asyncio" ,python-pytest-asyncio)))
+    (home-page "https://github.com/aio-libs/janus/")
+    (synopsis
+     "Sync-async queue to interoperate between asyncio tasks and classic threads")
+    (description
+     "Mixed sync-async queue, supposed to be used for communicating between
+classic synchronous (threaded) code and asynchronous (in terms of
+@url{https://docs.python.org/3/library/asyncio.html,asyncio}) one.  Like
+@url{https://en.wikipedia.org/wiki/Janus,Janus god} the queue object from the
+library has two faces: synchronous and asynchronous interface.  Synchronous is
+fully compatible with
+@url{https://docs.python.org/3/library/queue.html,standard queue},
+asynchronous one follows
+@url{https://docs.python.org/3/library/asyncio-queue.html,asyncio queue
+design}.")
+    (license license:asl2.0)))
+
+(define-public python-logbook
+  (package
+    (name "python-logbook")
+    (version "1.5.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "Logbook" version))
+       (sha256
+        (base32 "1s1gyfw621vid7qqvhddq6c3z2895ci4lq3g0r1swvpml2nm9x36"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-before 'build 'cythonize-sources
+           (lambda _
+             (with-directory-excursion "logbook"
+               (invoke "cython" "_speedups.pyx"))))
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               ;; Check cython build also
+               (setenv "CYBUILD" "True")
+               (invoke "pytest" "--cov=logbook" "-r" "s" "tests")))))))
+    (native-inputs
+     `(("python-cython" ,python-cython)
+       ("python-mock" ,python-mock)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-google-brotli" ,python-google-brotli)))
+    (home-page "https://github.com/getlogbook/logbook")
+    (synopsis "Logbook is a logging replacement for Python")
+    (description
+     "Logbook is a logging system for Python that replaces the standard
+library’s logging module.  It was designed with both complex and simple
+applications in mind and the idea to make logging fun.")
+    (license license:bsd-3)))
 
 (define-public python-ueberzug
   (package
@@ -4269,7 +4348,7 @@ software version simply.")
 (define-public python-deprecated
   (package
     (name "python-deprecated")
-    (version "1.2.5")
+    (version "1.2.13")
     (source
      (origin
        (method git-fetch)
@@ -4279,13 +4358,14 @@ software version simply.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "14909glxxwwc4b9qpz2b9jdriwzi5n65ichw85xqppap5f79wcwz"))))
+         "0v4ys9xr8lski2r98da99spsj6hjlnnqgnhhmyhrm66myiix885c"))))
     (build-system python-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
                   (replace 'check
-                    (lambda _
-                      (invoke "pytest"))))))
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (when tests?
+                        (invoke "pytest")))))))
     (propagated-inputs
      `(("python-wrapt" ,python-wrapt)))
     (native-inputs
@@ -9613,6 +9693,56 @@ applications.")
      "PyZMQ is the official Python binding for the ZeroMQ messaging library.")
     (license license:bsd-4)))
 
+(define-public python-immutabledict
+  (package
+    (name "python-immutabledict")
+    (version "2.2.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "immutabledict" version))
+       (sha256
+        (base32 "0fpc4gbk7inpfbgdypsg6c18bmdjw8gwx47bjw0hvixn3gghxnqx"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f)) ; no tests in PyPI release and no setup.py in GitHub
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/corenting/immutabledict")
+    (synopsis "Immutable wrapper around dictionaries")
+    (description
+     "@dfn{immutabledict} is an immutable wrapper around dictionaries.
+It implements the complete mapping interface and can be used as a drop-in
+replacement for dictionaries where immutability is desired.")
+    (license license:expat)))
+
+(define-public python-emoji
+  (package
+    (name "python-emoji")
+    (version "1.6.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "emoji" version))
+       (sha256
+        (base32 "0923mpixwq6hdpkgvi4r46alfvf608iq975rb8lnqpq29j71mmjk"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "python" "-m" "pytest")))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/carpedm20/emoji/")
+    (synopsis "Emoji terminal output for Python")
+    (description "This package provides Emoji terminal output for Python.  The
+entire set of Emoji codes as defined by the Unicode Consortium is supported in
+addition to a bunch of aliases.")
+    (license license:bsd-3)))
+
 (define-public python-pep8
   ;; This package has been renamed to ‘pycodestyle’ and is no longer updated.
   ;; Its last release (1.7.1) adds only a scary warning to this effect, breaking
@@ -10812,13 +10942,13 @@ printing of sub-tables by specifying a row range.")
 (define-public python-curio
   (package
     (name "python-curio")
-    (version "1.2")
+    (version "1.5")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "curio" version))
        (sha256
-        (base32 "16wkww6kh511b9bzsfhpvrv0766cc6ssgbzz4lgpjnrzzgx21wwh"))))
+        (base32 "045wwg16qadsalhicbv21p14sj8i4w0l57639j7dmdqbb4p2225g"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -10990,6 +11120,67 @@ also supports getting the version from Python source distributions or, once
 your package is installed, via @code{pkg_resources} (part of
 @code{setuptools}).")
     (license license:gpl3+)))
+
+(define-public python-filetype
+  (package
+    (name "python-filetype")
+    (version "1.0.8")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "filetype" version))
+       (sha256
+        (base32 "05mkinkcn36v1cnb5hzay3zxmv7jmmflckxxp08rgzbkkf3i9pvp"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "python" "-m" "pytest" "-k"
+                       (string-append
+                        ;; Both tests fail with FileNotFoundError.
+                        "not test_infer_zip_from_disk"
+                        " and not test_infer_tar_from_disk"))))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-pytest-benchmark" ,python-pytest-benchmark)))
+    (home-page "https://github.com/h2non/filetype.py")
+    (synopsis "Infer file type and MIME type of any file/buffer")
+    (description "@code{filetype} is a small and dependency free Python
+package to infer file type and MIME type checking the magic numbers
+signature of a file or buffer.")
+    (license license:expat)))
+
+(define-public python-cachelib
+  (package
+    (name "python-cachelib")
+    (version "0.4.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "cachelib" version))
+       (sha256
+        (base32 "0p4chkvbvffcllsny5rpzmsq2vyr24ql3kzif4ha0fxp3fp7vqk8"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest")))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-pytest-xprocess" ,python-pytest-xprocess)))
+    (home-page "https://github.com/pallets/cachelib")
+    (synopsis "Collection of cache libraries")
+    (description "Cachelib is a library extracted from @code{werkzeug} which
+provides a collection of cache libraries in the same API interface.")
+    (license license:bsd-3)))
 
 (define-public python-legacy-api-wrap
   (package
@@ -12459,6 +12650,17 @@ for atomic file system operations.")
 
 (define-public python2-atomicwrites
   (package-with-python2 python-atomicwrites))
+
+(define-public python-atomicwrites-1.4
+  (package
+    (inherit python-atomicwrites)
+    (version "1.4.0")
+    (source (origin
+              (method url-fetch)
+              (uri (pypi-uri "atomicwrites" version))
+              (sha256
+               (base32
+                "0yla2svfhfqrcj8qbyqzx7wi4jy0dwcxvlkg0k3zjd54s5m3jw5f"))))))
 
 (define-public python-qstylizer
   (package
@@ -14584,14 +14786,14 @@ development version of CPython that are not available in older releases.")
 (define-public python-future
   (package
     (name "python-future")
-    (version "0.17.1")
+    (version "0.18.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "future" version))
        (sha256
         (base32
-         "1f2rlqn9rh7adgir52dlbqz69gsab44x0mlm8gf1cs7xvhv54137"))))
+         "0zakvfj87gy6mn1nba06sdha63rn4njm7bhh0wzyrxhcny8avgmi"))))
     (build-system python-build-system)
     ;; Many tests connect to the network or are otherwise flawed.
     ;; https://github.com/PythonCharmers/python-future/issues/210
@@ -15764,14 +15966,29 @@ simple, lightweight implementation.")
 (define-public python-ukpostcodeparser
   (package
     (name "python-ukpostcodeparser")
-    (version "1.0.3")
+    (version "1.1.2")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "UkPostcodeParser" version))
               (sha256
                (base32
-                "1jwg9z4rz51mcka1821rwgycsd0mcicyp1kiwjfa2kvg8bm9p2qd"))))
+                "03jkf1ygbwq3akzbcjyjk1akc1hv2sfgx90306pq1nwklbpn80lk"))))
     (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               ;; Tests for lowercase postcodes fail.
+               (invoke "pytest" "-vv" "ukpostcodeparser/test/parser.py" "-k"
+                       (string-append "not test_091 "
+                                      "and not test_097 "
+                                      "and not test_098 "
+                                      "and not test_125 "
+                                      "and not test_131"))))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
     (home-page "https://github.com/hamstah/ukpostcodeparser")
     (synopsis "UK Postcode parser for Python")
     (description
@@ -15784,37 +16001,37 @@ parsing UK postcodes.")
 
 (define-public python-faker
   (package
-  (name "python-faker")
-  (version "4.0.2")
-  (source (origin
-            (method url-fetch)
-            (uri (pypi-uri "Faker" version))
-            (sha256
-             (base32
-              "13qq485ydxmdnqn3xbfv1xfyqbf9qfnfw33v1vw5l6jyy9p8cgrd"))))
-  (build-system python-build-system)
-  (arguments
-   '(#:phases
-     (modify-phases %standard-phases
-       (replace 'check
-         (lambda _ (invoke "python" "-m" "pytest" "-v"))))))
-  (native-inputs
-   `(;; For testing
-     ("python-freezegun" ,python-freezegun)
-     ("python-pytest" ,python-pytest)
-     ("python-random2" ,python-random2)
-     ("python-ukpostcodeparser" ,python-ukpostcodeparser)
-     ("python-validators" ,python-validators)))
-  (propagated-inputs
-   `(("python-dateutil" ,python-dateutil)
-     ("python-text-unidecode" ,python-text-unidecode)))
-  (home-page "https://github.com/joke2k/faker")
-  (synopsis "Python package that generates fake data")
-  (description
-   "Faker is a Python package that generates fake data such as names,
+    (name "python-faker")
+    (version "9.3.1")
+    (source (origin
+              (method url-fetch)
+              (uri (pypi-uri "Faker" version))
+              (sha256
+               (base32
+                "0lpfdc4ndvk7chgqrfd2b1my4n54pccq9b645vp9cp5s5ypyknfd"))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda _ (invoke "python" "-m" "pytest" "-v"))))))
+    (native-inputs
+     `( ;; For testing
+       ("python-freezegun" ,python-freezegun)
+       ("python-pytest" ,python-pytest-6)
+       ("python-random2" ,python-random2)
+       ("python-ukpostcodeparser" ,python-ukpostcodeparser)
+       ("python-validators" ,python-validators)))
+    (propagated-inputs
+     `(("python-dateutil" ,python-dateutil)
+       ("python-text-unidecode" ,python-text-unidecode)))
+    (home-page "https://github.com/joke2k/faker")
+    (synopsis "Python package that generates fake data")
+    (description
+     "Faker is a Python package that generates fake data such as names,
 addresses, and phone numbers.")
-  (license license:expat)
-  (properties `((python2-variant . ,(delay python2-faker))))))
+    (license license:expat)
+    (properties `((python2-variant . ,(delay python2-faker))))))
 
 ;; Faker 4.0 dropped Python 2 support, so we stick with this older version here.
 (define-public python2-faker
@@ -16334,10 +16551,10 @@ binary or text.")
        `(("python2-enum34" ,python2-enum34)
          ,@(package-propagated-inputs base))))))
 
-(define-public python-binwalk
+(define-public binwalk
   (package
-    (name "python-binwalk")
-    (version "2.2.0")
+    (name "binwalk")
+    (version "2.3.2")
     (source
      (origin
        (method git-fetch)
@@ -16346,8 +16563,7 @@ binary or text.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "1bxgj569fzwv6jhcbl864nmlsi9x1k1r20aywjxc8b9b1zgqrlvc"))))
+        (base32 "01dalxw07c42ka4fqpixcacvy42h04ya909lzpmsblr9s2xdgwcm"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -16358,8 +16574,7 @@ binary or text.")
                      (string-append
                       (getcwd) "/src/"
                       ":" (getenv "PYTHONPATH")))
-             (setenv "HOME" "")
-             #t)))))
+             (setenv "HOME" ""))))))
     (native-inputs
      `(("python-coverage" ,python-coverage)
        ("python-nose" ,python-nose)))
@@ -16368,6 +16583,9 @@ binary or text.")
     (description "Binwalk is a tool for analyzing, reverse engineering, and
 extracting firmware images")
     (license license:expat)))
+
+(define-public python-binwalk
+  (deprecated-package "python-binwalk" binwalk))
 
 (define-public python-nltk
   (package
@@ -16609,9 +16827,6 @@ command @command{natsort} that exposes this functionality in the command line.")
 Glances uses the PsUtil library to get information from your system.  It
 monitors CPU, load, memory, network bandwidth, disk I/O, disk use, and more.")
   (license license:lgpl3+)))
-
-(define-public python-glances
-  (deprecated-package "python-glances" glances))
 
 (define-public python-graphql-core
   (package
@@ -18254,14 +18469,14 @@ perform the operations required for synchronizing plain text.")
 (define-public python-levenshtein
   (package
     (name "python-levenshtein")
-    (version "0.12.0")
+    (version "0.12.2")
     (source
      (origin
       (method url-fetch)
       (uri (pypi-uri "python-Levenshtein" version))
       (sha256
        (base32
-        "1c9ybqcja31nghfcc8xxbbz9h60s9qi12b9hr4jyl69xbvg12fh3"))))
+        "1xj60gymwx1jl2ra9razx2wk8nb9cv1i7l8d14qsp8a8s7xra8yw"))))
     (build-system python-build-system)
     (home-page "https://github.com/ztane/python-Levenshtein")
     (synopsis "Fast computation of Levenshtein distance and string similarity")
@@ -19056,9 +19271,50 @@ address is valid and really exists.")
        ("python-pytz" ,python-pytz)))
     (home-page "https://github.com/marshmallow-code/marshmallow")
     (synopsis "Convert complex datatypes to and from native
-Python datatypes.")
+Python datatypes")
     (description "@code{marshmallow} provides a library for converting
 complex datatypes to and from native Python datatypes.")
+    (license license:expat)))
+
+(define-public python-marshmallow-3.2
+  (package
+    (inherit python-marshmallow)
+    (version "3.2.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "marshmallow" version))
+       (sha256
+        (base32 "1w18klwj0z9bqxj252qpj1hz8l46nl27sbc89rkajc7mln73wbws"))))))
+
+(define-public python-marshmallow-jsonapi
+  (package
+    (name "python-marshmallow-jsonapi")
+    (version "0.24.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "marshmallow-jsonapi" version))
+       (sha256
+        (base32 "1d9pxcgmln4gls99vwj1h24qv0lz7fb2jqmqrsiv1pid1snc125x"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-marshmallow" ,python-marshmallow-3.2)))
+    (native-inputs
+     `(("python-faker" ,python-faker)
+       ("python-flake8" ,python-flake8)
+       ("python-flake8-bugbear" ,python-flake8-bugbear)
+       ("python-flask" ,python-flask)
+       ("python-mock" ,python-mock)
+       ("python-pre-commit" ,python-pre-commit)
+       ("python-pytest" ,python-pytest)
+       ("python-tox" ,python-tox)))
+    (home-page "https://github.com/marshmallow-code/marshmallow-jsonapi")
+    (synopsis "JSON:API 1.0 formatting with Marshmallow")
+    (description
+     "The marshmallow-jsonapi package provides a simple way to produce
+@uref{https://jsonapi.org, JSON:API}-compliant data in any Python Web framework.
+It includes optional utilities to integrate with Flask.")
     (license license:expat)))
 
 (define-public python-apispec
@@ -19239,14 +19495,8 @@ many of the popular cloud service providers using a unified API.")
 window memory map manager.")
     (license license:bsd-3)))
 
-(define-public python-smmap2
-  (deprecated-package "python-smmap2" python-smmap))
-
 (define-public python2-smmap
   (package-with-python2 python-smmap))
-
-(define-public python2-smmap2
-  (deprecated-package "python2-smmap2" python2-smmap))
 
 (define-public python-regex
   (package
@@ -24675,19 +24925,40 @@ replacement for dictionaries where immutability is desired.")
 (define-public python-unpaddedbase64
   (package
     (name "python-unpaddedbase64")
-    (version "1.1.0")
+    (version "2.1.0")
     (source
      (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/matrix-org/python-unpaddedbase64")
-             (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
+       (method url-fetch)
+       (uri (pypi-uri "unpaddedbase64" version))
        (sha256
-        (base32
-         "0if3fjfxga0bwdq47v77fs9hrcqpmwdxry2i2a7pdqsp95258nxd"))))
+        (base32 "01ghlmw63fgslwj8j74vkpf1kqvr7a4agm6nyn89vqwx106ccwvj"))))
     (build-system python-build-system)
-    (home-page "https://pypi.org/project/unpaddedbase64/")
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key inputs tests? #:allow-other-keys)
+             (when tests?
+               (copy-recursively (string-append
+                                  (assoc-ref inputs "tests") "/tests")
+                                 "tests")
+               (invoke "python" "-m" "pytest" "-vv")))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("tests"
+        ;; The release on pypi comes without tests.  We can't build from this
+        ;; checkout, though, because installation requires an invocation of
+        ;; poetry.
+        ,(origin
+           (method git-fetch)
+           (uri (git-reference
+                 (url "https://github.com/matrix-org/python-unpaddedbase64")
+                 (commit (string-append "v" version))))
+           (file-name (git-file-name name version))
+           (sha256
+            (base32
+             "1n6har8pxv0mqb96lanzihp1xf76aa17jw3977drb1fgz947pnmz"))))))
+    (home-page "https://github.com/matrix-org/python-unpaddedbase64")
     (synopsis "Encode and decode Base64 without “=” padding")
     (description
      "RFC 4648 specifies that Base64 should be padded to a multiple of 4 bytes
@@ -26919,8 +27190,8 @@ result.")
     (home-page "https://github.com/readthedocs/recommonmark")
     (synopsis "Docutils-compatibility bridge to CommonMark")
     (description
-     "This packages provides a docutils-compatibility bridge to CommonMark,
-enabling you to write CommonMark inside of Docutils & Sphinx projects.")
+     "This package provides a docutils-compatibility bridge to CommonMark that
+lets you write CommonMark inside of Docutils & Sphinx projects.")
     (license license:expat)))
 
 (define-public python-pyhull
@@ -26993,7 +27264,8 @@ and BMI2).")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "1yy62k3cjr6556nbp651w6v4hzl7kz4y75wy2dfqgndgbnixskx2"))))
+                  "1yy62k3cjr6556nbp651w6v4hzl7kz4y75wy2dfqgndgbnixskx2"))
+                (patches (search-patches "python-peachpy-determinism.patch"))))
       (build-system python-build-system)
       (arguments
        '(#:phases (modify-phases %standard-phases
@@ -27308,6 +27580,35 @@ location.  This small Python module determines the appropriate
 platform-specific directories, e.g. the ``user data dir''.")
     (license license:expat)))
 
+(define-public python-json2html
+  (package
+    (name "python-json2html")
+    (version "1.3.0")
+    (source
+     ;; There are no tests in the PyPI tarball.
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/softvar/json2html")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1ncypljnl5y8lsxy6ibcqy412kx3mzxl4ajg67568hvq98kv1sb3"))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "python" "test/run_tests.py")))))))
+    (home-page "https://github.com/softvar/json2html")
+    (synopsis "Convert JSON to HTML table")
+    (description "@code{python-json2html} is a python module to convert JSON
+into a human readable HTML table representation.")
+    (license license:expat)))
+
 (define-public python-face
   (package
     (name "python-face")
@@ -27412,3 +27713,76 @@ and powerful way to handle real-world data, featuring:
      "This package provides the @code{python-box} Python module.
 It implements advanced Python dictionaries with dot notation access.")
     (license license:expat)))
+
+(define-public python-fields
+  (package
+    (name "python-fields")
+    (version "5.0.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "fields" version))
+        (sha256
+          (base32 "09sppvhhkhkv9zc9g994m53z15v92csxwcf42ggkaknlv01smm1i"))))
+    (build-system python-build-system)
+    (home-page "https://python-fields.readthedocs.io/")
+    (synopsis "Python container class boilerplate killer")
+    (description "Avoid repetetive boilerplate code in Python classes.")
+    (license license:bsd-3)))
+
+(define-public python-aspectlib
+  (package
+    (name "python-aspectlib")
+    (version "1.5.2")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "aspectlib" version))
+        (sha256
+          (base32 "1am4ycf292zbmgz791z393v63w7qrynf8q5p9db2wwf2qj1fqxfj"))))
+    (build-system python-build-system)
+    (propagated-inputs `(("python-fields" ,python-fields)))
+    (home-page "https://github.com/ionelmc/python-aspectlib")
+    (synopsis
+      "Python monkey-patching and decorators")
+    (description
+      "This package provides an aspect-oriented programming, monkey-patch
+and decorators library.  It is useful when changing behavior in existing
+code is desired.  It includes tools for debugging and testing:
+simple mock/record and a complete capture/replay framework.")
+    (license license:bsd-2)))
+
+(define-public python-ijson
+  (package
+    (name "python-ijson")
+    (version "3.1.4")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "ijson" version))
+       (sha256
+        (base32 "1sp463ywj4jv5cp6hsv2qwiima30d09xsabxb2dyq5b17jp0640x"))))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         ;; the tests run by the default setup.py require yajl 1.x,
+         ;; but we have 2.x.  yajl 1.x support is going to be removed
+         ;; anyway, so use pytest to avoid running the yajl1-related
+         ;; tests. See: https://github.com/ICRAR/ijson/issues/55
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest" "-vv")))))))
+    (inputs
+     ;; libyajl is optional, but compiling with it makes faster
+     ;; backends available to ijson:
+     `(("libyajl", libyajl)))
+    (native-inputs
+     `(("python-pytest", python-pytest)))
+    (build-system python-build-system)
+    (home-page "https://github.com/ICRAR/ijson")
+    (synopsis "Iterative JSON parser with Python iterator interfaces")
+    (description
+     "Ijson is an iterative JSON parser with standard Python iterator
+interfaces.")
+    (license license:bsd-3)))

@@ -9,7 +9,7 @@
 ;;; Copyright © 2016 Andy Patterson <ajpatter@uwaterloo.ca>
 ;;; Copyright © 2016, 2017, 2018, 2019 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2017 Mekeor Melire <mekeor.melire@gmail.com>
-;;; Copyright © 2017, 2018, 2020 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2017, 2018, 2020, 2021 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2017 Theodoros Foradis <theodoros@foradis.org>
 ;;; Copyright © 2017, 2018, 2019 Rutger Helling <rhelling@mykolab.com>
@@ -239,7 +239,7 @@ Its design goals are simplicity and stability.")
 (define-public libgnt
   (package
     (name "libgnt")
-    (version "2.14.1")
+    (version "2.14.3")
     (source
      (origin
        (method url-fetch)
@@ -247,7 +247,7 @@ Its design goals are simplicity and stability.")
         (string-append "mirror://sourceforge/pidgin/libgnt/"
                        version "/libgnt-" version ".tar.xz"))
        (sha256
-        (base32 "1n2bxg0ignn53c08cp69pj4sdg53kwlqn23rincyjmpr327fdhsy"))))
+        (base32 "08v14fjcx2wx6c573wllq015l6zc8qkpz8rrl6qhp7crf9zlbxap"))))
     (build-system meson-build-system)
     (outputs '("out" "doc"))
     (arguments
@@ -260,16 +260,14 @@ Its design goals are simplicity and stability.")
                (("'/usr'")
                 (string-append "'"
                                (assoc-ref inputs "ncurses")
-                               "'")))
-             #t))
+                               "'")))))
          (add-before 'configure 'patch-docbook-xml
            (lambda* (#:key inputs #:allow-other-keys)
              (with-directory-excursion "doc"
                (substitute* "libgnt-docs.xml"
                  (("http://www.oasis-open.org/docbook/xml/4.1.2/")
                   (string-append (assoc-ref inputs "docbook-xml")
-                                 "/xml/dtd/docbook/"))))
-             #t))
+                                 "/xml/dtd/docbook/"))))))
          (add-after 'install 'move-doc
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
@@ -277,8 +275,7 @@ Its design goals are simplicity and stability.")
                (mkdir-p (string-append doc "/share"))
                (rename-file
                 (string-append out "/share/gtk-doc")
-                (string-append doc "/share/gtk-doc"))
-               #t))))))
+                (string-append doc "/share/gtk-doc"))))))))
     (native-inputs
      `(("docbook-xml" ,docbook-xml-4.1.2)
        ("glib:bin" ,glib "bin")
@@ -1040,14 +1037,14 @@ simultaneously and therefore appear under the same nickname on IRC.")
 (define-public python-nbxmpp
   (package
     (name "python-nbxmpp")
-    (version "2.0.2")
+    (version "2.0.4")
     (source
      (origin
        (method url-fetch)
        (uri
         (pypi-uri "nbxmpp" version))
        (sha256
-        (base32 "1482fva70i01w60fk70c0fhqmqgzi1fb4xflllz2v6c8mdqkd1m3"))))
+        (base32 "1s2phiipq7ks8vrd93p96dzd5wgmgg8q9h2rxsnh2gg7iy06gj9c"))))
     (build-system python-build-system)
     (native-inputs
      `(("glib:bin" ,glib "bin")))
@@ -1069,7 +1066,7 @@ of xmpppy.")
 (define-public gajim
   (package
     (name "gajim")
-    (version "1.3.2")
+    (version "1.3.3")
     (source
      (origin
        (method url-fetch)
@@ -1078,7 +1075,7 @@ of xmpppy.")
                        (version-major+minor version)
                        "/gajim-" version ".tar.gz"))
        (sha256
-        (base32 "1vjzv8zg9s393xw81klcgbkn4h6j2blzla9iil5kqfrw7wmldskh"))
+        (base32 "1337qkpcv7j0fgws9scnk82mn2l7s17060vmrbh3ihinmxmbxg6x"))
        (patches (search-patches "gajim-honour-GAJIM_PLUGIN_PATH.patch"))))
     (build-system python-build-system)
     (arguments
@@ -1092,13 +1089,6 @@ of xmpppy.")
         (guix build utils))
        #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'disable-failing-tests
-           (lambda _
-             ;; ModuleNotFoundError: No module named 'gajim.gui.emoji_data'
-             ;; https://dev.gajim.org/gajim/gajim/-/issues/10478
-             (delete-file "test/lib/gajim_mocks.py")
-             (delete-file "test/unit/test_gui_interface.py")
-             #t))
          (replace 'check
            (lambda _
              ;; Tests require a running X server.
@@ -1106,8 +1096,7 @@ of xmpppy.")
              (setenv "DISPLAY" ":1")
              ;; For missing '/etc/machine-id'.
              (setenv "DBUS_FATAL_WARNINGS" "0")
-             (invoke "dbus-launch" "python" "./setup.py" "test")
-             #t))
+             (invoke "dbus-launch" "python" "./setup.py" "test")))
          (add-after 'install 'glib-or-gtk-compile-schemas
            (assoc-ref glib-or-gtk:%standard-phases 'glib-or-gtk-compile-schemas))
          (add-after 'install 'glib-or-gtk-wrap
@@ -1123,8 +1112,7 @@ of xmpppy.")
                     (wrap-program file
                       `("GST_PLUGIN_SYSTEM_PATH" ":" prefix (,gst-plugin-path))
                       `("GI_TYPELIB_PATH" ":" prefix (,gi-typelib-path)))))
-                '("gajim" "gajim-remote" "gajim-history-manager")))
-             #t)))))
+                '("gajim" "gajim-remote" "gajim-history-manager"))))))))
     (native-search-paths
      (list
       (search-path-specification
@@ -1340,14 +1328,14 @@ default.")
 (define-public prosody
   (package
     (name "prosody")
-    (version "0.11.9")
+    (version "0.11.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://prosody.im/downloads/source/"
                                   "prosody-" version ".tar.gz"))
               (sha256
                (base32
-                "02gzvsaq0l5lx608sfh7hfz14s6yfsr4sr4kzcsqd1cxljp35h6c"))))
+                "1q84s9cq7cgzd295qxa2iy0r3vd3v3chbck62bdx3pd6skk19my6"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ;tests require "busted"
@@ -1363,16 +1351,14 @@ default.")
              ;; The configure script aborts when it encounters unexpected
              ;; arguments.  Make it more tolerant.
              (substitute* "configure"
-               (("exit 1") ""))
-             #t))
+               (("exit 1") ""))))
          (add-after 'unpack 'fix-makefile
            (lambda _
              (substitute* "GNUmakefile"
                ;; prosodyctl needs to read the configuration file.
                (("^INSTALLEDCONFIG =.*") "INSTALLEDCONFIG = /etc/prosody\n")
                ;; prosodyctl needs a place to put auto-generated certificates.
-               (("^INSTALLEDDATA =.*") "INSTALLEDDATA = /var/lib/prosody\n"))
-             #t))
+               (("^INSTALLEDDATA =.*") "INSTALLEDDATA = /var/lib/prosody\n"))))
          (add-after 'install 'wrap-programs
            (lambda* (#:key inputs outputs #:allow-other-keys)
              ;; Make sure all executables in "bin" find the required Lua
@@ -1408,8 +1394,7 @@ default.")
                              `("LUA_PATH"  ";" = (,lua-path))
                              `("LUA_CPATH" ";" = (,lua-cpath))
                              `("PATH" ":" prefix ,path)))
-                         (find-files bin ".*"))
-               #t))))))
+                         (find-files bin ".*"))))))))
     (inputs
      `(("libidn" ,libidn)
        ("openssl" ,openssl)
@@ -3000,5 +2985,122 @@ keybase, matrix, microsoft teams, nextcloud, mumble, vk and more with REST
 API.  Mattermost is not required.")
     (home-page "https://github.com/42wim/matterbridge")
     (license license:asl2.0)))
+
+(define-public weechat-matrix
+  (package
+    (name "weechat-matrix")
+    (version "0.3.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/poljar/weechat-matrix")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "1iv55n4k05139f7jzkhczgw4qp6qwilrvfsy3c6v2m1kxffj12d3"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (delete 'build)
+         (replace 'install
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((weechat-python (string-append (assoc-ref outputs "out")
+                                                   "/share/weechat/python")))
+               ;; Avoid circular import by renaming the matrix module to
+               ;; weechat_matrix.
+               (substitute* (cons "main.py"
+                                  (append (find-files "matrix")
+                                          (find-files "tests")))
+                 (("from matrix") "from weechat_matrix")
+                 (("import matrix") "import weechat_matrix"))
+               ;; Install python modules.
+               (invoke "make" "install-lib"
+                       (string-append "INSTALLDIR="
+                                      (site-packages inputs outputs)
+                                      "/weechat_matrix"))
+               ;; Extend PYTHONPATH to find installed python modules.
+               (add-installed-pythonpath inputs outputs)
+               ;; Augment sys.path so that dependencies are found.
+               (substitute* "main.py"
+                 (("import os\n" all)
+                  (apply string-append
+                         all
+                         "import sys\n"
+                         (map (lambda (path)
+                                (string-append "sys.path.append('" path "')\n"))
+                              (string-split (getenv "PYTHONPATH") #\:)))))
+               ;; Install script.
+               (mkdir-p weechat-python)
+               (copy-file "main.py"
+                          (string-append weechat-python "/matrix.py")))))
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest")))))))
+    (inputs
+     `(("python-matrix-nio" ,python-matrix-nio)
+       ("python-pygments" ,python-pygments)
+       ("python-pyopenssl" ,python-pyopenssl)
+       ("python-webcolors" ,python-webcolors)))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/poljar/weechat-matrix")
+    (synopsis "Weechat Matrix protocol script")
+    (description "@code{weechat-matrix} is a Python plugin for Weechat that lets
+Weechat communicate over the Matrix protocol.")
+    (license license:isc)))
+
+(define-public weechat-wee-slack
+  (package
+    (name "weechat-wee-slack")
+    (version "2.8.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/wee-slack/wee-slack")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0xfklr0gsc9jgxfyrrb2j756lclz9g8imcb0pk0xgyj8mhsw23zk"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (delete 'build)
+         (replace 'install
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             ;; Augment sys.path so that dependencies are found.
+             (substitute* "wee_slack.py"
+               (("import sys\n" all)
+                (apply string-append
+                       all
+                       (map (lambda (path)
+                              (string-append "sys.path.append('" path "')\n"))
+                            (string-split (getenv "PYTHONPATH") #\:)))))
+             ;; Install script.
+             (install-file "wee_slack.py"
+                           (string-append (assoc-ref outputs "out")
+                                          "/share/weechat/python"))))
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest")))))))
+    (inputs
+     `(("python-websocket-client" ,python-websocket-client)))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/wee-slack/wee-slack")
+    (synopsis "Weechat Slack script")
+    (description "@code{weechat-wee-slack} is a WeeChat native client for
+Slack.  It provides supplemental features only available in the web/mobile
+clients such as synchronizing read markers, typing notification, threads (and
+more)!  It connects via the Slack API, and maintains a persistent websocket
+for notification of events.")
+    (license license:expat)))
 
 ;;; messaging.scm ends here

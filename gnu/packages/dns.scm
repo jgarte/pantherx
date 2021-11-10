@@ -592,14 +592,14 @@ asynchronous fashion.")
 (define-public nsd
   (package
     (name "nsd")
-    (version "4.3.7")
+    (version "4.3.8")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.nlnetlabs.nl/downloads/nsd/nsd-"
                            version ".tar.gz"))
        (sha256
-        (base32 "1bg87g0i66hw16fm7gbqmzyi2rcn1hadzz0bg9b8s5mx7g2rwfzx"))))
+        (base32 "1qcrrglm3r486r6n26h5fr1xb1k8jf63gm9b43wrhnigywjpx28i"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -635,8 +635,7 @@ asynchronous fashion.")
                  ((".*INSTALL.*\\$\\((config|pid|xfr|db)dir" command)
                   (string-append "#" command))
                  (("\\$\\(nsdconfigfile\\)\\.sample" file-name)
-                  (string-append doc "/examples/" file-name)))
-               #t))))
+                  (string-append doc "/examples/" file-name)))))))
        #:tests? #f))                    ; no tests
     (inputs
      `(("libevent" ,libevent)
@@ -924,7 +923,7 @@ Extensions} (DNSSEC).")
 (define-public knot
   (package
     (name "knot")
-    (version "3.1.2")
+    (version "3.1.4")
     (source
      (origin
        (method git-fetch)
@@ -933,7 +932,7 @@ Extensions} (DNSSEC).")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1kyjf6d1jx8q0zjzwy06f4d3ar5cbbqxka8cc7ckwmbpf1n6cij5"))
+        (base32 "0wx8ad95adryzp527m4k0lja8y39qqd65f5z9immhfpb9cyax6i7"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -1062,14 +1061,14 @@ synthesis, and on-the-fly re-configuration.")
 (define-public knot-resolver
   (package
     (name "knot-resolver")
-    (version "5.4.1")
+    (version "5.4.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://secure.nic.cz/files/knot-resolver/"
                                   "knot-resolver-" version ".tar.xz"))
               (sha256
                (base32
-                "0rixiqfj53rfabrz8qpnq4whx8y29d2m5w64a4jlwx7gv4nrd2zv"))))
+                "12x5cd09rv530pak5f2smxcfq2zdqg0g5qxsd5k0alm7f6aj2spa"))))
     (build-system meson-build-system)
     (outputs '("out" "doc"))
     (arguments

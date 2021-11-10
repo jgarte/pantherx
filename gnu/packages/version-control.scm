@@ -40,6 +40,7 @@
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
 ;;; Copyright © 2021 François J. <francois-oss@avalenn.eu>
 ;;; Copyright © 2021 Julien Lepiller <julien@lepiller.eu>
+;;; Copyright © 2021 jgart <jgart@dismail.de>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -873,16 +874,16 @@ to lock down your entire repository.")
 (define-public git-remote-gcrypt
   (package
    (name "git-remote-gcrypt")
-   (version "1.3")
+   (version "1.4")
    (source (origin
              (method git-fetch)
              (uri (git-reference
                    (url "https://git.spwhitton.name/git-remote-gcrypt")
                    (commit version)))
-             (file-name (string-append name "-" version "-checkout"))
+             (file-name (git-file-name name version))
              (sha256
               (base32
-               "0n8fzvr6y0pxrbvkywlky2bd8jvi0ayp4n9hwi84l1ldmv4a40dh"))))
+               "1x5ca1fi0hyn5w5mnz230x27bqr8j78adnzmlc7cbhzr13q36y5q"))))
    (build-system trivial-build-system)
    (arguments
     `(#:modules ((guix build utils))
@@ -892,8 +893,7 @@ to lock down your entire repository.")
                          (output (assoc-ref %outputs "out"))
                          (bindir (string-append output "/bin")))
                     (install-file (string-append source "/git-remote-gcrypt")
-                                  bindir)
-                    #t))))
+                                  bindir)))))
    (home-page "https://spwhitton.name/tech/code/git-remote-gcrypt/")
    (synopsis "Whole remote repository encryption")
    (description "git-remote-gcrypt is a Git remote helper to push and pull from
@@ -1157,13 +1157,13 @@ allowing to handle large objects with a small memory footprint.")
 (define-public python-gitpython
   (package
     (name "python-gitpython")
-    (version "3.1.0")
+    (version "3.1.24")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "GitPython" version))
               (sha256
                (base32
-                "1jzllsy9lwc9yibccgv7h9naxisazx2n3zmpy21c8n5xhysw69p4"))))
+                "1rarp97cpjnhi106k2yhb7kygdyflmlgq0icxv3ggzl4wvszv0yz"))))
     (build-system python-build-system)
     (arguments
      `(#:tests? #f ;XXX: Tests can only be run within the GitPython repository.
@@ -1174,12 +1174,12 @@ allowing to handle large objects with a small memory footprint.")
                         (("git_exec_name = \"git\"")
                          (string-append "git_exec_name = \""
                                         (assoc-ref inputs "git")
-                                        "/bin/git\"")))
-                      #t)))))
+                                        "/bin/git\""))))))))
     (inputs
      `(("git" ,git)))
     (propagated-inputs
-     `(("python-gitdb" ,python-gitdb)))
+     `(("python-gitdb" ,python-gitdb)
+       ("python-typing-extensions" ,python-typing-extensions)))
     (native-inputs
      `(("python-ddt" ,python-ddt)
        ("python-nose" ,python-nose)))
@@ -2643,25 +2643,27 @@ a built-in wiki, built-in file browsing, built-in tickets system, etc.")
 (define-public stagit
   (package
     (name "stagit")
-    (version "0.7.2")
+    (version "0.9.6")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://dl.2f30.org/releases/"
-                                  name "-" version ".tar.gz"))
+              (method git-fetch)
+              (uri (git-reference
+                     (url "git://git.codemadness.org/stagit")
+                     (commit version)))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1m3s9g1z9szbjrhm8sic91xh6f2bfpi56rskdkqd5wc4wdycpyi5"))))
+                "0hcf1rmsp9s6jjg1dypq7sa3dqmqg2q3x1kj23rb5gwrsb31vyfj"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f ; No tests
-       #:make-flags (list "CC=gcc"
+       #:make-flags (list (string-append "CC=" ,(cc-for-target))
                           (string-append "PREFIX=" %output))
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)))) ; No configure script
     (inputs
      `(("libgit2" ,libgit2)))
-    (home-page "https://2f30.org/")
+    (home-page "https://git.codemadness.org/stagit/")
     (synopsis "Static git page generator")
     (description "Stagit creates static pages for git repositories, the results can
 be served with a HTTP file server of your choice.")

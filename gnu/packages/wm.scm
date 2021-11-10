@@ -102,6 +102,7 @@
   #:use-module (gnu packages imagemagick)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages linux)
+  #:use-module (gnu packages lisp-check)
   #:use-module (gnu packages lisp-xyz)
   #:use-module (gnu packages logging)
   #:use-module (gnu packages lua)
@@ -958,7 +959,7 @@ experience.")
 (define-public fnott
   (package
     (name "fnott")
-    (version "1.1.0")
+    (version "1.1.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -967,7 +968,7 @@ experience.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1xaz13iry3fdjhqk9xzg29kbv7hqj8dzzqxr5mhrj8f2m013jdc3"))))
+                "0vkwyci4z4jj2aczxkrmj0861j5jczjr8isasa7gml93nlvyw7gv"))))
     (build-system meson-build-system)
     (arguments
      `( #:meson ,meson-0.55
@@ -1428,14 +1429,14 @@ its size
 (define-public polybar
   (package
     (name "polybar")
-    (version "3.5.5")
+    (version "3.5.7")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/polybar/polybar/releases/"
                            "download/" version "/polybar-" version ".tar.gz"))
        (sha256
-        (base32 "1c8br9972x1qw7l2shj9aqzv0gsx58fdh3r0f1z5i1bqdwxmsqky"))))
+        (base32 "1nr386jdlm8qkbdf23w7lyvbfhr362s90f957fawnyi1finhw8bk"))))
     (build-system cmake-build-system)
     (arguments
      ;; Test is disabled because it requires downloading googletest from the

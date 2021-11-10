@@ -316,6 +316,7 @@ MODULES =					\
   guix/scripts/import/stackage.scm		\
   guix/scripts/import/texlive.scm  		\
   guix/scripts/environment.scm			\
+  guix/scripts/shell.scm			\
   guix/scripts/publish.scm			\
   guix/scripts/edit.scm				\
   guix/scripts/size.scm				\
@@ -474,6 +475,7 @@ SCM_TESTS =					\
   tests/graph.scm				\
   tests/gremlin.scm				\
   tests/hackage.scm				\
+  tests/home-import.scm				\
   tests/import-git.scm				\
   tests/import-utils.scm			\
   tests/inferior.scm				\
@@ -552,6 +554,7 @@ SH_TESTS =					\
   tests/guix-authenticate.sh			\
   tests/guix-environment.sh			\
   tests/guix-environment-container.sh		\
+  tests/guix-shell.sh				\
   tests/guix-graph.sh				\
   tests/guix-describe.sh			\
   tests/guix-repl.sh     			\
@@ -640,6 +643,7 @@ EXTRA_DIST +=						\
   build-aux/check-final-inputs-self-contained.scm	\
   build-aux/check-channel-news.scm			\
   build-aux/compile-as-derivation.scm			\
+  build-aux/convert-xref.scm			\
   build-aux/generate-authors.scm			\
   build-aux/test-driver.scm				\
   build-aux/update-guix-package.scm			\
@@ -699,8 +703,6 @@ $(1): $(2)
 	  --completed $(3)					\
 	  $$(filter %.scm,$$^)
 
-.PHONY: $(1)
-
 endef
 
 # Split compilation in several steps, each of which building a subset of
@@ -712,22 +714,31 @@ MODULES_CORE     = guix.scm $(filter-out guix/scripts/%,$(filter guix/%,$(MODULE
 MODULES_PACKAGES = $(filter gnu/packages/%,$(MODULES))
 MODULES_SYSTEM   = gnu.scm $(filter-out gnu/packages/%,$(filter gnu/%,$(MODULES)))
 MODULES_CLI      = $(filter guix/scripts/%,$(MODULES))
+MODULES_PO       = guix/build/po.scm
 
 $(eval $(call guile-compilation-rule,make-core-go,	\
   $(MODULES_CORE) guix/config.scm $(dist_noinst_DATA),	\
   0))
+.PHONY: make-core-go
 
 $(eval $(call guile-compilation-rule,make-packages-go,	\
   $(MODULES_PACKAGES) make-core-go,			\
   $(words $(MODULES_CORE))))
+.PHONY: make-packages-go
 
 $(eval $(call guile-compilation-rule,make-system-go,	\
   $(MODULES_SYSTEM) make-packages-go make-core-go,	\
   $(words $(MODULES_CORE) $(MODULES_PACKAGES))))
+.PHONY: make-system-go
 
 $(eval $(call guile-compilation-rule,make-cli-go,			\
   $(MODULES_CLI) make-system-go make-packages-go make-core-go,		\
   $(words $(MODULES_CORE) $(MODULES_PACKAGES) $(MODULES_SYSTEM))))
+.PHONY: make-cli-go
+
+$(eval $(call guile-compilation-rule,guix/build/po.go,			\
+  $(MODULES_PO),							\
+  0))
 
 SUFFIXES = .go
 

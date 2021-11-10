@@ -124,6 +124,7 @@
 
             profile-manifest
             package->manifest-entry
+            package->development-manifest
             packages->manifest
             ca-certificate-bundle
             %default-profile-hooks
@@ -399,6 +400,24 @@ file name."
                      (parent parent)
                      (properties properties))))
     entry))
+
+(define* (package->development-manifest package
+                                        #:optional
+                                        (system (%current-system))
+                                        #:key target)
+  "Return a manifest for the \"development inputs\" of PACKAGE for SYSTEM,
+optionally when cross-compiling to TARGET.  Development inputs include both
+explicit and implicit inputs of PACKAGE."
+  (manifest
+   (filter-map (match-lambda
+                 ((label (? package? package))
+                  (package->manifest-entry package))
+                 ((label (? package? package) output)
+                  (package->manifest-entry package output))
+                 ;; TODO: Support <inferior-package>.
+                 (_
+                  #f))
+               (package-development-inputs package system #:target target))))
 
 (define (packages->manifest packages)
   "Return a list of manifest entries, one for each item listed in PACKAGES.
@@ -1663,6 +1682,16 @@ the entries in MANIFEST."
                     `((type . profile-hook)
                       (hook . manual-database))))
 
+(define (manual-database/optional manifest)
+  "Return a derivation to build the manual database of MANIFEST, but only if
+MANIFEST contains the \"man-db\" package.  Otherwise, return #f."
+  ;; Building the man database (for "man -k") is expensive and rarely used.
+  ;; Build it only if the profile also contains "man-db".
+  (mlet %store-monad ((man-db (manifest-lookup-package manifest "man-db")))
+    (if man-db
+        (manual-database manifest)
+        (return #f))))
+
 (define (texlive-configuration manifest)
   "Return a derivation that builds a TeXlive configuration for the entries in
 MANIFEST."
@@ -1765,7 +1794,7 @@ MANIFEST."
   ;; This is the list of derivation-returning procedures that are called by
   ;; default when making a non-empty profile.
   (list info-dir-file
-        manual-database
+        manual-database/optional
         fonts-dir-file
         ghc-package-cache-file
         ca-certificate-bundle

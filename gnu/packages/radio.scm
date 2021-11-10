@@ -379,14 +379,14 @@ SoapySDR library.")
 (define-public chirp
   (package
     (name "chirp")
-    (version "20201121")
+    (version "20211016")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://trac.chirp.danplanet.com/chirp_daily/daily-"
                            version "/chirp-daily-" version ".tar.gz"))
        (sha256
-        (base32 "092jryb1jn9li6zj243awv6piz1lhghqsm4phrz7j0rgqf76dy4n"))))
+        (base32 "13xzqnhvnw6yipv4izkq0s9ykyl9pc5ifpr1ii8xfp28ch706qyw"))))
     (build-system python-build-system)
     (inputs
      `(("python2-libxml2" ,python2-libxml2)
@@ -953,7 +953,7 @@ or USB connection.")
 (define-public flamp
   (package
     (name "flamp")
-    (version "2.2.05")
+    (version "2.2.07")
     (source
      (origin
        (method git-fetch)
@@ -962,7 +962,7 @@ or USB connection.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ll2wbhyh1sb4iqsypwrd118mrgw3vbsdbz442qhk4r6l8kjzblq"))))
+        (base32 "0rygd5w04nspxdj8qj81gpb3mgijvlmii74s1f4mihqs5kb8nwh6"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -1069,7 +1069,7 @@ you must extend 'udev-service-type' with this package.  E.g.:
 (define-public hamlib
   (package
     (name "hamlib")
-    (version "4.2")
+    (version "4.3.1")
     (source
      (origin
        (method url-fetch)
@@ -1077,7 +1077,7 @@ you must extend 'udev-service-type' with this package.  E.g.:
              "https://github.com/Hamlib/Hamlib/releases/download/"
              version "/hamlib-" version ".tar.gz"))
        (sha256
-        (base32 "1m8gb20i8ga6ndnnw187ry1h4z8wx27v1hl7c610r6ky60pv4072"))))
+        (base32 "0c578m04zs8dllbd4cv6nxb44y0dn8kiapzkih84ycfjzmnkhdrl"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("doxygen" ,doxygen)
@@ -2045,7 +2045,7 @@ voice formats.")
 (define-public sdrangel
   (package
     (name "sdrangel")
-    (version "6.16.1")
+    (version "6.17.1")
     (source
      (origin
        (method git-fetch)
@@ -2054,7 +2054,7 @@ voice formats.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0g9h4cy8k9dqlwkfk4lkk2d2s003bckzskm3vra87ndmgq1nfbzv"))))
+        (base32 "1yraif6dzs5sdskxnj937x613xz3zxnqim5mnk18vj2m0apcaqam"))))
     (build-system qt-build-system)
     (native-inputs
      `(("doxygen" ,doxygen)
@@ -2118,7 +2118,7 @@ various hardware.")
 (define-public sdr++
   (package
     (name "sdr++")
-    (version "1.0.3")
+    (version "1.0.4")
     (source
      (origin
        (method git-fetch)
@@ -2127,7 +2127,7 @@ various hardware.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1mplhys07l4bqv3q301ayh35468mg0hpxp5zgrps7gkjyf3v6idr"))))
+        (base32 "1xwbz6yyca6wmzad5ykxw6i0r8jzc7i3jbzq7mhp8caiymd6knw3"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("gcc" ,gcc-10) ; A GCC more recent than version 7 is required.
@@ -2135,6 +2135,7 @@ various hardware.")
     (inputs
      `(("airspyhf" ,airspyhf)
        ("alsa-lib" ,alsa-lib)
+       ("codec2" ,codec2)
        ("fftwf" ,fftwf)
        ("glew" ,glew)
        ("glfw" ,glfw)
@@ -2149,7 +2150,8 @@ various hardware.")
     (arguments
      `(#:tests? #f ; No test suite.
        #:configure-flags '("-DOPT_BUILD_AIRSPY_SOURCE=OFF"
-                           "-DOPT_BUILD_PLUTOSDR_SOURCE=OFF")
+                           "-DOPT_BUILD_PLUTOSDR_SOURCE=OFF"
+                           "-DOPT_BUILD_M17_DECODER=ON")
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'fix-paths
@@ -2375,7 +2377,7 @@ of devices than RTL-SDR.")
 (define-public gnss-sdr
   (package
     (name "gnss-sdr")
-    (version "0.0.14")
+    (version "0.0.15")
     (source
      (origin
        (method git-fetch)
@@ -2384,7 +2386,7 @@ of devices than RTL-SDR.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1kjh9bnf6h9q71bnn8nrwlc80wcnkib97ylzvb102acii4p0fm08"))))
+        (base32 "1m41rnlfr1nrzbg382jfsk5x0by2ym48v3innd2rbc6phd85q223"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("gfortran" ,gfortran)
@@ -2422,14 +2424,6 @@ of devices than RTL-SDR.")
                             (assoc-ref %build-inputs "googletest-source")))
        #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'fix-tests
-           (lambda _
-             ;; Some tests fail to compile when the FILESYSTEM package is
-             ;; available, so we disable it (and the tests will use Boost
-             ;; Filesystem instead).
-             (substitute* "CMakeLists.txt"
-               (("find_package\\(FILESYSTEM COMPONENTS Final Experimental\\)")
-                ""))))
          (add-before 'check 'set-home
            (lambda _
              (setenv "HOME" "/tmp"))))))

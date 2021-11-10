@@ -200,18 +200,42 @@ Cyrillic, Canadian Syllabics and most Latin based languages are supported.")
 (define-public font-abattis-cantarell
   (package
     (name "font-abattis-cantarell")
-    (version "0.301")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "mirror://gnome/sources/cantarell-fonts/"
-                                  (version-major+minor version)
-                                  "/cantarell-fonts-" version ".tar.xz"))
-              (sha256
-               (base32
-                "10sycxscs9kzl451mhygyj2qj8qlny8pamskb86np7izq05dnd9x"))))
-    (build-system meson-build-system)
+    (version "0.303")
+    (source
+     (origin
+       (method url-fetch/zipbomb)
+       (uri (string-append "https://gitlab.gnome.org/GNOME/cantarell-fonts/-/"
+                           "jobs/1515399/artifacts/download"))
+       (file-name (string-append name "-" version "-static"))
+       (sha256
+        (base32 "1dz551xrrhx6l40j57ksk2alllrihghg4947z1r88dpcq3snpn1s"))))
+    (build-system font-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'unpack-source
+           ;; The actual OTF fonts are prebuilt (building them requires at least
+           ;; the currently unpackaged psautohint and its numerous dependencies;
+           ;; TODO), but unpack the source so that COPYING is installed later.
+           (lambda* (#:key outputs #:allow-other-keys)
+             (invoke "tar" "--strip-components=1" "-xvf"
+                     (string-append "build/meson-dist/cantarell-fonts-"
+                                    ,version ".tar.xz"))))
+         (add-after 'unpack 'unpack-variable-font
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((variable-font (assoc-ref inputs "variable-font")))
+               (copy-recursively (string-append variable-font "/prebuilt")
+                                 ".")))))))
     (native-inputs
-     `(("gettext" ,gettext-minimal)))   ; for msgfmt
+     `(("variable-font"
+        ,(origin
+           (method url-fetch/zipbomb)
+           (uri (string-append "https://gitlab.gnome.org/GNOME/cantarell-fonts/-/"
+                               "jobs/1515398/artifacts/download"))
+           (file-name (string-append name "-" version "-variable"))
+           (sha256
+            (base32 "0z93pbkxidsx3y98rsl2jm2qpvxv5pj0w870xhnsciglw6pc9a9i"))))
+       ("unzip" ,unzip)))
     (home-page "https://wiki.gnome.org/Projects/CantarellFonts")
     (synopsis "Cantarell sans-serif typeface")
     (description "The Cantarell font family is a contemporary Humanist
@@ -307,21 +331,18 @@ The Lato 2.010 family supports more than 100 Latin-based languages, over
     (properties '((upstream-name . "freefont")
                   (ftp-directory . "/gnu/freefont")))))
 
-(define-public font-gnu-freefont-ttf
-  (deprecated-package "font-gnu-freefont-ttf" font-gnu-freefont))
-
 (define-public font-liberation
   (package
     (name "font-liberation")
-    (version "2.1.4")
+    (version "2.1.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append
              "https://github.com/liberationfonts/liberation-fonts/"
-             "files/6418984/liberation-fonts-ttf-" version ".tar.gz"))
+             "files/7261482/liberation-fonts-ttf-" version ".tar.gz"))
        (sha256
-        (base32 "1vx5q5bif9d1cn5pvm78203sf4may2mch72aa1hx1a8avl959y16"))))
+        (base32 "1l15iwk0x75621q67qlh9wv561c0gc7x0kh9l9rrz29qpxlwd4bi"))))
     (build-system font-build-system)
     (home-page "https://github.com/liberationfonts")
     (synopsis "Fonts compatible with Arial, Times New Roman, and Courier New")
@@ -719,7 +740,7 @@ for use at smaller text sizes")))
 (define-public font-gnu-unifont
   (package
     (name "font-gnu-unifont")
-    (version "13.0.06")
+    (version "14.0.01")
     (source
      (origin
        (method url-fetch)
@@ -729,22 +750,21 @@ for use at smaller text sizes")))
              (string-append "mirror://gnu/unifont/unifont-"
                             version "/unifont-" version ".tar.gz")))
        (sha256
-        (base32 "09g91g0gv76sadslp70m5xwfk3jf8kh7rpk2pz3l2hpldnjggpk8"))))
+        (base32 "0wkdn8h20pprna5a3hbny0qk2mgksrbxs2y6ng6qarj6rkpdmlbs"))))
     (build-system gnu-build-system)
     (outputs '("out"   ; TrueType version
                "pcf"   ; PCF (bitmap) version
                "psf"   ; PSF (console) version
                "bin")) ; Utilities to manipulate '.hex' format
     (arguments
-     '(#:tests? #f          ; no check target
+     `(#:tests? #f          ; no check target
+       #:make-flags
+       (list (string-append "CC=" ,(cc-for-target)))
        #:phases
        (modify-phases %standard-phases
-         (replace
-          'configure
-          (lambda _ (setenv "CC" "gcc") #t))
-         (replace
-          'install
-          (lambda* (#:key outputs #:allow-other-keys)
+         (delete 'configure)
+         (replace 'install
+          (lambda* (#:key make-flags outputs #:allow-other-keys)
             (let* ((ttf (string-append (assoc-ref outputs "out")
                                        "/share/fonts/truetype"))
                    (pcf (string-append (assoc-ref outputs "pcf")
@@ -752,18 +772,17 @@ for use at smaller text sizes")))
                    (psf (string-append (assoc-ref outputs "psf")
                                        "/share/consolefonts"))
                    (bin (assoc-ref outputs "bin")))
-              (invoke "make"
-                      (string-append "PREFIX=" bin)
-                      (string-append "TTFDEST=" ttf)
-                      (string-append "PCFDEST=" pcf)
-                      (string-append "CONSOLEDEST=" psf)
-                      "install")
+              (apply invoke "make" "install"
+                     (string-append "PREFIX=" bin)
+                     (string-append "TTFDEST=" ttf)
+                     (string-append "PCFDEST=" pcf)
+                     (string-append "CONSOLEDEST=" psf)
+                     make-flags)
               ;; Move Texinfo file to the right place.
               (mkdir (string-append bin "/share/info"))
               (invoke "gzip" "-9n" "doc/unifont.info")
               (install-file "doc/unifont.info.gz"
-                            (string-append bin "/share/info"))
-              #t))))))
+                            (string-append bin "/share/info"))))))))
     (inputs
      `(("perl" ,perl))) ; for utilities
     (synopsis
@@ -821,7 +840,7 @@ visual language \"Material Design\".")
 (define-public font-borg-sans-mono
   (package
     (name "font-borg-sans-mono")
-    (version "0.3.2")
+    (version "0.3.3")
     (source
      (origin
        (method url-fetch)
@@ -830,7 +849,7 @@ visual language \"Material Design\".")
              "/releases/download/v" version "/borg-sans-mono.zip"))
        (sha256
         (base32
-         "0q16gw3ry9hpgbl2636qq00ap59xyx15jf3gzvx2ybz3gja164c4"))))
+         "0xzi866ag9w4q114bn984yjfy72pmfs563v5yy1rkbqycphgwwyp"))))
     (build-system font-build-system)
     (home-page "https://github.com/charje/borg-sans-mono")
     (synopsis "The Borg Sans Mono font")
@@ -1571,9 +1590,6 @@ swapping.  The italic style for OpenDyslexic has been crafted to be used for
 emphasis while still being readable.")
     (license license:silofl1.1)))
 
-(define-public font-open-dyslexic
-  (deprecated-package "font-open-dyslexic" font-opendyslexic))
-
 (define-public font-openmoji
   (package
     (name "font-openmoji")
@@ -1944,25 +1960,25 @@ in small sizes, the text looks crisper.")
 (define-public font-juliamono
   (package
     (name "font-juliamono")
-    (version "0.031")
+    (version "0.043")
     (source
      (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/cormullion/juliamono")
-             (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
+       (method url-fetch)
+       (uri (string-append
+             "https://github.com/cormullion/juliamono/releases/download/"
+             "v" version "/JuliaMono-ttf.tar.gz"))
        (sha256
-        (base32 "0pcz2qaw0g0gak4plvhgg3m76h4gamffa373r52dzx0qwn1i1cf1"))))
+        (base32
+         "0vb7n9yqgasnxzps13ckklay5bla6b0i79pzmfqvjms1r37079gh"))))
     (build-system font-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'delete-website-folder
-           ;; This folder contains other unrelated fonts.
-           (lambda _
-             (delete-file-recursively "website")
-             #t)))))
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'unpack
+                    (lambda* (#:key source #:allow-other-keys)
+                      (mkdir "source")
+                      (chdir "source")
+                      (invoke "tar" "xzf" source))))))
+    (native-inputs `(("tar" ,tar)))
     (home-page "https://github.com/cormullion/juliamono")
     (synopsis "Monospaced font for programming")
     (description
@@ -2242,16 +2258,16 @@ half of the twentieth century.")
 (define-public font-overpass
   (package
     (name "font-overpass")
-    (version "3.0.4")
+    (version "3.0.5")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://github.com/RedHatOfficial/Overpass")
-             (commit version)))
+             (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1pl7zpwlx0j2xv23ahnpmbb4a5d6ib2cjck5mxqzi3jjk25rk9kb"))))
+        (base32 "1vsp94h7v5sn29hajv2ng94gyx4pqb0xgvn3gf7jp2q80gdv8pkm"))))
     (build-system font-build-system)
     (arguments
      `(#:phases

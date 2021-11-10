@@ -11,7 +11,7 @@
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016–2021 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2016 Eric Bavier <bavier@member.fsf.org>
-;;; Copyright © 2016, 2017, 2020 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2016, 2017, 2020, 2021 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2016, 2017 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2017,2019,2020 Hartmut Goebel <h.goebel@crazy-compilers.com>
@@ -1158,7 +1158,7 @@ supplies a generic doubly-linked list and some string functions.")
       ("libraw" ,libraw)
       ("libtiff" ,libtiff)
       ("libwebp" ,libwebp)
-      ("openexr" ,openexr)
+      ("openexr" ,openexr-2)
       ("openjpeg" ,openjpeg)
       ("zlib" ,zlib)))
    (synopsis "Library for handling popular graphics image formats")
@@ -1192,7 +1192,7 @@ graphics image formats like PNG, BMP, JPEG, TIFF and others.")
       ("libjpeg" ,libjpeg-turbo)
       ("libpng" ,libpng)
       ("libtiff" ,libtiff)
-      ("openexr" ,openexr)
+      ("openexr" ,openexr-2)
       ("python" ,python-wrapper)
       ("python-numpy" ,python-numpy)
       ("zlib" ,zlib)))
@@ -1346,18 +1346,25 @@ channels.")
 (define-public exiv2
   (package
     (name "exiv2")
-    (version "0.27.4")
+    (version "0.27.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.exiv2.org/builds/exiv2-" version
                            "-Source.tar.gz"))
        (sha256
-        (base32 "0klhxkxvkzzzcqpzv8jb56pykq0gyhb6rk9vc2kzjahngjx6sdl4"))))
+        (base32 "1qm6bvj28l42km009nc60gffn1qhngc0m2wjlhf90si3mcc8d99m"))))
     (build-system cmake-build-system)
     (arguments
      '(#:test-target "tests"
-       #:configure-flags (list "-DEXIV2_BUILD_UNIT_TESTS=ON")))
+       #:configure-flags (list "-DEXIV2_BUILD_UNIT_TESTS=ON")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'delete-static-libraries
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (lib (string-append out "/lib")))
+               (for-each delete-file (find-files lib "\\.a$"))))))))
     (propagated-inputs
      `(("expat" ,expat)
        ("zlib" ,zlib)))
@@ -1405,7 +1412,7 @@ and XMP metadata of images in various formats.")
        ("libmng" ,libmng)
        ("libpng" ,libpng)
        ("libtiff" ,libtiff)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("zlib" ,zlib)))
     (synopsis "Library for manipulating many image formats")
     (description "Developer's Image Library (DevIL) is a library to develop
@@ -1417,7 +1424,7 @@ convert, manipulate, filter and display a wide variety of image formats.")
 (define-public jasper
   (package
     (name "jasper")
-    (version "2.0.32")
+    (version "2.0.33")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1426,7 +1433,7 @@ convert, manipulate, filter and display a wide variety of image formats.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0hhggh2jxp1wn7nwzvbx2z1vi1ih8wmz4av17bljyn0c3mxjs22k"))))
+                "0p3fj89gkhd2ys5ci75cwb6p7rvb2pf52jd8c9d4g76qp846njnx"))))
     (build-system cmake-build-system)
     (inputs
      `(("libjpeg" ,libjpeg-turbo)))
@@ -2175,7 +2182,11 @@ This package can be used to create @code{favicon.ico} files for web sites.")
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags '("-DAVIF_CODEC_AOM=ON" "-DAVIF_CODEC_DAV1D=ON"
-                           "-DAVIF_CODEC_RAV1E=ON"
+                           ,@(if (string-prefix? "x86_64"
+                                                 (or (%current-target-system)
+                                                     (%current-system)))
+                                 '("-DAVIF_CODEC_RAV1E=ON")
+                                 '())
                            "-DAVIF_BUILD_TESTS=ON")
        #:phases
        (modify-phases %standard-phases
@@ -2186,12 +2197,16 @@ This package can be used to create @code{favicon.ico} files for web sites.")
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (doc (string-append out "/share/doc/libavif-" ,version)))
-               (install-file "../source/README.md" doc)
-               #t))))))
+               (install-file "../source/README.md" doc)))))))
     (inputs
      `(("dav1d" ,dav1d)
        ("libaom" ,libaom)
-       ("rav1e" ,rav1e)))
+       ;; XXX: rav1e depends on rust, which currently only works on x86_64.
+       ;; See also the related configure flag when changing this.
+       ,@(if (string-prefix? "x86_64" (or (%current-target-system)
+                                          (%current-system)))
+             `(("rav1e" ,rav1e))
+             '())))
     (synopsis "Encode and decode AVIF files")
     (description "Libavif is a C implementation of @acronym{AVIF, the AV1 Image
 File Format}.  It can encode and decode all YUV formats and bit depths supported
@@ -2348,7 +2363,7 @@ Wacom-style graphics tablets.")
 (define-public phockup
   (package
     (name "phockup")
-    (version "1.5.9")
+    (version "1.7.1")
     (source
      (origin
        (method git-fetch)
@@ -2358,7 +2373,7 @@ Wacom-style graphics tablets.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "13ajj0xch7yfqaaxbw0awxs0fz17n1rxir4gqh2wcgxjysqk1j2y"))))
+         "0nqd89g4ppwc96gxyh9npain7ipnzj66p6n3irsvhrpi4k54h388"))))
     (build-system copy-build-system)
     (arguments
      `(#:install-plan '(("src" "share/phockup/")
@@ -2368,10 +2383,10 @@ Wacom-style graphics tablets.")
          (add-after 'unpack 'configure
            (lambda* (#:key inputs #:allow-other-keys)
              (substitute* (list "src/dependency.py" "src/exif.py")
-               (("exiftool")
-                (string-append (assoc-ref inputs "perl-image-exiftool")
-                               "/bin/exiftool")))
-             #t))
+               (("'exiftool")
+                (string-append "'"
+                               (assoc-ref inputs "perl-image-exiftool")
+                               "/bin/exiftool")))))
          (add-before 'install 'check
            (lambda _
              (invoke "pytest")))
@@ -2380,11 +2395,18 @@ Wacom-style graphics tablets.")
              (let ((out (assoc-ref outputs "out")))
                (mkdir (string-append out "/bin"))
                (symlink (string-append out "/share/phockup/phockup.py")
-                        (string-append out "/bin/phockup")))
-             #t)))))
+                        (string-append out "/bin/phockup")))))
+         (add-after 'install-bin 'wrap-program
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               (wrap-program (string-append out "/bin/phockup")
+                 `("PYTHONPATH" prefix
+                   ,(search-path-as-string->list
+                     (getenv "PYTHONPATH"))))))))))
     (inputs
      `(("perl-image-exiftool" ,perl-image-exiftool)
-       ("python" ,python)))
+       ("python" ,python)
+       ("python-tqdm" ,python-tqdm)))
     (native-inputs
      `(("python-pytest" ,python-pytest)
        ("python-pytest-mock" ,python-pytest-mock)))

@@ -114,9 +114,11 @@
        ("mock" ,python-mock)))
     (propagated-inputs
      `(("lockfile" ,python-lockfile)
+       ("pygobject" ,python-pygobject)
        ("urllib3" ,python-urllib3)))
     (inputs
-     `(("librsync" ,librsync)
+     `(("dbus" ,dbus)                   ; dbus-launch (Gio backend)
+       ("librsync" ,librsync)
        ("lftp" ,lftp)
        ("gnupg" ,gnupg)                 ; gpg executable needed
        ("util-linux" ,util-linux)))     ; for setsid
@@ -129,7 +131,11 @@
              (substitute* "duplicity/gpginterface.py"
                (("self.call = u'gpg'")
                 (string-append "self.call = '" (assoc-ref inputs "gnupg") "/bin/gpg'")))
-
+             (substitute* "duplicity/backends/giobackend.py"
+               (("subprocess.Popen\\(\\[u'dbus-launch'\\]")
+                (string-append "subprocess.Popen([u'"
+                               (assoc-ref inputs "dbus")
+                               "/bin/dbus-launch']")))
              (substitute* '("testing/functional/__init__.py"
                             "testing/overrides/bin/lftp")
                (("/bin/sh") (which "sh")))
@@ -144,7 +150,7 @@
              ;; defaults don't match up, breaking test_restart.  Fix it.
              (setenv "TMPDIR" "/tmp")
              #t)))))
-    (home-page "http://duplicity.nongnu.org/index.html")
+    (home-page "https://duplicity.gitlab.io/duplicity-web/")
     (synopsis "Encrypted backup using rsync algorithm")
     (description
      "Duplicity backs up directories by producing encrypted tar-format volumes
@@ -1138,21 +1144,15 @@ backup.")
 (define-public disarchive
   (package
     (name "disarchive")
-    (version "0.2.1")
+    (version "0.3.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://files.ngyro.com/disarchive/"
                                   "disarchive-" version ".tar.gz"))
               (sha256
                (base32
-                "1jypk0gdwxqbqxiblww863nzq0kwnc676q68j32sprqd7ilnq02s"))
-              (patches (search-patches "disarchive-cross-compilation.patch"))))
+                "0jgc53rrbas8i4z13l2ii99cpav1ma73spsjg70ygihf0635r3dh"))))
     (build-system gnu-build-system)
-    (arguments
-     `(#:phases (modify-phases %standard-phases
-                  (add-after 'unpack 'delete-configure
-                    (lambda _
-                      (delete-file "configure"))))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)

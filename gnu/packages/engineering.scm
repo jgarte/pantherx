@@ -983,7 +983,7 @@ Emacs).")
        ("python" ,python-wrapper)
        ("wxwidgets" ,wxwidgets)
        ("wxpython" ,python-wxpython)))
-    (home-page "https://kicad-pcb.org/")
+    (home-page "https://www.kicad.org/")
     (synopsis "Electronics Design Automation Suite")
     (description "Kicad is a program for the formation of printed circuit
 boards and electrical circuits.  The software has a number of programs that
@@ -1017,9 +1017,6 @@ electrical diagrams), gerbview (viewing Gerber files) and others.")
     (description "This package contains the po files that are used for the GUI
 translations for KiCad.")
     (license license:gpl3+)))
-
-(define-public kicad-i18l
-  (deprecated-package "kicad-i18l" kicad-i18n))
 
 (define-public kicad-doc
   (package

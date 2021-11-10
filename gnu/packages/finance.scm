@@ -24,6 +24,7 @@
 ;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2021 ZmnSCPxj jxPCSnmZ <ZmnSCPxj@protonmail.com>
 ;;; Copyright © 2021 François J <francois-oss@avalenn.eu>
+;;; Copyright © 2021 Foo Chuan Wei <chuanwei.foo@hotmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -114,7 +115,7 @@
 (define-public bitcoin-core-0.21
   (package
     (name "bitcoin-core")
-    (version "0.21.1")
+    (version "0.21.2")
     (source (origin
               (method url-fetch)
               (uri
@@ -122,7 +123,7 @@
                               version "/bitcoin-" version ".tar.gz"))
               (sha256
                (base32
-                "1q51nqv64lhng5wh1cqb01jar7iswpnyyb1i7xslbkr0j9227zya"))))
+                "17nvir1yc6mf4wr1fn4xsabw49cd5p9vig8wj77vv4anzi8zfij1"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -1753,3 +1754,39 @@ Interface (UI) for the hledger accounting system.  It can be used as a
 local, single-user UI, or as a multi-user UI for viewing, adding, and
 editing on the Web.")
     (license license:gpl3)))
+
+(define-public ta-lib
+  (package
+    (name "ta-lib")
+    (version "0.4.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/ta-lib/ta-lib/"
+                           version "/ta-lib-" version "-src.tar.gz"))
+       (sha256
+        (base32 "0lf69nna0aahwpgd9m9yjzbv2fbfn081djfznssa84f0n7y1xx4z"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'link-math-library
+           (lambda _
+             (substitute* "src/Makefile.am"
+               (("ta_common/libta_common.la")
+                "ta_common/libta_common.la -lm"))
+             (substitute* "src/Makefile.in"
+               (("\\$\\(libta_lib_la_LDFLAGS\\) \\$\\(LDFLAGS\\) -o \\$@")
+                "$(libta_lib_la_LDFLAGS) $(LDFLAGS) -lm -o $@")))))
+       ;; Parallel build fails with:
+       ;; mv -f .deps/gen_code-gen_code.Tpo .deps/gen_code-gen_code.Po
+       ;; mv: cannot stat '.deps/gen_code-gen_code.Tpo': No such file or directory
+       ;; Makefile:254: recipe for target 'gen_code-gen_code.o' failed
+       #:parallel-build? #f
+       #:configure-flags '("--disable-static")))
+    (home-page "https://ta-lib.org")
+    (synopsis "Technical analysis library")
+    (description
+     "TA-Lib is a library providing common functions for the technical
+analysis of financial market data.")
+    (license license:bsd-3)))

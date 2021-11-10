@@ -48,7 +48,7 @@
 ;;; Copyright © 2020 Oleg Pykhalov <go.wigust@gmail.com>
 ;;; Copyright © 2020 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2020 raingloom <raingloom@riseup.net>
-;;; Copyright © 2020 Nicolas Goaziou <mail@nicolasgoaziou.fr>
+;;; Copyright © 2020, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2020 Naga Malleswari <nagamalli@riseup.net>
 ;;; Copyright © 2020 Ryan Prior <rprior@protonmail.com>
 ;;; Copyright © 2020, 2021 Vinicius Monego <monego@posteo.net>
@@ -1773,19 +1773,27 @@ configuration files for the GNOME menu, as well as a simple menu editor.")
            (lambda _
              (substitute* "data/post-install.sh"
                (("gtk-update-icon-cache") "true"))
-             #t)))))
+             #t))
+         (add-after 'install 'wrap-program
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             ;; Add duplicity to the search path
+             (wrap-program (string-append (assoc-ref outputs "out")
+                                          "/bin/deja-dup")
+               `("PATH" ":" prefix
+                 (,(string-append (assoc-ref inputs "duplicity") "/bin")))))))))
     (inputs
-     `(("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
+     `(("bash-minimal" ,bash-minimal)
        ("duplicity" ,duplicity)
-       ("python" ,python)
-       ("python-pygobject" ,python-pygobject)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
        ("gtk+" ,gtk+)
        ("json-glib" ,json-glib)
-       ("libnotify" ,libnotify)
        ("libgpg-error" ,libgpg-error)
+       ("libnotify" ,libnotify)
        ("libsecret" ,libsecret)
        ("libsoup" ,libsoup)
-       ("packagekit" ,packagekit)))
+       ("packagekit" ,packagekit)
+       ("python" ,python)
+       ("python-pygobject" ,python-pygobject)))
     (native-inputs
      `(("appstream-glib" ,appstream-glib)
        ("desktop-file-utils" ,desktop-file-utils)
@@ -4573,8 +4581,7 @@ and RDP protocols.")
                       ;; much longer than the default of 30 seconds.
                       (substitute* "tests/meson.build"
                         (("test\\(unit_test\\[0\\], exe" all)
-                         (string-append all ", timeout : 90")))
-                      #t)))))
+                         (string-append all ", timeout: 300"))))))))
     (home-page "https://developer.gnome.org/dconf/")
     (synopsis "Low-level GNOME configuration system")
     (description "Dconf is a low-level configuration system.  Its main purpose
@@ -10655,7 +10662,7 @@ configurable file renaming. ")
 (define-public workrave
   (package
     (name "workrave")
-    (version "1.10.43")
+    (version "1.10.48")
     (source
      (origin
        (method git-fetch)
@@ -10666,7 +10673,7 @@ configurable file renaming. ")
                                          version)))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1baa9qjzd4b3q1zy5vhvyrx0hyz17mk237373ca48647897kw4cr"))))
+        (base32 "0qcknxylk9mr0xzszsd1rkgh2zpnix20m998dfclkm9x8zh9pvyr"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      ;; The only tests are maintainer tests (in po/), which fail.
@@ -11829,7 +11836,7 @@ provided there is a DBus service present:
 (define-public parlatype
   (package
     (name "parlatype")
-    (version "2.1")
+    (version "3.0")
     (source
      (origin
        (method git-fetch)
@@ -11838,13 +11845,17 @@ provided there is a DBus service present:
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1c15ja0rwz3jj8bnqdq0nmqka39iwrhy8krdv2a2x8nl4shfpmv0"))))
+        (base32 "0mvzagkg9kq2ji6mffi37mdjxmlj3wa65d4lcayij9hsmjlklnzs"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
        #:tests? #f                      ;require internet access
        #:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'skip-gtk-update-icon-cache
+           (lambda _
+             (substitute* "data/meson_post_install.py"
+               (("gtk-update-icon-cache") "true"))))
          (add-after 'install 'wrap-parlatype
            ;; Add gstreamer plugin provided in this package to system's
            ;; plugins.
@@ -11855,8 +11866,7 @@ provided there is a DBus service present:
                                       ":"
                                       (getenv "GST_PLUGIN_SYSTEM_PATH"))))
                (wrap-program (string-append out "/bin/parlatype")
-                 `("GST_PLUGIN_SYSTEM_PATH" ":" = (,gst-plugin-path))))
-             #t)))))
+                 `("GST_PLUGIN_SYSTEM_PATH" ":" = (,gst-plugin-path)))))))))
     (native-inputs
      `(("appstream-glib" ,appstream-glib)
        ("desktop-file-utils" ,desktop-file-utils) ;for desktop-file-validate
@@ -11869,10 +11879,11 @@ provided there is a DBus service present:
        ("gst-plugins-good" ,gst-plugins-good)
        ("gstreamer" ,gstreamer)
        ("gtk+" ,gtk+)
+       ("iso-codes" ,iso-codes)
        ("pocketsphinx" ,pocketsphinx)
        ("pulseaudio" ,pulseaudio)
        ("sphinxbase" ,sphinxbase)))
-    (home-page "http://gkarsay.github.io/parlatype/")
+    (home-page "https://www.parlatype.org")
     (synopsis "GNOME audio player for transcription")
     (description "Parlatype is an audio player for the GNOME desktop
 environment.  Its main purpose is the manual transcription of spoken
@@ -12076,7 +12087,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.35.1")
+    (version "0.35.2")
     (source
      (origin
        (method git-fetch)
@@ -12086,7 +12097,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0975c55lmiwaqm0wj0ci91a90syjan3i99akrp0hl9m7r73jnfh9"))))
+         "11iq2mc8k7ny70vb0iqfjhj1hii0wvr4cv2p6b5rnjqdp6hc63n9"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
