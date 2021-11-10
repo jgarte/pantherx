@@ -4,6 +4,7 @@
 ;;; Copyright © 2019 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2021 Alexandru-Sergiu Marton <brown121407@posteo.ro>
+;;; Copyright © 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -38,16 +39,16 @@
 (define-public dunst
   (package
     (name "dunst")
-    (version "1.6.1")
+    (version "1.7.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                     (url "https://github.com/dunst-project/dunst")
-                     (commit (string-append "v" version))))
+                    (url "https://github.com/dunst-project/dunst")
+                    (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0lga1kj2vjbj9g9rl93nivngjmk5fkxdxwal8w96x9whwk9jvdga"))))
+                "0v15fhwzcg7zfn092sry0f4qb6dccz9bb312y9dadg745wf3n9qw"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no check target

@@ -768,7 +768,7 @@ model to base your own plug-in on, here it is.")
        ("mesa" ,mesa)
        ("neon" ,neon)
        ("openal" ,openal)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("openjpeg" ,openjpeg)
        ("openssl" ,openssl)
        ("opus" ,opus)
@@ -938,13 +938,6 @@ given, also pass them to the build system instead of the ones used by PKG."
                   (substitute* "meson_options.txt"
                     (("'auto'") "'disabled'"))
                   #t)))))))))
-
-(define-public gst-transcoder
-  (deprecated-package
-   "gst-transcoder"
-   (gst-plugins/selection gst-plugins-bad
-                          #:plugins '("transcoder")
-                          #:configure-flags '("-Dintrospection=enabled"))))
 
 (define-public python-gst
   (package

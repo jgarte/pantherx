@@ -645,14 +645,14 @@ systems with no further dependencies.")
 (define-public blueman
   (package
     (name "blueman")
-    (version "2.2.1")
+    (version "2.2.3")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/blueman-project/blueman/releases"
                            "/download/" version "/blueman-" version ".tar.xz"))
        (sha256
-        (base32 "0whs1bqnn1fgzrq7y2w1d06ldvfafq6h2xzmcfncbwmyb4i0mhgw"))))
+        (base32 "1s86w4mklzr8hvbgl3nkg8jycl6grww533dhzw8gdn5glqfpkpbf"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:configure-flags (list "--enable-polkit"
@@ -672,8 +672,7 @@ systems with no further dependencies.")
                  (("@PYTHON@") (string-append (assoc-ref inputs "python")
                                               "/bin/python"
                                               ,(version-major+minor
-                                                (package-version python))))))
-             #t))
+                                                (package-version python))))))))
          ;; Fix loading of external programs.
          (add-after 'unpack 'patch-external-programs
            (lambda* (#:key inputs #:allow-other-keys)
@@ -687,8 +686,7 @@ systems with no further dependencies.")
                                "/sbin/iptables"))
                (("/usr/sbin/pppd")
                 (string-append (assoc-ref inputs "ppp")
-                               "/sbin/pppd")))
-             #t))
+                               "/sbin/pppd")))))
          ;; Fix loading of pulseaudio libraries.
          (add-after 'unpack 'patch-pulseaudio-libraries
            (lambda* (#:key inputs #:allow-other-keys)
@@ -699,8 +697,7 @@ systems with no further dependencies.")
                (with-directory-excursion "blueman/main"
                  (substitute* "PulseAudioUtils.py"
                    (("libpulse.so.0") pulse)
-                   (("libpulse-mainloop-glib.so.0") pulse-glib)))
-               #t)))
+                   (("libpulse-mainloop-glib.so.0") pulse-glib))))))
          ;; Fix running of blueman programs.
          (add-after 'glib-or-gtk-wrap 'wrap-blueman-progs
            (lambda* (#:key outputs #:allow-other-keys)
@@ -721,8 +718,7 @@ systems with no further dependencies.")
                       '("adapters" "applet" "manager"
                         "sendto" "services" "tray"))
                  (map (lambda (prog) (string-append libexec prog))
-                      '("mechanism" "rfcomm-watcher"))))
-               #t))))))
+                      '("mechanism" "rfcomm-watcher"))))))))))
     (native-inputs
      `(("cython" ,python-cython)
        ("glib:bin" ,glib "bin")
@@ -936,7 +932,7 @@ or server shell scripts with network connections.")
 (define-public mbuffer
   (package
     (name "mbuffer")
-    (version "20210328")
+    (version "20211018")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -944,8 +940,10 @@ or server shell scripts with network connections.")
                     version ".tgz"))
               (sha256
                (base32
-                "0pfw9xw4ph18yss07fl6w8fbqiwy1w9r1knzw5gsb4c993cbidai"))))
+                "1qxnbpyly00kml3sjan9iqg6pqacsi3yqq66x25w455cwkjc2h72"))))
     (build-system gnu-build-system)
+    (native-inputs
+     `(("which" ,which)))
     (inputs `(("openssl" ,openssl)))
     (home-page "http://www.maier-komor.de/mbuffer.html")
     (synopsis
@@ -1219,14 +1217,14 @@ receiving NDP messages.")
 (define-public ethtool
   (package
     (name "ethtool")
-    (version "5.12")
+    (version "5.14")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://kernel.org/software/network/"
                                   "ethtool/ethtool-" version ".tar.xz"))
               (sha256
                (base32
-                "01vgyczgldrfss98cqrgjz8krj6kwb29xjf8p08q0g85fnfgmpgm"))))
+                "11kns8imm55i0miggsnv9nblnzm60zgnanxnjajdgb2wj68xn4xv"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -2264,14 +2262,14 @@ libproxy only have to specify which proxy to use.")
 (define-public proxychains-ng
   (package
     (name "proxychains-ng")
-    (version "4.14")
+    (version "4.15")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "http://ftp.barfooze.de/pub/sabotage/tarballs/"
                            "proxychains-ng-" version ".tar.xz"))
        (sha256
-        (base32 "1bmhfbl1bzc87vl0xwr1wh5xvslfyc41nl2hqzhbj258p0sy004x"))))
+        (base32 "10ch6rmbw2lwrq1bc9w4glxkws7hvsy5ihasvzf3yg053xzsn1rj"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; there are no tests
@@ -2284,12 +2282,10 @@ libproxy only have to specify which proxy to use.")
              (substitute* "configure"
                (("\\*\\) break ;;" line)
                 (string-append "[A-Z]*) shift ;;\n"
-                               line)))
-             #t))
+                               line)))))
          (add-before 'configure 'set-up-environment
            (lambda _
-             (setenv "CC" "gcc")
-             #t)))))
+             (setenv "CC" ,(cc-for-target)))))))
     (synopsis "Redirect any TCP connection through a proxy or proxy chain")
     (description "Proxychains-ng is a preloader which hooks calls to sockets
 in dynamically linked programs and redirects them through one or more SOCKS or
@@ -2498,7 +2494,7 @@ procedure calls (RPCs).")
 (define-public openvswitch
   (package
     (name "openvswitch")
-    (version "2.16.0")
+    (version "2.16.1")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -2506,11 +2502,12 @@ procedure calls (RPCs).")
                     version ".tar.gz"))
               (sha256
                (base32
-                "0sldyib85v5lh3qp9af0jgvf304pwdmjd0y7rknfwliykgjvgqsm"))))
+                "1x0k0pw6jykrfgb8rq56bp2ghxd433d55pmr8mxy9gbzw1nc1vbi"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags
        '("--enable-shared"
+         "--disable-static"        ; XXX still installs libopenvswitchavx512.a
          "--localstatedir=/var"
          "--with-dbdir=/var/lib/openvswitch")
        #:phases
@@ -4066,19 +4063,20 @@ stamps.")
 (define-public nbd
   (package
     (name "nbd")
-    (version "3.21")
+    (version "3.22")
     (source
       (origin
         (method url-fetch)
         (uri (string-append "mirror://sourceforge/nbd/nbd/" version
                             "/nbd-" version ".tar.xz"))
         (sha256
-         (base32 "1ydylvvayi4w2d08flji9q03sl7y8hn0c26vsay3nwwikprqls77"))))
+         (base32 "1ljx6vb3lja5p0lr28vmjp27n9d6krlvq49bhqbcm2ns8vxd1vh6"))))
     (build-system gnu-build-system)
     (inputs
      `(("glib" ,glib)))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
+     `(("bison" ,bison)
+       ("pkg-config" ,pkg-config)
        ("which" ,which)))
     (home-page "https://nbd.sourceforge.io/")
     (synopsis "NBD client and server")
@@ -4213,32 +4211,34 @@ on hub/switched networks.  It is based on @acronym{ARP} packets, it will send
 (define-public putty
   (package
     (name "putty")
-    (version "0.75")
+    (version "0.76")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "http://www.putty.be/" version
-                           "/putty-" version ".tar.gz"))
+       (uri (list (string-append "https://the.earth.li/~sgtatham/putty/"
+                                 version "/putty-" version ".tar.gz")
+                  (string-append "http://www.putty.be/" version
+                                 "/putty-" version ".tar.gz")))
        (sha256
-        (base32
-         "1xgrr1fbirw79zafspg2b6crzfmlfw910y79md4r7gnxgq1kn5yk"))))
+        (base32 "0gvi8phabszqksj2by5jrjmshm7bpirhgavz0dqyz1xaimxdjz2l"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
          (add-before 'configure 'chdir
            (lambda _
-             (chdir "unix")
-             #t)))))
+             (chdir "unix"))))))
     (inputs
      `(("gtk+" ,gtk+)))
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("python" ,python))) ; for tests
-    (synopsis "Graphical @acronym{SSH} and telnet client")
-    (description "Putty is a terminal client.  It supports @acronym{SSH},
-telnet, and raw socket connections with good terminal emulation.  It supports
-public key authentication and Kerberos single-sign-on.  It also includes
-command-line @acronym{SFTP} and @acronym{SCP} implementations.")
+    (synopsis "Graphical @acronym{SSH, Secure SHell} and telnet client")
+    (description "PuTTY is a graphical text terminal client.  It supports
+@acronym{SSH, Secure SHell}, telnet, and raw socket connections with good
+terminal emulation.  It can authenticate with public keys and Kerberos
+single-sign-on.  It also includes command-line @acronym{SFTP, Secure File
+Transfer Protocol} and older @acronym{SCP, Secure Copy Protocol}
+implementations.")
     (home-page "https://www.chiark.greenend.org.uk/~sgtatham/putty/")
     (license license:expat)))

@@ -15,7 +15,7 @@
 ;;; Copyright © 2018 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2018 Brett Gilio <brettg@gnu.org>
 ;;; Copyright © 2018, 2019 Marius Bakke <mbakke@fastmail.com>
-;;; Copyright © 2018 Thorsten Wilms <t_w_@freenet.de>
+;;; Copyright © 2018, 2021 Thorsten Wilms <t_w_@freenet.de>
 ;;; Copyright © 2018 Eric Bavier <bavier@member.fsf.org>
 ;;; Copyright © 2018 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2019, 2021 Pierre Langlois <pierre.langlois@gmx.com>
@@ -107,6 +107,7 @@
   #:use-module (gnu packages readline)
   #:use-module (gnu packages sdl)
   #:use-module (gnu packages serialization)
+  #:use-module (gnu packages sqlite)
   #:use-module (gnu packages telephony)
   #:use-module (gnu packages linphone)
   #:use-module (gnu packages linux)
@@ -615,7 +616,7 @@ streams from live audio.")
 (define-public ardour
   (package
     (name "ardour")
-    (version "6.8")
+    (version "6.9")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -633,7 +634,7 @@ namespace ARDOUR { const char* revision = \"" version "\" ; const char* date = \
                     #t)))
               (sha256
                (base32
-                "16x7bkzbrk0rgywq5vrkhf2z3jj08jw1bvaq9vwlf2b4h4sd7i4s"))
+                "0vlcbd70y0an881zv87kc3akmaiz4w7whsy3yaiiqqjww35jg1mm"))
               (file-name (string-append name "-" version))))
     (build-system waf-build-system)
     (arguments
@@ -1216,6 +1217,40 @@ classes include: dynamics (compressor, limiter), time (delay, chorus,
 flanger), ringmodulator, distortion, filters, pitchshift, oscillators,
 emulation (valve, tape), bit fiddling (decimator, pointer-cast), etc.")
     (license license:gpl3+)))
+
+(define-public libdjinterop
+  (package
+    (name "libdjinterop")
+    (version "0.16.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/xsco/libdjinterop")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "16nrqpr90vb9ggmp9j73m0hspd7pmfdhh0g6iyp8vd7kx7g17qnk"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         ;; crate_test writes a database file to the source tree.
+         (add-after 'unpack 'make-git-checkout-writable
+           (lambda _
+             (for-each make-file-writable (find-files ".")))))))
+    (native-inputs
+     `(("boost" ,boost)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("sqlite" ,sqlite)
+       ("zlib" ,zlib)))
+    (home-page "https://github.com/xsco/libdjinterop")
+    (synopsis "C++ library for access to DJ record libraries")
+    (description
+     "@code{libdjinterop} is a C++ library that allows access to database
+formats used to store information about DJ record libraries.")
+    (license license:lgpl3+)))
 
 (define-public tao
   (package
@@ -2172,14 +2207,14 @@ synchronous execution of all clients, and low latency operation.")
 (define-public jalv
   (package
     (name "jalv")
-    (version "1.6.4")
+    (version "1.6.6")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.drobilla.net/jalv-"
                                   version ".tar.bz2"))
               (sha256
                (base32
-                "1wwfn7yzbs37s2rdlfjgks63svd5g14yyzd2gdl7h0z12qncwsy2"))))
+                "05lycfq0f06zjp5xqvzjz9hx9kmqx72yng1lghh76hv63dw43lcj"))))
     (build-system waf-build-system)
     (arguments
      `(#:tests? #f                      ; no check target
@@ -2577,14 +2612,14 @@ frequencies.  This data is then formatted to MIDI and written to disk.")
 (define-public lilv
   (package
     (name "lilv")
-    (version "0.24.10")
+    (version "0.24.12")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://download.drobilla.net/lilv-"
                                  version ".tar.bz2"))
              (sha256
               (base32
-               "1565zy0yz46cf2f25pi46msdnzkj6bbhml9gfigdpjnsdlyskfyi"))))
+               "0qchfsyrsrp2pdpd59025kllycr04ddpzd03ha1iz70ci687g8r6"))))
     (build-system waf-build-system)
     (arguments
      `(#:tests? #f                      ; no check target
@@ -2594,15 +2629,13 @@ frequencies.  This data is then formatted to MIDI and written to disk.")
           (lambda* (#:key outputs #:allow-other-keys)
             (setenv "LDFLAGS"
                     (string-append "-Wl,-rpath="
-                                   (assoc-ref outputs "out") "/lib"))
-            #t))
+                                   (assoc-ref outputs "out") "/lib"))))
          (add-after 'unpack 'full-store-path-to-shared-library
            (lambda* (#:key outputs #:allow-other-keys)
              (with-directory-excursion "bindings/python"
                (substitute* "lilv.py"
                  (("liblilv-0.so") (string-append (assoc-ref outputs "out")
-                                                  "/lib/liblilv-0.so"))))
-             #t)))))
+                                                  "/lib/liblilv-0.so")))))))))
     ;; Required by lilv-0.pc.
     (propagated-inputs
      `(("lv2" ,lv2)
@@ -2623,14 +2656,14 @@ significantly faster and have minimal dependencies.")
 (define-public lv2
   (package
     (name "lv2")
-    (version "1.18.0")
+    (version "1.18.2")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://lv2plug.in/spec/lv2-"
                                  version ".tar.bz2"))
              (sha256
               (base32
-               "0gs7401xz23q9vajqr31aa2db8dvssgyh5zrvr4ipa6wig7yb8wh"))))
+               "0pp0n9x1rg8d4fw853z9cvfifjdi4bl85yjxxddqa1acfjy1z2af"))))
     (build-system waf-build-system)
     (arguments
      `(#:tests? #f                      ; no check target
@@ -2807,7 +2840,7 @@ buffers, and audio capture.")
 (define-public patchage
   (package
     (name "patchage")
-    (version "1.0.2")
+    (version "1.0.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://download.drobilla.net/patchage-"
@@ -2815,11 +2848,10 @@ buffers, and audio capture.")
                                   ".tar.bz2"))
               (sha256
                (base32
-                "0dk3fiac10m83mwss3026yz7ygc47c2iw924cwwnh2fyydc9bsy6"))))
+                "0gbakiw3mikgbvy3pssrmqmn7z5c7kp4vyaxj5rs4jnkscxgw9vw"))))
     (build-system waf-build-system)
     (arguments
-     `(#:tests? #f                      ; no check target
-       #:python ,python-2))
+     `(#:tests? #f))                    ; no check target
     (inputs
      `(("alsa-lib" ,alsa-lib)
        ("boost" ,boost)
@@ -2830,7 +2862,7 @@ buffers, and audio capture.")
        ("dbus-glib" ,dbus-glib)))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
-    (home-page "https://drobilla.net/software/patchage/")
+    (home-page "https://drobilla.net/software/patchage.html")
     (synopsis "Modular patch bay for audio and MIDI systems")
     (description
      "Patchage is a modular patch bay for audio and MIDI systems based on JACK
@@ -2873,14 +2905,14 @@ different audio devices such as ALSA or PulseAudio.")
 (define-public qjackctl
   (package
     (name "qjackctl")
-    (version "0.9.4")
+    (version "0.9.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/qjackctl/qjackctl/"
                                   version "/qjackctl-" version ".tar.gz"))
               (sha256
                (base32
-                "186rg3j67rac9ds1r7gnrib2d0smgv15cmr5gwb7v83mywcp1gzy"))))
+                "1g61xwsxsndwlnh4547vl7jfcf4kqlbb4394jq2m8qbbzk51b6rv"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f))                    ; no check target
@@ -3053,6 +3085,31 @@ user must be allowed to access the realtime features of the kernel.  Search
 for \"realtime\" in the index of the Guix manual to learn how to achieve this
 using Guix System.")
     (license license:gpl2+)))
+
+(define-public libshout-idjc
+  (package
+    (name "libshout-idjc")
+    (version "2.4.4")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/libshoutidjc.idjc.p"
+                           "/libshout-idjc-" version ".tar.gz"))
+       (sha256
+        (base32 "1r9z8ggxylr2ab0isaljbm574rplnlcb12758j994h54nh2vikwb"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libogg" ,libogg)
+       ("libtheora" ,libtheora)
+       ("libvorbis" ,libvorbis)
+       ("speex" ,speex)))
+    (home-page "http://idjc.sourceforge.net/")
+    (synopsis "Broadcast streaming library with IDJC extensions")
+    (description "This package provides libshout plus IDJC extensions.")
+    ;; GNU Library (not Lesser) General Public License.
+    (license license:lgpl2.0+)))
 
 (define-public raul
   (package
@@ -3256,7 +3313,7 @@ Suil currently supports every combination of Gtk, Qt, and X11.")
 (define-public libebur128
   (package
     (name "libebur128")
-    (version "1.2.4")
+    (version "1.2.6")
     (source
      (origin
        (method git-fetch)
@@ -3265,7 +3322,7 @@ Suil currently supports every combination of Gtk, Qt, and X11.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0n81rnm8dm1zmibkr2v3q79rsd609y0dbbsrbay18njcjva88p0g"))))
+        (base32 "0xkpz5rzz1j1srhprbh89669gw8z5f1njpvcnxqgf7qax69vd8sh"))))
     (build-system cmake-build-system)
     (arguments
      `(;; Tests require proprietary .wav files. See
@@ -3416,6 +3473,31 @@ stretching and pitch scaling of audio.  This package contains the library.")
     ;; There is no explicit declaration of a license, but a COPYING file
     ;; containing gpl2.
     (license license:gpl2)))
+
+(define-public libkeyfinder
+  (package
+    (name "libkeyfinder")
+    (version "2.2.5")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/mixxxdj/libkeyfinder")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1623kirmxhmvmhx7f8lbzk0f18w2hrhwlkzl8l4aa906lfqffdp2"))))
+    (build-system cmake-build-system)
+    (native-inputs
+     `(("catch" ,catch-framework2)))
+    (inputs
+     `(("fftw" ,fftw)))
+    (home-page "https://mixxxdj.github.io/libkeyfinder/")
+    (synopsis "Musical key detection for digital audio")
+    (description
+     "@code{libkeyfinder} is a small C++11 library for estimating the musical
+key of digital audio.")
+    (license license:gpl3+)))
 
 (define-public wavpack
   (package
@@ -3974,6 +4056,33 @@ files are a way to represent the layout of a data or audio CD in a
 machine-readable ASCII format.")
     (home-page "https://github.com/svend/cuetools")
     (license license:gpl2+)))
+
+(define-public mp3guessenc
+  (package
+    (name "mp3guessenc")
+    (version "0.27.5")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://sourceforge/mp3guessenc/mp3guessenc-"
+                           (version-major+minor version) "/mp3guessenc-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "1fa3sbwwn4p2v1749lzy040bfy1xfd574mf2frwgg9ikgk3vlb3c"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f ; no tests
+       #:make-flags
+       (list (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)))) ; no configure phase
+    (home-page "https://mp3guessenc.sourceforge.io")
+    (synopsis "Analyze MPEG layer I/II/III files")
+    (description "mp3guessenc is a command line utility that tries to detect the
+encoder used for an MPEG Layer III (MP3) file, as well as scan any MPEG audio
+file (any layer) and print a lot of useful information.")
+    (license license:lgpl2.1+)))
 
 (define-public shntool
   (package
@@ -4586,7 +4695,7 @@ library supports sample rates up to 96 kHz and up to eight channels (7.1
 (define-public libopenshot-audio
   (package
     (name "libopenshot-audio")
-    (version "0.2.0")
+    (version "0.2.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4595,7 +4704,7 @@ library supports sample rates up to 96 kHz and up to eight channels (7.1
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "13if0m5mvlqly8gmbhschzb9papkgp3yqivklhb949dhy16m8zgf"))))
+                "03dygh85riljk7dpn5a5a0d22a2kz45fs13gzwqgnbzzr1k17p2y"))))
     (build-system cmake-build-system)
     (inputs
      `(("alsa-lib" ,alsa-lib)
@@ -4808,7 +4917,7 @@ workstations as well as consumer software such as music players.")
 (define-public redkite
   (package
     (name "redkite")
-    (version "1.3.0")                     ;marked unmaintained as of Oct. 2021
+    (version "1.3.1")                     ;marked unmaintained as of Oct. 2021
     (source
      (origin
        (method git-fetch)
@@ -4817,7 +4926,7 @@ workstations as well as consumer software such as music players.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "16j9zp5i7svq3g38rfb6h257qfgnd2brrxi7cjd2pdax9xxwj40y"))))
+        (base32 "1zb2k2a4m7z2ravqrjn8fq8lic20wbr2m8kja3p3113jsk7j9zvd"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ;no tests included
@@ -5321,14 +5430,14 @@ while still staying in time.")
 (define-public butt
   (package
     (name "butt")
-    (version "0.1.31")
+    (version "0.1.32")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/butt/butt/butt-"
                                   version "/butt-" version ".tar.gz"))
               (sha256
                (base32
-                "19zvdi5vr6vqnrpc60jir7550nz9a5x1c61lh13355cdny2zp28z"))
+                "1qwllkx9p1gb3syhbbck3agrk375m82l18fb81aqygi4g3dg3s9r"))
               (modules '((guix build utils)))
               (snippet
                '(substitute* "src/butt.cpp"
@@ -5369,7 +5478,7 @@ while still staying in time.")
                                         version "_manual.pdf"))
                     (sha256
                      (base32
-                      "0a0kgd069whfp1v8xgw6qm67w02n8b7b4h5ay5665wgq947hxanp"))))))
+                      "0g70jyyxbx5nin3xs9q9zf878b2kyy7rn8gn9w91x1ychbjd6dhh"))))))
     (home-page "https://danielnoethen.de/butt/")
     (synopsis "Audio streaming tool")
     (description "Butt is a tool to stream audio to a ShoutCast or

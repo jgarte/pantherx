@@ -52,6 +52,7 @@
 ;;; Copyright © 2020 pukkamustard <pukkamustard@posteo.net>
 ;;; Copyright © 2021 B. Wilson <elaexuotee@wilsonb.com>
 ;;; Copyright © 2021 Ivan Gankevich <i.gankevich@spbu.ru>
+;;; Copyright © 2021 Olivier Dion <olivier.dion@polymtl.ca>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -346,17 +347,17 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The current "stable" kernels. That is, the most recently released major
 ;; versions that are still supported upstream.
-(define-public linux-libre-5.14-version "5.14.12")
+(define-public linux-libre-5.14-version "5.14.17")
 (define-public linux-libre-5.14-gnu-revision "gnu")
 (define deblob-scripts-5.14
   (linux-libre-deblob-scripts
    linux-libre-5.14-version
    linux-libre-5.14-gnu-revision
-   (base32 "00vv2a51cvw2nx8iazmiy9i4h3jj9gvvpwz9gxp2v1hcmrsxq935")
+   (base32 "11zax57brk8bl75q68c71xsdlvslj48wpmrv8rh34sb8wym9n4mc")
    (base32 "024rz0bp3n3r5nkwbib7byx10d72c2fh5cw9iv00diyzgnp819g7")))
 (define-public linux-libre-5.14-pristine-source
   (let ((version linux-libre-5.14-version)
-        (hash (base32 "0dswxf1qk70lms5lph15i7nz3ybwiia58v8zzrmi71ajviwjc9wd")))
+        (hash (base32 "0q7df51yk6di1m8ky0gplkyx6smlr9inxrd569qv3ww3ykg933sd")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.14)))
@@ -364,92 +365,92 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
-(define-public linux-libre-5.10-version "5.10.73")
+(define-public linux-libre-5.10-version "5.10.78")
 (define-public linux-libre-5.10-gnu-revision "gnu1")
 (define deblob-scripts-5.10
   (linux-libre-deblob-scripts
    linux-libre-5.10-version
    linux-libre-5.10-gnu-revision
-   (base32 "19d1pdsilq1ycnx1zw3vhf9mwdxbi5nmgzm0g1kj1lkkf1y4i1mv")
+   (base32 "1swy3y851jnnmk3hc0khllpsifb98camlwyskpn1dyvjsgjljd8x")
    (base32 "024rz0bp3n3r5nkwbib7byx10d72c2fh5cw9iv00diyzgnp819g7")))
 (define-public linux-libre-5.10-pristine-source
   (let ((version linux-libre-5.10-version)
-        (hash (base32 "0xhf0g5pra27hnavpy0y3mn05m5hqn5rd3d6fx0a3vr35c1jicpd")))
+        (hash (base32 "03q5lrv8gr9hnm7984pxi9kwsvxrn21qwykj60amisi2wac6r05y")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.10)))
 
-(define-public linux-libre-5.4-version "5.4.153")
+(define-public linux-libre-5.4-version "5.4.158")
 (define-public linux-libre-5.4-gnu-revision "gnu1")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
    linux-libre-5.4-version
    linux-libre-5.4-gnu-revision
-   (base32 "1cdxljvmivdwcy9v9fr5iv0x0d1884pf3876p9nzrly599lz2wnl")
+   (base32 "1nlgk8ajb5wl3aa96h9a0pb9j5a5wmrbpk63varn557x1d00r7wj")
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "0jaz57sd51xqc7w8k3f43bfc5mdsh1413mdngqqsgr8isv4hg7vd")))
+        (hash (base32 "0ncdkf1iz49458k3dvq3dc5b2r9dp21jsn3ffm9lbhlgvkn8y0bf")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.211")
+(define-public linux-libre-4.19-version "4.19.216")
 (define-public linux-libre-4.19-gnu-revision "gnu1")
 (define deblob-scripts-4.19
   (linux-libre-deblob-scripts
    linux-libre-4.19-version
    linux-libre-4.19-gnu-revision
-   (base32 "1hiaagdyfy6b0f9ivdy7zq0cd6akaj6v3c4nzikrgsk12vgc1a1q")
+   (base32 "06pqv050bkii0hc2v7ymny5264w1bca8db0dp1pw9mfmjg865am5")
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "1m3y5gsf5s8bb4jxkri20dlxi8aiqabzaijj2h1svz4r19ca8j7v")))
+        (hash (base32 "0cs8yy5jfbvvi5j9f3kzyc4j0fjylxdj1641f53ga6gkmjmayv3d")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.250")
+(define-public linux-libre-4.14-version "4.14.254")
 (define-public linux-libre-4.14-gnu-revision "gnu1")
 (define deblob-scripts-4.14
   (linux-libre-deblob-scripts
    linux-libre-4.14-version
    linux-libre-4.14-gnu-revision
-   (base32 "0cnax38650m9sxiwvc1xm5saymlsmx427j3jqpx34df2ah2rnrwf")
+   (base32 "02rxvr0gmxb3zfsyyzdmzgfq04gkdkv1cc38md0xfl0mxzdzdfyk")
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "0zbf6gxm8iwf7cra310gfd0zyj8l9ckdahky9w6wb9wlznwkvd54")))
+        (hash (base32 "0ihdlsg4jg9wwhhcbjjmrcchnl9pc0szh21nwmbhwnxgqcdmrnfz")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.286")
+(define-public linux-libre-4.9-version "4.9.289")
 (define-public linux-libre-4.9-gnu-revision "gnu1")
 (define deblob-scripts-4.9
   (linux-libre-deblob-scripts
    linux-libre-4.9-version
    linux-libre-4.9-gnu-revision
-   (base32 "1n74ddrifnw06hx7ih2sk8jaiqlm1jyyhswyjpxiyhrrcvjcilch")
+   (base32 "0nai5m4rbh37qaj1xf2qj7656l2gacfh0847q5d07y22b048fq5n")
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "0id62p43dmkl9ir278p0dsfg3q7m1d8rlxv0c9qi1pzalkygv8p2")))
+        (hash (base32 "19kz74qgw5yzfinnsvljmn2zm855lr4cxgfpn8gwljmkspyx1hm5")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.288")
+(define-public linux-libre-4.4-version "4.4.291")
 (define-public linux-libre-4.4-gnu-revision "gnu1")
 (define deblob-scripts-4.4
   (linux-libre-deblob-scripts
    linux-libre-4.4-version
    linux-libre-4.4-gnu-revision
-   (base32 "11397dgj6cdfv6anxrj7jwgvnqvwh5i0ci6c8mb85ry6h4fnfmq4")
+   (base32 "1mmnv77432la5dkhpy1n8w59c0v6l08fyf2ggh294gyrx8nbci11")
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "028w3yzmzymy7l1nf3n1pfbg95hfi4ilphkyl00ddgj8sfm542c7")))
+        (hash (base32 "0lbbvv3ha4d8nwzjh8bdk0aqyd12w6gw0nsxsdnp8pbmnndgb9vh")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -992,9 +993,6 @@ It has been modified to remove all non-free binary blobs.")
                         ("CONFIG_RTC_DRV_RK808" . #t))
                       %default-extra-linux-options)))
 
-(define-public linux-libre-arm-veyron
-  (deprecated-package "linux-libre-arm-veyron" linux-libre-arm-generic))
-
 (define-public linux-libre-arm-generic-5.10
   (make-linux-libre* linux-libre-5.10-version
                      linux-libre-5.10-gnu-revision
@@ -1218,7 +1216,7 @@ and should be used with caution, especially on untested models.")
 (define-public corefreq
   (package
     (name "corefreq")
-    (version "1.86.7")
+    (version "1.87.4")
     (source
      (origin
        (method git-fetch)
@@ -1227,7 +1225,7 @@ and should be used with caution, especially on untested models.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1k8pyxcahc78kcc8q1h76dr91i1r33jciqhgkajkz3xa28qx8mhn"))))
+        (base32 "01g1smhfzb02gmfjm8c7rchc79dan9jc9pv9c0f8f7fly2hy5zvs"))))
     (build-system linux-module-build-system)
     (outputs (list "out" "linux-module"))
     (arguments
@@ -2605,7 +2603,7 @@ Both commands are targeted at system administrators.")
 (define-public jitterentropy-rngd
   (package
     (name "jitterentropy-rngd")
-    (version "1.2.0")
+    (version "1.2.5")
     (source
      (origin
        (method git-fetch)
@@ -2614,7 +2612,7 @@ Both commands are targeted at system administrators.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1fb8zfwhwkl1d8n4cdn7rdv5rwd75qgc00d36pmkl7wgnj3c9xda"))))
+        (base32 "05h9a60s9x3jav33lh50ac1jw8wvbljw2ndrk3k7gs2nlz0kkl14"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no test suite
@@ -2698,7 +2696,7 @@ that the Ethernet protocol is much simpler than the IP protocol.")
 (define-public iproute
   (package
     (name "iproute2")
-    (version "5.13.0")
+    (version "5.15.0")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -2706,7 +2704,7 @@ that the Ethernet protocol is much simpler than the IP protocol.")
                     version ".tar.xz"))
               (sha256
                (base32
-                "0dhvdybfm33q9lz73sfnc24pxy2r42xywzb1gdgydjfafhvyb8kj"))))
+                "1zwin8sjnnwf2a9rjwzb3q8lkhcpy06s29sh05f5gxd7z6jy9qrq"))))
     (build-system gnu-build-system)
     (arguments
      `( ;; There is a test suite, but it wants network namespaces and sudo.
@@ -5684,7 +5682,7 @@ feature, and a laptop with an accelerometer.  It has no effect on SSDs.")
 (define-public thinkfan
   (package
     (name "thinkfan")
-    (version "1.2.2")
+    (version "1.3.0")
     (source
      (origin
        (method git-fetch)
@@ -5693,7 +5691,7 @@ feature, and a laptop with an accelerometer.  It has no effect on SSDs.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "01l1pnj1cgy3dwgyys2s5iqzyv6kk47vlpy09qjafk8py21ijik3"))))
+        (base32 "1whdhf3aw0g4xwbn1csy2wz6g1hw5nlw64r91nnxba9qn25nl9k4"))))
     (build-system cmake-build-system)
     (arguments
      `(#:modules ((guix build cmake-build-system)
@@ -6386,7 +6384,7 @@ the default @code{nsswitch} and the experimental @code{umich_ldap}.")
 (define-public mcelog
   (package
     (name "mcelog")
-    (version "176")
+    (version "179")
     (source
      (origin
        (method git-fetch)
@@ -6395,14 +6393,13 @@ the default @code{nsswitch} and the experimental @code{umich_ldap}.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1mlwn6ck9qiwqa2vg5wg1gvfva3jv7ygjr7p7bam0qszajs5pirk"))
+        (base32 "0fz9j0p8jyp4m09wshl8cdhdvrdidf29bjp9hgwvv6xvg8lma06g"))
        (modules '((guix build utils)))
        (snippet
         `(begin
            ;; The checkout lacks a .git directory, breaking ‘git describe’.
            (substitute* "Makefile"
-             (("\"unknown\"") (string-append "\"v" ,version "\"")))
-           #t))))
+             (("\"unknown\"") (string-append "\"v" ,version "\"")))))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -6462,7 +6459,7 @@ of flash storage.")
 (define-public libseccomp
   (package
     (name "libseccomp")
-    (version "2.5.2")
+    (version "2.5.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/seccomp/libseccomp/"
@@ -6470,7 +6467,7 @@ of flash storage.")
                                   "/libseccomp-" version ".tar.gz"))
               (sha256
                (base32
-                "1pw7rd4gwqpmraipgdqkdkhnx4ql35wrn3lnjgl6pncinkgm59hp"))))
+                "0xhan73zn4p0n7s8vx6s47wjmidvk4x8r90vfbljairn6f3mq1jr"))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--disable-static")
@@ -7157,14 +7154,14 @@ available in the kernel Linux.")
 (define-public cpuid
   (package
     (name "cpuid")
-    (version "20201006")
+    (version "20211031")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://www.etallen.com/cpuid/cpuid-"
                                   version ".src.tar.gz"))
               (sha256
                (base32
-                "19jnkh57f979b78ak5mpxmdvnkgc33r55cw9shgd2hc380b3zi8k"))))
+                "13sxb2ar4gypiv0l87lr7hf3qjccwgsg1r92adv9jvrfxcv36pbn"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -7179,12 +7176,11 @@ available in the kernel Linux.")
                       ;; Make the compressed manpages writable so that the
                       ;; reset-gzip-timestamps phase does not error out.
                       (substitute* "Makefile"
-                        (("-m 444") "-m 644"))
-                      #t)))))
+                        (("-m 444") "-m 644")))))))
     (inputs `(("perl" ,perl)))
     (supported-systems '("i686-linux" "x86_64-linux"))
     (home-page "http://www.etallen.com/cpuid.html")
-    (synopsis "Linux tool to dump x86 CPUID information about the CPU(s)")
+    (synopsis "Dump x86 CPUID processor information")
     (description "cpuid dumps detailed information about the CPU(s) gathered
 from the CPUID instruction, and also determines the exact model of CPU(s).  It
 supports Intel, AMD, and VIA CPUs, as well as older Transmeta, Cyrix, UMC,
@@ -7222,7 +7218,7 @@ the MTP device as a file system.")
 (define-public procenv
   (package
    (name "procenv")
-   (version "0.58")
+   (version "0.60")
    (source
     (origin
      (method git-fetch)
@@ -7231,7 +7227,7 @@ the MTP device as a file system.")
             (commit version)))
      (file-name (git-file-name name version))
      (sha256
-      (base32 "137n630qzml4yraqzp2fij8nzn8341nf8d58yzfhk8ddlzi60sfm"))))
+      (base32 "00d7q0h4qjc8lg435lq77lp2fx6ikm5piq90m81mr1dqqna1g6pz"))))
    (build-system gnu-build-system)
    (native-inputs
     `(("pkg-config" ,pkg-config)
@@ -8138,6 +8134,71 @@ enable and disable specific instrumentation points, and writes event records
 to ring buffers shared with a consumer daemon.")
     (license license:lgpl2.1+)))
 
+(define-public lttng-tools
+  (package
+    (name "lttng-tools")
+    (version "2.12.5")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://lttng.org/files/lttng-tools/"
+                                  "lttng-tools-" version ".tar.bz2"))
+              (sha256
+               (base32
+                "0bgk35423v6z17j1w80m7dcza7gigs1pwyq24sdmgqwg6j2d1zmc"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(;; FIXME - Currently there's a segmentation fault by swig when enabling
+       ;; Python's bindings.  Thus, bindings are disable here.  Replace
+       ;; `disable` by `enable` in #:configure-flags when this is fixed.
+       #:configure-flags '("--disable-python-bindings")
+       ;; FIXME - Tests are disabled for now because one test hangs
+       ;; indefinetely.  Also, parallel testing is not possible because of how
+       ;; the lttng-daemon handles sessions.  Thus, keep parallel testing
+       ;; disabled even after tests are enabled!
+       #:tests? #f
+       #:parallel-tests? #f
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'configure 'set-environment-variables
+           (lambda _
+             (setenv "HOME" "/tmp")
+             (setenv "LTTNG_HOME" "/tmp")))
+         ;; We don't put (which "man") here because LTTng uses execlp.
+         (add-after 'unpack 'patch-default-man-path
+           (lambda _
+             (substitute* "src/common/defaults.h"
+               (("/usr/bin/man") "man")))))))
+    ;; NOTE - Users have to install python-3 in their profile to use the
+    ;; bindings.  We don't put it in the inputs, because the rest of the tools
+    ;; can work without it.
+    (inputs
+     `(("liburcu" ,liburcu)
+       ("popt" ,popt)
+       ("numactl" ,numactl)))
+    (propagated-inputs
+     `(("kmod" ,kmod)
+       ("module-init-tools" ,module-init-tools)))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("perl" ,perl)
+       ("libpfm4" ,libpfm4)
+       ("python-3" ,python-3)
+       ("swig" ,swig)
+       ("procps" ,procps)
+       ("which" ,which)
+       ("flex" ,flex)
+       ("bison" ,bison)
+       ("asciidoc" ,asciidoc)
+       ("libxml2" ,libxml2)
+       ("lttng-ust" ,lttng-ust)))
+    (home-page "https://lttng.org/")
+    (synopsis "LTTng userspace tracer libraries")
+    (description "The lttng-tools project provides a session
+daemon @code{lttng-sessiond} that acts as a tracing registry, the @command{lttng} command
+line for tracing control, a @code{lttng-ctl} library for tracing control and a
+@code{lttng-relayd} for network streaming.")
+    (license (list  license:gpl2 license:lgpl2.1))))
+
 (define-public kexec-tools
   (package
     (name "kexec-tools")
@@ -8394,21 +8455,22 @@ receiving.  It is dedicated to the PL011 UART of the Raspberry Pi.")
 (define-public ipset
   (package
     (name "ipset")
-    (version "7.11")
+    (version "7.15")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://ipset.netfilter.org/"
                            "ipset-" version ".tar.bz2"))
        (sha256
-        (base32 "0zdzp9fhpp6hmirzxy7w27fb9xx9lxd2ykxbn8by7ngi62nvll9i"))))
+        (base32 "0l8pcaym6057hq3a4zwnk53p5y6xg1m3d3c83wn18h5nmnm4am8a"))))
     (build-system gnu-build-system)
     (inputs
      `(("libmnl" ,libmnl)))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (arguments
-     `(#:configure-flags '("--with-kmod=no")))
+     `(#:configure-flags '("--disable-static"
+                           "--with-kmod=no")))
     (home-page "https://ipset.netfilter.org/")
     (synopsis "Administration tool for IP sets")
     (description "IP sets are a framework inside the Linux 2.4.x and 2.6.x kernel which

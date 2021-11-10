@@ -72,6 +72,7 @@
   #:use-module (guix build-system meson)
   #:use-module (guix build-system perl)
   #:use-module (guix build-system python)
+  #:use-module (guix build-system qt)
   #:use-module (guix build-system scons)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system qt)
@@ -89,6 +90,7 @@
   #:use-module (gnu packages backup)
   #:use-module (gnu packages base) ;libbdf
   #:use-module (gnu packages bash)
+  #:use-module (gnu packages benchmark)
   #:use-module (gnu packages bison)
   #:use-module (gnu packages boost)
   #:use-module (gnu packages build-tools)
@@ -1867,7 +1869,7 @@ device supports.")
 (define-public bsequencer
   (package
     (name "bsequencer")
-    (version "1.8.0")
+    (version "1.8.10")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1876,12 +1878,13 @@ device supports.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0w7iwzz2r4a699fi24qk71vv2k3jpl9ylzlgmvyc3rlgad0m01k1"))))
+                "0w3m7x0619iq8rafcy0bal4gwh9m9h7iq93q7gkpxhv6dq58ix6l"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
-       (list (string-append "PREFIX=" (assoc-ref %outputs "out")))
-       #:tests? #f ; there are none
+       (list (string-append "CC=" ,(cc-for-target))
+             (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       #:tests? #f                      ; there are none
        #:phases
        (modify-phases %standard-phases
          (delete 'configure))))
@@ -1902,7 +1905,7 @@ with a selectable pattern matrix size.")
   (package
     (inherit bsequencer)
     (name "bchoppr")
-    (version "1.8.0")
+    (version "1.10.10")
     (source
      (origin
        (method git-fetch)
@@ -1911,8 +1914,7 @@ with a selectable pattern matrix size.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "1nd6byy75f0rbz9dm9drhxmpsfhxhg0y7q3v2m3098llynhy9k2j"))))
+        (base32 "0gxz0cpxdfj7ajcd9yg05d26i7p24mx5865vy3ph76ni8kycdlrc"))))
     (synopsis "Audio stream-chopping LV2 plugin")
     (description "B.Choppr cuts the audio input stream into a repeated
 sequence of up to 16 chops.  Each chop can be leveled up or down (gating).
@@ -1924,7 +1926,7 @@ B.Choppr is the successor of B.Slizr.")
   (package
     (inherit bsequencer)
     (name "bshapr")
-    (version "0.9")
+    (version "0.13")
     (source
      (origin
        (method git-fetch)
@@ -1933,7 +1935,7 @@ B.Choppr is the successor of B.Slizr.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "04zd3a178i2nivg5rjailzqvc5mlnilmhj1ziygmbhshbrywplri"))))
+        (base32 "1qr3fxqcplgb6iqi2vxc27jghhv6qsidww2by15zb2vs34yh73pl"))))
     (synopsis "Beat/envelope shaper LV2 plugin")
     (description "B.Shapr is a beat/envelope shaper LV2 plugin.")
     (home-page "https://github.com/sjaehn/BShapr")
@@ -1943,7 +1945,7 @@ B.Choppr is the successor of B.Slizr.")
   (package
     (inherit bsequencer)
     (name "bjumblr")
-    (version "1.4.2")
+    (version "1.6.8")
     (source
      (origin
        (method git-fetch)
@@ -1952,8 +1954,7 @@ B.Choppr is the successor of B.Slizr.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "0kl6hrxmqrdf0195bfnzsa2h1073fgiqrfhg2276fm1954sm994v"))))
+        (base32 "00fgax8aqqggs54pjpagw5pc30kgxaghh8mrzpqwhs06cnchcam9"))))
     (inputs
      `(("cairo" ,cairo)
        ("libsndfile" ,libsndfile)
@@ -1968,7 +1969,7 @@ re-sequencer LV2 plugin.")
   (package
     (inherit bsequencer)
     (name "bschaffl")
-    (version "1.2.0")
+    (version "1.4.8")
     (source
      (origin
        (method git-fetch)
@@ -1977,8 +1978,7 @@ re-sequencer LV2 plugin.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "1c09acqrbd387ba41f8ch1qykdap5h6cg9if5pgd16i4dmjnpghj"))))
+        (base32 "1kfc75xhj365fwl8cbvhg5chwz1snzcvf4929flds02ljylc7k6d"))))
     (inputs
      `(("cairo" ,cairo)
        ("fontconfig" ,fontconfig)
@@ -2175,6 +2175,112 @@ Editor.  It is compatible with Power Tab Editor 1.7 and Guitar Pro.")
      "The jalv.select package provides a graphical user interface allowing
 users to select LV2 plugins and run them with jalv.")
     (license license:public-domain)))
+
+(define-public mixxx
+  (package
+    (name "mixxx")
+    (version "2.3.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/mixxxdj/mixxx")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (patches
+        (search-patches "mixxx-link-qtscriptbytearray-qtscript.patch"
+                        "mixxx-system-googletest-benchmark.patch"))
+       (sha256
+        (base32 "04781s4ajdlwgvf12v2mvh6ia5grhc5pn9d75b468qci3ilnmkg8"))
+       (modules '((guix build utils)))
+       (snippet
+        ;; Delete libraries that we already have or don't need.
+        ;; TODO: try to unbundle more (see lib/).
+        `(begin
+           (let ((third-parties '("apple" "benchmark" "googletest" "hidapi"
+                                  "libebur128")))
+             (with-directory-excursion "lib"
+               (map (lambda (third-party)
+                      (delete-file-recursively third-party))
+                    third-parties)))
+           #t))))
+    (build-system qt-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         ;; Tests need a running X server.
+         (add-before 'check 'prepare-x-for-test
+           (lambda _
+             (system "Xvfb &")
+             (setenv "DISPLAY" ":0")))
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               ;; This test fails.  I don't know why.
+               (invoke "ctest" "-E" "TagLibTest.WriteID3v2Tag"))))
+         (add-after 'install 'wrap-executable
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (faad2 (assoc-ref inputs "faad2")))
+               (wrap-program (string-append out "/bin/mixxx")
+                 `("LD_LIBRARY_PATH" ":" prefix
+                   ,(list (string-append faad2 "/lib"))))))))))
+    (native-inputs
+     `(("benchmark" ,benchmark)
+       ("googletest" ,googletest)
+       ("python" ,python-wrapper)
+       ("qttools" ,qttools)
+       ("xorg-server" ,xorg-server-for-tests)))
+    (inputs
+     `(("bash" ,bash-minimal)
+       ("chromaprint" ,chromaprint)
+       ("faad2" ,faad2)
+       ("ffmpeg" ,ffmpeg)
+       ("fftw" ,fftw)
+       ("flac" ,flac)
+       ("glu" ,glu)
+       ("hidapi" ,hidapi)
+       ("jack" ,jack-1)
+       ("lame" ,lame)
+       ("libdjinterop" ,libdjinterop)
+       ("libebur128" ,libebur128)
+       ("libid3tag" ,libid3tag)
+       ("libkeyfinder" ,libkeyfinder)
+       ("libmad" ,libmad)
+       ("libmp4v2" ,libmp4v2)
+       ("libmodplug" ,libmodplug)
+       ("libsndfile" ,libsndfile)
+       ("libshout" ,libshout)
+       ;; XXX: Mixxx complains the libshout-idjc package suffers from bug
+       ;; lp1833225 and refuses to use it.  Use the bundle for now.
+       ;; ("libshout-idjc" ,libshout-idjc)
+       ("libusb" ,libusb)
+       ("libvorbis" ,libvorbis)
+       ("lilv" ,lilv)
+       ("mp3guessenc" ,mp3guessenc)
+       ("openssl" ,openssl)
+       ("opusfile" ,opusfile)
+       ("portaudio" ,portaudio)
+       ("portmidi" ,portmidi)
+       ("protobuf" ,protobuf)
+       ("qtbase" ,qtbase-5)
+       ("qtdeclarative" ,qtdeclarative)
+       ("qtkeychain" ,qtkeychain)
+       ("qtscript" ,qtscript)
+       ("qtsvg" ,qtsvg)
+       ("qtx11extras" ,qtx11extras)
+       ("rubberband" ,rubberband)
+       ("soundtouch" ,soundtouch)
+       ("sqlite" ,sqlite)
+       ("taglib" ,taglib)
+       ("upower" ,upower)
+       ("vamp" ,vamp)
+       ("wavpack" ,wavpack)))
+    (home-page "https://mixxx.org/")
+    (synopsis "DJ software to perform live mixes")
+    (description "Mixxx is a DJ software.  It integrates the tools DJs need to
+perform creative live mixes with digital music files.")
+    (license license:gpl2+)))
 
 (define-public synthv1
   (package
@@ -3257,14 +3363,14 @@ from the command line.")
 (define-public qtractor
   (package
     (name "qtractor")
-    (version "0.9.23")
+    (version "0.9.24")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://downloads.sourceforge.net/qtractor/"
                                   "qtractor-" version ".tar.gz"))
               (sha256
                (base32
-                "1d2d884x5kfa41skwyh0ihyx5jgc9467617gmfjm379qcgnxq00s"))))
+                "0bkr3ahpz54ssrvgkg3dw1jxp3hh7ayxr51jy3csm327is9gnd31"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; no "check" target
@@ -5970,7 +6076,7 @@ short-time Fourier transform, available as LV2 audio plugin and JACK client.")
 (define-public x42-plugins
   (package
     (name "x42-plugins")
-    (version "20200714")
+    (version "20211016")
     (source
      (origin
        (method url-fetch)
@@ -5978,7 +6084,7 @@ short-time Fourier transform, available as LV2 audio plugin and JACK client.")
         (string-append "https://gareus.org/misc/x42-plugins/x42-plugins-"
                        version ".tar.xz"))
        (sha256
-        (base32 "1av05ykph8x67018hm9zfgh1vk0zi39mvrsxkj6bm4hkarxf0vvl"))))
+        (base32 "11bf6q42ihyk4qxwf83y0847zzyl65kwpbk3hmyz0f0ykil5fsb7"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no "check" target
@@ -5987,13 +6093,10 @@ short-time Fourier transform, available as LV2 audio plugin and JACK client.")
              "LIBZITACONVOLVER=-lzita-convolver"
              (string-append "FONTFILE="
                             (assoc-ref %build-inputs "font-dejavu")
-                            "/share/fonts/truetype/DejaVuSans-Bold.ttf"))
+                            "/share/fonts/truetype/DejaVuSans-Bold.ttf")
+             (string-append "CC=" ,(cc-for-target)))
        #:phases
        (modify-phases %standard-phases
-         (add-before 'build 'set-CC-variable
-           (lambda _
-             (setenv "CC" "gcc")
-             #t))
          (delete 'configure))))
     (inputs
      `(("cairo" ,cairo)
@@ -6160,7 +6263,7 @@ ones.")
 (define-public dpf-plugins
   (package
     (name "dpf-plugins")
-    (version "1.3")
+    (version "1.4")
     (source
      (origin
        (method git-fetch)
@@ -6170,17 +6273,15 @@ ones.")
          (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "1hsfmpv3kvpiwk8nfw9xpaipzy0n27i83y2v1yr93lznwm5rqrbs"))))
+        (base32 "0y7qvpfm34g6f7d786c6c9043dlbg5c4h71l2s24dsc9m8i7x2ww"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no "check" target
        #:make-flags
-       (list (string-append "PREFIX=" (assoc-ref %outputs "out")))
+       (list (string-append "PREFIX=" (assoc-ref %outputs "out"))
+             (string-append "CC=" ,(cc-for-target)))
        #:phases
        (modify-phases %standard-phases
-         (add-before 'build 'set-CC-variable
-           (lambda _ (setenv "CC" "gcc") #t))
          (delete 'configure))))
     (inputs
      `(("cairo" ,cairo)
@@ -6377,7 +6478,7 @@ plugin support, JACK support and chord assistance.")
 (define-public dragonfly-reverb
   (package
     (name "dragonfly-reverb")
-    (version "3.2.1")
+    (version "3.2.5")
     (source
      (origin
        (method git-fetch)
@@ -6389,11 +6490,12 @@ plugin support, JACK support and chord assistance.")
          (recursive? #t)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0vfm2510shah67k87mdyar4wr4vqwii59y9lqfhwm6blxparkrqa"))))
+        (base32 "14kia9wjs0nqfx4psnr3vf4x6hihkf80gb0mjzmdnnnk4cnrdydm"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no check target
-       #:make-flags (list "CC=gcc")
+       #:make-flags
+       (list (string-append "CC=" ,(cc-for-target)))
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)            ;no configure target
@@ -6417,8 +6519,7 @@ plugin support, JACK support and chord assistance.")
                                (and
                                  (equal? (dirname name) "bin")
                                  (not (string-suffix? ".so" name))
-                                 (not (string-suffix? ".lv2" name))))))
-               #t))))))
+                                 (not (string-suffix? ".lv2" name))))))))))))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs

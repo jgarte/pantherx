@@ -18,6 +18,7 @@
 ;;; Copyright © 2021 Solene Rapenne <solene@perso.pw>
 ;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2021 Matthew James Kraai <kraai@ftbfs.org>
+;;; Copyright © 2021 John Kehayias <john.kehayias@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -155,7 +156,7 @@ in intelligent transportation networks.")
                       (substitute* "Makefile"
                         (("test-runtime\\$\\(EXEEXT\\)") ""))
                       #t)))))
-    (home-page "https://p11-glue.freedesktop.org/p11-kit.html")
+    (home-page "https://p11-glue.github.io/p11-glue/p11-kit.html")
     (synopsis "PKCS#11 library")
     (description
      "p11-kit provides a way to load and enumerate PKCS#11 modules.  It
@@ -164,6 +165,24 @@ in such a way that they are discoverable.  It also solves problems with
 coordinating the use of PKCS#11 by different components or libraries
 living in the same process.")
     (license license:bsd-3)))
+
+(define-public p11-kit-next
+  (package
+    (inherit p11-kit)
+    (version "0.24.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/p11-glue/p11-kit/releases/"
+                           "download/" version "/p11-kit-" version ".tar.xz"))
+       (sha256
+        (base32 "11f6saclxsclc1f3lbavzw8kikws4cr3mfd1avly8dgnhh2i9rl1"))))
+    (arguments
+     ;; Use the default certificates so that users such as flatpak find them.
+     ;; See <https://issues.guix.gnu.org/49957>.
+     (substitute-keyword-arguments (package-arguments p11-kit)
+       ((#:configure-flags flags ''())
+        ''("--with-trust-paths=/etc/ssl/certs/ca-certificates.crt"))))))
 
 (define-public gnutls
   (package
@@ -348,9 +367,6 @@ required structures.")
     (inputs `(("guile" ,guile-2.2)
               ,@(alist-delete "guile"
                               (package-inputs gnutls))))))
-
-(define-public guile3.0-gnutls
-  (deprecated-package "guile3.0-gnutls" gnutls))
 
 (define-public openssl
   (package
@@ -660,13 +676,13 @@ netcat implementation that supports TLS.")
   (package
     (name "python-acme")
     ;; Remember to update the hash of certbot when updating python-acme.
-    (version "1.17.0")
+    (version "1.18.0")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "acme" version))
               (sha256
                (base32
-                "03ij1wp7jwvppv70qbjkgdg7w824yh6j4gfb68jj20wicx08xx1a"))))
+                "1bv2swaqmzpcx2nq1nbhrc6b825d5sxkdv0al972sjfcpcqn1q4s"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -714,7 +730,7 @@ netcat implementation that supports TLS.")
               (uri (pypi-uri "certbot" version))
               (sha256
                (base32
-                "0wyipx6q78fmvngf1i6g50s01qpjqh07qlk1b5vyxwgl3080lhgg"))))
+                "0yr8sxfg5zspal04l9lpd9xis6gp8il20bhka54xr9bb4hc6xrgk"))))
     (build-system python-build-system)
     (arguments
      `(,@(substitute-keyword-arguments (package-arguments python-acme)

@@ -49,6 +49,7 @@
   #:use-module (gnu packages mono)
   #:use-module (gnu packages ocaml)
   #:use-module (gnu packages package-management)
+  #:use-module (gnu packages pascal)
   #:use-module (gnu packages patchutils)
   #:use-module (gnu packages pdf)
   #:use-module (gnu packages python-web)
@@ -72,7 +73,7 @@
 (define-public diffoscope
   (package
     (name "diffoscope")
-    (version "186")
+    (version "190")
     (source
      (origin
        (method git-fetch)
@@ -81,9 +82,9 @@
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1qlll5jn76ci5jy915v2kvyngfyycwylxpbdylffzaninvdy3dav"))
+        (base32 "10q93qybwqf2nzj3iakw1pxhccq10ixm9fn7xgdr4p88qb0wchb5"))
        (patches
-        (search-patches "diffoscope-fix-test_item3_deflate_llvm_bitcode.patch"))))
+        (search-patches "diffoscope-fix-llvm-test.patch"))))
     (build-system python-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -148,9 +149,9 @@
               ("xxd" ,xxd)))
     (native-inputs `(("help2man" ,help2man)
                      ;; Below are modules used for tests.
+                     ("binwalk" ,binwalk)
                      ("python-pytest" ,python-pytest)
                      ("python-chardet" ,python-chardet)
-                     ("python-binwalk" ,python-binwalk)
                      ("python-black" ,python-black)
                      ("python-h5py" ,python-h5py)
                      ("python-pypdf2" ,python-pypdf2)
@@ -182,6 +183,7 @@
                      ("dtc" ,dtc)
                      ("e2fsprogs" ,e2fsprogs)
                      ("ffmpeg" ,ffmpeg)
+                     ("fpc" ,fpc)
                      ("gettext" ,gettext-minimal)
                      ("ghostscript" ,ghostscript)
                      ("giflib:bin" ,giflib "bin")
@@ -228,7 +230,7 @@ install.")
 (define-public reprotest
   (package
     (name "reprotest")
-    (version "0.7.16")
+    (version "0.7.18")
     (source
      (origin
        (method git-fetch)
@@ -238,7 +240,7 @@ install.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0s7gyixk868dw6yqxsb1sq24mgg9ilz5s2yidd5j0zhl683n7dw9"))))
+         "19lwsxq53isgfkvlxvxqqmbjfcim3lhcxwk7m9ddfjiynhq74949"))))
     (inputs
      `(("python-debian" ,python-debian)
        ("python-distro" ,python-distro)

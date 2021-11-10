@@ -17,6 +17,7 @@
 ;;; Copyright © 2021 Andy Tai <atai@atai.org>
 ;;; Copyright © 2021 Ekaitz Zarraga <ekaitz@elenq.tech>
 ;;; Copyright © 2021 Paul Garlick <pgarlick@tourbillion-technology.com>
+;;; Copyright © 2021 Ivan Gankevich <i.gankevich@spbu.ru>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -56,6 +57,7 @@
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages geo)
   #:use-module (gnu packages ghostscript)
+  #:use-module (gnu packages gimp)
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
@@ -160,7 +162,7 @@ licences similar to the Modified BSD licence."))))
        ("maxflow" ,maxflow)
        ("niftilib" ,niftilib)
        ("nlopt" ,nlopt)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("python-lxml" ,python2-lxml)
        ("vtk" ,vtk)))
     (native-inputs
@@ -230,7 +232,7 @@ of external libraries that provide additional functionality.")
      ;; ocioconvert fails: error: conflicting declaration ?typedef void
      ;; (* PFNGLGETFRAGMENTMATERIALFVSGIXPROC)(GLenum, GLenum, GLfloat*)
      `(("lcms" ,lcms)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("tinyxml" ,tinyxml)))
     (home-page "https://opencolorio.org")
     (synopsis "Color management for visual effects and animation")
@@ -635,7 +637,7 @@ integrates with various databases on GUI toolkits such as Qt and Tk.")
               ("libwebp" ,libwebp)
               ("zlib" ,zlib)
               ("gtkglext" ,gtkglext)
-              ("openexr" ,openexr)
+              ("openexr" ,openexr-2)
               ("ilmbase" ,ilmbase)
               ("gtk+" ,gtk+-2)
               ("python-numpy" ,python-numpy)
@@ -701,7 +703,7 @@ vision algorithms.  It can be used to do things like:
        ("libwebp" ,libwebp)
        ("matio" ,matio)
        ("niftilib" ,niftilib)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("orc" ,orc)
        ("pango" ,pango)
        ("poppler" ,poppler)))
@@ -753,7 +755,7 @@ due to its architecture which automatically parallelises the image workflows.")
        ("libtiff" ,libtiff)
        ("libx11" ,libx11)
        ;;("opencv" ,opencv) ;OpenCV is currently broken in the CI
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("zlib" ,zlib)))
     (home-page "https://gmic.eu/")
     (synopsis "Full-featured framework for digital image processing")
@@ -801,6 +803,25 @@ including 2D color images.")
                               (assoc-ref %build-inputs "gmic") "/lib")))))
     (synopsis "Krita plugin for the G'MIC image processing framework")))
 
+(define-public gmic-qt-gimp
+  (package
+    (inherit gmic-qt)
+    (name "gmic-qt-gimp")
+    (inputs
+     ;; GIMP and its dependencies.
+     `(("gimp" ,gimp)
+       ("gdk-pixbuf" ,gdk-pixbuf)
+       ("cairo" ,cairo)
+       ("gegl" ,gegl)
+       ,@(package-inputs gmic-qt)))
+    (arguments
+     (substitute-keyword-arguments (package-arguments gmic-qt)
+       ((#:configure-flags flags)
+        '(list "-DGMIC_QT_HOST=gimp" "-DENABLE_DYNAMIC_LINKING=ON"
+               (string-append "-DGMIC_LIB_PATH="
+                              (assoc-ref %build-inputs "gmic") "/lib")))))
+    (synopsis "GIMP plugin for the G'MIC image processing framework")))
+
 (define-public nip2
   (package
     (name "nip2")
@@ -840,7 +861,7 @@ including 2D color images.")
        ("matio" ,matio)
        ("lcms" ,lcms)
        ("libwebp" ,libwebp)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("poppler" ,poppler)
        ("gsl" ,gsl)))
     (native-inputs
@@ -1326,7 +1347,7 @@ segmentation.")
 (define-public labelme
   (package
     (name "labelme")
-    (version "4.5.9")
+    (version "4.5.13")
     (source
      (origin
        ;; PyPi tarball lacks tests.
@@ -1336,7 +1357,7 @@ segmentation.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "12wn291516kdv0wqngz4l04j95g3rwc6cvkcb0gw8rrv4wgc7c66"))))
+        (base32 "0cmi2xb4dgh7738l259rgwhn9l134f0vnaaqc2gflc5yr3lqhrv2"))))
     (build-system python-build-system)
     (arguments
      `(#:phases

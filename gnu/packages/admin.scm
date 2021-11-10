@@ -313,9 +313,6 @@ interface and is based on GNU Guile.")
      `(("guile" ,guile-2.2)
        ("guile2.2-readline" ,guile2.2-readline)))))
 
-(define-public guile3.0-shepherd
-  (deprecated-package "guile3.0-shepherd" shepherd))
-
 (define-public guile2.0-shepherd
   (package
     (inherit shepherd)
@@ -637,7 +634,7 @@ console.")
 (define-public htop
   (package
     (name "htop")
-    (version "3.1.0")
+    (version "3.1.1")
     (source
      (origin
        (method git-fetch)
@@ -645,7 +642,7 @@ console.")
              (url "https://github.com/htop-dev/htop")
              (commit version)))
        (sha256
-        (base32 "1ngvidaka6xbfb3l4zxmlksk2ms93fy3sb76w7917kjgn9mh53zz"))
+        (base32 "19xnqnavpxbyix2gp1p3lbhlaawx0gdklx3aq4x4ylrxml2nwyi6"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (inputs
@@ -2507,14 +2504,13 @@ of supported upstream metrics systems simultaneously.")
 (define-public ansible-core
   (package
     (name "ansible-core")
-    (version "2.11.4")
+    (version "2.11.6")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ansible-core" version))
        (sha256
-        (base32
-         "0jgahcv2pyc5ky0wir55a1h9q9d6rgqj60rqmvlpbj76vz1agsi2"))))
+        (base32 "0fih7nxszni8imi5sywsifd976v77ydhip43pzg7dd65qy1h5mck"))))
     (build-system python-build-system)
     (arguments
      `(#:modules ((guix build python-build-system)
@@ -3209,13 +3205,13 @@ a new command using the matched rule, and runs it.")
 (define-public di
   (package
     (name "di")
-    (version "4.50")
+    (version "4.51")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://sourceforge/diskinfo-di/di-" version ".tar.gz"))
        (sha256
-        (base32 "0aj9ldkvmj8fmrk685vd2gagz0q8lwsn2nfbx6r6mza94mn8pw42"))))
+        (base32 "1fv12j9b9sw6p38lcbzcw87zl5qp1aa7a4a4jn3449zz9af15ckr"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; obscure test failures
@@ -3225,8 +3221,7 @@ a new command using the matched rule, and runs it.")
          (add-before 'build 'setup-environment
            (lambda* (#:key outputs #:allow-other-keys)
              (setenv "CC" ,(cc-for-target))
-             (setenv "prefix" (assoc-ref outputs "out"))
-             #t)))
+             (setenv "prefix" (assoc-ref outputs "out")))))
        #:make-flags (list "--environment-overrides")))
     (home-page "https://gentoo.com/di/")
     (synopsis "Advanced df like disk information utility")
@@ -3970,7 +3965,7 @@ Python loading in HPC environments.")
   (let ((real-name "inxi"))
     (package
       (name "inxi-minimal")
-      (version "3.3.06-1")
+      (version "3.3.08-1")
       (source
        (origin
          (method git-fetch)
@@ -3979,7 +3974,7 @@ Python loading in HPC environments.")
                (commit version)))
          (file-name (git-file-name real-name version))
          (sha256
-          (base32 "1qk40iyrdp52vmbiqwxicvlcycm2v2bf1gg4lzq0b4619sd6d1m7"))))
+          (base32 "0kgxyxfw4hkmp9s3nazdqqvbfb4jqwv59mnpaa7g4n63nrqjv06v"))))
       (build-system trivial-build-system)
       (inputs
        `(("bash" ,bash-minimal)

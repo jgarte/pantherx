@@ -368,18 +368,18 @@ the same, being completely separated from the Internet.")
 (define-public nginx
   (package
     (name "nginx")
+    ;; Please update the nginx-documentation package together with this one!
     ;; Track the ‘mainline’ branch.  Upstream considers it more reliable than
     ;; ’stable’ and recommends that “in general you deploy the NGINX mainline
     ;; branch at all times” (https://www.nginx.com/blog/nginx-1-6-1-7-released/)
-    ;; Please update the nginx-documentation package together with this one!
-    (version "1.21.3")
+    (version "1.21.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nginx.org/download/nginx-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0nhps7igdqcpcy1r8677ar807rfclpylmz3y858a678m1np4lxql"))))
+                "1ziv3xargxhxycd5hp6r3r5mww54nvvydiywcpsamg3i9r3jzxyi"))))
     (build-system gnu-build-system)
     (inputs `(("libxml2" ,libxml2)
               ("libxslt" ,libxslt)
@@ -474,9 +474,9 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
 
 (define-public nginx-documentation
   ;; This documentation should be relevant for the current nginx package.
-  (let ((version "1.21.3")
-        (revision 2769)
-        (changeset "16f6fa718be2"))
+  (let ((version "1.21.4")
+        (revision 2791)
+        (changeset "9385526a9b2d"))
     (package
       (name "nginx-documentation")
       (version (simple-format #f "~A-~A-~A" version revision changeset))
@@ -488,7 +488,7 @@ and as a proxy to reduce the load on back-end HTTP or mail servers.")
                (file-name (string-append name "-" version))
                (sha256
                 (base32
-                 "1rjq5xqzx843yk9nblz8lq14r4kmlrahap7m0lkvx5mky80vqp79"))))
+                 "07v5vpwg2k4y1asbygmrvsk61l1vbdb2pyllc5k4hcjykg9avfza"))))
       (build-system gnu-build-system)
       (arguments
        '(#:tests? #f                    ; no test suite
@@ -807,7 +807,7 @@ programming language.")))
                  ;; The nginx source code is part of the module’s source.
                  (format #t "decompressing nginx source code~%")
                  (invoke "tar" "xvf" (assoc-ref inputs "nginx-sources")
-                         ;; This packages's LICENSE file would be
+                         ;; This package's LICENSE file would be
                          ;; overwritten with the one from nginx when
                          ;; unpacking the nginx source, so rename the nginx
                          ;; one when unpacking.
@@ -5791,28 +5791,29 @@ and similar services.")
 (define-public darkhttpd
   (package
     (name "darkhttpd")
-    (version "1.12")
+    (version "1.13")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "https://unix4lyfe.org/darkhttpd/darkhttpd-"
-                           version ".tar.bz2"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/emikulic/darkhttpd")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32
-         "0185wlyx4iqiwfigp1zvql14zw7gxfacncii3d15yaxk4av1f155"))))
+        (base32 "0w11xq160q9yyffv4mw9ncp1n0dl50d9plmwxb0yijaaxls9i4sk"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:make-flags '("CC=gcc")
+     `(#:make-flags
+       (list (string-append "CC=" ,(cc-for-target)))
        #:tests? #f ; No test suite
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure)
+         (delete 'configure)            ; no configure script
          (replace 'install
            (lambda* (#:key outputs #:allow-other-keys)
              (install-file "darkhttpd"
                            (string-append (assoc-ref outputs "out")
-                                          "/bin"))
-             #t)))))
+                                          "/bin")))))))
     (synopsis "Simple static web server")
     (description "darkhttpd is a simple static web server.  It is
 standalone and does not need inetd or ucspi-tcp.  It does not need any
@@ -5823,20 +5824,19 @@ config files---you only have to specify the www root.")
 (define-public goaccess
   (package
     (name "goaccess")
-    (version "1.5.1")
+    (version "1.5.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://tar.goaccess.io/goaccess-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "03wp75n1krv8g643q00gcv1ikmzwwh8jjqmph0wxww1bwrw7whc8"))
+                "12hwmd9cn7yy7vj92110skjaslpxkn05msb9wj228qmjjf9jzkm0"))
               (modules '((guix build utils)))
               (snippet '(begin
                           (substitute* "src/error.h"
                             (("__DATE__") "\"1970-01-01\"")
-                            (("__TIME__") "\"00:00:00\""))
-                          #t))))
+                            (("__TIME__") "\"00:00:00\""))))))
     (build-system gnu-build-system)
     (inputs
      ;; TODO: Add dependency on geoip-tools.

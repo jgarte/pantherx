@@ -107,7 +107,7 @@
   "Texinfo markup in description is invalid"
   (single-lint-warning-message
    (check-description-style
-    (dummy-package "x" (description "f{oo}b@r")))))
+    (dummy-package "x" (description (identity "f{oo}b@r"))))))
 
 (test-equal "description: does not start with an upper-case letter"
   "description should start with an upper-case letter or digit"
@@ -177,6 +177,20 @@
                               (description "Whitespace. "))))
      (check-description-style pkg))))
 
+(test-equal "description: pluralized 'This package'"
+  "description contains typo 'This packages', should be 'This package'"
+  (single-lint-warning-message
+   (let ((pkg (dummy-package "x"
+                             (description "This packages is a typo."))))
+     (check-description-style pkg))))
+
+(test-equal "description: grammar 'allows to'"
+  "description contains typo 'allows to'"
+  (single-lint-warning-message
+   (let ((pkg (dummy-package "x"
+                             (description "This package allows to do stuff."))))
+     (check-description-style pkg))))
+
 (test-equal "synopsis: not a string"
   "invalid synopsis: #f"
   (single-lint-warning-message
@@ -195,7 +209,7 @@
   "Texinfo markup in synopsis is invalid"
   (single-lint-warning-message
    (check-synopsis-style
-    (dummy-package "x" (synopsis "Bad $@ texinfo")))))
+    (dummy-package "x" (synopsis (identity "Bad $@ texinfo"))))))
 
 (test-equal "synopsis: does not start with an upper-case letter"
   "synopsis should start with an upper-case letter or digit"

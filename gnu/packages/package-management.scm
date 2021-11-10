@@ -142,8 +142,8 @@
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
   (let ((version "1.3.0")
-        (commit "f31a282e28853b887bc8221369e19930927be7fc")
-        (revision 10))
+        (commit "014f1b607f1d88a8e733017afaca006545b7d99b")
+        (revision 11))
     (package
       (name "guix")
 
@@ -159,7 +159,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "0r7zv4g8m3pypb8wsvdlspjb1br9lr78b76nm80zrx3fhdf4vp1k"))
+                  "0mmq0ypkxj6dc1r9j1mdgih87h6fc0mk05hp481cjp8shdc1w6gw"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -530,9 +530,6 @@ the Nix package manager.")
                (invoke "make" "install-binPROGRAMS")))
            (delete 'wrap-program)))))))
 
-(define-public guile3.0-guix
-  (deprecated-package "guile3.0-guix" guix))
-
 (define-public guix-minimal
   ;; A version of Guix which is built with the minimal set of dependencies, as
   ;; outlined in the README "Requirements" section.  Intended as a CI job, so
@@ -598,14 +595,14 @@ out) and returning a package that uses that as its 'source'."
 (define-public nix
   (package
     (name "nix")
-    (version "2.3.13")
+    (version "2.3.16")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://releases.nixos.org/nix/nix-"
                                  version "/nix-" version ".tar.xz"))
              (sha256
               (base32
-               "0631qk2lgd76y6g2z45wy6lcpv647r2a08jd2dagzzpwniy68d3h"))))
+               "1g5aqavr6i3c1xln53w1pdh1kvlxrpnknb105m4jbd85kyv83rky"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags '("--sysconfdir=/etc" "--enable-gc")
@@ -981,9 +978,6 @@ other systems as well.  Conda makes environments first-class citizens, making
 it easy to create independent environments even for C libraries.  Conda is
 written entirely in Python.")
     (license license:bsd-3)))
-
-(define-public python-conda
-  (deprecated-package "python-conda" conda))
 
 (define-public conan
   (package
@@ -1525,14 +1519,15 @@ the boot loader configuration.")
 (define-public flatpak
   (package
    (name "flatpak")
-   (version "1.10.2")
+   (version "1.12.1")
    (source
     (origin
      (method url-fetch)
      (uri (string-append "https://github.com/flatpak/flatpak/releases/download/"
                          version "/flatpak-" version ".tar.xz"))
      (sha256
-      (base32 "1r6xw7r3ir2vaa30n3mily6m7d51cf4qv22fkqlzzy3js0wjf5fv"))))
+      (base32 "0my82ijg1ipa4lwrvh88jlrxbabfqfz2ssfb8cn6k0pfgz53p293"))
+     (patches (search-patches "flatpak-fix-path.patch"))))
 
    ;; Wrap 'flatpak' so that GIO_EXTRA_MODULES is set, thereby allowing GIO to
    ;; find the TLS backend in glib-networking.
@@ -1567,6 +1562,16 @@ cp -r /tmp/locale/*/en_US.*")))
               (("/bin/kill") (which "kill"))
               (("/usr/bin/python3") (which "python3")))
             #t))
+        (add-after 'unpack 'p11-kit-fix
+          (lambda* (#:key inputs #:allow-other-keys)
+            (let ((p11-path (string-append (assoc-ref inputs "p11-kit-next")
+                                           "/bin/p11-kit")))
+              (substitute* "session-helper/flatpak-session-helper.c"
+                (("\"p11-kit\",")
+                 (string-append "\"" p11-path "\","))
+                (("if \\(g_find_program_in_path \\(\"p11-kit\"\\)\\)")
+                 (string-append "if (g_find_program_in_path (\""
+                                p11-path "\"))"))))))
         ;; Many tests fail for unknown reasons, so we just run a few basic
         ;; tests.
         (replace 'check
@@ -1605,6 +1610,7 @@ cp -r /tmp/locale/*/en_US.*")))
       ("libsoup" ,libsoup)
       ("libxau" ,libxau)
       ("libxml2" ,libxml2)
+      ("p11-kit-next" ,p11-kit-next)
       ("util-linux" ,util-linux)
       ("xdg-dbus-proxy" ,xdg-dbus-proxy)))
    (home-page "https://flatpak.org")

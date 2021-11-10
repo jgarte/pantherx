@@ -245,16 +245,8 @@ for platform-specific firmwares executing in M-mode.")
 (define-public opensbi-qemu-generic
   (make-opensbi-package "generic" "opensbi-qemu-generic"))
 
-(define-public opensbi-qemu-virt
-  (deprecated-package "opensbi-qemu-virt" opensbi-qemu-generic))
-
 (define-public opensbi-sifive-fu540
   (make-opensbi-package "sifive/fu540" "opensbi-sifive-fu540"))
-
-(define-public opensbi-qemu-sifive-u
-  ;; Dropped upstream, as all functionality is present in the sifive-fu540
-  ;; target for recent versions of qemu, u-boot and linux.
-  (deprecated-package "opensbi-qemu-sifive-u" opensbi-sifive-fu540))
 
 (define-public seabios
   (package
@@ -465,7 +457,7 @@ Virtual Machines.  OVMF contains a sample UEFI firmware for QEMU and KVM.")
 (define* (make-arm-trusted-firmware platform #:optional (arch "aarch64"))
   (package
     (name (string-append "arm-trusted-firmware-" platform))
-    (version "2.4")
+    (version "2.5")
     (source
       (origin
         (method git-fetch)
@@ -476,7 +468,7 @@ Virtual Machines.  OVMF contains a sample UEFI firmware for QEMU and KVM.")
         (file-name (git-file-name "arm-trusted-firmware" version))
        (sha256
         (base32
-         "12k0n79j156bdzqws18kpbli04kn00nh6dy42pjv6gakqrkx9px3"))))
+         "0w3blkqgmyb5bahlp04hmh8abrflbzy0qg83kmj1x9nv4mw66f3b"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases

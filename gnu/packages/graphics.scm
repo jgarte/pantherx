@@ -26,6 +26,7 @@
 ;;; Copyright © 2021 Antoine Côté <antoine.cote@posteo.net>
 ;;; Copyright © 2021 Andy Tai <atai@atai.org>
 ;;; Copyright © 2021 Ekaitz Zarraga <ekaitz@elenq.tech>
+;;; Copyright © 2021 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -568,7 +569,7 @@ typically encountered in feature film production.")
        ("libxrender" ,libxrender)
        ("opencolorio" ,opencolorio)
        ("openimageio" ,openimageio)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("opensubdiv" ,opensubdiv)
        ("ilmbase" ,ilmbase)
        ("openjpeg" ,openjpeg)
@@ -668,7 +669,7 @@ application can be customized via its API for Python scripting.")
        ("libx11" ,libx11)
        ("opencolorio" ,opencolorio)
        ("openimageio" ,openimageio)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("ilmbase" ,ilmbase)
        ("openjpeg" ,openjpeg)
        ("libjpeg" ,libjpeg-turbo)
@@ -796,6 +797,28 @@ many more.")
     ;; permissive licenses.
     (license license:gpl3+)))
 
+(define-public imath
+  (package
+    (name "imath")
+    (version "3.1.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/AcademySoftwareFoundation/Imath")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1nyld18mf220ghm1vidnfnn0rdns9z5i4l9s66xgd0kfdgarb31f"))))
+    (build-system cmake-build-system)
+    (home-page "https://github.com/AcademySoftwareFoundation/Imath")
+    (synopsis "Library of math operations for computer graphics")
+    (description
+     "Imath is a C++ representation of 2D and 3D vectors and matrices and other
+mathematical objects, functions, and data types common in computer graphics
+applications, including the \"half\" 16-bit floating-point type.")
+    (license license:bsd-3)))
+
 (define-public ilmbase
   (package
     (name "ilmbase")
@@ -905,14 +928,14 @@ basic geometries.")
 (define-public pstoedit
   (package
     (name "pstoedit")
-    (version "3.75")
+    (version "3.77")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/pstoedit/pstoedit/"
                                   version "/pstoedit-" version ".tar.gz"))
               (sha256
                (base32
-                "1kv46g2wsvsvcngkavxl5gnw3l6g5xqnh4kmyx4b39a01d8xiddp"))))
+                "02av76j75g5sq3bg353yl6dlllda9ihmmk4c8hvgiscix816nv4s"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)))
@@ -1085,17 +1108,47 @@ graphics.")
 (define-public openexr
   (package
     (name "openexr")
+    (version "3.1.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/AcademySoftwareFoundation/openexr")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0vyclrrikphwkkpyjg8kzh3qzflzk3d6xsidgqllgfdgllr9wmgv"))))
+    (build-system cmake-build-system)
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         ;; /var/tmp does not exist in the Guix build environment
+         (add-after 'unpack 'patch-test-directory
+           (lambda _
+             (substitute* '("src/test/OpenEXRUtilTest/tmpDir.h"
+                            "src/test/OpenEXRFuzzTest/tmpDir.h"
+                            "src/test/OpenEXRTest/tmpDir.h"
+                            "src/test/OpenEXRCoreTest/main.cpp")
+               (("/var/tmp") "/tmp")))))))
+    (inputs
+     `(("imath" ,imath)
+       ("zlib" ,zlib)))
+    (home-page "https://www.openexr.com/")
+    (synopsis "High-dynamic-range file format library")
+    (description
+     "OpenEXR provides the specification and reference implementation of the
+EXR file format.  The purpose of EXR format is to accurately and efficiently
+represent high-dynamic-range scene-linear image data and associated metadata,
+with strong support for multi-part, multi-channel use cases.")
+    (license license:bsd-3)))
+
+(define-public openexr-2
+  (package
+    (name "openexr")
     (version (package-version ilmbase))
     (source (origin
               (inherit (package-source ilmbase))
-              (file-name (git-file-name "openexr" version))
-              (modules '((guix build utils)))
-              (snippet
-               '(begin
-                  (substitute* (find-files "OpenEXR" "tmpDir\\.h")
-                    (("\"/var/tmp/\"")
-                     "\"/tmp/\""))
-                  #t))))
+              (file-name (git-file-name "openexr" version))))
     (build-system cmake-build-system)
     (arguments
      `(#:phases
@@ -1104,6 +1157,12 @@ graphics.")
            (lambda _
              (chdir "OpenEXR")
              #t))
+         (add-after 'change-directory 'patch-test-directory
+           (lambda _
+             (substitute* '("IlmImfFuzzTest/tmpDir.h"
+                            "IlmImfTest/tmpDir.h"
+                            "IlmImfUtilTest/tmpDir.h")
+               (("/var/tmp") "/tmp"))))
          (add-after 'change-directory 'increase-test-timeout
            (lambda _
              ;; On armhf-linux, we need to override the CTest default
@@ -1129,13 +1188,10 @@ graphics.")
     (propagated-inputs
      `(("ilmbase" ,ilmbase)                       ;used in public headers
        ("zlib" ,zlib)))                           ;OpenEXR.pc reads "-lz"
-    (home-page "https://www.openexr.com/")
-    (synopsis "High-dynamic range file format library")
-    (description
-     "OpenEXR is a high dynamic-range (HDR) image file format developed for
-use in computer imaging applications.  The IlmImf C++ libraries support
-storage of the \"EXR\" file format for storing 16-bit floating-point images.")
-    (license license:bsd-3)))
+    (home-page (package-home-page openexr))
+    (synopsis (package-synopsis openexr))
+    (description (package-description openexr))
+    (license (package-license openexr))))
 
 (define-public openimageio
   (package
@@ -1166,7 +1222,7 @@ storage of the \"EXR\" file format for storing 16-bit floating-point images.")
        ("libjpeg" ,libjpeg-turbo)
        ("libtiff" ,libtiff)
        ("giflib" ,giflib)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("ilmbase" ,ilmbase)
        ("pugixml" ,pugixml)
        ("python" ,python-wrapper)
@@ -1228,32 +1284,56 @@ virtual reality, scientific visualization and modeling.")
     ;; LGPL 2.1, but with 4 exceptions. This version is called OSGPL.
     (license license:lgpl2.1)))
 
-;; We need this for simgear
-(define-public openscenegraph-3.4
-  (package (inherit openscenegraph)
-    (name "openscenegraph")
-    (version "3.4.1")
+(define-public gr-framework
+  (package
+    (name "gr-framework")
+    (version "0.58.1")
     (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/openscenegraph/OpenSceneGraph")
-             (commit (string-append "OpenSceneGraph-" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32
-         "1fbzg1ihjpxk6smlq80p3h3ggllbr16ihd2fxpfwzam8yr8yxip9"))))
+      (origin
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/sciapp/gr")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "0q1rz4iyxbh0dc22y4w28ry3hr0yypdwdm6pw2zlwgjya7wkbvsw"))
+        (modules '((guix build utils)))
+        (snippet
+         '(begin
+            (delete-file-recursively "3rdparty")
+            #t))))
+    (build-system cmake-build-system)
     (arguments
-     (substitute-keyword-arguments (package-arguments openscenegraph)
-       ((#:configure-flags flags)
-        `(cons
-          ;; The jpeg plugin requires conversion between integers and booleans
-          "-DCMAKE_CXX_FLAGS=-fpermissive"
-          ,flags))))
+     `(#:tests? #f))    ; no test target
     (inputs
-     `(("libjpeg" ,libjpeg-turbo)
-       ,@(package-inputs openscenegraph)))))
-
+     `(("bzip2" ,bzip2)
+       ("cairo" ,cairo)
+       ("fontconfig" ,fontconfig)
+       ("ffmpeg" ,ffmpeg)
+       ("freetype" ,freetype)
+       ("ghostscript" ,ghostscript)
+       ("glfw" ,glfw)
+       ("libjpeg-turbo" ,libjpeg-turbo)
+       ("libpng" ,libpng)
+       ("libtiff" ,libtiff)
+       ("libx11" ,libx11)
+       ("libxft" ,libxft)
+       ("libxt" ,libxt)
+       ("pixman" ,pixman)
+       ("qtbase" ,qtbase-5)
+       ("qhull" ,qhull)
+       ("zlib" ,zlib)))
+    (home-page "https://gr-framework.org/")
+    (synopsis "Graphics library for visualisation applications")
+    (description "GR is a universal framework for cross-platform visualization
+applications.  It offers developers a compact, portable and consistent graphics
+library for their programs.  Applications range from publication quality 2D
+graphs to the representation of complex 3D scenes.  GR is essentially based on
+an implementation of a @acronym{GKS, Graphical Kernel System}.  As a
+self-contained system it can quickly and easily be integrated into existing
+applications (i.e. using the @code{ctypes} mechanism in Python or @code{ccall}
+in Julia).")
+    (license license:expat)))
 
 (define-public openmw-openscenegraph
   ;; OpenMW prefers its own fork of openscenegraph:
@@ -1319,7 +1399,7 @@ virtual reality, scientific visualization and modeling.")
        ("libjpeg" ,libjpeg-turbo)
        ("libpng" ,libpng)
        ("libtiff" ,libtiff)
-       ("openexr" ,openexr)
+       ("openexr" ,openexr-2)
        ("sdl" ,sdl)
        ("zlib" ,zlib)))
     (arguments
@@ -1440,7 +1520,7 @@ and is connected to the programming logic using data bindings and commands.")
     (arguments '(#:tests? #f))                    ;no 'test' target
 
     ;; Headers include OpenEXR and IlmBase headers.
-    (propagated-inputs `(("openexr" ,openexr)))
+    (propagated-inputs `(("openexr" ,openexr-2)))
 
     (home-page "http://ampasctl.sourceforge.net")
     (synopsis "Color Transformation Language")

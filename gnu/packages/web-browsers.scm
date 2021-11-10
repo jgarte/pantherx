@@ -59,6 +59,7 @@
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages fonts)
   #:use-module (gnu packages freedesktop)
+  #:use-module (gnu packages fribidi)
   #:use-module (gnu packages gcc)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages glib)
@@ -72,6 +73,7 @@
   #:use-module (gnu packages libunistring)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lisp)
+  #:use-module (gnu packages lisp-check)
   #:use-module (gnu packages lisp-xyz)
   #:use-module (gnu packages lua)
   #:use-module (gnu packages man)
@@ -688,16 +690,10 @@ for power users.  Conceptually inspired by Emacs and Vim, it has familiar
 key-bindings (Emacs, vi, CUA), and is fully configurable in Common Lisp.")
     (license license:bsd-3)))
 
-(define-public next
-  (deprecated-package "next" nyxt))
-
-(define-public sbcl-next
-  (deprecated-package "sbcl-next" nyxt))
-
 (define-public lagrange
   (package
     (name "lagrange")
-    (version "1.5.2")
+    (version "1.7.2")
     (source
      (origin
        (method url-fetch)
@@ -705,7 +701,7 @@ key-bindings (Emacs, vi, CUA), and is fully configurable in Common Lisp.")
         (string-append "https://git.skyjake.fi/skyjake/lagrange/releases/"
                        "download/v" version "/lagrange-" version ".tar.gz"))
        (sha256
-        (base32 "0gqaipgs16kw711ijhshmbhhvlyjvh37wxdz059p4vvjhfrxbr1v"))))
+        (base32 "1fr7p0pjli9clsgr0a1fp1pr119r9zqx43dvhc1g91bj742mxhfa"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #false                  ;no tests
@@ -713,7 +709,10 @@ key-bindings (Emacs, vi, CUA), and is fully configurable in Common Lisp.")
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (inputs
-     `(("libunistring" ,libunistring)
+     `(("fribidi" ,fribidi)
+       ("harfbuzz" ,harfbuzz)
+       ("libunistring" ,libunistring)
+       ("libwebp" ,libwebp)
        ("mpg123" ,mpg123)
        ("openssl" ,openssl)
        ("pcre" ,pcre)

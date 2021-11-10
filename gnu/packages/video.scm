@@ -53,6 +53,7 @@
 ;;; Copyright © 2020 Hartmut Goebel <h.goebel@crazy-compilers.com>
 ;;; Copyright © 2021 Raghav Gururajan <rg@raghavgururajan.name>
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
+;;; Copyright © 2021 Robin Templeton <robin@terpri.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -142,6 +143,7 @@
   #:use-module (gnu packages man)
   #:use-module (gnu packages markup)
   #:use-module (gnu packages maths)
+  #:use-module (gnu packages music)
   #:use-module (gnu packages mp3)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages networking)
@@ -822,7 +824,7 @@ television and DVD.  It is also known as AC-3.")
 (define-public libaom
   (package
     (name "libaom")
-    (version "3.1.2")
+    (version "3.2.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -831,7 +833,7 @@ television and DVD.  It is also known as AC-3.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1c7yrhb56qj5c3lz54n1f9cbrvdr32g2yrrdiiy72sib8ycq9hz2"))))
+                "0fmnbzpl481i7kchx4hbvb507r5pfgyrzfrlrs7jk3bicycm75qv"))))
     (build-system cmake-build-system)
     (native-inputs
      `(("perl" ,perl)
@@ -1071,7 +1073,7 @@ H.264 (MPEG-4 AVC) video streams.")
 (define-public pipe-viewer
   (package
     (name "pipe-viewer")
-    (version "0.1.4")
+    (version "0.1.5")
     (source
      (origin
        (method git-fetch)
@@ -1081,7 +1083,7 @@ H.264 (MPEG-4 AVC) video streams.")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0d8b3gcr9dndw8qlwfrm0wgp4vjmn8fwd151kmzz7kkw57f5jfch"))))
+        (base32 "075xc5kvnmyqqj7zijvdrvbkna931h7xf8f8z0ick7yx5fy3pn5j"))))
     (build-system perl-build-system)
     (arguments
      `(#:imported-modules
@@ -1508,14 +1510,14 @@ operate properly.")
 (define-public ffmpeg
   (package
     (name "ffmpeg")
-    (version "4.4")
+    (version "4.4.1")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://ffmpeg.org/releases/ffmpeg-"
                                  version ".tar.xz"))
              (sha256
               (base32
-               "02fr8mvf2agwmyb9q2bmh9p09gpz3xxmpcbbbj8iydz57hc0mc86"))))
+               "00hfwd8ld6jnd26pl9f0wcd2mag4zacxxgqgabsja2xkkagavnza"))))
     (build-system gnu-build-system)
     (inputs
      `(("dav1d" ,dav1d)
@@ -1699,28 +1701,17 @@ convert and stream audio and video.  It includes the libavcodec
 audio/video codec library.")
     (license license:gpl2+)))
 
-(define-public ffmpeg-4.3
-  (package/inherit ffmpeg
-    (version "4.3.2")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://ffmpeg.org/releases/ffmpeg-"
-                                  version ".tar.xz"))
-              (sha256
-               (base32
-                "1nyd9jlcy0pqnwzi29a7sg50hq37vb0g3f9l16y3q8yh3m7ydr26"))))))
-
 (define-public ffmpeg-3.4
   (package
     (inherit ffmpeg)
-    (version "3.4.7")
+    (version "3.4.9")
     (source (origin
              (method url-fetch)
              (uri (string-append "https://ffmpeg.org/releases/ffmpeg-"
                                  version ".tar.xz"))
              (sha256
               (base32
-               "1j7mdk9szrljgv4sdx69bm1pnbb3cldbdxbkr42jbdi9zn11gl7g"))))
+               "0d8nkd9c85rkjlgsq1hidmykkrksi883ygqzhhj6wh4nqflv8vs9"))))
     (arguments
      (substitute-keyword-arguments (package-arguments ffmpeg)
        ((#:modules modules %gnu-build-system-modules)
@@ -1740,14 +1731,14 @@ audio/video codec library.")
 (define-public ffmpeg-2.8
   (package
     (inherit ffmpeg)
-    (version "2.8.16")
+    (version "2.8.18")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://ffmpeg.org/releases/ffmpeg-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "14n0xg22yz1r4apif2idm91s3avcmkz4sl8gyj5763gcy415k2bb"))))
+                "0k6dq7b8rpjvdl5ncf1135qwc36x0x9va8v83aggvbfhy5d97vwn"))))
     (arguments
      `(#:tests? #f               ; XXX: Enable them later, if required
        #:configure-flags
@@ -2093,7 +2084,7 @@ SVCD, DVD, 3ivx, DivX 3/4/5, WMV and H.264 movies.")
 (define-public mpv
   (package
     (name "mpv")
-    (version "0.33.1")
+    (version "0.34.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2101,8 +2092,7 @@ SVCD, DVD, 3ivx, DivX 3/4/5, WMV and H.264 movies.")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
-               (base32
-                "06rw1f55zcsj78ql8w70j9ljp2qb1pv594xj7q9cmq7i92a7hq45"))))
+               (base32 "0kqckrgvpx42gdmnc644lpwbimwf1am256xd670w2b8sbrjv3bm9"))))
     (build-system waf-build-system)
     (native-inputs
      `(("perl" ,perl) ; for zsh completion file
@@ -2146,19 +2136,17 @@ SVCD, DVD, 3ivx, DivX 3/4/5, WMV and H.264 movies.")
        ("wayland" ,wayland)
        ("wayland-protocols" ,wayland-protocols)
        ("libxkbcommon" ,libxkbcommon)
-       ("youtube-dl" ,youtube-dl)
+       ("yt-dlp" ,yt-dlp)
        ("zlib" ,zlib)))
     (arguments
      '(#:phases
        (modify-phases %standard-phases
-         (add-after
-          'unpack 'patch-paths
-          (lambda* (#:key inputs #:allow-other-keys)
-            (let ((ytdl (assoc-ref inputs "youtube-dl")))
-              (substitute* "player/lua/ytdl_hook.lua"
-                (("\"youtube-dl\",")
-                 (string-append "\"" ytdl "/bin/youtube-dl\",")))
-              #t)))
+         (add-after 'unpack 'patch-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((ytdl (assoc-ref inputs "yt-dlp")))
+               (substitute* "player/lua/ytdl_hook.lua"
+                 (("\"yt-dlp\",")
+                  (string-append "\"" ytdl "/bin/yt-dlp\","))))))
          (add-before 'configure 'build-reproducibly
            (lambda _
              ;; Somewhere in the build system library dependencies are enumerated
@@ -2359,6 +2347,74 @@ To load this plugin, specify the following option when starting mpv:
 YouTube.com and many more sites.")
     (home-page "https://yt-dl.org")
     (license license:public-domain)))
+
+(define-public yt-dlp
+  (package/inherit youtube-dl
+    (name "yt-dlp")
+    (version "2021.10.22")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://github.com/yt-dlp/yt-dlp/"
+                                  "releases/download/"
+                                  version "/yt-dlp.tar.gz"))
+              (sha256
+               (base32
+                "0xh4cwmvx49pxn8x07wj2dy8ynj6xg8977l5493vv0l8zc27wp87"))
+              (snippet
+               '(begin
+                  ;; Delete the pre-generated files, except for the man page
+                  ;; which requires 'pandoc' to build.
+                  (for-each delete-file '("yt-dlp"
+                                          ;;pandoc is needed to generate
+                                          ;;"yt-dlp.1"
+                                          "completions/bash/yt-dlp"
+                                          "completions/fish/yt-dlp.fish"
+                                          "completions/zsh/_yt-dlp"))
+                  #t))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments youtube-dl)
+       ((#:tests? _) #t)
+       ((#:phases phases)
+        `(modify-phases ,phases
+           ;; See the comment for the corresponding phase in youtube-dl.
+           (replace 'default-to-the-ffmpeg-input
+             (lambda _
+               (substitute* "yt_dlp/postprocessor/ffmpeg.py"
+                 (("\\.get_param\\('ffmpeg_location'\\)" match)
+                  (format #f "~a or '~a'" match (which "ffmpeg"))))
+               #t))
+           (replace 'build-generated-files
+             (lambda _
+               ;; Avoid the yt-dlp.1 target, which requires pandoc.
+               (invoke "make" "PYTHON=python" "yt-dlp" "completions")))
+           (replace 'fix-the-data-directories
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let ((prefix (assoc-ref outputs "out")))
+                 (substitute* "setup.py"
+                   (("'etc/")
+                    (string-append "'" prefix "/etc/"))
+                   (("'share/")
+                    (string-append "'" prefix "/share/"))))
+               #t))
+           (delete 'install-completion)
+           (replace 'check
+             (lambda* (#:key tests? #:allow-other-keys)
+               (when tests?
+                 (invoke "pytest" "-k" "not download"))))))))
+    (inputs
+     `(("python-mutagen" ,python-mutagen)
+       ("python-pycryptodomex" ,python-pycryptodomex)
+       ("python-websockets" ,python-websockets)
+       ,@(package-inputs youtube-dl)))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ,@(package-native-inputs youtube-dl)))
+    (description
+     "yt-dlp is a small command-line program to download videos from
+YouTube.com and many more sites.  It is a fork of youtube-dl with a
+focus on adding new features while keeping up-to-date with the
+original project.")
+    (home-page "https://github.com/yt-dlp/yt-dlp")))
 
 (define-public youtube-dl-gui
   (package
@@ -3697,7 +3753,7 @@ supported players in addition to this package.")
 (define-public handbrake
   (package
     (name "handbrake")
-    (version "1.4.1")
+    (version "1.4.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/HandBrake/HandBrake/"
@@ -3705,7 +3761,7 @@ supported players in addition to this package.")
                                   "HandBrake-" version "-source.tar.bz2"))
               (sha256
                (base32
-                "1xhq9jjmf854jf7sg4m754hgajnavwwhmjnaikcf2vgjr35ax81r"))
+                "0qgvdpnjjvh9937cr0yry1lkz5fj6x9pz32fx7s80c9fvjvq33lb"))
               (modules '((guix build utils)))
               (snippet
                ;; Remove "contrib" and source not necessary for
@@ -3718,8 +3774,7 @@ supported players in addition to this package.")
                     ;; (ffmpeg, libvpx, libdvdread, libdvdnav, and libbluray),
                     ;; which would lead to fetching and building of these
                     ;; libraries.  Use our own instead.
-                    (("MODULES \\+= contrib") "# MODULES += contrib"))
-                  #t))))
+                    (("MODULES \\+= contrib") "# MODULES += contrib"))))))
     (build-system  glib-or-gtk-build-system)
     (native-inputs
      `(("automake" ,automake)           ; GUI subpackage must be bootstrapped
@@ -3785,8 +3840,7 @@ supported players in addition to this package.")
          (add-before 'configure 'patch-SHELL
            (lambda _
              (substitute* "gtk/po/Makefile.in.in"
-               (("SHELL = /bin/sh") "SHELL = @SHELL@"))
-             #t))
+               (("SHELL = /bin/sh") "SHELL = @SHELL@"))))
          (add-before 'configure 'relax-reqs
            (lambda _
              (substitute* "make/configure.py"
@@ -3796,8 +3850,7 @@ supported players in addition to this package.")
                ;; and ninja are only needed for contrib/libdav1d, and nasm
                ;; only for libvpx
                (("((cmake|meson|ninja|nasm) *=.*abort=)True" _ &)
-                (string-append & "False")))
-             #t))
+                (string-append & "False")))))
          (replace 'configure
            (lambda* (#:key outputs configure-flags #:allow-other-keys)
              ;; 'configure' is not an autoconf-generated script, and
@@ -3808,7 +3861,7 @@ supported players in addition to this package.")
                       (string-append "--prefix=" out)
                       (or configure-flags '())))))
          (add-after 'configure 'chdir-build
-           (lambda _ (chdir "./build") #t)))))
+           (lambda _ (chdir "./build"))))))
     (home-page "https://handbrake.fr")
     (synopsis "Video transcoder")
     (description
@@ -4592,7 +4645,7 @@ create smoother and stable videos.")
 (define-public libopenshot
   (package
     (name "libopenshot")
-    (version "0.2.5")
+    (version "0.2.7")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4601,11 +4654,11 @@ create smoother and stable videos.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1mxjkgjmjzgf628y3rscc6rqf55hxgjpmvwxlncfk1216i5xskwp"))
+                "0i9bsn8gklm1mvj60l3d3xrxdgy8svpxjfqcwsr308j5zjn30pv8"))
               (modules '((guix build utils)))
               (snippet '(begin
                           ;; Allow overriding of the python installation dir
-                          (substitute* "src/bindings/python/CMakeLists.txt"
+                          (substitute* "bindings/python/CMakeLists.txt"
                             (("(SET\\(PYTHON_MODULE_PATH.*)\\)" _ set)
                              (string-append set " CACHE PATH "
                                             "\"Python bindings directory\")")))
@@ -4617,11 +4670,12 @@ create smoother and stable videos.")
        ("python" ,python)
        ("swig" ,swig)
        ("unittest++" ,unittest-cpp)))
+    (inputs
+     `(("alsa-lib" ,alsa-lib)
+       ("zlib" ,zlib)))
     (propagated-inputs                  ;all referenced in installed headers
      `(("cppzmq" ,cppzmq)
-       ;; libopenshot doesn't yet build with ffmpeg 4.4 (see:
-       ;; https://github.com/OpenShot/libopenshot/issues/676).
-       ("ffmpeg" ,ffmpeg-4.3)
+       ("ffmpeg" ,ffmpeg)
        ("imagemagick" ,imagemagick)
        ("jsoncpp" ,jsoncpp)
        ("libopenshot-audio" ,libopenshot-audio)
@@ -4656,7 +4710,7 @@ API.  It includes bindings for Python, Ruby, and other languages.")
 (define-public openshot
   (package
     (name "openshot")
-    (version "2.5.1")
+    (version "2.6.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4665,7 +4719,7 @@ API.  It includes bindings for Python, Ruby, and other languages.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0qc5i0ay6j2wab1whl41sjb71cj02pg6y79drf7asrprq8b2rmfq"))
+                "0pa8iwl217503bjlqg2zlrw5lxyq5hvxrf5apxrh3843hj1w1myv"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -4690,9 +4744,10 @@ API.  It includes bindings for Python, Ruby, and other languages.")
        #:phases (modify-phases %standard-phases
                   (delete 'build)       ;install phase does all the work
                   (replace 'check
-                    (lambda _
-                      (setenv "QT_QPA_PLATFORM" "offscreen")
-                      (invoke "python" "src/tests/query_tests.py")))
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (when tests?
+                        (setenv "QT_QPA_PLATFORM" "offscreen")
+                        (invoke "python" "src/tests/query_tests.py"))))
                   (add-after 'unpack 'patch-font-location
                     (lambda* (#:key inputs #:allow-other-keys)
                       (let ((font (assoc-ref inputs "font-dejavu")))
@@ -4701,6 +4756,12 @@ API.  It includes bindings for Python, Ruby, and other languages.")
                           (("fonts") "share/fonts/truetype")
                           (("[A-Za-z_-]+.ttf") "DejaVuSans.ttf")))
                       #t))
+                  ;; https://github.com/OpenShot/openshot-qt/issues/4502
+                  (add-before 'ensure-no-mtimes-pre-1980 'fix-symbolic-link
+                    (lambda _
+                      (delete-file "images/Humanity/actions/custom/razor_line_with_razor.png")
+                      (symlink "../../../../src/timeline/media/images/razor_line_with_razor.png"
+                               "images/Humanity/actions/custom/razor_line_with_razor.png")))
                   (add-before 'install 'set-tmp-home
                     (lambda _
                       ;; src/classes/info.py "needs" to create several

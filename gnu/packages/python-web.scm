@@ -44,6 +44,7 @@
 ;;; Copyright © 2021 Greg Hogan <code@greghogan.com>
 ;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2021 Pradana Aumars <paumars@courrier.dev>
+;;; Copyright © 2021 Arun Isaac <arunisaac@systemreboot.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -171,7 +172,16 @@ API rules.")
        (method url-fetch)
        (uri (pypi-uri "aiohttp" version))
        (sha256
-        (base32 "1pn79h8fng4xi5gl1f6saw31nxgmgyxl41yf3vba1l21673yr12x"))))
+        (base32 "1pn79h8fng4xi5gl1f6saw31nxgmgyxl41yf3vba1l21673yr12x"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           (for-each delete-file
+                     '("aiohttp/_frozenlist.c"
+                       "aiohttp/_helpers.c"
+                       "aiohttp/_http_parser.c"
+                       "aiohttp/_http_writer.c"
+                       "aiohttp/_websocket.c"))))))
     (build-system python-build-system)
     (arguments
      '(#:phases
@@ -195,6 +205,15 @@ API rules.")
              ;; Don't test the aiohttp pytest plugin to avoid a dependency loop.
              (delete-file "tests/test_pytest_plugin.py")
              #t))
+         (add-before 'build 'cythonize
+           (lambda _
+             ;; Adapted from the Makefile.
+             (with-directory-excursion "aiohttp"
+               (for-each
+                 (lambda (file)
+                   (invoke "cython" "-3"
+                           file "-I" "aiohttp"))
+                 (find-files "." "_.*\\.pyx$")))))
          (replace 'check
            (lambda* (#:key tests? #:allow-other-keys)
              (setenv "PYTHONPATH"
@@ -216,7 +235,8 @@ API rules.")
        ("python-typing-extensions" ,python-typing-extensions)
        ("python-yarl" ,python-yarl)))
     (native-inputs
-     `(("python-pytest" ,python-pytest)
+     `(("python-cython" ,python-cython)
+       ("python-pytest" ,python-pytest)
        ("python-pytest-mock" ,python-pytest-mock)
        ("python-re-assert" ,python-re-assert)
        ("gunicorn" ,gunicorn-bootstrap)
@@ -239,14 +259,14 @@ Callback Hell.
 (define-public python-aiohttp-socks
   (package
     (name "python-aiohttp-socks")
-    (version "0.5.5")
+    (version "0.6.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "aiohttp_socks" version))
        (sha256
         (base32
-         "0jmhb0l1w8k1nishij3awd9zv8zbyb5l35a2pdalrqxxasbhbcif"))))
+         "04w010bvi719ifpc3sshav95k10hf9nq8czn9yglkj206yxcypdr"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-aiohttp" ,python-aiohttp)
@@ -844,13 +864,13 @@ follow links and submit forms.  It doesn’t do JavaScript.")
 (define-public python-hyperframe
   (package
     (name "python-hyperframe")
-    (version "5.2.0")
+    (version "6.0.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "hyperframe" version))
        (sha256
-        (base32 "07xlf44l1cw0ghxx46sbmkgzil8vqv8kxwy42ywikiy35izw3xd9"))))
+        (base32 "055951gyhnjqpa2al52rj34g8yrls9inyn56n7nfkj0x4d300ldf"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -873,7 +893,7 @@ into HTTP/2 frames.")
 (define-public python-hpack
   (package
     (name "python-hpack")
-    (version "3.0.0")
+    (version "4.0.0")
     (source
      (origin
        ;; PyPI tarball is missing some files necessary for the tests.
@@ -883,7 +903,7 @@ into HTTP/2 frames.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0w8hkz50a6lzkmgi41ryicm0mh9ca9cx29pm3s0xlpn0vs29xrmd"))))
+        (base32 "11qdayvz5a8zlzdcdm37f2z1fgnl67pz6j8xj2dz5rfa5lds29yq"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -892,10 +912,7 @@ into HTTP/2 frames.")
            (lambda* (#:key tests? inputs outputs #:allow-other-keys)
              (when tests?
                (add-installed-pythonpath inputs outputs)
-               (invoke "pytest" "-vv" "test" "-k"
-                       ;; This test will be fixed in the next version. See:
-                       ;; https://github.com/python-hyper/hpack/issues/168.
-                       "not test_get_by_index_out_of_range")))))))
+               (invoke "pytest" "-vv" "test")))))))
     (native-inputs
      `(("python-pytest" ,python-pytest)))
     (home-page "https://hyper.rtfd.org")
@@ -908,13 +925,13 @@ for use in Python programs that implement HTTP/2.")
 (define-public python-h11
   (package
     (name "python-h11")
-    (version "0.9.0")
+    (version "0.12.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "h11" version))
        (sha256
-        (base32 "1qfad70h59hya21vrzz8dqyyaiqhac0anl2dx3s3k80gpskvrm1k"))))
+        (base32 "0hk0nll6qazsambp3kl8cxxsbl4gv5y9252qadyk0jky0sv2q8j7"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -937,13 +954,13 @@ and that could be anything you want.")
 (define-public python-h2
   (package
     (name "python-h2")
-    (version "3.2.0")
+    (version "4.1.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "h2" version))
        (sha256
-        (base32 "051gg30aca26rdxsmr9svwqm06pdz9bv21ch4n0lgi7jsvml2pw7"))))
+        (base32 "1fraip114fm1ha5w37pdc0sk8dn9pb0ck267zrwwpap7zc4clfm8"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -952,13 +969,14 @@ and that could be anything you want.")
            (lambda* (#:key tests? inputs outputs #:allow-other-keys)
              (when tests?
                (add-installed-pythonpath inputs outputs)
-               (invoke "pytest" "-vv" "test")))))))
+               (invoke "python" "-m" "pytest" "-vv" "test")))))))
     (native-inputs
-     `(("python-pytest" ,python-pytest)))
+     `(("python-hypothesis" ,python-hypothesis-6.23)
+       ("python-pytest" ,python-pytest)))
     (propagated-inputs
      `(("python-hpack" ,python-hpack)
        ("python-hyperframe" ,python-hyperframe)))
-    (home-page "https://github.com/python-hyper/hyper-h2")
+    (home-page "https://github.com/python-hyper/h2")
     (synopsis "HTTP/2 State-Machine based protocol implementation")
     (description
      "This module contains a pure-Python implementation of a HTTP/2 protocol
@@ -1617,24 +1635,26 @@ choose to use, ensuring that you can communicate via WebSockets, as defined in
 RFC6455, regardless of your programming paradigm.")
     (license license:expat)))
 
-(define-public python-hypercorn
+(define-public hypercorn
   (package
-    (name "python-hypercorn")
-    (version "0.10.2")
+    (name "hypercorn")
+    (version "0.11.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "Hypercorn" version))
        (sha256
-        (base32 "15dgy47a18w2ls3hwykra1cyf7yzxmfjqnsqml482p12cxr2xwqr"))))
+        (base32 "16kai5d12f05jr89mj611zslxqri4cd7ixcgd6yhl211qlcyg8av"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (add-installed-pythonpath inputs outputs)
-             (invoke "pytest" "-vv"))))))
+           (lambda* (#:key inputs outputs tests? #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "python" "-m" "pytest")))))))
+    ;; Propagate because Hypercorn also exposes functionality over a module.
     (propagated-inputs
      `(("python-h11" ,python-h11)
        ("python-h2" ,python-h2)
@@ -1658,6 +1678,9 @@ wsproto libraries and inspired by Gunicorn.  It supports HTTP/1, HTTP/2,
 WebSockets (over HTTP/1 and HTTP/2), ASGI/2, and ASGI/3 specifications.  It can
 utilise asyncio, uvloop, or trio worker types.")
     (license license:expat)))
+
+(define-public python-hypercorn
+  (deprecated-package "python-hypercorn" hypercorn))
 
 (define-public python-querystring-parser
   (package
@@ -4564,21 +4587,22 @@ Python.")
 (define-public python-slugify
   (package
     (name "python-slugify")
-    (version "4.0.1")
+    (version "5.0.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "python-slugify" version))
        (sha256
-        (base32 "0w22fapghmzk3xdasc4dn7h8sl58l08d1h5zbf72dh80drv1g9b9"))))
+        (base32 "1aww2ncglyii4jkbfjxqhinivawf9zmwifcj32d69gpwp6h86czi"))))
     (propagated-inputs
      `(("python-unidecode" ,python-unidecode)))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda _
-             (invoke "python" "test.py"))))))
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "python" "test.py")))))))
     (build-system python-build-system)
     (home-page "https://github.com/un33k/python-slugify")
     (synopsis "Python Slugify application that handles Unicode")
@@ -5265,18 +5289,19 @@ Some things HTTP Core does do:
      `(#:phases
        (modify-phases %standard-phases
          (replace 'check
-           (lambda _
-             (invoke "pytest" "-vv" "-k"
-                     ;; These tests try to open an outgoing connection.
-                     (string-append
-                      "not test_connect_timeout"
-                      " and not test_that_send_cause_async_client_to_be_not_"
-                      "closed"
-                      " and not test_that_async_client_caused_warning_when_"
-                      "being_deleted"
-                      " and not test_that_send_cause_client_to_be_not_closed"
-                      " and not test_async_proxy_close"
-                      " and not test_sync_proxy_close")))))))
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest" "-vv" "-k"
+                       ;; These tests try to open an outgoing connection.
+                       (string-append
+                        "not test_connect_timeout"
+                        " and not test_that_send_cause_async_client_to_be_not_"
+                        "closed"
+                        " and not test_that_async_client_caused_warning_when_"
+                        "being_deleted"
+                        " and not test_that_send_cause_client_to_be_not_closed"
+                        " and not test_async_proxy_close"
+                        " and not test_sync_proxy_close"))))))))
     (native-inputs
      `(("python-autoflake" ,python-autoflake)
        ("python-black" ,python-black)
@@ -6029,6 +6054,23 @@ over IMAP:
 @end itemize")
     (license license:asl2.0)))
 
+(define-public python-giturlparse
+  (package
+    (name "python-giturlparse")
+    (version "0.10.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "giturlparse" version))
+        (sha256
+         (base32 "0dxk7sqy8ibaqdl6jzxd0ac1p7shzp4p9f3lhkd7qw9h3llsp595"))))
+    (build-system python-build-system)
+    (home-page "https://github.com/nephila/giturlparse")
+    (synopsis "Git URL parsing module")
+    (description "This package provides a git URL parsing module which supports
+parsing and rewriting of remote git URLs from various hosting providers.")
+    (license license:asl2.0)))
+
 (define-public python-hstspreload
   (package
     (name "python-hstspreload")
@@ -6139,17 +6181,17 @@ your code non-blocking and speedy.")
 (define-public python-socks
   (package
     (name "python-socks")
-    (version "1.1.2")
+    (version "1.2.4")
     (source
-      (origin
-        (method url-fetch)
-        (uri (pypi-uri "python-socks" version))
-        (sha256
-         (base32
-          "06mgv3icsyglv50w3sb71x6cpbskza20pqd93l5xk59x574i6xgs"))))
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "python-socks" version))
+       (sha256
+        (base32
+         "1n6xb18jy41ybgkmamakg6psp3qididd45qknxiggngaiibz43kx"))))
     (build-system python-build-system)
     (arguments
-     `(#:tests? #f  ; tests not included
+     `(#:tests? #f                      ; tests not included
        #:phases
        (modify-phases %standard-phases
          (replace 'check
@@ -6232,3 +6274,79 @@ communicate with Microsoft Azure Storage services.")
 comments, or tags from HTML snippets, extract base url from HTML snippets,
 translate entities on HTML strings, among other things.")
     (license license:bsd-3)))
+
+(define-public python-webcolors
+  (package
+    (name "python-webcolors")
+    (version "1.11.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "webcolors" version))
+       (sha256
+        (base32 "1rkda75h2p65zx6r84c9mjavn4xpviqvqrklvdvcklapd5in1wvn"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest")))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/ubernostrum/webcolors")
+    (synopsis "HTML/CSS color definitions library")
+    (description "@code{python-webcolors} is a module for working with
+HTML/CSS color definitions.  Normalizing and converting between the following
+formats is supported.
+@itemize
+@item Specification-defined color names
+@item Six-digit hexadecimal
+@item Three-digit hexadecimal
+@item Integer rgb() triplet
+@item Percentage rgb() triplet
+@end itemize
+Only the RGB colorspace is supported.  Conversion to/from the HSL colorspace
+can be handled by the @code{colorsys} module in the Python standard library.")
+    (license license:bsd-3)))
+
+(define-public python-flask-combo-jsonapi
+  (package
+    (name "python-flask-combo-jsonapi")
+    (version "1.1.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/AdCombo/flask-combo-jsonapi")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "07fhcjiyif80z1vyh35za29sqx1mmqh568jrbrrs675j4a797sj1"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-flask" ,python-flask)
+       ("python-marshmallow" ,python-marshmallow-3.2)
+       ("python-marshmallow-jsonapi" ,python-marshmallow-jsonapi)
+       ("python-simplejson" ,python-simplejson)
+       ("python-sqlalchemy" ,python-sqlalchemy-1.3)
+       ("python-apispec" ,python-apispec)
+       ("python-simplejson" ,python-simplejson)
+       ("python-six" ,python-six)))
+    (native-inputs
+     `(("python-coverage" ,python-coverage)
+       ("python-coveralls" ,python-coveralls)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-runner" ,python-pytest-runner)))
+    (home-page "https://github.com/AdCombo/flask-combo-jsonapi")
+    (synopsis "Flask extension to quickly create JSON:API 1.0 REST Web APIs")
+    (description
+     "Flask-COMBO-JSONAPI is a Python Flask extension for building REST Web APIs
+compliant with the @uref{https://jsonapi.org, JSON:API 1.0} specification.
+
+It tries to combine the power of Flask-Restless with the flexibility of
+Flask-RESTful to quickly build APIs that fit the complexity of existing
+real-life projects with legacy data and diverse storage providers.")
+    (license license:expat)))

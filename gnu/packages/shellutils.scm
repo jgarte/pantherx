@@ -12,6 +12,7 @@
 ;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2021 Alexandr Vityazev <avityazev@posteo.org>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
+;;; Copyright © 2021 Foo Chuan Wei <chuanwei.foo@hotmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -42,18 +43,21 @@
   #:use-module (gnu packages bison)
   #:use-module (gnu packages flex)
   #:use-module (gnu packages golang)
+  #:use-module (gnu packages libunistring)
   #:use-module (gnu packages ncurses)
+  #:use-module (gnu packages pcre)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
   #:use-module (gnu packages readline)
   #:use-module (gnu packages ruby)
   #:use-module (gnu packages shells)
-  #:use-module (gnu packages tmux))
+  #:use-module (gnu packages tmux)
+  #:use-module (gnu packages vim))
 
 (define-public boxes
   (package
     (name "boxes")
-    (version "1.3")
+    (version "2.1.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -62,32 +66,43 @@
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0b12rsynrmkldlwcb62drk33kk0aqwbj10mq5y5x3hjf626gjwsi"))))
+                "1bf5rnfiw04ffs1l17zhbg4wvq2vfn2qbz1xmd250xqj15lysw88"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
        #:make-flags (list (string-append "GLOBALCONF="
                                          (assoc-ref %outputs "out")
                                          "/etc/boxes-config"))
+       #:modules
+       ((ice-9 match)
+        ,@%gnu-build-system-modules)
        #:phases
        (modify-phases %standard-phases
          (delete 'configure)
          (replace 'install
            (lambda* (#:key outputs #:allow-other-keys)
-             (let ((dest (assoc-ref outputs "out")))
-               (for-each (lambda (x)
-                           (install-file (car x)
-                                         (string-append dest "/" (cdr x))))
-                         '(("src/boxes" . "bin")
-                           ("doc/boxes.1" . "share/man/man1")
-                           ("boxes-config" . "etc/")))
-               #t))))))
-    (native-inputs `(("flex" ,flex) ("bison" ,bison)))
+             (let ((out (assoc-ref outputs "out")))
+               (for-each (match-lambda
+                           ((source target)
+                            (install-file source
+                                          (string-append out "/" target))))
+                         '(("out/boxes"    "bin/")
+                           ("doc/boxes.1"  "share/man/man1/")
+                           ("boxes-config" "etc/")))))))))
+    (native-inputs
+     `(("bison" ,bison)
+       ("flex" ,flex)
+
+       ;; For the tests.
+       ("xxd" ,xxd)))
+    (inputs
+     `(("libunistring" ,libunistring)
+       ("pcre2" ,pcre2)))
+    (home-page "https://boxes.thomasjensen.com")
     (synopsis "Command line ASCII boxes")
     (description
      "This command-line filter program draws ASCII-art boxes around your input
 text.")
-    (home-page "https://boxes.thomasjensen.com/build.html")
     (license license:gpl2)))
 
 (define-public zsh-autosuggestions
@@ -292,7 +307,7 @@ are already there.")
 (define-public direnv
   (package
     (name "direnv")
-    (version "2.15.2")
+    (version "2.28.0")
     (source
      (origin (method git-fetch)
              (uri (git-reference
@@ -301,18 +316,12 @@ are already there.")
              (file-name (git-file-name name version))
              (sha256
               (base32
-               "1y18619pmhfl0vrf4w0h75ybkkwgi9wcb7d9kv4n8drg1xp4aw4w"))))
+               "0yk53jn7wafklixclka17wyjjs2g5giigjr2bd0xzy10nrzwp7c9"))))
     (build-system go-build-system)
     (arguments
      '(#:import-path "github.com/direnv/direnv"
        #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'delete-vendor
-           (lambda _
-             ;; Using a snippet causes issues with the name of the directory,
-             ;; so delete the extra source code here.
-             (delete-file-recursively "src/github.com/direnv/direnv/vendor")
-             #t))
          (add-after 'install 'install-manpages
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
@@ -330,7 +339,9 @@ are already there.")
                  ;; The following file needs to be writable so it can be
                  ;; modified by the testsuite.
                  (make-file-writable "test/scenarios/base/.envrc")
-                 (invoke "make" "test")
+                 ;; We need to manually run test because make test
+                 ;; tries to use go modules
+                 (invoke "go" "test" "./...")
                  ;; Clean up from the tests, especially so that the extra
                  ;; direnv executable that's generated is removed.
                  (invoke "make" "clean")))
@@ -338,6 +349,8 @@ are already there.")
     (native-inputs
      `(("go-github-com-burntsushi-toml" ,go-github-com-burntsushi-toml)
        ("go-github-com-direnv-go-dotenv" ,go-github-com-direnv-go-dotenv)
+       ("go-github-com-mattn-go-isatty" ,go-github-com-mattn-go-isatty)
+       ("go-golang-org-x-mod" ,go-golang-org-x-mod)
        ("which" ,which)))
     (home-page "https://direnv.net/")
     (synopsis "Environment switcher for the shell")
@@ -451,3 +464,51 @@ the UNIX philosophy, these commands are designed to be composed via pipes. A
 large collection of functions such as basename, replace, contains or is_dir
 are provided as arguments to these commands.")
     (license license:expat)))
+
+(define-public rig
+  (package
+    (name "rig")
+    (version "1.11")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "mirror://sourceforge/rig/rig/"
+                                  version "/rig-"
+                                  version ".tar.gz"))
+              (sha256
+                (base32
+                  "1f3snysjqqlpk2kgvm5p2icrj4lsdymccmn3igkc2f60smqckgq0"))))
+    (build-system gnu-build-system)
+    (arguments `(#:make-flags
+                 (list (string-append "CXX=" ,(cxx-for-target))
+                       (string-append "PREFIX=" %output))
+                 #:phases
+                 (modify-phases %standard-phases
+                   (delete 'configure)
+                   (add-after 'unpack 'fix-build
+                     (lambda _
+                       (substitute* "rig.cc"
+                         (("^#include <string>")
+                          "#include <cstring>"))
+                       (substitute* "Makefile"
+                         (("g\\+\\+")
+                          "${CXX} -O2")
+                         (("install -g 0 -m 755 -o 0 -s rig \\$\\(BINDIR\\)")
+                          "install -m 755 -d $(DESTDIR)$(BINDIR)\n\t\
+install -m 755 rig $(DESTDIR)$(BINDIR)/rig")
+                         (("install -g 0 -m 644 -o 0 rig.6 \\$\\(MANDIR\\)/man6/rig.6")
+                          "install -m 755 -d $(DESTDIR)$(MANDIR)/man6/\n\t\
+install -m 644 rig.6 $(DESTDIR)$(MANDIR)/man6/rig.6")
+                         (("install -g 0 -m 755 -o 0 -d \\$\\(DATADIR\\)")
+                          "install -m 755 -d $(DESTDIR)$(DATADIR)")
+                         (("install -g 0 -m 644 -o 0 data/\\*.idx \\$\\(DATADIR\\)")
+                          "install -m 644 data/*.idx $(DESTDIR)$(DATADIR)")))))
+                 #:tests? #f))
+    (home-page "http://rig.sourceforge.net")
+    (synopsis "Random identity generator")
+    (description
+      "RIG (Random Identity Generator) generates random, yet real-looking,
+personal data.  It is useful if you need to feed a name to a Web site, BBS, or
+real person, and are too lazy to think of one yourself.  Also, if the Web
+site/BBS/person you are giving the information to tries to cross-check the
+city, state, zip, or area code, it will check out.")
+    (license license:gpl2+)))
