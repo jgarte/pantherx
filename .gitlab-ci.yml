@@ -77,7 +77,7 @@ build-nonlibre:
     - if [ -d "${MANIFEST_REPO}" ]; then
         rm -rf "${MANIFEST_REPO}";
       fi
-    - git clone "https://panther:${MANIFEST_TOKEN}@git.pantherx.org/development/${MANIFEST_REPO}.git"
+    - git clone "https://panther:${MANIFEST_TOKEN}@git.pantherx.org/development/${MANIFEST_REPO}.git" -b master
     - cd "${MANIFEST_REPO}"
     - sed 's/^ //g' manifest.txt | grep -v '^#' | grep -v '^$' | while read -r package; do
         echo "Build process started for $package";
