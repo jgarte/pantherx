@@ -28,6 +28,7 @@
 ;;; Copyright © 2021 Cameron Chaparro <cameron@cameronchaparro.com>
 ;;; Copyright © 2021 Charles Jackson <charles.b.jackson@protonmail.com>
 ;;; Copyright © 2021 Foo Chuan Wei <chuanwei.foo@hotmail.com>
+;;; Copyright © 2021 jgart <jgart@dismail.de>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -68,6 +69,7 @@
   #:use-module (gnu packages file)
   #:use-module (gnu packages fonts)
   #:use-module (gnu packages fontutils)
+  #:use-module (gnu packages game-development)
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
@@ -3054,31 +3056,32 @@ settings ensure a very simple mode of operation, similar to that provided by
   (sbcl-package->ecl-package sbcl-cl-json))
 
 (define-public sbcl-unix-opts
-  (package
-    (name "sbcl-unix-opts")
-    (version "0.1.7")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/libre-man/unix-opts")
-             (commit version)))
-       (file-name (git-file-name "unix-opts" version))
-       (sha256
-        (base32
-         "08djdi1ard09fijb7w9bdmhmwd98b1hzmcnjw9fqjiqa0g3b44rr"))))
-    (build-system asdf-build-system/sbcl)
-    (home-page "https://github.com/hankhero/cl-json")
-    (synopsis "Unix-style command line options parser")
-    (description
-     "This is a minimalistic parser of command line options.  The main
+  (let ((commit "0e61f34b2ecf62288437810d4abb31e572048b04")
+        (revision "1"))
+    (package
+      (name "sbcl-unix-opts")
+      (version (git-version "0.1.7" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/libre-man/unix-opts")
+               (commit commit)))
+         (file-name (git-file-name "unix-opts" version))
+         (sha256
+          (base32 "16mcqpzwrz808p9n3wwl99ckg3hg7yihw08y1i4l7c92aldbkasq"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/hankhero/cl-json")
+      (synopsis "Unix-style command line options parser")
+      (description
+       "This is a minimalistic parser of command line options.  The main
 advantage of the library is the ability to concisely define command line
 options once and then use this definition for parsing and extraction of
 command line arguments, as well as printing description of command line
 options (you get --help for free).  This way you don't need to repeat
 yourself.  Also, @command{unix-opts} doesn't depend on anything and
 precisely controls the behavior of the parser via Common Lisp restarts.")
-    (license license:expat)))
+      (license license:expat))))
 
 (define-public cl-unix-opts
   (sbcl-package->cl-source-package sbcl-unix-opts))
@@ -3230,7 +3233,7 @@ is a library for creating graphical user interfaces.")
 (define-public sbcl-cl-webkit
   (package
     (name "sbcl-cl-webkit")
-    (version "3.0.0")
+    (version "3.4.0")
     (source
      (origin
        (method git-fetch)
@@ -3240,7 +3243,7 @@ is a library for creating graphical user interfaces.")
        (file-name (git-file-name "cl-webkit" version))
        (sha256
         (base32
-         "015xry1cvbgspfzz35ifz2qscz946ljhj2z8rzjscy9v8fgnjsdk"))))
+         "0l6ml7g0r0kzbgf49bsgj2yxhgralh8fc0h9vpc79fvw20qgsd56"))))
     (build-system asdf-build-system/sbcl)
     (inputs
      `(("cffi" ,sbcl-cffi)
@@ -5774,6 +5777,46 @@ offered, one SAX-like, the other similar to StAX.")
 
 (define-public ecl-cxml
   (sbcl-package->ecl-package sbcl-cxml))
+
+(define-public sbcl-cxml-rng
+  (let ((commit "bdcfeb92798694b2935a8321e641d8803e814b7b")
+        (revision "1"))
+    (package
+      (name "sbcl-cxml-rng")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "http://www.lichteblau.com/git/cxml-rng.git")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1rld038hmvm0whaffkszd5ks7mg44z1vfbgddal434df8sgspzql"))))
+      (build-system asdf-build-system/sbcl)
+    (inputs
+     `(("cxml" ,sbcl-cxml)
+       ("cl-ppcre" ,sbcl-cl-ppcre)
+       ("yacc" ,sbcl-cl-yacc)
+       ("parse-number" ,sbcl-parse-number)
+       ("cl-base64" ,sbcl-cl-base64)))
+    (synopsis "Relax NG for Closure XML (CXML)")
+    (description "An implementation of Relax NG schema validation written in
+Common Lisp, including support for compact syntax, DTD Compatibility, and the
+XSD type library.")
+    (home-page "http://www.lichteblau.com/cxml-rng/")
+    (license license:bsd-2))))
+
+(define-public cl-cxml-rng
+  (sbcl-package->cl-source-package sbcl-cxml-rng))
+
+;; FIXME: Fails on ECL with
+;; In function STRUCTURE-SET, the value of the first argument is
+;;   #<empty  0x7fffeb0fd440>
+;; which is not of the expected type %TYPED-PATTERN.
+;; (define-public ecl-cxml-rng
+;;   (sbcl-package->ecl-package sbcl-cxml-rng))
 
 (define-public sbcl-cl-reexport
   (let ((commit "312f3661bbe187b5f28536cd7ec2956e91366c3b")
@@ -9048,7 +9091,7 @@ ones.")
 (define-public sbcl-salza2
   (package
     (name "sbcl-salza2")
-    (version "2.0.9")
+    (version "2.1")
     (source
      (origin
        (method git-fetch)
@@ -9057,8 +9100,14 @@ ones.")
              (commit (string-append "release-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0p38rj4gq7j5k807php7hrz7l2zyyfshv8i9yms7i8lkgg3433ki"))))
+        (base32 "1p48lxdibnps5rpyh5cmnk0vc77bmmxb32qdzfz93zadr8wwas10"))))
     (build-system asdf-build-system/sbcl)
+    (native-inputs
+     `(("chipz" ,sbcl-chipz)
+       ("flexi-streams" ,sbcl-flexi-streams)
+       ("parachute" ,sbcl-parachute)))
+    (inputs
+     `(("trivial-gray-streams" ,sbcl-trivial-gray-streams)))
     (synopsis "Common Lisp library for zlib, deflate and gzip compression")
     (description
      "Salza2 is a Common Lisp library for creating compressed data in the zlib,
@@ -9329,30 +9378,31 @@ generation functions from the GSL library.")
   (sbcl-package->ecl-package sbcl-cl-randist))
 
 (define-public sbcl-float-features
-  (package
-    (name "sbcl-float-features")
-    (version "1.0.0")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/Shinmera/float-features")
-             (commit "d3ef60181635b0849aa28cfc238053b7ca4644b0")))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32
-         "0yj419k7n59x6rh3grwr6frgwwyria2il6f7wxpfazm8cskv4lzr"))))
-    (build-system asdf-build-system/sbcl)
-    (synopsis "Common Lisp IEEE float portability library")
-    (description
-     "Portability library for IEEE float features that are not
+  (let ((commit "c1f86aea91cfaa3aa59799162be23ef8a12b199d")
+        (revision "2"))
+    (package
+      (name "sbcl-float-features")
+      (version (git-version "1.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/Shinmera/float-features")
+               (commit commit)))
+         (file-name (git-file-name "float-features" version))
+         (sha256
+          (base32 "0vqm9xhn2i4vbjrxnp4hr1l3lydjflhjykdz6cmqg2j48c5kh3g3"))))
+      (build-system asdf-build-system/sbcl)
+      (synopsis "Common Lisp IEEE float portability library")
+      (description
+       "Portability library for IEEE float features that are not
 covered by the Common Lisp standard.")
-    (home-page "https://github.com/Shinmera/float-features")
-    (license license:zlib)
-    (inputs
-     `(("documentation-utils" ,sbcl-documentation-utils)))
-    (arguments
-     `(#:tests? #f))))
+      (home-page "https://github.com/Shinmera/float-features")
+      (license license:zlib)
+      (inputs
+       `(("documentation-utils" ,sbcl-documentation-utils)))
+      (arguments
+       `(#:tests? #f)))))
 
 (define-public cl-float-features
   (sbcl-package->cl-source-package sbcl-float-features))
@@ -10579,10 +10629,10 @@ MOP easier to use.")
   (sbcl-package->cl-source-package sbcl-moptilities))
 
 (define-public sbcl-osicat
-  (let ((commit "de0c18a367eedc857e1902a7319828af072a0d97"))
+  (let ((commit "eab6b8cabd71b59e894b51dc555e171683ec3387"))
     (package
       (name "sbcl-osicat")
-      (version (git-version "0.7.0" "1" commit))
+      (version (git-version "0.7.0" "2" commit))
       (home-page "http://www.common-lisp.net/project/osicat/")
       (source
        (origin
@@ -10592,7 +10642,7 @@ MOP easier to use.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "15viw5pi5sa7qq9b4n2rr3dj2jkqr180rh9z1lh8w3rgl42i2adc"))))
+          (base32 "18g137iqf86i247c9cg7d86b8k9cfq3yv272l73fsv734qpnv0g9"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("alexandria" ,sbcl-alexandria)
@@ -14135,10 +14185,10 @@ standard library.")
   (sbcl-package->cl-source-package sbcl-shlex))
 
 (define-public sbcl-cmd
-  (let ((commit "8ace7fb45f2ecf0eefae28583ee36c941d142179"))
+  (let ((commit "b0b79adf1214dbec082f3dd2274a72a0ff58efd7"))
     (package
       (name "sbcl-cmd")
-      (version (git-version "0.0.1" "4" commit))
+      (version (git-version "0.0.1" "5" commit))
       (source
        (origin
          (method git-fetch)
@@ -14147,7 +14197,7 @@ standard library.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "1da8sa0fsvsdivnx2s9m6jbb7yszrnkqqcxrn1sszp7k6iwnnkgi"))))
+          (base32 "0kk29vydmi1fyhpbwy3mrsg3bhvx0478r6r7jcsfkr3ci2h8w8a1"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("alexandria" ,sbcl-alexandria)
@@ -14794,8 +14844,8 @@ HTML documents.")
   (sbcl-package->cl-source-package sbcl-cl-html-diff))
 
 (define-public sbcl-tooter
-  (let ((commit "b1639d8a58dfe8020c82ed36697b7a668ef41a09")
-        (revision "2"))
+  (let ((commit "ec97bee3431c55913078e532daae81eb0fd90372")
+        (revision "3"))
     (package
       (name "sbcl-tooter")
       (version (git-version "1.0.0" revision commit))
@@ -14807,7 +14857,7 @@ HTML documents.")
                (commit commit)))
          (file-name (git-file-name "tooter" version))
          (sha256
-          (base32 "0842lbj9ml6qxdm5xvhdbm87wyrvrq7bxawa6i8wk80n8lnvmhdw"))))
+          (base32 "02vpjaq38d6laaqmsana9f13c38xzr0xwy05fcfkmzdhh0kllpkv"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("sbcl-cl-ppcre" ,sbcl-cl-ppcre)
@@ -14828,8 +14878,8 @@ protocol for Mastodon.")
   (sbcl-package->cl-source-package sbcl-tooter))
 
 (define-public sbcl-croatoan
-  (let ((commit "a577951d8dd607f828d6efb3290b4e8ac9f1e654")
-        (revision "3"))
+  (let ((commit "cf875137a23ed4efbfde63e52691f1b544d55d17")
+        (revision "4"))
     (package
       (name "sbcl-croatoan")
       (version (git-version "0.0.1" revision commit))
@@ -14841,7 +14891,7 @@ protocol for Mastodon.")
                (commit commit)))
          (file-name (git-file-name "croatoan" version))
          (sha256
-          (base32 "1y7a13mzy0cz19pw0xvqwca1s7frfaqryaqwl1mrq7iz84sw0fcw"))))
+          (base32 "0dvp8irimlnnvz2m4lnmxp19xbam1yfri3d1i9qqml968i08xcwb"))))
       (build-system asdf-build-system/sbcl)
       (arguments
        '(#:phases
@@ -14970,11 +15020,11 @@ dynamically.")
   (sbcl-package->cl-source-package sbcl-sxql-composer))
 
 (define-public sbcl-cl-i18n
-  (let ((commit "fa0aa5bef8dfbdf2d72f7cc9f49e848ccbb567aa")
+  (let ((commit "4216fe9fc7b54033c0d881dbb835b7af786365ed")
         (revision "1"))
     (package
       (name "sbcl-cl-i18n")
-      (version (git-version "0.5.0" revision commit))
+      (version (git-version "0.5.1" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -14983,7 +15033,7 @@ dynamically.")
                (commit commit)))
          (file-name (git-file-name "cl-i18n" version))
          (sha256
-          (base32 "1hpsdbb3hd79bzbrnbqgk2j3f0ispxvk91snp08fm2z3f1sds5as"))))
+          (base32 "1mdhfkk61djj39vgnns5y1cssd12h0m1cfwd21m8xpa2l3rqvmgf"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("alexandria" ,sbcl-alexandria)
@@ -15633,30 +15683,32 @@ abstract, final and singleton classes.")
   (sbcl-package->cl-source-package sbcl-abstract-classes))
 
 (define-public sbcl-coalton
-  (let ((commit "4a42ffb4222fde3abfd1b50d96e455ff2eef9fe8")
-        (revision "1"))
+  (let ((commit "012f6c8db6d73df16f7729090a12a929fb82db17")
+        (revision "2"))
     (package
       (name "sbcl-coalton")
-      (version (git-version "0.0.0" revision commit))
+      (version (git-version "0.0.1" revision commit))
       (source
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/stylewarning/coalton")
+               (url "https://github.com/coalton-lang/coalton")
                (commit commit)))
          (file-name (git-file-name "coalton" version))
          (sha256
-          (base32 "0aidwwam7cnhb3p9212zbv5w2dl6kr5iklzanypzr1a9lqaxwdlk"))))
+          (base32 "1j3d12vyyn7y9nz2an4xmaa5si0jbxbwq7y61hq2b7vk376zvw18"))))
       (build-system asdf-build-system/sbcl)
       (native-inputs
        `(("fiasco" ,sbcl-fiasco)))
       (inputs
-       `(("abstract-classes" ,sbcl-abstract-classes)
-         ("alexandria" ,sbcl-alexandria)
+       `(("alexandria" ,sbcl-alexandria)
+         ("float-features" ,sbcl-float-features)
+         ("fset" ,sbcl-fset)
          ("global-vars" ,sbcl-global-vars)
-         ("optima" ,sbcl-optima)
-         ("trivial-garbage" ,sbcl-trivial-garbage)))
-      (home-page "https://github.com/stylewarning/coalton")
+         ("json-streams" ,sbcl-json-streams)
+         ("serapeum" ,sbcl-serapeum)
+         ("trivia" ,sbcl-trivia)))
+      (home-page "https://coalton-lang.github.io")
       (synopsis "Dialect of ML in Common Lisp")
       (description
        "Coalton is a dialect of ML embedded in Common Lisp.  It emphasizes
@@ -17345,6 +17397,126 @@ computing and event based message handling.")
 (define-public cl-gserver
   (sbcl-package->cl-source-package sbcl-cl-gserver))
 
+(define-public sbcl-assoc-utils
+  (let ((commit "74af16a3c0f10ad35e406167de02984744fc7854")
+        (revision "1"))
+    (package
+      (name "sbcl-assoc-utils")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/fukamachi/assoc-utils")
+               (commit commit)))
+         (file-name (git-file-name "cl-assoc-utils" version))
+         (sha256
+          (base32 "1yac1v7zmdxj0p6rvwrrhyqvy7yjfhmqbchkwqhhr89gpjvvaick"))))
+      (build-system asdf-build-system/sbcl)
+      (arguments
+       ;; All test cases pass, but tests successfully fail at the end:
+       ;;
+       ;; Summary:
+       ;;   All 1 file passed.
+       ;; Unhandled ASDF/FIND-COMPONENT:MISSING-DEPENDENCY in thread
+       ;; #<SB-THREAD:THREAD "main thread" RUNNING {1001858103}>:
+       ;;   Component ASSOC-UTILS-ASD::ASSOC-UTILS-TEST not found, required by
+       ;;   #<SYSTEM "assoc-utils">
+       `(#:tests? #f))
+      (native-inputs
+       `(("prove" ,sbcl-prove)))
+      (home-page "https://github.com/fukamachi/assoc-utils")
+      (synopsis "Utilities for manipulating association lists in Common Lisp")
+      (description
+       "@code{assoc-utils} provides utilities for manipulating association
+lists in Common Lisp.")
+      (license license:public-domain))))
+
+(define-public cl-assoc-utils
+  (sbcl-package->cl-source-package sbcl-assoc-utils))
+
+(define-public ecl-assoc-utils
+  (sbcl-package->ecl-package sbcl-assoc-utils))
+
+(define-public sbcl-let-over-lambda
+  (let ((commit "481b2e3ab4646186451dfdd2062113203287d520")
+        (revision "1"))
+    (package
+      (name "sbcl-let-over-lambda")
+      (version (git-version "1.0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/thephoeron/let-over-lambda")
+               (commit commit)))
+         (file-name (git-file-name "cl-let-over-lambda" version))
+         (sha256
+          (base32 "114p781lwi9lrbzg27dnkymz9m4cvm1k430j7qsykwd0b58d8qbk"))))
+      (build-system asdf-build-system/sbcl)
+      (arguments
+       ;; All test cases pass, but tests successfully fail at the end:
+       ;;
+       ;; Summary:
+       ;; All 1 file passed.
+       ;; Unhandled ASDF/FIND-COMPONENT:MISSING-DEPENDENCY in thread
+       ;; #<SB-THREAD:THREAD "main thread" RUNNING {1001860103}>:
+       ;;   Component LET-OVER-LAMBDA-ASD::LET-OVER-LAMBDA-TEST not found,
+       ;;   required by #<SYSTEM "let-over-lambda">
+       `(#:tests? #f))
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("cl-ppcre" ,sbcl-cl-ppcre)
+         ("named-readtables" ,sbcl-named-readtables)))
+      (native-inputs
+       `(("prove" ,sbcl-prove)))
+      (home-page "https://github.com/thephoeron/let-over-lambda")
+      (synopsis "Macros from Let Over Lambda")
+      (description
+       "This package provides Doug Hoyte's \"Production\" version of macros
+from the Let Over Lambda book, including community updates.")
+      (license license:bsd-3))))
+
+(define-public cl-let-over-lambda
+  (sbcl-package->cl-source-package sbcl-let-over-lambda))
+
+(define-public ecl-let-over-lambda
+  (sbcl-package->ecl-package sbcl-let-over-lambda))
+
+(define-public sbcl-flute
+  (let ((commit "90ebcd6e82f637f49b6de7d625ccc51ec4c92900")
+        (revision "1"))
+    (package
+      (name "sbcl-flute")
+      (version (git-version "0.2-dev" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ailisp/flute")
+               (commit commit)))
+         (file-name (git-file-name "cl-flute" version))
+         (sha256
+          (base32 "0q8jhp040cvpppyn820mm6a550yfxyr1lar298x13c42mm807f4f"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("assoc-utils" ,sbcl-assoc-utils)
+         ("let-over-lambda" ,sbcl-let-over-lambda)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (home-page "https://github.com/ailisp/flute")
+      (synopsis "HTML5 generation library in Common Lisp")
+      (description
+       "Flute is an easily composable HTML5 generation library in Common
+Lisp.")
+      (license license:expat))))
+
+(define-public cl-flute
+  (sbcl-package->cl-source-package sbcl-flute))
+
+(define-public ecl-flute
+  (sbcl-package->ecl-package sbcl-flute))
+
 (define-public sbcl-cl-posix-mqueue
   (let ((commit "8977370c7206d1f62bd1be80f4254af40654b83f")
         (revision "1"))
@@ -17575,6 +17747,51 @@ fit together as required by any particular game.")
 (define-public cl-trial
   (sbcl-package->cl-source-package sbcl-trial))
 
+(define-public sbcl-cl-liballegro
+  (let ((commit "49f632ce97fc4f835bf5d450588793234b980a64")
+        (revision "1"))
+    (package
+      (name "sbcl-cl-liballegro")
+      (version (git-version "0.2.15" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/resttime/cl-liballegro")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0brbr7i342s0gadlnzd3a61w2b9ihhx60l19ararnc2asvyhmz7x"))))
+      (build-system asdf-build-system/sbcl)
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'patch-allegro-lib-path
+             (lambda* (#:key inputs #:allow-other-keys)
+               (let ((allegro-lib-path (string-append
+                                        (assoc-ref inputs "allegro") "/lib/")))
+                 (substitute* "src/library.lisp"
+                   (("lib \".so\"" all)
+                    (string-append "\"" allegro-lib-path "\"" " lib \".so\"")))))))))
+      (inputs
+       `(("allegro" ,allegro)
+         ("cffi" ,sbcl-cffi)
+         ("float-features" ,sbcl-float-features)
+         ("trivial-garbage" ,sbcl-trivial-garbage)
+         ("trivial-main-thread" ,sbcl-trivial-main-thread)))
+      (home-page "https://github.com/resttime/cl-liballegro")
+      (synopsis "Allegro 5 game programming library bindings for Common Lisp")
+      (description
+       "This package provides CFFI bindings and interface to Allegro 5 game
+developing library for Common Lisp.")
+      (license license:zlib))))
+
+(define-public ecl-cl-liballegro
+  (sbcl-package->ecl-package sbcl-cl-liballegro))
+
+(define-public cl-liballegro
+  (sbcl-package->cl-source-package sbcl-cl-liballegro))
+
 (define-public sbcl-alloy
   (let ((commit "e86e22c2887836ec31cd97e039f0bca5248d8f1c")
         (revision "1"))
@@ -17736,11 +17953,11 @@ functions allow Lisp programs to explore the web.")
   (sbcl-package->cl-source-package sbcl-aserve))
 
 (define-public sbcl-yxorp
-  (let ((commit "d2e8f9304549e47ae5c7fa35a6b114804603eac9")
-        (revision "1"))
+  (let ((commit "c306898a467995e123a22316c9b79fcac442415b")
+        (revision "4"))
     (package
       (name "sbcl-yxorp")
-      (version (git-version "0" revision commit))
+      (version (git-version "0.4" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -17749,14 +17966,18 @@ functions allow Lisp programs to explore the web.")
                (commit commit)))
          (file-name (git-file-name "cl-yxorp" version))
          (sha256
-          (base32 "1zz1j678vzwkf817h2z0pf0fcyf4mldv4hiv1wyam58hd4bcrjsw"))))
+          (base32 "0ll1s9w29yhhgqssgiw58fcapw4n040gkvpz4sxwv3q2v60rbidj"))))
       (build-system asdf-build-system/sbcl)
       (inputs
-       `(("cl+ssl" ,sbcl-cl+ssl)
+       `(("chipz" ,sbcl-chipz)
+         ("chunga" ,sbcl-chunga)
+         ("cl+ssl" ,sbcl-cl+ssl)
          ("cl-binding-arrows" ,sbcl-binding-arrows)
          ("cl-str" ,sbcl-cl-str)
          ("cl-usocket" ,sbcl-usocket)
          ("flexi-streams" ,sbcl-flexi-streams)
+         ("rutils" ,sbcl-rutils)
+         ("salza2" ,sbcl-salza2)
          ("trivial-garbage" ,sbcl-trivial-garbage)))
       (home-page "https://github.com/charje/cl-yxorp")
       (synopsis
@@ -17947,11 +18168,11 @@ and DOM cleaning, to ensure that all remote DOMs are the same.")
   (sbcl-package->cl-source-package sbcl-issr-core))
 
 (define-public sbcl-portal
-  (let ((commit "cc7ba6a54cea6ef63b17dcc6e653d91d9907f59e")
-        (revision "1"))
+  (let ((commit "416589fa04cb239971422a1272acba236c8333be")
+        (revision "2"))
     (package
       (name "sbcl-portal")
-      (version (git-version "1" revision commit))
+      (version (git-version "1.2" revision commit))
       (source
        (origin
          (method git-fetch)
@@ -17960,7 +18181,7 @@ and DOM cleaning, to ensure that all remote DOMs are the same.")
                (commit commit)))
          (file-name (git-file-name "portal" version))
          (sha256
-          (base32 "0fc81iwb4lpp8d2scdwafkixxwkfmq4gqns522zyb4bh6c1rfmwy"))))
+          (base32 "1012jc068qdd8df6mmbn8vmmqlniqm5j2jbyrraw3yz8c13c8280"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        `(("alexandria" ,sbcl-alexandria)
@@ -18063,6 +18284,34 @@ bound to whatever value was in the same place in the URL (as a string).")
 (define-public cl-hunchenissr-routes
   (sbcl-package->cl-source-package sbcl-hunchenissr-routes))
 
+(define-public sbcl-genhash
+  (let ((commit "220ae1af8361dbd2005177f2ee11072b6a33934f")
+        (revision "1"))
+    (package
+      (name "sbcl-genhash")
+      (version (git-version "1.7" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/pnathan/genhash")
+               (commit commit)))
+         (file-name (git-file-name "cl-genhash" version))
+         (sha256
+          (base32 "1jnk1fix1zydhy0kn3cvlp6dy0241x7v8ahq001nlr6v152z1cwk"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/pnathan/genhash")
+      (synopsis "Generic hash tables for Common Lisp")
+      (description
+       "This an implementation of CDR 2: generic hash tables for Common Lisp")
+      (license license:public-domain))))
+
+(define-public cl-genhash
+  (sbcl-package->cl-source-package sbcl-genhash))
+
+(define-public ecl-genhash
+  (sbcl-package->ecl-package sbcl-genhash))
+
 (define-public sbcl-spinneret
   ;; No release since 2019, no tags.
   (let ((commit "02451b32648eda4e6e4022bbb7f91d9ea71bebbc"))
@@ -18123,6 +18372,39 @@ semantics in Lisp and Parenscript.
 
 (define-public cl-spinneret
   (sbcl-package->cl-source-package sbcl-spinneret))
+
+(define-public sbcl-path-parse
+  (let ((commit "86183f3752374435f8933394b4c5d8e75a37a113")
+        (revision "1"))
+    (package
+      (name "sbcl-path-parse")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/eudoxia0/path-parse")
+               (commit commit)))
+         (file-name (git-file-name "cl-path-parse" version))
+         (sha256
+          (base32 "10mxm6q62cfpv3hw2w8k968ba8a1xglqdkwlkqs4l4nby3b11aaq"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("split-sequence" ,sbcl-split-sequence)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (home-page "https://github.com/eudoxia0/path-parse")
+      (synopsis "Parse the PATH environment variable in Common Lisp")
+      (description
+       "This package provides a function to parse the @code{PATH} environment
+variable portably in Common Lisp.")
+      (license license:expat))))
+
+(define-public cl-path-parse
+  (sbcl-package->cl-source-package sbcl-path-parse))
+
+(define-public ecl-path-parse
+  (sbcl-package->ecl-package sbcl-path-parse))
 
 (define-public sbcl-cl-libxml2
   (let ((commit "8d03110c532c1a3fe15503fdfefe82f60669e4bd"))
@@ -18210,6 +18492,40 @@ child nodes enumeration, etc.
 (define-public cl-libxml2
   (sbcl-package->cl-source-package sbcl-cl-libxml2))
 
+(define-public sbcl-pileup
+  (let ((commit "f269473a570a8e55881082545ee63cfe5c7d3e72")
+        (revision "1"))
+    (package
+      (name "sbcl-pileup")
+      (version (git-version "1.0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/nikodemus/pileup")
+               (commit commit)))
+         (file-name (git-file-name "cl-pileup" version))
+         (sha256
+          (base32 "01gvshpxil0ggjgfmgcymbgmpsfaxy6aggm0bywkn40rck3038vb"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("bordeaux-threads" ,sbcl-bordeaux-threads)))
+      (native-inputs
+       `(("hu.dwim.stefil" ,sbcl-hu.dwim.stefil)))
+      (home-page "https://github.com/nikodemus/pileup")
+      (synopsis "Simple thread-safe binary heap implementation for Common Lisp")
+      (description
+       "@code{Pileup} is a portable, performant, and thread-safe binary heap
+for Common Lisp.")
+      (license license:expat))))
+
+(define-public cl-pileup
+  (sbcl-package->cl-source-package sbcl-pileup))
+
+(define-public ecl-pileup
+  (sbcl-package->ecl-package sbcl-pileup))
+
 (define-public sbcl-feeder
   ;; No release.
   (let ((commit "b05f517d7729564575cc809e086c262646a94d34")
@@ -18245,6 +18561,51 @@ formats within this framework.")
 
 (define-public cl-feeder
   (sbcl-package->cl-source-package sbcl-feeder))
+
+(define-public sbcl-routes
+  (let ((commit "1b79e85aa653e1ec87e21ca745abe51547866fa9")
+        (revision "1"))
+    (package
+      (name "sbcl-routes")
+      (version (git-version "0.2.5" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/archimag/cl-routes")
+               (commit commit)))
+         (file-name (git-file-name "cl-routes" version))
+         (sha256
+          (base32 "1zpk3cp2v8hm50ppjl10yxr437vv4552r8hylvizglzrq2ibsbr1"))))
+      (build-system asdf-build-system/sbcl)
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'fix-tests
+             (lambda* (#:key inputs #:allow-other-keys)
+               ;; Fix: :FORCE and :FORCE-NOT arguments not allowed in
+               ;; a nested call to ASDF/OPERATE:OPERATE unless
+               ;; identically to toplevel
+               (substitute* "routes.asd"
+                 ((" :force t") "")))))))
+      (inputs
+       `(("iterate" ,sbcl-iterate)
+         ("puri" ,sbcl-puri)
+         ("split-sequence" ,sbcl-split-sequence)))
+      (native-inputs
+       `(("lift" ,sbcl-lift)))
+      (home-page "https://github.com/archimag/cl-routes")
+      (synopsis "Rails routes system for Common Lisp")
+      (description
+       "This is a a Common Lisp re-implementation of the Rails routes system
+for mapping URLs.")
+      (license license:llgpl))))
+
+(define-public cl-routes
+  (sbcl-package->cl-source-package sbcl-routes))
+
+(define-public ecl-routes
+  (sbcl-package->ecl-package sbcl-routes))
 
 (define-public sbcl-terminfo
   (let ((commit "b8b2e3ed786bfcf9f1aa4a264cee2e93135080f5")
@@ -18306,6 +18667,40 @@ tasks in Common Lisp.  It is fork of SWANK-BACKEND.")
 
 (define-public ecl-conium
   (sbcl-package->ecl-package sbcl-conium))
+
+(define-public sbcl-terminal-size
+  (let ((commit "e0b3d56a9dd3366baf2a05d84381da5747a2ef4a")
+        (revision "1"))
+    (package
+      (name "sbcl-terminal-size")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/eudoxia0/terminal-size")
+               (commit commit)))
+         (file-name (git-file-name "cl-terminal-size" version))
+         (sha256
+          (base32 "1212wbadms9jzrqgarpj3d9xh9w4dab8jhx4k2aryqgf116zs42h"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("cffi" ,sbcl-cffi)
+         ("osicat" ,sbcl-osicat)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (home-page "https://github.com/eudoxia0/terminal-size")
+      (synopsis "Get the size of the terminal from Common Lisp")
+      (description
+       "This package provides the @code{terminal-size:size} function to get the
+size of the terminal from Common Lisp.")
+      (license license:expat))))
+
+(define-public cl-terminal-size
+  (sbcl-package->cl-source-package sbcl-terminal-size))
+
+(define-public ecl-terminal-size
+  (sbcl-package->ecl-package sbcl-terminal-size))
 
 (define-public sbcl-cl-readline
   (let ((commit "8438c9ebd92ccc95ebab9cc9cbe6c72d44fccc58")
@@ -18646,6 +19041,34 @@ higher-level lispier interface.")
 (define-public ecl-cl-charms
   (sbcl-package->ecl-package sbcl-cl-charms))
 
+(define-public sbcl-trivial-open-browser
+  (let ((commit "7ab4743dea9d592639f15c565bfa0756e828c427")
+        (revision "1"))
+    (package
+      (name "sbcl-trivial-open-browser")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/eudoxia0/trivial-open-browser")
+               (commit commit)))
+         (file-name (git-file-name "trivial-open-browser" version))
+         (sha256
+          (base32 "0ixay1piq420i6adx642qhw45l6ik7rvgk52lyz27dvx5f8yqsdb"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/eudoxia0/trivial-open-browser")
+      (synopsis "Open a browser window from Common Lisp")
+      (description
+       "This package provides a library to open a web browser to a URL.")
+      (license license:expat))))
+
+(define-public cl-trivial-open-browser
+  (sbcl-package->cl-source-package sbcl-trivial-open-browser))
+
+(define-public ecl-trivial-open-browser
+  (sbcl-package->ecl-package sbcl-trivial-open-browser))
+
 (define-public sbcl-clinenoise
   (let ((commit "46e21f99d06a55d93eaa382cf652d55d457032ef")
         (revision "1"))
@@ -18678,6 +19101,198 @@ terminals.")
 
 (define-public ecl-clinenoise
   (sbcl-package->ecl-package sbcl-clinenoise))
+
+(define-public sbcl-trivial-raw-io
+  (let ((commit "b1a3c876305baa0dead419841de7b3e433a75867")
+        (revision "1"))
+    (package
+      (name "sbcl-trivial-raw-io")
+      (version (git-version "0.0.2" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/kingcons/trivial-raw-io")
+               (commit commit)))
+         (file-name (git-file-name "trivial-raw-io" version))
+         (sha256
+          (base32 "19290zw2b64k78wr62gv30pp7cmqg07q85vfwjknaffjdd73xwi1"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("sbcl-alexandria" ,sbcl-alexandria)))
+      (home-page "https://github.com/kingcons/trivial-raw-io")
+      (synopsis "Trivial portability for raw *nix IO in Common Lisp")
+      (description
+       "This library exports three symbols: @code{with-raw-io},
+@code{read-char}, and @code{read-line}, to provide raw POSIX I/O in Common
+Lisp.")
+      (license license:bsd-2))))
+
+(define-public cl-trivial-raw-io
+  (sbcl-package->cl-source-package sbcl-trivial-raw-io))
+
+(define-public ecl-trivial-raw-io
+  (sbcl-package->ecl-package sbcl-trivial-raw-io))
+
+(define-public sbcl-terminal-keypress
+  (let ((commit "2ef48c045aa627229764b2aa393a83d392d93d08")
+        (revision "1"))
+    (package
+      (name "sbcl-terminal-keypress")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/eudoxia0/terminal-keypress")
+               (commit commit)))
+         (file-name (git-file-name "cl-terminal-keypress" version))
+         (sha256
+          (base32 "11c4krpq5x55qkchx6ykcnb455ssb4r3jjywx3c3irfrkj733ybp"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("trivial-raw-io" ,sbcl-trivial-raw-io)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (home-page "https://github.com/eudoxia0/terminal-keypress")
+      (synopsis "Read keyboard events in the terminal from Common Lisp")
+      (description
+       "This is a library for reading semi-raw user input from terminals.
+Semi-raw as in, we can't detect if the user pressed the @code{Control} key
+alone, and the function keys are a mystery.  What is supported, however, is:
+
+@itemize
+@item Regular characters
+@item Control+[key]
+@item Alt+[key]
+@item Control+Alt+[key]
+@end itemize")
+      (license license:expat))))
+
+(define-public cl-terminal-keypress
+  (sbcl-package->cl-source-package sbcl-terminal-keypress))
+
+(define-public ecl-terminal-keypress
+  (sbcl-package->ecl-package sbcl-terminal-keypress))
+
+(define-public sbcl-periodic-table
+  (package
+    (name "sbcl-periodic-table")
+    (version "1.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://common-lisp.net/project/chemboy/periodic-table-"
+             version ".tar.gz"))
+       (sha256
+        (base32 "1ircvqm3q93ma4rxbxprb1i9rcax10ld6xmdzdhfnigr27sh5jvg"))))
+    (build-system asdf-build-system/sbcl)
+    (home-page "https://common-lisp.net/project/chemboy/")
+    (synopsis "Periodic table for Common Lisp")
+    (description
+     "This package defines a Common Lisp package, @code{:elements}, with an
+@code{ELEMENT} structure and a number of functions to search the periodic
+table.")
+    (license license:llgpl)))
+
+(define-public cl-periodic-table
+  (sbcl-package->cl-source-package sbcl-periodic-table))
+
+(define-public ecl-periodic-table
+  (sbcl-package->ecl-package sbcl-periodic-table))
+
+(define-public sbcl-chemical-compounds
+  (package
+    (name "sbcl-chemical-compounds")
+    (version "1.0.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://common-lisp.net/project/chemboy/chemical-compounds-"
+             version ".tar.gz"))
+       (sha256
+        (base32 "12fd8a6ay5qlsq4givzgh9d55mbg4ci2vvmymig6pjl2ms64v0pf"))))
+    (build-system asdf-build-system/sbcl)
+    (inputs
+     `(("periodic-table" ,sbcl-periodic-table)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-files
+           (lambda _
+             ;; Fix incorrect version number.
+             (substitute* "chemical-compounds.asd"
+               ((":version \"1.0.1\"")
+                (string-append ":version \"" ,version "\"")))
+             ;; Remove incorrect declaration of string type.
+             (substitute* "parsing.lisp"
+               (("\\(declare \\(simple-base-string string\\)")
+                "(declare")))))))
+    (home-page "https://common-lisp.net/project/chemboy/")
+    (synopsis "Chemical formula parser and pretty-printer for Common Lisp")
+    (description
+     "It can sometimes be useful to be able to parse chemical compounds in a
+user-friendly syntax into easy-to-manipulate s-expressions.  You also want to
+be able to go in reverse.  You could probably write your own parser — or you
+could just install the chemical-compounds package.")
+    (license license:llgpl)))
+
+(define-public cl-chemical-compounds
+  (sbcl-package->cl-source-package sbcl-chemical-compounds))
+
+(define-public ecl-chemical-compounds
+  (sbcl-package->ecl-package sbcl-chemical-compounds))
+
+(define-public sbcl-chemboy
+  (package
+    (name "sbcl-chemboy")
+    (version "0.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://common-lisp.net/project/chemboy/chemboy-"
+             version ".tar.gz"))
+       (sha256
+        (base32 "0lr134l16mjcgdj3fm2yff4chlfbihn1sji7q80y7lnr176zgs7d"))))
+    (build-system asdf-build-system/sbcl)
+    (inputs
+     `(("chemical-compounds" ,sbcl-chemical-compounds)
+       ("periodic-table" ,sbcl-periodic-table)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-files
+           (lambda _
+             ;; Fix incorrect version number.
+             (substitute* "chemboy.asd"
+               ((":version \"0.2\"")
+                (string-append ":version \"" ,version "\"")))
+             ;; Remove incorrect declaration of string type.
+             (substitute* "query-parsing.lisp"
+               (("\\(declare \\(simple-base-string string\\)")
+                "(declare"))
+             ;; Fix incorrect function calls.
+             (substitute* "conversions.lisp"
+               (("\\(pprint-compound element s\\)")
+                "(pprint-compound element :stream s)")
+               (("\\(pprint-compound parsed-compound s\\)")
+                "(pprint-compound parsed-compound :stream s)")))))))
+    (home-page "https://common-lisp.net/project/chemboy/")
+    (synopsis "Common Lisp program for doing basic chemistry calculations")
+    (description
+     "Chemboy is a Common Lisp program for doing basic chemistry calculations.
+This package provides the text-based interface for Chemboy.")
+    (license license:llgpl)))
+
+(define-public cl-chemboy
+  (sbcl-package->cl-source-package sbcl-chemboy))
+
+(define-public ecl-chemboy
+  (sbcl-package->ecl-package sbcl-chemboy))
 
 (define-public sbcl-cl-pass
   (let ((commit "e58e97c0c0588dc742c061208afb9bc31e4dbd34")
@@ -18712,3 +19327,624 @@ terminals.")
 
 (define-public ecl-cl-pass
   (sbcl-package->ecl-package sbcl-cl-pass))
+
+(define-public sbcl-which
+  (let ((commit "b2333e4fcacab6e5d85eecd28b5ef4944bda1448")
+        (revision "1"))
+    (package
+      (name "sbcl-which")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/eudoxia0/which")
+               (commit commit)))
+         (file-name (git-file-name "cl-which" version))
+         (sha256
+          (base32 "127pm9h4rm4w9aadw5yvamnfzhk2rr69kchx10rf9k7sk7izqqfk"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("cl-fad" ,sbcl-cl-fad)
+         ("path-parse" ,sbcl-path-parse)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (home-page "https://github.com/eudoxia0/which")
+      (synopsis "The which command in Common Lisp")
+      (description
+       "This package provides an implementation of the @code{which} UNIX
+command in Common Lisp.")
+      (license license:expat))))
+
+(define-public cl-which
+  (sbcl-package->cl-source-package sbcl-which))
+
+(define-public ecl-which
+  (sbcl-package->ecl-package sbcl-which))
+
+(define-public sbcl-cl-tld
+  ;; No release.
+  (let ((commit "f5014da8d831fa9481d4181d4450f10a52850c75"))
+    (package
+      (name "sbcl-cl-tld")
+      (version (git-version "0.1" "2" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/lu4nx/cl-tld")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0sxnn35gzdby1ixil6zbjg72vli9fcspwzsqimqk455310syx9iv"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/lu4nx/cl-tld/")
+      (synopsis "Extract the Top Level Domain from domains, in Common Lisp")
+      (description
+       "This library extracts the TLD (Top Level Domain) from domains.  The
+information is taken from @url{https://publicsuffix.org}.")
+      (license license:public-domain))))
+
+(define-public cl-tld
+  (sbcl-package->cl-source-package sbcl-cl-tld))
+
+(define-public ecl-cl-tld
+  (sbcl-package->ecl-package sbcl-cl-tld))
+
+(define-public sbcl-cl-strftime
+  ;; No release.
+  (let ((commit "21cb57f2595faa26d687893963f24ec41822b63c"))
+    (package
+      (name "sbcl-cl-strftime")
+      (version (git-version "0.0.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ruricolist/cl-strftime/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "00c8hq7vzgb89ab3q7mrp60x743kiqmsk1g51ynhxlqhph2bnslf"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("local-time" ,sbcl-local-time)
+         ("ppcre" ,sbcl-cl-ppcre)
+         ("serapeum" ,sbcl-serapeum)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)
+         ("cffi" ,sbcl-cffi)))
+      (home-page "https://github.com/ruricolist/cl-strftime")
+      (synopsis "Common Lisp compiler for the strftime language")
+      (description
+       "CL-STRFTIME is a Common Lisp compiler for the strftime “language.”")
+      (license license:expat))))
+
+(define-public cl-strftime
+  (sbcl-package->cl-source-package sbcl-cl-strftime))
+
+(define-public ecl-cl-strftime
+  (sbcl-package->ecl-package sbcl-cl-strftime))
+
+(define-public sbcl-exit-hooks
+  ;; No release.
+  (let ((commit "78050f4f55c138fcea86a9d720928782021b6012"))
+    (package
+      (name "sbcl-exit-hooks")
+      (version (git-version "0.0.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ailisp/exit-hooks/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "00rk0pr2cy3hy6giblh166b7yrg06d5lanipjcqv508gkfb0vi47"))))
+      (build-system asdf-build-system/sbcl)
+      (home-page "https://github.com/ailisp/exit-hooks")
+      (synopsis "Call functions automatically when Common Lisp exits")
+      (description
+       "@code{exit-hooks} provides a portable way to automatically call some
+user-defined function when exiting Common Lisp (both @code{quit} from the REPL
+or a kill in a shell).  Like @code{atexit} in C and Python or Java’s
+@code{Runtime.addShutdownHook()}.  It currently supports SBCL, CCL, ECL, ABCL,
+Allegro CL, clisp and CMUCL.  Before exit-hooks, there was no portable way of
+doing so and no staightforward way to use an exit hook on ABCL.  It can be used
+for tasks like parmenantly save something when exiting Lisp.")
+      (license license:bsd-2))))
+
+(define-public cl-exit-hooks
+  (sbcl-package->cl-source-package sbcl-exit-hooks))
+
+(define-public ecl-exit-hooks
+  (sbcl-package->ecl-package sbcl-exit-hooks))
+
+(define-public sbcl-cl-base58
+  (let ((commit "f446835b4104896e0eed6a61d2ceb4ad22f589d8")
+        (revision "1"))
+    (package
+      (name "sbcl-cl-base58")
+      (version (git-version "0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/eudoxia0/cl-base58/")
+               (commit commit)))
+         (file-name (git-file-name "cl-base58" version))
+         (sha256
+          (base32 "01wiiyz1jzxx3zhxi2hpq5n8hv28g1mn0adk793vwjzh4v5bi5zz"))))
+      (build-system asdf-build-system/sbcl)
+      (arguments
+       '(#:asd-systems '("cl-base58-test" "cl-base58")
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'fix-tests
+             (lambda _
+               (substitute* "cl-base58-test.asd"
+                 (("cl-test-more")
+                  "prove"))
+               #t)))))
+      (native-inputs
+       `(("prove" ,sbcl-prove)))
+      (home-page "https://github.com/eudoxia0/cl-base58")
+      (synopsis "Implementation of base58 for Common Lisp")
+      (description
+       "This library implements the @code{base58} encoding algorithm.  It's
+basically @code{base64} but with a smaller alphabet (58, as in the name) that
+doesn't include similar looking characters, among other things.  See
+@url{https://github.com/bitcoin/bitcoin/blob/master/src/base58.h} for a full
+reference.")
+      (license license:expat))))
+
+(define-public cl-base58
+  (sbcl-package->cl-source-package sbcl-cl-base58))
+
+(define-public ecl-cl-base58
+  (sbcl-package->ecl-package sbcl-cl-base58))
+
+(define-public sbcl-bit-smasher
+  ;; No release.
+  (let ((commit "c2dcb3b5ec0e485484be681fe17c4e81e58790d9"))
+    (package
+      (name "sbcl-bit-smasher")
+      (version (git-version "1.0.2" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/thephoeron/bit-smasher/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "0wjmwn06fjpw0rlpaksf3ab727p8fnzj58z7jajl3m0wqd4ii74w"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("cl-base64" ,sbcl-cl-base64)
+         ("cl-base58" ,sbcl-cl-base58)))
+      ;; Load order matters for tests, both for file reading and evaluation.
+      (arguments
+       `(#:asd-systems '("bit-smasher-test" "bit-smasher")
+         #:asd-files '("bit-smasher.asd" "bit-smasher-test.asd")))
+      (home-page "https://github.com/thephoeron/bit-smasher/")
+      (synopsis "Handle bit vectors, bit vector arithmetic, and type conversions")
+      (description
+       "Utility library for handling bit vectors, bit vector arithmetic, and
+universal integer type conversions between bit-vectors, byte-vectors, octals,
+decimals, and hexadecimal notation.")
+      (license license:expat))))
+
+(define-public cl-bit-smasher
+  (sbcl-package->cl-source-package sbcl-bit-smasher))
+
+(define-public ecl-bit-smasher
+  (sbcl-package->ecl-package sbcl-bit-smasher))
+
+(define-public sbcl-overlord
+  ;; No release.
+  (let ((commit "a8f37b321a8aae1652fc50b78e74e57c771cc763"))
+    (package
+      (name "sbcl-overlord")
+      (version (git-version "0.0.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ruricolist/overlord/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1maqm53yhlhaa3cka8xcc4sq24ifrr4y3y0s5dyyn682xsh14hb4"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("babel" ,sbcl-babel)
+         ("bit-smasher" ,sbcl-bit-smasher)
+         ("bordeaux-threads" ,sbcl-bordeaux-threads)
+         ("cl-strftime" ,sbcl-cl-strftime)
+         ("cmd" ,sbcl-cmd)
+         ("drakma" ,sbcl-drakma)
+         ("exit-hooks" ,sbcl-exit-hooks)
+         ("fset" ,sbcl-fset)
+         ("local-time" ,sbcl-local-time)
+         ("lparallel" ,sbcl-lparallel)
+         ("md5" ,sbcl-md5)
+         ("murmurhash" ,sbcl-cl-murmurhash)
+         ("named-readtables" ,sbcl-named-readtables)
+         ("ppcre" ,sbcl-cl-ppcre)
+         ("serapeum" ,sbcl-serapeum)
+         ("trivia" ,sbcl-trivia)
+         ("trivial-file-size" ,sbcl-trivial-file-size)))
+      (propagated-inputs
+       `(("quickproject" ,sbcl-quickproject)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)))
+      (arguments
+       `(#:asd-files '("overlord.asd")
+         #:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'include-overlord/net
+             (lambda _
+               (substitute* "all.lisp"
+                 (("\\(:import-from :overlord/kernel :nproc\\)")
+                  (string-append
+                   "(:import-from :overlord/kernel :nproc)"
+                   "\n"
+                   "(:import-from :overlord/net)")))
+               #t)))))
+      (home-page "https://github.com/ruricolist/overlord")
+      (synopsis "Build system in Common Lisp")
+      (description
+       "Overlord is a build system in Common Lisp.  It is a real build system,
+with all the modern features: rules with multiple outputs, parallel builds,
+immunity to clock issues, and dynamic dependencies.
+
+But Overlord is more than another build system.  Overlord is a uniform
+approach to dependencies inside or outside of a Lisp image.  Overlord is to
+Make what Lisp macros are to C macros.
+
+Overlord is designed to be used from the Lisp REPL.  A command line interface
+is available in a separate repository.  See
+@url{https://github.com/ruricolist/overlord-cli}.")
+      (license license:expat))))
+
+(define-public cl-overlord
+  (sbcl-package->cl-source-package sbcl-overlord))
+
+;; FIXME: Broken on ECL? https://github.com/ruricolist/overlord/issues/25
+;; (define-public ecl-overlord
+;;   (sbcl-package->ecl-package sbcl-overlord))
+
+(define-public sbcl-xpath
+  ;; No release.
+  (let ((commit "d364da693a534e23bd5eb3a85420e9c25e6c75b3"))
+    (package
+      (name "sbcl-xpath")
+      (version (git-version "0.1" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/sharplispers/xpath/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1fb03fgnzrvh22lw1jdg04pmyja5fib5n42rzwp5mhr829yvxkvp"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("cxml" ,sbcl-cxml)
+         ("parse-number" ,sbcl-parse-number)
+         ("cl-ppcre" ,sbcl-cl-ppcre)
+         ("yacc" ,sbcl-cl-yacc)))
+      (home-page "https://github.com/sharplispers/xpath/")
+      (synopsis "Implementation of the XML Path Language (XPath) Version 1.0")
+      (description
+       "This library is an implementation of the XML Path Language (XPath)
+Version 1.0.")
+      (license license:bsd-2))))
+
+;; According to
+;; https://github.com/sharplispers/xpath/blob/master/doc/index.xml ECL is not
+;; supported.
+(define-public cl-xpath
+  (sbcl-package->cl-source-package sbcl-xpath))
+
+(define-public sbcl-fxml
+  ;; No release.
+  (let ((commit "a0e73bb48ef03adea94a55986cc27f522074c8e1"))
+    (package
+      (name "sbcl-fxml")
+      (version (git-version "0.0.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ruricolist/fxml/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1vxdb1cjjqi986f72bggnw1s4yzv12g4li7vn4y49b6lphshr8lm"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("babel" ,sbcl-babel)
+         ("named-readtables" ,sbcl-named-readtables)
+         ("serapeum" ,sbcl-serapeum)
+         ("quri" ,sbcl-quri)
+         ("flexi-streams" ,sbcl-flexi-streams)
+         ("split-sequence" ,sbcl-split-sequence)
+         ("alexandria" ,sbcl-alexandria)
+         ("trivial-gray-streams" ,sbcl-trivial-gray-streams)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)
+         ("cxml" ,sbcl-cxml)
+         ("cxml-rng" ,sbcl-cxml-rng)
+         ("xpath" ,sbcl-xpath)))
+      (home-page "https://github.com/ruricolist/fxml")
+      (synopsis "XML parser and serializer in Common Lisp")
+      (description
+       "FXML is a secure-by-default, error-recovering XML parser and serializer.
+It is a fork of CXML.
+
+You should use FXML instead of CXML if:
+@itemize
+@item You are parsing potentially ill-formed XML.
+@item You are parsing potentially malicious XML.
+@item You need to use Klacks with namespaces.
+@end itemize
+
+FXML’s API is very close to CXML's, and for the most part you can refer to the
+CXML documentation for usage.")
+      (license license:llgpl))))
+
+(define-public cl-fxml
+  (sbcl-package->cl-source-package sbcl-fxml))
+
+(define-public sbcl-vernacular
+  ;; No release.
+  (let ((commit "79be179e9ada423b3ec41d2a1ea6f6e0266ed21f"))
+    (package
+      (name "sbcl-vernacular")
+      (version (git-version "0.8.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ruricolist/vernacular/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "19vzn28hw4is4sgmvzqin18ds89s0pai21vcm0ky10vmfv6wg745"))
+         (modules '((guix build utils)))
+         (snippet
+          '(begin
+             ;; The demo depends on cl-js, which we don't have at this point.
+             (delete-file-recursively "demo")
+             #t))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("overlord" ,sbcl-overlord)
+         ("trivial-macroexpand-all" ,sbcl-trivial-macroexpand-all)
+         ("local-time" ,sbcl-local-time)
+         ("parse-js" ,sbcl-parse-js)
+         ("trivia" ,sbcl-trivia)
+         ("trivial-garbage" ,sbcl-trivial-garbage)
+         ("named-readtables" ,sbcl-named-readtables)
+         ("alexandria" ,sbcl-alexandria)
+         ("serapeum" ,sbcl-serapeum)
+         ("trivial-gray-streams" ,sbcl-trivial-gray-streams)))
+      (arguments
+       ;; Circular dependency: Tests depend on core-lisp
+       ;; (http://github.com/ruricolist/core-lisp) which depends on
+       ;; Vernacular.
+       '(#:tests? #f))
+      (home-page "https://github.com/ruricolist/vernacular")
+      (synopsis "Module system for languages that compile to Common Lisp")
+      (description
+       "Vernacular is a build and module system for languages that compile to
+Common Lisp.  It allows languages to compile to Lisp while remaining part of
+the Common Lisp ecosystem.  Vernacular languages interoperate with Common Lisp
+and one another.
+
+Vernacular handles locating files, compiling files into FASLs, tracking
+dependencies and rebuilding, and export and import between your new language,
+Lisp, and any other language Vernacular supports.
+
+Vernacular builds on Overlord and is inspired by Racket.")
+      (license license:expat))))
+
+(define-public cl-vernacular
+  (sbcl-package->cl-source-package sbcl-vernacular))
+
+(define-public sbcl-cmn
+  (package
+    (name "sbcl-cmn")
+    (version "2021.11.22")
+    (source
+     (origin
+       (method url-fetch)
+       (uri "https://ccrma.stanford.edu/software/cmn/cmn.tar.gz")
+       (file-name (string-append "cmn-" version ".tar.gz"))
+       (sha256
+        (base32 "04j1l57cdyfi2zzxqwmvmf1hl899ffgs3bl4r42ba47zsw45kq14"))))
+    (build-system asdf-build-system/sbcl)
+    (home-page "https://ccrma.stanford.edu/software/cmn/")
+    (synopsis "Western music notation package written in Common Lisp")
+    (description
+     "CMN provides a package of functions to hierarchically describe a musical
+score.  When evaluated, the musical score is rendered to an image.")
+    (license license:expat)))
+
+(define-public cl-cmn
+  (sbcl-package->cl-source-package sbcl-cmn))
+
+(define-public ecl-cmn
+  (sbcl-package->ecl-package sbcl-cmn))
+
+(define-public sbcl-data-sift
+  (let ((commit "fd617d8200cdcc1b87ecf45ab59bb38e8b16ef7e")
+        (revision "1"))
+    (package
+      (name "sbcl-data-sift")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/archimag/data-sift")
+               (commit commit)))
+         (file-name (git-file-name "cl-data-sift" version))
+         (sha256
+          (base32 "1v7gf0x4ibjzp0c56n9m77hxdgwcm9356zlk5n4l3fx4i0hj6146"))))
+      (build-system asdf-build-system/sbcl)
+      (arguments
+       ;; All test cases test a function that has been removed.
+       `(#:tests? #f))
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("cl-ppcre" ,sbcl-cl-ppcre)
+         ("parse-number" ,sbcl-parse-number)
+         ("puri" ,sbcl-puri)))
+      (native-inputs
+       `(("lift" ,sbcl-lift)))
+      (home-page "https://github.com/archimag/data-sift")
+      (synopsis
+       "Common Lisp library for validation and transformation of string data")
+      (description
+       "@code{DATA-SIFT} is a Common Lisp data validation and transformation
+library inspired by @code{cl-data-format-validation} and WTForms validators.")
+      (license license:llgpl))))
+
+(define-public cl-data-sift
+  (sbcl-package->cl-source-package sbcl-data-sift))
+
+(define-public ecl-data-sift
+  (sbcl-package->ecl-package sbcl-data-sift))
+
+(define-public sbcl-restas
+  (let ((commit "81bbbab6b36f81f846f78e71232e9d3d15f6d952")
+        (revision "1"))
+    (package
+      (name "sbcl-restas")
+      (version (git-version "0.1.4" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/archimag/restas")
+               (commit commit)))
+         (file-name (git-file-name "cl-restas" version))
+         (sha256
+          (base32 "00ng6jik1lwjw3bbxhijy8s0ml24lgm73liwrr01gcsb0r6wrjjn"))))
+      (build-system asdf-build-system/sbcl)
+      (arguments
+       '(#:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'fix-paths
+             (lambda* (#:key inputs #:allow-other-keys)
+               (substitute* "contrib/restas-daemon.lisp"
+                 (("/lib64/") "")
+                 (("/lib/") "")
+                 (("libcap.so")
+                  (string-append (assoc-ref inputs "libcap")
+                                 "/lib/libcap.so"))))))))
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("bordeaux-threads" ,sbcl-bordeaux-threads)
+         ("cffi" ,sbcl-cffi)
+         ("data-sift" ,sbcl-data-sift)
+         ("hunchentoot" ,sbcl-hunchentoot)
+         ("libcap" ,libcap)
+         ("routes" ,sbcl-routes)))
+      (home-page "https://github.com/archimag/restas")
+      (synopsis "Common Lisp web framework")
+      (description "@code{RESTAS} is a Common Lisp web application framework.")
+      (license license:llgpl))))
+
+(define-public cl-restas
+  (sbcl-package->cl-source-package sbcl-restas))
+
+(define-public ecl-restas
+  (sbcl-package->ecl-package sbcl-restas))
+
+(define-public sbcl-cl-https-everywhere
+  ;; No release.
+  ;; Don't forget to update the https-everywhere input.
+  (let ((commit "cbcc73b985a5b1c0ce0d4ec38bc982a0538d4bd8"))
+    (package
+      (name "sbcl-cl-https-everywhere")
+      (version (git-version "0.0.0" "1" commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/ruricolist/cl-https-everywhere/")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1wcvx1icwym1ncd6wl1wxzkyyndrm796caalbklvjd4a2cbl3xxi"))))
+      (build-system asdf-build-system/sbcl)
+      (inputs
+       `(("alexandria" ,sbcl-alexandria)
+         ("global-vars" ,sbcl-global-vars)
+         ("parenscript" ,sbcl-parenscript)
+         ("cl-markdown" ,sbcl-cl-markdown)
+         ("cl-tld" ,sbcl-cl-tld)
+         ("fxml" ,sbcl-fxml)
+         ("overlord" ,sbcl-overlord)
+         ("ppcre" ,sbcl-cl-ppcre)
+         ("serapeum" ,sbcl-serapeum)
+         ("trivial-gray-streams" ,sbcl-trivial-gray-streams)
+         ("vernacular" ,sbcl-vernacular)))
+      (native-inputs
+       `(("fiveam" ,sbcl-fiveam)
+         ("https-everywhere"
+          ,(let ((version "2021.7.13"))
+             (origin
+               (method git-fetch)
+               (uri (git-reference
+                     (url "https://github.com/EFForg/https-everywhere")
+                     (commit version)))
+               (file-name (git-file-name "https-everywhere" version))
+               (sha256
+                (base32
+                 "1k5gj29imhxf47sv3d8rxyrgr6k65scp2fm040va3nfshayslzia")))))))
+      (arguments
+       `(#:phases
+         (modify-phases %standard-phases
+           (add-after 'unpack 'link-https-everywhere-repo
+             (lambda* (#:key inputs #:allow-other-keys)
+               (let ((https-everywhere (assoc-ref inputs "https-everywhere")))
+                 (symlink https-everywhere "https-everywhere"))))
+           (add-after 'unpack 'fix-overlord-build
+             ;; Upstream bugs?  See
+             ;; https://github.com/ruricolist/cl-https-everywhere/issues/1.
+             (lambda* (#:key outputs #:allow-other-keys)
+               (let* ((out (assoc-ref outputs "out"))
+                      (rulesets.xml (string-append out "/share/common-lisp/" (%lisp-type)
+                                                   "/cl-https-everywhere/rulesets.xml")))
+                 (substitute* "build.lisp"
+                   (("\\(depends-on https-everywhere-version\\)") "")
+                   ;; Don't rebuild the rulesets just because the timestamp is epoch.
+                   (("\\(vernacular:require-default :cl-https-everywhere/rulesets-file \"rulesets.xml\"\\)")
+                    (format #f "(if (uiop:file-exists-p ~s)
+      (compile-rulesets ~s)
+      (vernacular:require-default :cl-https-everywhere/rulesets-file \"rulesets.xml\"))"
+                            rulesets.xml
+                            rulesets.xml))
+                   (("\\(uiop:parse-unix-namestring \"https-everywhere/src/chrome/content/rules/\\*\\.xml\")")
+                    "\"https-everywhere/src/chrome/content/rules/*.xml\"")
+                   (("\\(out temp :external-format :utf-8\\)")
+                    "(out temp :external-format :utf-8 :if-exists :supersede)")))
+               #t)))))
+      (home-page "https://github.com/ruricolist/cl-https-everywhere/")
+      (synopsis "Use HTTPS Everywhere rules from Lisp")
+      (description
+       "CL-HTTPS-EVERYWHERE parses HTTPS Everywhere rulesets and makes them
+available for use in Lisp programs.")
+      (license (list license:expat
+                     ;; For the ruleset
+                     license:gpl2+)))))
+
+(define-public cl-https-everywhere
+  (sbcl-package->cl-source-package sbcl-cl-https-everywhere))

@@ -29,6 +29,7 @@
 ;;; Copyright © 2020, 2021 Robert Karszniewicz <avoidr@posteo.de>
 ;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2021 Denis 'GNUtoo' Carikli <GNUtoo@cyberdimension.org>
+;;; Copyright © 2021 Vinicius Monego <monego@posteo.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -391,6 +392,47 @@ conferencing.")
       license:gpl2+
       license:bsd-2))))
 
+(define-public qxmpp
+  (package
+    (name "qxmpp")
+    (version "1.4.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/qxmpp-project/qxmpp")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1knpq1jkwk0lxdwczbmzf7qrjvlxba9yr40nbq9s5nqkcx6q1c3i"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:configure-flags (list "-DBUILD_EXAMPLES=false"
+                               "-DWITH_GSTREAMER=true")
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "ctest" "-E"
+                       (string-join ;; These tests use the network.
+                        (list "tst_qxmppiceconnection"
+                              "tst_qxmppcallmanager"
+                              "tst_qxmpptransfermanager")
+                        "|"))))))))
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("gstreamer" ,gstreamer)
+       ("qtbase" ,qtbase-5)))
+    (home-page "https://github.com/qxmpp-project/qxmpp")
+    (synopsis "XMPP client and server library")
+    (description
+     "QXmpp is a XMPP client and server library written in C++ and uses the Qt
+framework.  It builds XMPP clients complying with the XMPP Compliance Suites
+2021 for IM and Advanced Mobile.")
+    (license license:lgpl2.1+)))
+
 (define-public meanwhile
   (package
     (name "meanwhile")
@@ -543,6 +585,82 @@ forward secrecy protocol that works in synchronous and asynchronous
 messaging environments.  It can be used with messaging software to provide
 end-to-end encryption.")
   (license license:gpl3+)))
+
+(define-public axc
+  (package
+    (name "axc")
+    (version "0.3.6")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/gkdr/axc")
+             (commit (string-append "v" version))))
+       (modules '((guix build utils)))
+       (snippet
+        `(begin
+           ;; Submodules
+           (delete-file-recursively "lib")))
+       (file-name
+        (git-file-name name version))
+       (sha256
+        (base32 "05sv7l6lk0xk4wb2bspc2sdpygrb1f0szzi82a1kyfm0fjz887b3"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'configure
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let ((out (assoc-ref outputs "out")))
+                        (setenv "CC" "gcc")
+                        (setenv "PREFIX" out)))))
+       #:parallel-tests? #f))
+    (native-inputs `(("cmocka" ,cmocka)
+                     ("pkg-config" ,pkg-config)))
+    (inputs `(("glib" ,glib)
+              ("libgcrypt" ,libgcrypt)
+              ("libsignal-protocol-c" ,libsignal-protocol-c)
+              ("sqlite" ,sqlite)))
+    (synopsis "Client library for libsignal-protocol-c")
+    (description "This is a client library for @code{libsignal-protocol-c}.
+It implements the necessary interfaces using @code{libgcrypt} and
+@code{sqlite}.")
+    (home-page "https://github.com/gkdr/axc")
+    (license license:gpl3)))                  ;GPLv3-only, per license headers
+
+(define-public libomemo
+  (package
+    (name "libomemo")
+    (version "0.7.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/gkdr/libomemo")
+             (commit (string-append "v" version))))
+       (file-name
+        (git-file-name name version))
+       (sha256
+        (base32 "1q3vyj8zk3vm0a4v6w8qya5dhk2yw04bga8799a0zl6907nf122k"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'configure
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let ((out (assoc-ref outputs "out")))
+                        (setenv "CC" "gcc")
+                        (setenv "PREFIX" out)))))
+       #:parallel-tests? #f))
+    (native-inputs `(("cmocka" ,cmocka)
+                     ("pkg-config" ,pkg-config)))
+    (inputs `(("glib" ,glib)
+              ("libgcrypt" ,libgcrypt)
+              ("minixml" ,minixml)
+              ("sqlite" ,sqlite)))
+    (synopsis "OMEMO C library")
+    (description "This library implements @acronym{OMEMO, OMEMO Multi-End
+Message and Object Encryption} of XMPP (XEP-0384) in C.")
+    (home-page "https://github.com/gkdr/libomemo")
+    (license license:expat)))
 
 (define-public bitlbee
   (package
@@ -2048,7 +2166,7 @@ are both supported).")
 (define-public profanity
   (package
     (name "profanity")
-    (version "0.10.0")
+    (version "0.11.1")
     (source
      (origin
        (method url-fetch)
@@ -2057,7 +2175,7 @@ are both supported).")
                        version ".tar.gz"))
        (sha256
         (base32
-         "137z77514fgj2dk13d12g4jrn6gs5k85nwrk1r1kiv7rj0jy61aa"))))
+         "0idx0a5g077a57q462w01m0h8i4vyvabzlj87p8527wpqbv4s6vg"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:configure-flags
@@ -2396,13 +2514,13 @@ QMatrixClient project.")
 (define-public hangups
   (package
     (name "hangups")
-    (version "0.4.14")
+    (version "0.4.15")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "hangups" version))
        (sha256
-        (base32 "15qbbafcrdkx73xz9y30qa3d8nj6mgrp2m41749i5nn1qywmikk8"))))
+        (base32 "1fa58m6zgvsawp2h1maj82wn6lpdllhbficmcjm78n5bg1hv7f4m"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -2412,13 +2530,11 @@ QMatrixClient project.")
            (lambda _
              (substitute* "setup.py"
                (("==") ">=")
-               ((",<.*'") "'"))
-             #t))
+               ((",<.*'") "'"))))
          (replace 'check
            (lambda* (#:key tests? #:allow-other-keys)
              (when tests?
-               (invoke "pytest" "hangups"))
-             #t)))))
+               (invoke "pytest" "hangups")))))))
     (propagated-inputs
      `(("python-aiohttp" ,python-aiohttp)
        ("python-appdirs" ,python-appdirs)
@@ -2608,6 +2724,93 @@ support for high performance Telegram Bot creation.")
     (description "Plugin for libpurple to allow sending SMS using ModemManager.")
     (home-page "https://source.puri.sm/Librem5/purple-mm-sms")
     (license license:gpl2+)))
+
+(define-public purple-lurch
+  (package
+    (name "purple-lurch")
+    (version "0.7.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference (url "https://github.com/gkdr/lurch")
+                       (commit (string-append "v" version))))
+       (modules '((guix build utils)))
+       (snippet
+        `(begin
+           ;; Submodules
+           (delete-file-recursively "lib")))
+       (file-name
+        (git-file-name name version))
+       (sha256
+        (base32 "1ipd9gwh04wbqv6c10yxi02lc2yjsr02hwjycgxhl4r9x8b33psd"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:phases (modify-phases %standard-phases
+                  (replace 'configure
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let ((out (assoc-ref outputs "out")))
+                        (substitute* "Makefile"
+                          (("^PURPLE_PLUGIN_DIR = .*")
+                           (string-append "PURPLE_PLUGIN_DIR = " out
+                                          "/lib/purple-2\n")))
+                        (setenv "CC" "gcc")))))
+       #:parallel-tests? #f))
+    (native-inputs `(("cmocka" ,cmocka)
+                     ("pkg-config" ,pkg-config)))
+    (inputs `(("axc" ,axc)
+              ("glib" ,glib)
+              ("libgcrypt" ,libgcrypt)
+              ("libomemo" ,libomemo)
+              ("libsignal-protocol-c" ,libsignal-protocol-c)
+              ("libxml2" ,libxml2)
+              ("minixml" ,minixml)
+              ("pidgin" ,pidgin)
+              ("sqlite" ,sqlite)))
+    (synopsis "OMEMO Encryption for libpurple")
+    (description "Purple-lurch plugin adds end-to-end encryption support
+through the Double Ratchet (Axolotl) algorithm, to @code{libpurple}
+applications using @acronym{XMPP, Extensible Messaging and Presence Protocol},
+through its standard XEP-0384: @acronym{OMEMO, OMEMO Multi-End Message and
+Object Encryption} Encryption.  It provides confidentiality, (weak) forward
+secrecy, break-in recovery, authentication, integrity, deniability, and
+asynchronicity.")
+    (home-page "https://github.com/gkdr/lurch")
+    (license license:gpl3+)))
+
+(define-public libphonenumber
+  (package
+   (name "libphonenumber")
+   (version "8.11.3")
+   (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/google/libphonenumber")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "06y3mh1d1mks6d0ynxp3980g712nkf8l5nyljpybsk326b246hg9"))))
+   (arguments
+    `(#:test-target "tests"
+      #:phases
+      (modify-phases %standard-phases
+        (add-after 'unpack 'change-directory
+          (lambda _ (chdir "cpp"))))))
+   (build-system cmake-build-system)
+   (native-inputs
+    `(("googletest" ,googletest)
+      ("pkg-config" ,pkg-config)))
+   (inputs
+    `(("boost" ,boost)
+      ("protobuf" ,protobuf)
+      ("icu4c" ,icu4c)))
+   (synopsis "Library for parsing and using phone numbers")
+   (description
+    "This package provides a C++ library for parsing, formatting, and
+validating international phone numbers.")
+   (home-page "https://github.com/google/libphonenumber")
+   (license license:asl2.0)))
+
 
 (define-public chatty
  (package

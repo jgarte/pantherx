@@ -14,6 +14,7 @@
 ;;; Copyright © 2020 Tim Howes <timhowes@lavabit.com>
 ;;; Copyright © 2021 Bonface Munyoki Kilyungi <me@bonfacemunyoki.com>
 ;;; Copyright © 2021 Lars-Dominik Braun <lars@6xq.net>
+;;; Copyright © 2021 Frank Pursel <frank.pursel@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -67,6 +68,7 @@
   #:use-module (gnu packages machine-learning)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages multiprecision)
+  #:use-module (gnu packages ncurses)
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages pkg-config)
@@ -74,6 +76,7 @@
   #:use-module (gnu packages python-science)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages readline)
+  #:use-module (gnu packages shells)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages ssh)
   #:use-module (gnu packages tcl)
@@ -1497,13 +1500,13 @@ from knitr Rmarkdown.")
 (define-public r-microbenchmark
   (package
     (name "r-microbenchmark")
-    (version "1.4-7")
+    (version "1.4.9")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "microbenchmark" version))
               (sha256
                (base32
-                "1xl4m4yl4h2zcjiz8wsa7f3sh55qg2xr3sgpvz18rlix6b3173r6"))))
+                "1lpzpffnjiwnxxl0jhrvyj88fvxqksnpccbpq953xwqf6ypjqga4"))))
     (build-system r-build-system)
     (home-page "https://cran.r-project.org/web/packages/microbenchmark/")
     (synopsis "Accurate timing functions for R")
@@ -1559,13 +1562,13 @@ you call it again with the same arguments it returns the pre-computed value.")
 (define-public r-crayon
   (package
     (name "r-crayon")
-    (version "1.4.1")
+    (version "1.4.2")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "crayon" version))
               (sha256
                (base32
-                "1ir963s6zk9l32fw257y54p7898cd7z7yazkn9h6j2cdfhpf9dh8"))))
+                "0mxq87qsvz5znfncrb6yjchzv6iwpn9lr386i02y6xiycizkjd7f"))))
     (build-system r-build-system)
     (home-page "https://github.com/gaborcsardi/crayon")
     (synopsis "Colored terminal output for R")
@@ -1679,14 +1682,14 @@ like tidy evaluation.")
 (define-public r-tibble
   (package
     (name "r-tibble")
-    (version "3.1.5")
+    (version "3.1.6")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "tibble" version))
        (sha256
         (base32
-         "1ryv1r3cah1s8dyqdhcb0yl81r384jvgc4d1q9zwsrrsd2x8fqys"))))
+         "14l2i6ri3v5y0h8g0ahc4kz0pdqsp5yabxk2w8wavss6y44xjcsv"))))
     (build-system r-build-system)
     (propagated-inputs
      `(("r-ellipsis" ,r-ellipsis)
@@ -1995,6 +1998,16 @@ inference for statistical models.")
 (define-public python2-statsmodels
   (let ((stats (package-with-python2 python-statsmodels)))
     (package/inherit stats
+      ;; Version 0.11.1 and later does not work with Python 2.  It may build
+      ;; fine but loading modules fails.
+      (version "0.9.0")
+      (source
+       (origin
+         (method url-fetch)
+         (uri (pypi-uri "statsmodels" version))
+         (sha256
+          (base32
+           "0fxs8a7sp4d7jvqlm36yi45i2d28kjfvraf9q8i9jr1chhxgjqb4"))))
       (propagated-inputs
        `(("python2-pytz" ,python2-pytz)
          ("python2-numpy" ,python2-numpy)
@@ -2141,14 +2154,14 @@ limited to R.")
 (define-public r-backports
   (package
     (name "r-backports")
-    (version "1.2.1")
+    (version "1.3.0")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "backports" version))
        (sha256
         (base32
-         "1mf2nz78l97lbxyagv55bcxrny51ds8g28h307cfa1g3ayylp0x2"))))
+         "0bc14x4gyw4gnvm4hrvg5cmmrq449kfza3l14wdgp642ra8iw8sg"))))
     (build-system r-build-system)
     (home-page "https://cran.r-project.org/web/packages/backports")
     (synopsis "Reimplementations of functions introduced since R 3.0.0")
@@ -2424,13 +2437,13 @@ functions make it easy to control additional request components.")
 (define-public r-git2r
   (package
     (name "r-git2r")
-    (version "0.28.0")
+    (version "0.29.0")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "git2r" version))
               (sha256
                (base32
-                "1wjmbs9cmm16pm3g0rmqp7cxxyh95m5lgx4fx5bpgj6j466i8vff"))))
+                "13nlrhma6kavvhranb43w3003vadfkyrn2f4l3r63iqavj0s3xzq"))))
     (build-system r-build-system)
     (inputs
      `(("libgit2" ,libgit2)
@@ -2554,13 +2567,13 @@ time-of-day values, based on the @code{difftime} class.")
 (define-public r-readr
   (package
     (name "r-readr")
-    (version "2.0.2")
+    (version "2.1.0")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "readr" version))
               (sha256
                (base32
-                "05bnvcc55i0xjilfrqx3700mwiz8sgihq1wxlbvvr8nxa7bmxc4q"))))
+                "03d7y4k9w5vcm7fwlcaw715ff7d953i92jwbp7ynrqcr09kw6zm0"))))
     (build-system r-build-system)
     (propagated-inputs
      `(("r-cli" ,r-cli)
@@ -2647,13 +2660,13 @@ well as additional utilities such as panel and axis annotation functions.")
 (define-public r-rcpparmadillo
   (package
     (name "r-rcpparmadillo")
-    (version "0.10.7.0.0")
+    (version "0.10.7.3.0")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "RcppArmadillo" version))
               (sha256
                (base32
-                "1x35xb5yfslsdpaz9msl5p9f7gilnbkhwvq7pbycwasvkp2fma01"))))
+                "0qk25x8naci76fqcd8jkv8gnba6sj61vkv9yf8498fwff1kvf41p"))))
     (properties `((upstream-name . "RcppArmadillo")))
     (build-system r-build-system)
     (propagated-inputs
@@ -3070,13 +3083,13 @@ multiple breakpoints are allowed.")
 (define-public r-snow
   (package
     (name "r-snow")
-    (version "0.4-3")
+    (version "0.4-4")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "snow" version))
               (sha256
                (base32
-                "1n3n8pva9s34fvlw32yng0x416lmbv7q1fsd0ywa4kikmxym64l5"))))
+                "1j8kvf3imxijsqkdjz4i9s7qggfxqrpas46y5wz6za92y937yn44"))))
     (build-system r-build-system)
     (home-page "https://cran.r-project.org/web/packages/snow")
     (synopsis "Support for simple parallel computing in R")
@@ -3227,7 +3240,7 @@ using the multicore functionality of the parallel package.")
            ("https://cdn.datatables.net/1.10.20/js/dataTables.semanticui.js"
             "1477f49xyxs4phias789mbspv23w8alxchhl5b5iy0aw6vd35c43"
             "datatables")
-           
+
            ("https://cdn.datatables.net/autofill/2.3.4/js/dataTables.autoFill.js"
             "04i6n7r3512gzfihl5wnhrvm0klnjp41g1z6cny3j803hvmnp8zk"
             "datatables-extensions/AutoFill")
@@ -3306,7 +3319,7 @@ using the multicore functionality of the parallel package.")
            ("https://cdn.datatables.net/colreorder/1.5.2/js/colReorder.jqueryui.js"
             "1rd8hijz3prg2y36fvqczrpdzixibjy2dxgs2fmgr8wrm8k01rrm"
             "datatables-extensions/ColReorder")
-           
+
            ("https://cdn.datatables.net/fixedcolumns/3.3.0/js/dataTables.fixedColumns.js"
             "0vsqk2fv59n351bdfcbvhmvpq38qwf41j1cn810xz1l1i07cg4hg"
             "datatables-extensions/FixedColumns")
@@ -3325,7 +3338,7 @@ using the multicore functionality of the parallel package.")
            ("https://cdn.datatables.net/fixedcolumns/3.3.0/js/fixedColumns.semanticui.js"
             "1kqsap9y0d25a7m5zjakipifl5qi2qr72kfj4ap3zxavd8md2wyn"
             "datatables-extensions/FixedColumns")
-           
+
            ("https://cdn.datatables.net/fixedheader/3.1.6/js/dataTables.fixedHeader.js"
             "1ml5ilnm8nirr6rsgmzn75l1k0hcjz3sqk6h1y1gy8cpwpklvqri"
             "datatables-extensions/FixedHeader")
@@ -3344,7 +3357,7 @@ using the multicore functionality of the parallel package.")
            ("https://cdn.datatables.net/fixedheader/3.1.6/js/fixedHeader.semanticui.js"
             "1v0i6dc68h8l8673fb5970igzkl7as36riv504iyg82glfi7n877"
             "datatables-extensions/FixedHeader")
-           
+
            ("https://cdn.datatables.net/keytable/2.5.1/js/dataTables.keyTable.js"
             "16iib2icxsjh93x5hd42gpsl7bzpcsqb7zjgj0m1s02ls45bdlv5"
             "datatables-extensions/KeyTable")
@@ -3382,7 +3395,7 @@ using the multicore functionality of the parallel package.")
            ("https://cdn.datatables.net/responsive/2.2.3/js/responsive.bootstrap4.js"
             "1zjh15p7n1038sggaxv1xvcwbkhw2nk1ndx745s6cxiqb69y3i0h"
             "datatables-extensions/Responsive")
-           
+
            ("https://cdn.datatables.net/rowgroup/1.1.1/js/dataTables.rowGroup.js"
             "0s4q7ir2d6q36g29nn9mqk7vrqrdig2mm5zbcv0sn2lixqi29pkj"
             "datatables-extensions/RowGroup")
@@ -3420,7 +3433,7 @@ using the multicore functionality of the parallel package.")
            ("https://cdn.datatables.net/rowreorder/1.2.6/js/rowReorder.semanticui.js"
             "1zjrx2rlgw3qannsqa88pcp3i4pc87pwv7rmgfw1dar8namkr9kk"
             "datatables-extensions/RowReorder")
-           
+
            ("https://cdn.datatables.net/scroller/2.0.1/js/dataTables.scroller.js"
             "0zfjjdvwwlsnps24i9l4c97hmway2qs6addks1is5bxl4k1r6d16"
             "datatables-extensions/Scroller")
@@ -3439,7 +3452,7 @@ using the multicore functionality of the parallel package.")
            ("https://cdn.datatables.net/scroller/2.0.1/js/scroller.semanticui.js"
             "1dfbblbzbryjgiv31qfdjnijz19lmyijg12win3y8gsgfd4fp9zz"
             "datatables-extensions/Scroller")
-           
+
            ("https://cdn.datatables.net/searchbuilder/1.0.0/js/dataTables.searchBuilder.js"
             "0n5g0j0yfzqvdpsmwb27bj1rd8zx864fsx2k7b2kpv6mqqavzpqc"
             "datatables-extensions/SearchBuilder")
@@ -3474,7 +3487,7 @@ using the multicore functionality of the parallel package.")
            ("https://cdn.datatables.net/searchpanes/1.1.1/js/searchPanes.semanticui.js"
             "1781d0xmx7xz0jly0wsw2zbrdmfc1crahmcdbsfbj5s66kdsnd7c"
             "datatables-extensions/SearchPanes")
-           
+
            ("https://cdn.datatables.net/select/1.3.1/js/dataTables.select.js"
             "0a7bkbz1cizhiq4h417b4rcdr7998pn8q4dlyzx8449xdp0h0n0v"
             "datatables-extensions/Select")
@@ -3495,13 +3508,13 @@ using the multicore functionality of the parallel package.")
             "datatables-extensions/Select"))))
     (package
       (name "r-dt")
-      (version "0.19")
+      (version "0.20")
       (source (origin
                 (method url-fetch)
                 (uri (cran-uri "DT" version))
                 (sha256
                  (base32
-                  "04rv1rprqlc56hycxpqkbmwmq4wjvmanq2lwxrflmf2s46pbv9ms"))
+                  "17xs18i439p15agyk7z2xyyrwgrpn5pw09kd3jwxn7qhxi4pyvf6"))
                 (modules '((guix build utils)))
                 (snippet
                  '(for-each delete-file
@@ -3646,13 +3659,13 @@ analysis of large sparse or dense matrices.")
 (define-public r-glmnet
   (package
    (name "r-glmnet")
-   (version "4.1-2")
+   (version "4.1-3")
    (source
     (origin
      (method url-fetch)
      (uri (cran-uri "glmnet" version))
      (sha256
-      (base32 "1kfd8kfhapx2cxw6qnkbs502c3kya4pd9qmf0mk76cdlq1c2paq6"))))
+      (base32 "0nij8v44b5dvp1vc843sfkl9ds83n6g687m2p37q1rdn82m3bg34"))))
    (build-system r-build-system)
    (native-inputs
     `(("gfortran" ,gfortran)
@@ -3660,6 +3673,8 @@ analysis of large sparse or dense matrices.")
    (propagated-inputs
     `(("r-foreach" ,r-foreach)
       ("r-matrix" ,r-matrix)
+      ("r-rcpp" ,r-rcpp)
+      ("r-rcppeigen" ,r-rcppeigen)
       ("r-shape" ,r-shape)
       ("r-survival" ,r-survival)))
    (home-page "https://www.jstatsoft.org/article/view/v033i01")
@@ -5099,14 +5114,14 @@ models, generalized linear models and model-based clustering.")
 (define-public r-mclust
   (package
     (name "r-mclust")
-    (version "5.4.7")
+    (version "5.4.8")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "mclust" version))
        (sha256
         (base32
-         "08scl72llpinfijiyx14yqvmx8lma9jvh8h92v9ynnzfr9kadxa5"))))
+         "0j79a1nidwxl62x8j97k09qjxladp9irw5z1x1q5gyy6zxskvh8i"))))
     (build-system r-build-system)
     (native-inputs
      `(("gfortran" ,gfortran)
@@ -5269,14 +5284,14 @@ generally.")
 (define-public r-robust
   (package
     (name "r-robust")
-    (version "0.5-0.0")
+    (version "0.6-1")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "robust" version))
        (sha256
         (base32
-         "1ks5scp8bnicl9j1r8yrmz668fjs6ifdmi540zw6d2ck500bbw42"))))
+         "0z8i0qqlsa6vpl457qir3dlsynhjfn2g22436d776vxwyqjx4vs9"))))
     (build-system r-build-system)
     (propagated-inputs
      `(("r-fit-models" ,r-fit-models)
@@ -5515,14 +5530,14 @@ expected shortfall risk are also included.")
 (define-public r-nloptr
   (package
     (name "r-nloptr")
-    (version "1.2.2.2")
+    (version "1.2.2.3")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "nloptr" version))
        (sha256
         (base32
-         "0whkilb85k4wixvr3k7rygfw1rcs1fs9h8c18kz4p3y1k9hsj3p8"))))
+         "1zznk9f2w2g02zqzay21k8xqzfvc6icxfzp6bx2wpd77sm7vf25g"))))
     (build-system r-build-system)
     (native-inputs
      `(("r-knitr" ,r-knitr) ; for building vignettes
@@ -5625,13 +5640,13 @@ Companion to Applied Regression, Third Edition, Sage.")
 (define-public r-car
   (package
     (name "r-car")
-    (version "3.0-11")
+    (version "3.0-12")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "car" version))
        (sha256
-        (base32 "0b2l35656bi75hfvnjhzhlnrnbpjn0vv7nvny8gn65gm0rr94b5k"))))
+        (base32 "00kk8l71508f73kyn21is1mx6kjbrzdq3ls94c5ajhiqmvpsd6dq"))))
     (build-system r-build-system)
     (propagated-inputs
      `(("r-abind" ,r-abind)
@@ -5643,8 +5658,7 @@ Companion to Applied Regression, Third Edition, Sage.")
        ("r-nlme" ,r-nlme)
        ("r-nnet" ,r-nnet)
        ("r-pbkrtest" ,r-pbkrtest)
-       ("r-quantreg" ,r-quantreg)
-       ("r-rio" ,r-rio)))
+       ("r-quantreg" ,r-quantreg)))
     (native-inputs
      `(("r-knitr" ,r-knitr)))
     (home-page "https://r-forge.r-project.org/projects/car/")
@@ -5911,14 +5925,14 @@ easy and fun.")
 (define-public r-fdrtool
   (package
     (name "r-fdrtool")
-    (version "1.2.16")
+    (version "1.2.17")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "fdrtool" version))
        (sha256
         (base32
-         "1aap4k1l3a9m43374xq688mqnzkgqx8l021li262r3h1xr4adpp7"))))
+         "1pf554vb902vavgqc4c0kgghywbgcvr3lkkr414bxngavcd60lil"))))
     (build-system r-build-system)
     (home-page "http://strimmerlab.org/software/fdrtool/")
     (synopsis "Estimation of false discovery rates and higher criticism")
@@ -6699,3 +6713,186 @@ original Datasaurus is detailed in \"Same Stats, Different Graphs: Generating
 Datasets with Varied Appearance and Identical Statistics through Simulated
 Annealing\" @url{doi:10.1145/3025453.3025912}.")
     (license license:expat)))
+
+(define-public r-lmom
+  (package
+    (name "r-lmom")
+    (version "2.8")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (cran-uri "lmom" version))
+        (sha256
+          (base32 "1lnj41gynaar5isyijg5nbll64qdxa12dnqvz7lxhaclqcjskqna"))))
+    (properties `((upstream-name . "lmom")))
+    (build-system r-build-system)
+    (native-inputs `(("gfortran" ,gfortran)))
+    (home-page "https://cran.r-project.org/package=lmom")
+    (synopsis "L-Moments for R")
+    (description
+      "This package provides functions related to L-moments: computation
+of L-moments and trimmed L-moments of distributions and data samples;
+parameter estimation; L-moment ratio diagram; plot vs.  quantiles of an
+extreme-value distribution.")
+    (license license:cpl1.0)))
+
+(define-public r-gld
+  (package
+    (name "r-gld")
+    (version "2.6.2")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (cran-uri "gld" version))
+        (sha256
+          (base32 "1wrw7i5bq7rb2ahadm57y9fmr697r7lp9ln7ajcd592b0nn60n4i"))))
+    (properties `((upstream-name . "gld")))
+    (build-system r-build-system)
+    (propagated-inputs `(("r-e1071" ,r-e1071) ("r-lmom" ,r-lmom)))
+    (home-page
+      "https://cran.r-project.org/package=gld")
+    (synopsis
+      "Estimation and Use of the Generalised (Tukey) Lambda Distribution")
+    (description
+      "The generalised lambda distribution, or Tukey lambda distribution,
+provides a wide variety of shapes with one functional form.  This package
+provides random numbers, quantiles, probabilities, densities and
+density quantiles for four different types of the distribution, the FKML
+(Freimer et al 1988), RS (Ramberg and Schmeiser 1974), GPD (van Staden
+and Loots 2009) and FM5 - see documentation for details.  It provides the
+density function, distribution function, and Quantile-Quantile plots.
+It implements a variety of estimation methods for the distribution,
+including diagnostic plots.  Estimation methods include the starship (all
+4 types), method of L-Moments for the GPD and FKML types, and a number
+of methods for only the FKML type.  These include maximum likelihood,
+maximum product of spacings, Titterington's method, Moments, Trimmed
+L-Moments and Distributional Least Absolutes.")
+    (license license:gpl2+)))
+
+(define-public r-exact
+  (package
+    (name "r-exact")
+    (version "3.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (cran-uri "Exact" version))
+        (sha256
+          (base32 "0acm01njg3arlzwknv5v1sdsz5ab0bdh04sn1bmf91hcg3li8qd7"))))
+    (properties `((upstream-name . "Exact")))
+    (build-system r-build-system)
+    (propagated-inputs `(("r-rootsolve" ,r-rootsolve)))
+    (home-page "https://cran.r-project.org/package=Exact")
+    (synopsis "Unconditional Exact Test")
+    (description
+      "Performs unconditional exact tests and power calculations for 2x2
+contingency tables.  For comparing two independent proportions, performs
+@url{doi:10.1038/156177a0, Barnard's test (1945)} using the original CSM
+test (@url{doi:10.1093/biomet/34.1-2.123, Barnard (1947)}), using Fisher's
+p-value referred to as @url{doi:10.1111/j.1467-9574.1970.tb00104.x,
+Boschloo's test (1970)}, or using a Z-statistic (@url{doi:10.2307/2981892,
+Suissa and Shuster (1985)}).  For comparing two binary proportions,
+performs unconditional exact test using McNemar's Z-statistic
+(@url{doi:10.1191/0962280203sm312ra, Berger and Sidik (2003)}), using
+McNemar's Z-statistic with continuity correction, or using CSM test.
+Calculates confidence intervals for the difference in proportion.")
+    (license license:gpl2)))
+
+(define-public r-desctools
+  (package
+    (name "r-desctools")
+    (version "0.99.43")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (cran-uri "DescTools" version))
+        (sha256
+          (base32 "1zx4wwry7pph21q37r0r1vgx616pki232ych2wl9z2s2fmclwg4c"))))
+    (properties `((upstream-name . "DescTools")))
+    (build-system r-build-system)
+    (propagated-inputs
+      `(("r-bh" ,r-bh)
+        ("r-boot" ,r-boot)
+        ("r-data-table" ,r-data-table)
+        ("r-exact" ,r-exact)
+        ("r-expm" ,r-expm)
+        ("r-gld" ,r-gld)
+        ("r-mass" ,r-mass)
+        ("r-mvtnorm" ,r-mvtnorm)
+        ("r-rcpp" ,r-rcpp)
+        ("r-rstudioapi" ,r-rstudioapi)))
+    (native-inputs `(("gfortran" ,gfortran)))
+    (home-page "https://andrisignorell.github.io/DescTools/")
+    (synopsis "Tools for Descriptive Statistics")
+    (description
+      "This package provides a collection of miscellaneous basic statistic
+functions and convenience wrappers for efficiently describing data.
+The author's intention was to create a toolbox, which facilitates the
+(notoriously time consuming) first descriptive tasks in data analysis,
+consisting of calculating descriptive statistics, drawing graphical
+summaries and reporting the results.  The package contains furthermore
+functions to produce documents using MS Word (or PowerPoint) and functions
+to import data from Excel.  Many of the included functions can be found
+scattered in other packages and other sources written partly by Titans
+of R.  The reason for collecting them here, was primarily to have them
+consolidated in ONE instead of dozens of packages (which themselves might
+depend on other packages which are not needed at all), and to provide a
+common and consistent interface as far as function and arguments naming,
+NA handling, recycling rules etc.  are concerned.  Google style guides
+were used as naming rules (in absence of convincing alternatives).
+The BigCamelCase style was consequently applied to functions borrowed
+from contributed R packages as well.")
+    (license license:gpl2+)))
+
+(define-public xlispstat
+  (let ((commit "f1bea6053df658ee48612bf1f63c35de99e2c649")
+        (revision "0"))
+    (package
+      (name "xlispstat")
+      (version (git-version "3.52.23" revision commit))
+      (source (origin
+	        (method git-fetch)
+	        (uri (git-reference
+		      (url "https://github.com/jhbadger/xlispstat.git")
+		      (commit commit)))
+                (file-name (git-file-name name version))
+	        (sha256
+	         (base32
+	          "1p0cmgy19kbkxia139cb5w9dnkp2cdqp5n3baag6cq3prn3n71mf"))))
+      (build-system gnu-build-system)
+      (arguments
+       `(#:parallel-build? #f   ; Parallel builds are not supported
+         #:configure-flags (list "--with-gcc")
+         #:phases
+         (modify-phases %standard-phases
+           (replace 'check
+             (lambda* (#:key tests? #:allow-other-keys)
+               (when tests?
+                 (with-output-to-file "exit.lsp"
+                   (lambda () (display "(exit)")))
+                 (invoke "./xlisp" "tests/test" "exit")))))))
+      (inputs `(("tcsh" ,tcsh)
+	        ("libx11" ,libx11)
+	        ("libxmu" ,libxmu)
+	        ("libxext" ,libxext)
+	        ("libxpm" ,libxpm)
+	        ("libxaw" ,libxaw)
+	        ("ncurses" ,ncurses)
+	        ("gnuplot" ,gnuplot)))
+      (native-inputs `(("pkg-config" ,pkg-config)))
+      (synopsis "Statistical analysis environment with interactive graphics")
+      (description "XLISP-STAT is a statistical environment based on a Lisp
+dialect called XLISP.  To facilitate statistical computations, standard
+functions for addition, logarithms, etc., have been modified to operate on
+lists and arrays of numbers, and a number of basic statistical functions have
+been added.  Many of these functions have been written in Lisp, and additional
+functions can be added easily by a user.  Several basic forms of plots,
+including histograms, scatterplots, rotatable plots and scatterplot matrices
+are provided.  These plots support various forms of interactive highlighting
+operations and can be linked so points highlighted in one plot will be
+highlighted in all linked plots.  Interactions with the plots are controlled
+by the mouse, menus and dialog boxes.  An object-oriented programming system
+is used to allow menus, dialogs, and the response to mouse actions to be
+ customized.")
+      (home-page "http://homepage.divms.uiowa.edu/~luke/xls/xlsinfo/")
+      (license license:expat))))

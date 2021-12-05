@@ -316,14 +316,14 @@ to @code{cabal repl}).")
 (define-public git-annex
   (package
     (name "git-annex")
-    (version "8.20211028")
+    (version "8.20211123")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://hackage.haskell.org/package/"
                            "git-annex/git-annex-" version ".tar.gz"))
        (sha256
-        (base32 "0bff1bchp60hbslb9yaagvd7hym26w0c3gkkssm7sildwqazwpng"))))
+        (base32 "0i9dhh601axv0b1i56yzn6jnfp160z530fp9pd557kpq4nbvg5kl"))))
     (build-system haskell-build-system)
     (arguments
      `(#:configure-flags
@@ -372,15 +372,15 @@ to @code{cabal repl}).")
                  (format out "main = buildMansOrWarn~%")))
              (invoke "runhaskell" "Build/MakeMans.hs")))
          (replace 'check
-           (lambda _
+           (lambda* (#:key tests? #:allow-other-keys)
              ;; We need to set the path so that Git recognizes
              ;; `git annex' as a custom command.
              (setenv "PATH" (string-append (getenv "PATH") ":"
                                            (getcwd) "/dist/build/git-annex"))
-             (with-directory-excursion "dist/build/git-annex"
-               (symlink "git-annex" "git-annex-shell"))
-             (invoke "git-annex" "test")
-             #t))
+             (when tests?
+               (with-directory-excursion "dist/build/git-annex"
+                 (symlink "git-annex" "git-annex-shell"))
+               (invoke "git-annex" "test"))))
          (add-after 'check 'unpatch-shell-and-rebuild
            (lambda args
              ;; Undo `patch-shell-for-tests'.
@@ -828,7 +828,7 @@ too slow and you'll get wound up in the scroll and crushed.")
 (define-public shellcheck
   (package
     (name "shellcheck")
-    (version "0.7.2")
+    (version "0.8.0")
     (source
      (origin
        (method url-fetch)
@@ -836,7 +836,7 @@ too slow and you'll get wound up in the scroll and crushed.")
              "https://hackage.haskell.org/package/ShellCheck/ShellCheck-"
              version ".tar.gz"))
        (sha256
-        (base32 "0wl43njaq95l35y5mvipwp1db9vr551nz9wl0xy83j1x1kc38xgz"))
+        (base32 "05jlapp4m997w36h2wszdxz9gvczdczaylypsbn14jqpb650w232"))
        (file-name (string-append name "-" version ".tar.gz"))))
     (build-system haskell-build-system)
     (arguments

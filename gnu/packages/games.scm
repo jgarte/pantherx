@@ -885,7 +885,7 @@ high a score as possible.")
 (define-public cataclysm-dda
   (package
     (name "cataclysm-dda")
-    (version "0.F-2")
+    (version "0.F-3")
     (source
      (origin
        (method git-fetch)
@@ -893,7 +893,7 @@ high a score as possible.")
              (url "https://github.com/CleverRaven/Cataclysm-DDA")
              (commit version)))
        (sha256
-        (base32 "1wzsri6rh2fm7078hw0y4x7lqjs6ak4a66d05szfiinnxyn4w1ph"))
+        (base32 "1qnsz6az9qp4sbr3y4rcqhlmadrrdzafvd2xwf3db5wn0swvbjys"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -3596,7 +3596,7 @@ are primarily in English, however some in other languages are provided.")
 C++.  Features include an OpenGL renderer, extensible materials, scene graph
 management, character animation, particle and other special effects, support
 for common mesh file formats, and collision detection.")
-    (home-page "http://irrlicht.sourceforge.net/")
+    (home-page "https://irrlicht.sourceforge.io/")
     (license license:zlib)))
 
 (define-public mars
@@ -4151,7 +4151,7 @@ falling, themeable graphics and sounds, and replays.")
 (define-public wesnoth
   (package
     (name "wesnoth")
-    (version "1.16.0")
+    (version "1.16.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://sourceforge/wesnoth/wesnoth-"
@@ -4160,7 +4160,7 @@ falling, themeable graphics and sounds, and replays.")
                                   "wesnoth-" version ".tar.bz2"))
               (sha256
                (base32
-                "0qs102ws46z0cqyk3maxd1c4bywswlacbqkpmb51x9jd8c746vhz"))))
+                "0cyrwmdg93pqpdm7030540jznaky9rda355i9ym8am4k9civlcwf"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f))                    ;no check target
@@ -5642,7 +5642,7 @@ Linux / Mac OS X servers, and an auto mapper with a VT100 map display.")
              (patches (search-patches "laby-make-install.patch"))))
     (build-system gnu-build-system)
     (inputs
-     `(("lablgtk" ,lablgtk)
+     `(("lablgtk3" ,lablgtk3)
        ("ocaml" ,ocaml)
        ("ocaml-findlib" ,ocaml-findlib)
        ("ocamlbuild" ,ocamlbuild)))
@@ -5650,15 +5650,9 @@ Linux / Mac OS X servers, and an auto mapper with a VT100 map display.")
      '(#:phases
        (modify-phases %standard-phases
          (delete 'configure)
-         (add-before 'build 'allow-unsafe-strings
-           ;; Fix a build failure with ocaml >=4.06.0.
-           ;; See <https://github.com/sgimenez/laby/issues/53>.
-           (lambda _
-             (setenv "OCAMLPARAM" "safe-string=0,_")
-             #t))
          (add-before 'build 'set-library-path
            (lambda* (#:key inputs #:allow-other-keys)
-             (let ((lablgtk (assoc-ref inputs "lablgtk")))
+             (let ((lablgtk (assoc-ref inputs "lablgtk3")))
                (setenv "LD_LIBRARY_PATH"
                        (string-append lablgtk "/lib/ocaml/stublibs"))))))
        #:tests? #f ; no 'check' target
@@ -6421,14 +6415,14 @@ with the mouse isn’t always trivial.")
 (define-public chroma
   (package
     (name "chroma")
-    (version "1.19")
+    (version "1.20")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://level7.org.uk/chroma/download/chroma-"
                                   version ".tar.bz2"))
               (sha256
                (base32
-                "19ybvv0dkql913xpgjgxyyy50s72vajc7hm83zsvy2lsq8lhg76q"))))
+                "02hn448ckfxbx2fqr9wgf66rwl0vr4gl87yvsr5fc99zz9zw2f5v"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ; no tests included
@@ -12074,10 +12068,10 @@ etc.  You can also play games on FICS or against an engine.")
     (license license:gpl2+)))
 
 (define-public stockfish
-  (let ((neural-network-revision "3475407dc199")) ; also update hash below
+  (let ((neural-network-revision "13406b1dcbe0")) ; also update hash below
     (package
       (name "stockfish")
-      (version "14")
+      (version "14.1")
       (source
        (origin
          (method git-fetch)
@@ -12086,7 +12080,7 @@ etc.  You can also play games on FICS or against an engine.")
                (commit (string-append "sf_" version))))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "046b3rq9w8lzgk07q5zazzkl93ai99ab18hr9d8n73mabjpi6zbx"))))
+          (base32 "0apqqcgpcflm3c6mcl13ln2y04f6zksnljmk4ys7naf7xk4vdgkd"))))
       (build-system gnu-build-system)
       (inputs
        `(("neural-network"
@@ -12096,7 +12090,7 @@ etc.  You can also play games on FICS or against an engine.")
                                  neural-network-revision ".nnue"))
              (sha256
               (base32
-               "11zci5kgwdw9rh8w2w4p84764g82rr666y3n8r2flwwrq5yl0x9l"))))))
+               "0vr3hcmlqqm74pn7hc54gmfs9drqvgc53nh7bvy6v8z0rcfnnh0k"))))))
       (arguments
        `(#:tests? #f
          #:make-flags (list "-C" "src"

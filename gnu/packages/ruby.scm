@@ -4324,13 +4324,13 @@ number, support for interrupted tests, better backtraces, and more.")
 (define-public ruby-mocha
   (package
     (name "ruby-mocha")
-    (version "1.11.2")
+    (version "1.13.0")
     (source (origin
               (method url-fetch)
               (uri (rubygems-uri "mocha" version))
               (sha256
                (base32
-                "0hxmkm8qxd04vwj8mqnpyrf2dwy7g1k9zipdfhl4y71cw7ijm9n4"))))
+                "15s53ggsykk69kxqvs4416s8yxdhz6caggva55n8sjgy4ixzwp10"))))
     (build-system ruby-build-system)
     (arguments
      `(#:phases
@@ -4349,7 +4349,7 @@ number, support for interrupted tests, better backtraces, and more.")
     (description
      "Mocha is a mocking and stubbing library with JMock/SchMock syntax, which
 allows mocking and stubbing of methods on real (non-mock) classes.")
-    (home-page "http://gofreerange.com/mocha/docs")
+    (home-page "https://mocha.jamesmead.org")
     ;; Mocha can be used with either license at the users choice.
     (license (list license:expat license:ruby))))
 
@@ -4771,14 +4771,14 @@ minitest 5.12, and is planned to be removed from minitest 6.")
 (define-public ruby-minitest-hooks
   (package
     (name "ruby-minitest-hooks")
-    (version "1.4.2")
+    (version "1.5.0")
     (source
      (origin
        (method url-fetch)
        (uri (rubygems-uri "minitest-hooks" version))
        (sha256
         (base32
-         "0lnpvzijbjrvxjc43d155jnbk2mkfshrz22an711wh004scavlzc"))))
+         "05z8r6sw3fz4s44fs1150ndlcmcy82vlxmhps5nncg8vk59k3gmf"))))
     (build-system ruby-build-system)
     (arguments
      '(#:test-target "spec"))
@@ -6560,7 +6560,7 @@ unacceptable HTML and/or CSS from a string.")
 (define-public ruby-oj
   (package
     (name "ruby-oj")
-    (version "3.10.1")
+    (version "3.13.9")
     (source
      (origin
        (method git-fetch)
@@ -6572,7 +6572,7 @@ unacceptable HTML and/or CSS from a string.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0i5xjx4sh816zx2c1a4d1q67k7vllg5jnnc4jy6zhbmwi1dvp5vw"))))
+         "0a24zd28y58nyhjxgrpn2k9p72vzj3zbmdrcsbhwbdycj7nn9fpd"))))
     (build-system ruby-build-system)
     (arguments
      '(#:test-target "test_all"
@@ -10836,7 +10836,7 @@ interface.  It allows Jekyll to rebuild your site when a file changes.")
 (define-public ruby-parallel
   (package
     (name "ruby-parallel")
-    (version "1.13.0")
+    (version "1.21.0")
     (source
      (origin
        (method git-fetch)
@@ -10846,7 +10846,7 @@ interface.  It allows Jekyll to rebuild your site when a file changes.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "1isqzbqxz2ndad4i5z3lb9ldrhaijfncj8bmffv04sq44sv87ikv"))))
+         "1xqjcvl3gq3shvrqp8wc3fbqibzh4mf1yczq6np9gd79558dwj3w"))))
     (build-system ruby-build-system)
     (arguments
      `(;; TODO 3 test failures

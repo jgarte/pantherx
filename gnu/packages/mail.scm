@@ -28,7 +28,7 @@
 ;;; Copyright © 2018 Alex Vong <alexvong1995@gmail.com>
 ;;; Copyright © 2018 Gábor Boskovits <boskovits@gmail.com>
 ;;; Copyright © 2018, 2019, 2020, 2021 Ricardo Wurmus <rekado@elephly.net>
-;;; Copyright © 2019, 2020 Tanguy Le Carrour <tanguy@bioneland.org>
+;;; Copyright © 2019, 2020, 2021 Tanguy Le Carrour <tanguy@bioneland.org>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Justus Winter <justus@sequoia-pgp.org>
 ;;; Copyright © 2020 Eric Brown <ecbrown@ericcbrown.com>
@@ -42,6 +42,7 @@
 ;;; Copyright © 2020 divoplade <d@divoplade.fr>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
 ;;; Copyright © 2021 Benoit Joly <benoit@benoitj.ca>
+;;; Copyright © 2021 Morgan Smith <Morgan.J.Smith@outlook.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -106,6 +107,7 @@
   #:use-module (gnu packages language)
   #:use-module (gnu packages libcanberra)
   #:use-module (gnu packages libevent)
+  #:use-module (gnu packages libffi)
   #:use-module (gnu packages libidn)
   #:use-module (gnu packages libunistring)
   #:use-module (gnu packages libunwind)
@@ -1165,15 +1167,15 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
 (define-public mu
   (package
     (name "mu")
-    (version "1.6.9")
+    (version "1.6.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/djcb/mu/releases/"
-                                  "download/" version "-signed/"
+                                  "download/" version "/"
                                   "mu-" version ".tar.xz"))
               (sha256
                (base32
-                "0n5gvdz6vn6y69f5gx0gndjdl328qjbvi2q048qynhk99w5476cd"))))
+                "1dh0x4lqnjflb0k8fybr5clqjxv35scf055g1590pr5znam29hhb"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("pkg-config" ,pkg-config)
@@ -1238,7 +1240,7 @@ attachments, create new maildirs, and so on.")
 (define-public alot
   (package
     (name "alot")
-    (version "0.9.1")
+    (version "0.10")
     (source (origin
               (method git-fetch)
               ;; package author intends on distributing via github rather
@@ -1250,7 +1252,7 @@ attachments, create new maildirs, and so on.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0s94m17yph1gq9f2svipb3bbwbw1s4j3zf2xkg5h91006v8286r6"))))
+                "0awf1phdy1wqm01cy9zmvqlw6c8pvkxm2f9ncjd0cmzxqnmq1dyn"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -1269,6 +1271,10 @@ attachments, create new maildirs, and so on.")
           (substitute* "tests/commands/test_global.py"
             (("def test_no_spawn_no_stdin_attached")
              "def _test_no_spawn_no_stdin_attached"))
+          ;; FIXME: Investigate why this test hangs.
+          (substitute* "tests/db/test_manager.py"
+            (("def test_save_named_query")
+             "def _test_save_named_query"))
           #t)))))
     (native-inputs
      `(("procps" ,procps)
@@ -1282,7 +1288,7 @@ attachments, create new maildirs, and so on.")
        ("python-urwid" ,python-urwid)
        ("python-urwidtrees" ,python-urwidtrees)
        ("python-gpg" ,python-gpg)
-       ("python-notmuch" ,python-notmuch)))
+       ("python-notmuch2" ,python-notmuch2)))
     (home-page "https://github.com/pazz/alot")
     (synopsis "Command-line MUA using Notmuch")
     (description
@@ -1344,14 +1350,14 @@ invoking @command{notifymuch} from the post-new hook.")
 (define-public notmuch
   (package
     (name "notmuch")
-    (version "0.33.2")
+    (version "0.34.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://notmuchmail.org/releases/notmuch-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "1bic1f2va136aygfy53bsgziwiidcpb7qf1v05mlza2jmgv94j14"))))
+                "05nq64gp8vnrwrl22d60v7ixgdhm9339ajhcdfkq0ll1qiycyyj5"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
@@ -1505,6 +1511,21 @@ and search library.")
 
 (define-public python2-notmuch
   (package-with-python2 python-notmuch))
+
+(define-public python-notmuch2
+  (package
+    (inherit python-notmuch)
+    (name "python-notmuch2")
+    (propagated-inputs `(("python-cffi" ,python-cffi)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         ;; This python package lives in a subdirectory of the notmuch source
+         ;; tree, so chdir into it before building.
+         (add-after 'unpack 'enter-python-dir
+           (lambda _ (chdir "bindings/python-cffi"))))))
+    (synopsis "Pythonic bindings for the notmuch mail database using CFFI")
+    (license license:gpl3+)))
 
 (define-public muchsync
   (package
@@ -3945,13 +3966,13 @@ servers.  The 4rev1 and 4 versions of IMAP are supported.")
 (define-public urlscan
   (package
     (name "urlscan")
-    (version "0.9.6")
+    (version "0.9.7")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "urlscan" version))
         (sha256
-         (base32 "09lxi7dhn49fpb3ij4cgrhj3qqqqs9rcxbjb7p9smw5wblrqpzga"))))
+         (base32 "0sqaplcrz0lj40x20s2mv3gkzsmawpi9h2kx0rmk342k5240il81"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-urwid" ,python-urwid)))
@@ -4487,6 +4508,41 @@ which can convert the contacts to @code{.ldif} format for import into LDAP
 databases, and other tools to process Outlook email archives.")
     (license license:gpl2+)))
 
+(define-public neatmail
+  (package
+    (name "neatmail")
+    (version "02")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url "https://github.com/aligrudi/neatmail")
+         (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "00d453d57d3v6ja2gpmjd8vch804c72g38pc1nr5shmz3hkgd52d"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ;no tests
+       #:make-flags `((string-append "CC=" ,(cc-for-target)))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)            ;no configure script
+         (replace 'install              ;no install target in the Makefile
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out  (assoc-ref outputs "out"))
+                    (bin  (string-append out "/bin")))
+               (rename-file "mail" "neatmail")
+               (install-file "neatmail" bin)))))))
+    (home-page "https://litcave.rudi.ir/")
+    (synopsis "Text-mode mail client")
+    (description
+     "@command{neatmail} is a noninteractive mail client.  It generates
+a listing of the messages in a mailbox in mbox format and executes a list of
+ex-like commands on it.")
+    (license license:isc)))
+
 (define-public crm114
   (package
     (name "crm114")
@@ -4564,3 +4620,41 @@ regexes, approximate regexes, a Hidden Markov Model, Orthogonal Sparse
 Bigrams, WINNOW, Correlation, KNN/Hyperspace, or Bit Entropy (or by other
 means--it's all programmable).")
     (license license:gpl3)))
+
+(define-public rss2email
+  (package
+    (name "rss2email")
+    (version "3.13.1")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/rss2email/rss2email")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0g1yr3v3ibdh2jqil64fbdbplx5m2yzxr893fqfkwcc5c7fbwl4d"))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (with-directory-excursion "test"
+                 ;; Skip networking tests
+                 (substitute* "test.py"
+                   (("( *)class (:?TestSend|TestFetch).*" match indent)
+                    (string-append indent "@unittest.skip(\"Networking stuff skipped\")\n"
+                                   indent match)))
+                 (invoke "python" "-m" "unittest"))))))))
+    (inputs
+     `(("python-feedparser" ,python-feedparser)
+       ("python-html2text" ,python-html2text)))
+    (home-page "https://github.com/rss2email/rss2email")
+    (synopsis "Converts RSS/Atom newsfeeds to email")
+    (description "The RSS2email program (@command{r2e}) fetches RSS/Atom news
+feeds, converts them into emails, and sends them.")
+    ;; GPL version 2 or 3.  NOT 2+.
+    (license (list license:gpl2
+                   license:gpl3))))

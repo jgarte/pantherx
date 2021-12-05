@@ -391,11 +391,16 @@ algorithm.")
                             (assoc-ref %build-inputs "boost")))
        #:phases
        (modify-phases %standard-phases
-         (add-before
-          'configure 'set-CXXFLAGS
-          (lambda _
-            (setenv "CXXFLAGS" "-fpermissive ")
-            #t)))))
+         (add-after 'unpack 'fix-compatibility-errors
+           (lambda _
+             (substitute* "src/library/IAM2WayImportance.h"
+               (("= std::make_pair.*")
+                "= std::minmax(varID1, varID2);"))
+             (substitute* "src/library/DataFrame.h"
+               (("isFirst\\?.*")
+                "if (isFirst) { isFirst = false; } else { os << par.delimiter; }\n"))))
+         (add-before 'configure 'set-CXXFLAGS
+           (lambda _ (setenv "CXXFLAGS" "-fpermissive "))))))
     (inputs
      `(("boost" ,boost)
        ("gsl" ,gsl)
@@ -2770,7 +2775,7 @@ TensorFlow.js, PyTorch, and MediaPipe.")
 (define-public python-pytorch
   (package
     (name "python-pytorch")
-    (version "1.9.0")
+    (version "1.10.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2780,7 +2785,7 @@ TensorFlow.js, PyTorch, and MediaPipe.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0cznsh68hwk5761gv7iijb4g6jgjpvs3bbixwpzzmkbkbn2q96c1"))
+                "1ihsjw48qqbikmhxxn17bcdvk2zsjabvkq61q6pvj7dzvrdpkb60"))
               (patches (search-patches "python-pytorch-system-libraries.patch"
                                        "python-pytorch-runpath.patch"))
               (modules '((guix build utils)))

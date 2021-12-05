@@ -23,11 +23,13 @@
 ;;; Copyright © 2020, 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2020, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2020 Leo Famulari <leo@famulari.name>
+;;; Copyright @ 2020 luhux <luhux@outlook.com>
 ;;; Copyright © 2021 Ekaitz Zarraga <ekaitz@elenq.tech>
 ;;; Copyright © 2021 Raphaël Mélotte <raphael.melotte@mind.be>
 ;;; Copyright © 2021 ikasero <ahmed@ikasero.com>
 ;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2021 Solene Rapenne <solene@perso.pw>
+;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -100,6 +102,40 @@
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
   #:use-module (srfi srfi-26))
+
+(define-public libptytty
+  (package
+    (name "libptytty")
+    (version "2.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/yusiwen/libptytty")
+             (commit "b9694ea18e0dbd78213f55233a430325c13ad63e")))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1g8by1m6ya4r47p137mw4ddml40js0zh6mdb9n6ib49ayngv8ak3"))))
+    (build-system cmake-build-system)
+    (arguments
+     `(#:tests? #f))                    ; no test suite
+    (home-page "https://github.com/yusiwen/libptytty")
+    (synopsis
+     "Portable, secure PTY/TTY and @file{utmp}/@file{wtmp}/@file{lastlog} handling")
+    (description
+     "Libptytty is a small C/C++ library to manage pseudo-ttys in a uniform way,
+created out of frustration over the many differences of PTY/TTY handling in
+different operating systems.
+
+In addition to mere PTY/TTY management, it supports updating the session
+database at @file{utmp}, and @file{wtmp}/@file{lastlog} for login shells.
+
+It also supports @code{fork}ing after start-up and dropping privileges in the
+calling process.  This reduces the potential attack surface: if the calling
+process were to be compromised by the user starting the program, there would be
+less to gain, as only the helper process is running with privileges (e.g.,
+@code{setuid}/@code{setgid}).")
+    (license license:gpl2+)))
 
 (define-public tilda
   (package
@@ -423,6 +459,64 @@ character sets and encodings from around the world.  It can display double-width
 (e.g.  East Asian) glyphs, combining characters used for, e.g., Thai and
 Vietnamese, and bi-directional scripts like Arabic and Hebrew.")
     (license license:bsd-3)))
+
+(define-public mtm
+  (package
+    (name "mtm")
+    (version "1.2.1")
+    (source
+     (origin
+       (uri (git-reference
+             (url "https://github.com/deadpixi/mtm")
+             (commit version)))
+       (method git-fetch)
+       (sha256
+        (base32 "0gibrvah059z37jvn1qs4b6kvd4ivk2mfihmcpgx1vz6yg70zghv"))
+       (file-name (git-file-name name version))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f                      ; no tests
+       #:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             (string-append "DESTDIR=" (assoc-ref %outputs "out")))
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure)            ;no configure script
+         (add-before 'build 'fix-headers
+           (lambda _
+             (substitute* "config.def.h"
+               (("ncursesw/curses.h") "curses.h"))))
+         (replace 'install
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out")))
+               ;; install binary
+               (mkdir-p (string-append out "bin/"))
+               (install-file "mtm" (string-append out "/bin"))
+               ;; install manpage
+               (mkdir-p (string-append out "share/man/man1"))
+               (install-file "mtm.1" (string-append out "/share/man/man1"))
+               ;; install terminfo
+               (mkdir-p (string-append out "share/terminfo"))
+               (invoke (string-append (assoc-ref inputs "ncurses") "/bin/tic")
+                       "-x" "-s" "-o"
+                       (string-append
+                        out "/share/terminfo")
+                       "mtm.ti")))))))
+    (inputs
+     `(("ncurses" ,ncurses)))
+    ;; FIXME: This should only be located in 'ncurses'.  Nonetheless it is
+    ;; provided for usability reasons.  See <https://bugs.gnu.org/22138>.
+    (native-search-paths
+     (list (search-path-specification
+            (variable "TERMINFO_DIRS")
+            (files '("share/terminfo")))))
+    (home-page "https://github.com/deadpixi/mtm")
+    (synopsis "Micro Terminal Multiplexer")
+    (description
+     "This package provides multiplexer for the terminal focused on simplicity,
+compatibility, size and stability.")
+    (license (list license:gpl3+
+                   license:bsd-3))))    ;vtparser.c
 
 (define-public picocom
   (package
@@ -776,7 +870,7 @@ a server/client mode.")
 (define-public sakura
   (package
     (name "sakura")
-    (version "3.8.3")
+    (version "3.8.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://launchpad.net/sakura/trunk/"
@@ -784,7 +878,7 @@ a server/client mode.")
                                   ".tar.bz2"))
               (sha256
                (base32
-                "1r2kpvxx21r407s07m5p5x0dam6x863991nmcv6k5ap873fxqh2h"))))
+                "1d8n32xnj21q2xx13xs2r9cfjaq31mxiyhx6d57x9cwnhwb11xn3"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f))                    ; no check phase

@@ -2373,10 +2373,9 @@ satisfiability checking (SAT).")
                   (add-before 'configure 'set-library-directory
                     (lambda _
                       ;; Install libraries to lib/, not lib64/.
-                      (substitute* "internal/ceres/CMakeLists.txt"
+                      (substitute* "CMakeLists.txt"
                         (("set\\(LIB_SUFFIX \"64\"\\)")
-                         "set(LIB_SUFFIX \"\")"))
-                      #t)))))
+                         "set(LIB_SUFFIX \"\")")))))))
     (native-inputs
      `(("pkg-config" ,pkg-config)))
     (propagated-inputs
@@ -6158,6 +6157,31 @@ easily be incorporated into existing simulation codes.")
            (add-before 'check 'mpi-setup
 	     ,%openmpi-setup)))))
     (synopsis "SUNDIALS with OpenMPI support")))
+
+(define-public sundials-julia
+  (package
+    (inherit sundials)
+    (name "sundials-julia")
+    (version "5.2.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/LLNL/sundials")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0nx4sqhmi126m14myzm7syv2053harav9snl0a247wnkcgs5rxrv"))))
+    (inputs
+     `(("lapack" ,lapack)
+       ,@(package-inputs sundials)))
+    (arguments
+     (substitute-keyword-arguments (package-arguments sundials)
+       ((#:configure-flags flags '())
+        `(cons* "-DLAPACK_ENABLE:BOOL=ON"
+                ,flags))))
+    (synopsis "SUNDIALS with lapack support as required by julia-sundials-jll")))
 
 (define-public combinatorial-blas
   (package

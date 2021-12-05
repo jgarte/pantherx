@@ -407,7 +407,7 @@ functions.")
     (home-page "https://metacpan.org/release/Test-Dir")
     (synopsis "Utilities for testing directory attributes")
     (description
-     "This modules provides a collection of test utilities for directory
+     "This module provides a collection of test utilities for directory
 attributes.")
     (license perl-license)))
 
@@ -840,14 +840,14 @@ memory_cycle_ok( $object );
 (define-public perl-test-mockmodule
   (package
     (name "perl-test-mockmodule")
-    (version "0.171.0")
+    (version "0.177.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://cpan/authors/id/G/GF/GFRANKS/"
                            "Test-MockModule-v" version ".tar.gz"))
        (sha256
-        (base32 "1arqgb1773zym5dqlwm6kz48bfrccjhb5bjfsif0vkalwq2gvm7b"))))
+        (base32 "0i8hiw9r2kak8kgp2qabr0cnnpp1yg1sddm781nhfxpavi4pmnhv"))))
     (build-system perl-build-system)
     (native-inputs
      `(("perl-module-build" ,perl-module-build)
@@ -1034,7 +1034,7 @@ code.")
     (build-system perl-build-system)
     (synopsis "Ensure no warnings are produced while testing")
     (description
-     "This modules causes any warnings during testing to be captured and
+     "This module causes any warnings during testing to be captured and
 stored.  It automatically adds an extra test that will run when your script
 ends to check that there were no warnings.  If there were any warnings, the
 test will fail and output diagnostics of where, when and what the warning was,

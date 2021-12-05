@@ -27,7 +27,7 @@
 ;;; Copyright © 2017, 2018 nee <nee-git@hidamari.blue>
 ;;; Copyright © 2017 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2017 Mohammed Sadiq <sadiq@sadiqpk.org>
-;;; Copyright © 2017, 2020 Brendan Tildesley <mail@brendan.scot>
+;;; Copyright © 2017, 2020, 2021 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2017, 2018 Rutger Helling <rhelling@mykolab.com>
 ;;; Copyright © 2018 Jovany Leandro G.C <bit4bit@riseup.net>
 ;;; Copyright © 2018 Vasile Dumitrascu <va511e@yahoo.com>
@@ -11450,8 +11450,7 @@ join_paths\\('build-aux', 'post_install.py'\\)\\)")
                   (add-before 'check 'setup-xvfb
                     (lambda _
                       (system "Xvfb :1 &")
-                      (setenv "DISPLAY" ":1")
-                      #t)))))
+                      (setenv "DISPLAY" ":1"))))))
     (inputs
      `(("enchant" ,enchant)
        ("folks" ,folks)
@@ -11480,6 +11479,7 @@ join_paths\\('build-aux', 'post_install.py'\\)\\)")
        ("gettext" ,gettext-minimal)
        ("glib:bin" ,glib "bin")
        ("gobject-introspection" ,gobject-introspection)
+       ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
        ("itstool" ,itstool)
        ("libarchive" ,libarchive)
        ("libxml2" ,libxml2)
@@ -11705,7 +11705,7 @@ It uses pandoc as back-end for parsing Markdown.")
 (define-public libratbag
   (package
     (name "libratbag")
-    (version "0.14")
+    (version "0.16")
     (source
      (origin
        (method git-fetch)
@@ -11714,7 +11714,7 @@ It uses pandoc as back-end for parsing Markdown.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1fpwp2sj8mf98bqasq2h8qwgprxi7k3iw33gcfid3d1lbyiacw0x"))))
+        (base32 "0jjf6xc3a37icp5dvbxla3ai9is2ns31m0llbfq1bmb6dk8cd4n0"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags
@@ -11772,7 +11772,7 @@ your operating-system definition:
 (define-public piper
   (package
     (name "piper")
-    (version "0.5.1")
+    (version "0.6")
     (source
      (origin
        (method git-fetch)
@@ -11780,7 +11780,7 @@ your operating-system definition:
              (url "https://github.com/libratbag/piper")
              (commit version)))
        (sha256
-        (base32 "1nfjnsiwg2rs6gkjsxzhr2708i6di149dgwq3cf6l12rxqpb8arj"))
+        (base32 "02x4d4n0078slj2pl0rvgayrrxvna6y6vj8fxfamvazsh5xyfzwk"))
        (file-name (git-file-name name version))))
     (build-system meson-build-system)
     (native-inputs
@@ -11793,6 +11793,7 @@ your operating-system definition:
      `(("adwaita-icon-theme" ,adwaita-icon-theme)
        ("gtk" ,gtk+)
        ("gtk:bin" ,gtk+ "bin")
+       ("libratbag" ,libratbag)
        ("librsvg" ,librsvg)
        ("python-evdev" ,python-evdev)
        ("python-lxml" ,python-lxml)
