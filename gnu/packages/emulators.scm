@@ -769,7 +769,7 @@ and Game Boy Color games.")
 (define-public sameboy
   (package
     (name "sameboy")
-    (version "0.14.5")
+    (version "0.14.7")
     (source
      (origin
        (method git-fetch)
@@ -778,7 +778,7 @@ and Game Boy Color games.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0qqribyksm51fhq923rdhrzb9c4yf16szymprbw8fsz0nzv8frm3"))))
+        (base32 "1r391jdh0gjnx8bwmr63dcdmq58lpm162mng2ncrx53ydbb13xxf"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("rgbds" ,rgbds)
@@ -1750,7 +1750,7 @@ This is a part of the TiLP project.")
 (define-public mame
   (package
     (name "mame")
-    (version "0.237")
+    (version "0.238")
     (source
      (origin
        (method git-fetch)
@@ -1759,7 +1759,7 @@ This is a part of the TiLP project.")
              (commit (apply string-append "mame" (string-split version #\.)))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0syj7l262s2ac70dfg47pakd6fk8x3p3sasixmcwdmvnzkiqvmj4"))
+        (base32 "188h9a4lla0gimbss1bfvlidsm0l8smhqrhplv973k8j2jgf74fb"))
        (modules '((guix build utils)))
        (snippet
         ;; Remove bundled libraries.
@@ -1899,7 +1899,7 @@ This is a part of the TiLP project.")
        ("texinfo" ,texinfo)))
     (inputs
      `(("alsa-lib" ,alsa-lib)
-       ("asio" ,asio-1.12)              ;the bundled copy is at 1.11
+       ("asio" ,asio)
        ("expat" ,expat)
        ("flac" ,flac)
        ("fontconfig" ,fontconfig)

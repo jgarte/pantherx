@@ -7,6 +7,7 @@
 ;;; Copyright © 2020, 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2021 Sharlatan Hellseher <sharlatanus@gmail.com>
 ;;; Copyright © 2021 Vinicius Monego <monego@posteo.net>
+;;; Copyright © 2021 Greg Hogan <code@greghogan.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -582,7 +583,7 @@ any arbitrary astrometric projection defined in the WCS standard.")
          ;; maybe required?
          ("mesa" ,mesa)
          ;; optional: fmtlib, Eigen3;
-         ("fmt" ,fmt)
+         ("fmt" ,fmt-7)
          ("eigen" ,eigen)
          ;; glut: for glut interface
          ("freeglut" ,freeglut)))
@@ -989,7 +990,7 @@ It can be used to calculate the trajectory of satellites.")
 (define-public indi
   (package
     (name "indi")
-    (version "1.9.2")
+    (version "1.9.3")
     (source
      (origin
        (method git-fetch)
@@ -998,7 +999,7 @@ It can be used to calculate the trajectory of satellites.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "00dlvp682xg2sdxm7ix55zp6311mgnd543q45drrc7kjlgaqvip4"))))
+        (base32 "0c7md288d3g2vf0m1ai6x2l4j4rmlasc4rya92phvd4ynf8vcki2"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags

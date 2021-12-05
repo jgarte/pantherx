@@ -63,7 +63,7 @@
 ;;; Copyright © 2019, 2020 Alex Griffin <a@ajgrf.com>
 ;;; Copyright © 2019, 2020, 2021 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2019 Jacob MacDonald <jaccarmac@gmail.com>
-;;; Copyright © 2019, 2020 Giacomo Leidi <goodoldpaul@autistici.org>
+;;; Copyright © 2019, 2020, 2021 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2019 Wiktor Żelazny <wzelazny@vurv.cz>
 ;;; Copyright © 2019, 2020, 2021 Tanguy Le Carrour <tanguy@bioneland.org>
 ;;; Copyright © 2019, 2021 Mădălin Ionel Patrașcu <madalinionel.patrascu@mdc-berlin.de>
@@ -111,6 +111,7 @@
 ;;; Copyright © 2021 Felix Gruber <felgru@posteo.net>
 ;;; Copyright © 2021 Sébastien Lerique <sl@eauchat.org>
 ;;; Copyright © 2021 Raphaël Mélotte <raphael.melotte@mind.be>
+;;; Copyright © 2021 ZmnSCPxj <ZmnSCPxj@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -142,6 +143,7 @@
   #:use-module (gnu packages crypto)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages dbm)
+  #:use-module (gnu packages django)
   #:use-module (gnu packages djvu)
   #:use-module (gnu packages docker)
   #:use-module (gnu packages enchant)
@@ -331,7 +333,7 @@ applications in mind and the idea to make logging fun.")
        ("python-xlib" ,python-xlib)))
     (home-page "https://github.com/seebye/ueberzug")
     (synopsis "Command line util to display images in combination with X11")
-    (description "Überzug is a command line util which allows to draw images on
+    (description "Überzug is a command line util which draws images on
 terminals by using child windows.  The advantages of using Überzug are:
 @itemize
 @item No race conditions as a new window is created to display images.
@@ -533,6 +535,28 @@ during long operations.")
 It indexes documents and provides a search interface for retrieving documents
 that best match text queries.")
     (license license:expat)))
+
+(define-public python-mrkd
+  (package
+    (name "python-mrkd")
+    (version "0.2.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "mrkd" version))
+        (sha256
+          (base32 "1bvaqbna1ihb4y2mv9pmvqcq3r9j6lwbbii99dani8lxx4dqqvs5"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-jinja2" ,python-jinja2)
+       ("python-mistune" ,python-mistune)
+       ("python-pygments" ,python-pygments)))
+    (home-page "https://pypi.org/project/mrkd/")
+    (synopsis "Python Markdown implementation")
+    (description
+     "@code{mrkd} writes man pages using Markdown, and convert them to Roff or
+HTML")
+    (license license:bsd-3)))
 
 (define-public python-mkdocs
   (package
@@ -1369,6 +1393,34 @@ concepts.")
 (define-public python2-h5py
   (package-with-python2 python-h5py))
 
+(define-public python-hnswlib
+  (package
+    (name "python-hnswlib")
+    (version "0.5.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "hnswlib" version))
+       (sha256
+        (base32 "0wf1cwmxmdzfqmfhrkqdxb5spf21ylgl2bidswhzjrqhwf35c9qf"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'disable-native-optimization
+           (lambda _
+             (substitute* "setup.py"
+               ((", '-march=native'") "")))))))
+    (propagated-inputs
+     `(("python-numpy" ,python-numpy)))
+    (native-inputs
+     `(("pybind11" ,pybind11)))
+    (home-page "https://github.com/nmslib/hnswlib")
+    (synopsis "Fast approximate nearest neighbor search")
+    (description "Hnswlib is a header-only C++ implementation of fast
+approximate nearest neighbor search with Python bindings.")
+    (license license:asl2.0)))
+
 (define-public python-pyls-black
   (package
     (name "python-pyls-black")
@@ -1552,6 +1604,35 @@ be tested for equality, containment, and equivalence.  They can be normalised
 and simplified.  It supports SPDX license expressions as well as other naming
 conventions and aliases in the same expression.")
     (license license:gpl2+)))
+
+(define-public python-wand
+  (package
+    (name "python-wand")
+    (version "0.6.7")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "Wand" version))
+       (sha256
+        (base32 "1nxn7zvbnfgk4kkxajbzglcjpbgr84ilhnxm990nifjxqb61ph7b"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'find-magickwand
+           (lambda* (#:key inputs #:allow-other-keys)
+             (setenv "MAGICK_HOME" (assoc-ref inputs "imagemagick"))
+             (setenv "WAND_MAGICK_LIBRARY_SUFFIX" ".Q16"))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)))
+    (inputs
+     `(("imagemagick" ,imagemagick)))
+    (home-page "https://docs.wand-py.org/")
+    (synopsis "MagickWand API binding for Python")
+    (description
+     "Wand is a ctypes-based binding for the C API of ImageMagick's MagickWand
+library.")
+    (license license:expat)))
 
 (define-public python-lockfile
   (package
@@ -2904,6 +2985,28 @@ existing ones.")
                    ;; Tests don't work with python2.
                    #:tests? #f)))))
 
+(define-public python-polling2
+  (package
+    (name "python-polling2")
+    (version "0.5.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "polling2" version))
+       (sha256
+        (base32 "0hp3238fv6k1qk43gv4jwnv1mwlkmx33akbj560b9nvsry1dmdwh"))))
+    (build-system python-build-system)
+    (arguments '(#:tests? #false)) ; no tests included
+    (native-inputs
+     `(("python-mock" ,python-mock)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-runner" ,python-pytest-runner)))
+    (home-page "https://github.com/ddmee/polling2")
+    (synopsis "Polling utility with many configurable options")
+    (description "Polling2 is a utility used to wait for a function to return
+a certain expected condition.")
+    (license license:expat)))
+
 (define-public python-poyo
   (package
     (name "python-poyo")
@@ -3405,7 +3508,7 @@ with sensible defaults out of the box.")
     (native-inputs
       `(("python-pytest-cov" ,python-pytest-cov)))
     (home-page "https://github.com/mapbox/cligj")
-    (synopsis "Click params for commmand line interfaces to GeoJSON")
+    (synopsis "Click params for command line interfaces to GeoJSON")
     (description
       "cligj is for Python developers who create command line interfaces
 for geospatial data.  cligj allows you to quickly build consistent,
@@ -4046,14 +4149,14 @@ logging and tracing of the execution.")
 (define-public python-daemon
   (package
     (name "python-daemon")
-    (version "2.2.3")
+    (version "2.3.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "python-daemon" version))
        (sha256
         (base32
-         "09fcjdjzk9ywmpnrj62iyxqgcygzdafsz41qlrk2dknzbagcmzmg"))))
+         "1bxfn2bq56sd4w0nm9mqy8y0905m7fc8vmhnjxlrf49vcbqr7adx"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -4068,9 +4171,11 @@ logging and tracing of the execution.")
     (propagated-inputs
      `(("python-lockfile" ,python-lockfile)))
     (native-inputs
-     `(("python-unittest2" ,python-unittest2)
+     `(("python-coverage" ,python-coverage)
+       ("python-unittest2" ,python-unittest2)
        ("python-testtools" ,python-testtools)
        ("python-testscenarios" ,python-testscenarios)
+       ("python-twine" ,python-twine)
        ("python-mock" ,python-mock)
        ("python-docutils" ,python-docutils)))
     (home-page "https://pagure.io/python-daemon/")
@@ -4813,28 +4918,31 @@ which can produce feeds in RSS 2.0, RSS 0.91, and Atom formats.")
 (define-public python2-feedgenerator
   (package-with-python2 python-feedgenerator))
 
-(define-public python-jsonrpc-server
+(define-public python-lsp-jsonrpc
   (package
-    (name "python-jsonrpc-server")
-    (version "0.4.0")
+    (name "python-lsp-jsonrpc")
+    (version "1.0.0")
     (source
      (origin
        (method url-fetch)
-       (uri (pypi-uri "python-jsonrpc-server" version))
+       (uri (pypi-uri "python-lsp-jsonrpc" version))
        (sha256
         (base32
-         "1585ybn3djvx5r5zbxkzlhz2wb1d47y4wrfwaxdyq0gi87jl7ib2"))))
+         "1gb0fsamxndhplx25v8m0b3k7aknzy454fpa0qsqsqnv6c3igv3v"))))
     (build-system python-build-system)
-    (propagated-inputs
+    (native-inputs
      `(("python-mock" ,python-mock)
-       ("python-pytest" ,python-pytest)
-       ("python-ujson" ,python-ujson)))
-    (home-page
-     "https://github.com/palantir/python-jsonrpc-server")
+       ("python-pytest" ,python-pytest)))
+    (propagated-inputs
+     `(("python-ujson" ,python-ujson)))
+    (home-page "https://github.com/python-lsp/python-lsp-jsonrpc")
     (synopsis "JSON RPC 2.0 server library")
     (description
      "This package provides a JSON RPC 2.0 server library for Python.")
     (license license:expat)))
+
+(define-public python-jsonrpc-server
+  (deprecated-package "python-jsonrpc-server" python-lsp-jsonrpc))
 
 (define-public python-pydantic
   (package
@@ -4911,29 +5019,23 @@ errors when data is invalid.")
 Server (PLS).")
     (license license:expat)))
 
-(define-public python-language-server
+(define-public python-lsp-server
   (package
-    (name "python-language-server")
-    (version "0.36.2")
+    (name "python-lsp-server")
+    (version "1.3.1")
     (source
      (origin
        (method url-fetch)
-       (uri (pypi-uri "python-language-server" version))
+       (uri (pypi-uri "python-lsp-server" version))
        (sha256
         (base32
-         "1c0pnk2aibfhfaanrs0a5gkabkvz81gj20z7r0152b7fcx5ci14r"))))
+         "15075a5irjxh55wcdf25hllz9c42byxc4770cmwgb480k1dm8scq"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'relax-deps
-           (lambda _
-             (substitute* "setup.py" (("pycodestyle>=2.6.0,<2.7.0")
-                                      "pycodestyle"))
-             (substitute* "setup.py" (("pyflakes>=2.2.0,<2.3.0") "pyflakes"))
-             #t))
          (add-before 'check 'set-HOME
-           (lambda _ (setenv "HOME" "/tmp") #t))
+           (lambda _ (setenv "HOME" "/tmp")))
          (replace 'check
            (lambda _
              ;; Disable failing test.
@@ -4946,7 +5048,7 @@ Server (PLS).")
        ("python-flake8" ,python-flake8)
        ("python-future" ,python-future)
        ("python-jedi" ,python-jedi)
-       ("python-jsonrpc-server" ,python-jsonrpc-server)
+       ("python-lsp-jsonrpc" ,python-lsp-jsonrpc)
        ("python-pluggy" ,python-pluggy)
        ("python-pycodestyle" ,python-pycodestyle)
        ("python-pyflakes" ,python-pyflakes)
@@ -4967,11 +5069,14 @@ Server (PLS).")
     (home-page "https://github.com/palantir/python-language-server")
     (synopsis "Python implementation of the Language Server Protocol")
     (description
-     "The Python Language Server (pyls) is an implementation of the Python 3
-language specification for the Language Server Protocol (LSP).  This tool is
-used in text editing environments to provide a complete and integrated
-feature-set for programming Python effectively.")
+"The Python Language Server @command{pylsp} is an implementation of the
+Python 3 language specification for the Language Server Protocol (LSP).
+This tool is used in text editing environments to provide a complete
+and integrated feature-set for programming Python effectively.")
     (license license:expat)))
+
+(define-public python-language-server
+  (deprecated-package "python-language-server" python-lsp-server))
 
 (define-public python-pathspec
   (package
@@ -5971,19 +6076,31 @@ that client code uses to construct the grammar directly in Python code.")
 (define-public python-numpydoc
   (package
     (name "python-numpydoc")
-    (version "0.8.0")
+    (version "1.1.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "numpydoc" version))
        (sha256
         (base32
-         "1zazxg3m8j4fksv3f7v7vpf4bj9qb1vj3r326am0vdip141vzx31"))))
+         "13j4fvy2p7lc8sn00sxvs0jb19vicaznfgx4cphv9jgxgz5xcvy3"))))
     (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest" "-v" "numpydoc/tests"
+                       ;; TODO: unclear why these fail.
+                       "-k" "not test_MyClass and not test_my_function")))))))
     (propagated-inputs
      `(("python-sphinx" ,python-sphinx)))
     (native-inputs
-     `(("python-nose" ,python-nose)))
+     `(("python-matplotlib" ,python-matplotlib)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-cov" ,python-pytest-cov)))
     (home-page "https://pypi.org/project/numpydoc/")
     (synopsis
      "Numpy's Sphinx extensions")
@@ -5996,6 +6113,15 @@ that client code uses to construct the grammar directly in Python code.")
   (let ((base (package-with-python2
                (strip-python2-variant python-numpydoc))))
     (package/inherit base
+      ;; This is the last version to support Python 2
+      (version "0.9.1")
+      (source
+       (origin
+         (method url-fetch)
+         (uri (pypi-uri "numpydoc" version))
+         (sha256
+          (base32
+           "09x6l1a4dcvj7001bvcmcayg1nwqwhaxlwbp6kzj9qrk57lqx3z0"))))
       (propagated-inputs
        `(("python2-jinja2" ,python2-jinja2)
          ,@(package-propagated-inputs base))))))
@@ -6653,29 +6779,20 @@ where key might be occurred more than once in the container.")
 (define-public python-orderedmultidict
   (package
     (name "python-orderedmultidict")
-    (version "1.0")
+    (version "1.0.1")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "orderedmultidict" version))
         (sha256
           (base32
-            "1idjbl933avgaadscrjw1np3xkvnz3phq0l8vw5qs0rqcjx9b65q"))))
+            "1bc2v0yflsxjyyjx4q9wqx0j3bvzcw9z87d5pz4iqac7bsxhn1q4"))))
     (build-system python-build-system)
-    (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'fix-tests
-           (lambda _
-             ;; The package uses nosetest for running the tests.
-             ;; Adding this initfile allows to run the test suite
-             ;; without requiring nosetest.
-             (with-output-to-file "tests/__init__.py" newline)
-             #t)))))
     (propagated-inputs
      `(("python-six" ,python-six)))
     (native-inputs
-     `(("python-pycodestyle" ,python-pycodestyle)))
+     `(("python-flake8" ,python-flake8)
+       ("python-pycodestyle" ,python-pycodestyle)))
     (home-page "https://github.com/gruns/orderedmultidict")
     (synopsis "Python Ordered Multivalue Dictionary - omdict")
     (description "This package contains a library for ordered multivalue
@@ -6683,9 +6800,6 @@ dictionaries.  A multivalue dictionary is a dictionary that can store
 multiple values for the same key.  An ordered multivalue dictionary is a
 multivalue dictionary that retains the order of insertions and deletions.")
     (license license:unlicense)))
-
-(define-public python2-orderedmultidict
-  (package-with-python2 python-orderedmultidict))
 
 (define-public python-autopep8
   (package
@@ -7363,14 +7477,14 @@ any machine that can run Python.")
 (define-public python-xcffib
   (package
     (name "python-xcffib")
-    (version "0.6.0")
+    (version "0.11.1")
     (source
      (origin
       (method url-fetch)
       (uri (pypi-uri "xcffib" version))
       (sha256
        (base32
-        "04k91yxyb3pgc5lvxmivh8w71yjrap2g57yk3s73x4rm4nvjq51n"))))
+        "0nkglsm9nbhv238iagmmsjcz6lf1yfdvp5kmspphdj385vz9r50j"))))
     (build-system python-build-system)
     (inputs
      `(("libxcb" ,libxcb)))
@@ -7386,7 +7500,8 @@ any machine that can run Python.")
            (lambda* (#:key inputs #:allow-other-keys)
              (let ((libxcb (assoc-ref inputs "libxcb")))
                (substitute* '("xcffib/__init__.py")
-                 (("^soname = \"") (string-append "soname = \"" libxcb "/lib/")))
+                 (("soname = ctypes.util.find_library.*xcb.*")
+                  (string-append "soname = \"" libxcb "/lib/libxcb.so\"\n")))
                #t)))
          (add-after 'install 'install-doc
            (lambda* (#:key outputs #:allow-other-keys)
@@ -7518,10 +7633,21 @@ PNG, PostScript, PDF, and SVG file output.")
 for the average programmer, and to popularize decorators usage giving examples
 of useful decorators, such as memoize, tracing, redirecting_stdout, locked,
 etc.  The core of this module is a decorator factory.")
-    (license license:expat)))
+    (license license:expat)
+    (properties `((python2-variant . ,(delay python2-decorator))))))
 
+;; Version 5 does not support Python 2
 (define-public python2-decorator
-  (package-with-python2 python-decorator))
+  (package
+    (inherit (package-with-python2
+              (strip-python2-variant python-decorator)))
+    (version "4.3.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "decorator" version))
+       (sha256
+        (base32 "0308djallnh00v112y5b7nadl657ysmkp6vc8xn51d6yzc9zm7n3"))))))
 
 (define-public python-drmaa
   (package
@@ -8539,13 +8665,13 @@ callback signature using a prototype function.")
 (define-public python-ipython
   (package
     (name "python-ipython")
-    (version "7.9.0")
+    (version "7.20.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ipython" version ".tar.gz"))
        (sha256
-        (base32 "103jkw18z7fnwdal1mdbijjxi1fndzn31g887lmj7ddpf2r07lyz"))))
+        (base32 "17pzzyfh6z7il1j49fb32glad04pqppqjsymj67gb30ah80ay8qr"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-backcall" ,python-backcall)
@@ -8582,8 +8708,7 @@ callback signature using a prototype function.")
              (substitute* "IPython/sphinxext/ipython_directive.py"
                ((".*import datetime") "")
                ((".*datetime.datetime.now\\(\\)") "")
-               (("%timeit") "# %timeit"))
-             #t))
+               (("%timeit") "# %timeit"))))
          ;; Tests can only be run after the library has been installed and not
          ;; within the source directory.
          (delete 'check)
@@ -8597,8 +8722,7 @@ callback signature using a prototype function.")
                    ;; We only test the core because one of the other tests
                    ;; tries to import ipykernel.
                    (invoke "python" "IPython/testing/iptest.py"
-                           "-v" "IPython/core/tests"))
-                 #t)))
+                           "-v" "IPython/core/tests")))))
          (add-before 'check 'fix-tests
            (lambda* (#:key inputs #:allow-other-keys)
              (substitute* "./IPython/utils/_process_posix.py"
@@ -8610,8 +8734,7 @@ callback signature using a prototype function.")
              ;; (which depends on ipython).
              (delete-file "IPython/core/tests/test_display.py")
              ;; AttributeError: module 'IPython.core' has no attribute 'formatters'
-             (delete-file "IPython/core/tests/test_interactiveshell.py")
-             #t)))))
+             (delete-file "IPython/core/tests/test_interactiveshell.py"))))))
     (home-page "https://ipython.org")
     (synopsis "IPython is a tool for interactive computing in Python")
     (description
@@ -8809,7 +8932,7 @@ distance between two or more sequences by many algorithms.")
 (define-public python-urwidtrees
   (package
     (name "python-urwidtrees")
-    (version "1.0.2")
+    (version "1.0.3")
     (source
       (origin
         (method git-fetch)
@@ -8821,11 +8944,10 @@ distance between two or more sequences by many algorithms.")
         (file-name (git-file-name name version))
         (sha256
           (base32
-           "1n1kpidvkdnsqyb82vlvk78gmly96kh8351lqxn2pzgwwns6fml2"))))
+           "1y1vysx7jg0vbrarlsykhf7nmr8fc6k1fva1q3i98xq2m30s6r68"))))
     (build-system python-build-system)
     (arguments
-     '(#:use-setuptools? #f
-       #:tests? #f)) ; no tests
+     '(#:tests? #f)) ; no tests
     (propagated-inputs `(("python-urwid" ,python-urwid)))
     (home-page "https://github.com/pazz/urwidtrees")
     (synopsis "Tree widgets for urwid")
@@ -8917,6 +9039,31 @@ implementation of D-Bus.")
               ,@(alist-delete "python"
                               (package-inputs python-dbus)
                               equal?)))))
+
+(define-public python-dbus-next
+  (package
+    (name "python-dbus-next")
+    (version "0.2.3")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/altdesktop/python-dbus-next")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "1ahaz52kny1p9xxv6phvk4iq56rg8li390wywlxf2yslaij1188h"))))
+    (build-system python-build-system)
+    (native-inputs
+      `(("python-pytest" ,python-pytest)))
+    (home-page "https://github.com/altdesktop/python-dbus-next")
+    (synopsis "Zero-dependency DBus library for Python with asyncio support")
+    (description
+     "This DBus library for Python aims to be a fully-featured high-level
+library primarily geared towards integration of applications into desktop and
+mobile environments.")
+    (license license:expat)))
 
 (define-public python-notify2
   (package
@@ -11251,14 +11398,14 @@ suitable for a wide range of protocols based on the ASN.1 specification.")
 (define-public python-pyasn1-modules
   (package
     (name "python-pyasn1-modules")
-    (version "0.2.2")
+    (version "0.2.8")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "pyasn1-modules" version))
         (sha256
          (base32
-          "0ivm850yi7ajjbi8j115qpsj95bgxdsx48nbjzg0zip788c3xkx0"))))
+          "0pp6dcagd8c2c9qx3lahc1rdwlnmm0y0siqr5icjq2r32b3q8pwh"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-pyasn1" ,python-pyasn1)))
@@ -12703,13 +12850,13 @@ the construction of PyQt/PySide stylesheets.")
 (define-public python-click-threading
   (package
     (name "python-click-threading")
-    (version "0.4.4")
+    (version "0.5.0")
     (source (origin
              (method url-fetch)
              (uri (pypi-uri "click-threading" version))
              (sha256
               (base32
-               "1rsxc2fbkxlhwhlmxsdjzq3spn284l6rvjfcz9mbb17ibgdgmc5j"))))
+               "0f9lmxwcq0y9lb8w0whbni7gwy12gbv74h1igh85qn9aq0iydkxd"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-click" ,python-click)))
@@ -14339,6 +14486,53 @@ checking library.")
           ,python2-backport-ssl-match-hostname)
           ,@(package-propagated-inputs whoosh))))))
 
+(define-public python-codespell
+  (package
+    (name "python-codespell")
+    (version "2.1.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "codespell" version))
+        (sha256
+          (base32 "1r9y714cz8m894rxp7pyvicr1lw2iid24vz6fxbl5wzy8ibgxlqr"))))
+    (build-system python-build-system)
+    (inputs
+      `(("python-chardet" ,python-chardet)))
+    (native-inputs
+      `(("python-check-manifest" ,python-check-manifest)
+        ("python-flake8" ,python-flake8)
+        ("python-pytest" ,python-pytest)
+        ("python-pytest-cov" ,python-pytest-cov)
+        ("python-pytest-dependency" ,python-pytest-dependency)))
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key outputs tests? #:allow-other-keys)
+             (when tests?
+               ;; Make installed executable available for running the tests.
+               (setenv "PATH"
+                       (string-append (assoc-ref outputs "out") "/bin"
+                                      ":" (getenv "PATH")))
+               (invoke "pytest" "-vv")))))))
+    (home-page "https://github.com/codespell-project/codespell/")
+    (synopsis "Spellchecker for code")
+    (description "Codespell fixes common misspellings in text files.
+It's designed primarily for checking misspelled words in source code,
+but it can be used with other files as well.  It does not check for word
+membership in a complete dictionary, but instead looks for a set of
+common misspellings.  Therefore it should catch errors like \"adn\", but
+it will not catch \"adnasdfasdf\".  This also means it shouldn't
+generate false-positives when you use a niche term it doesn't know
+about.")
+    (license
+      (list
+        ; for codespell and codespell_lib
+        license:gpl2
+        ; for dictionary*.txt
+        license:cc-by-sa3.0))))
+
 (define-public python-pathlib
   (package
     (name "python-pathlib")
@@ -15695,7 +15889,7 @@ database, file, dict stores.  Cachy supports python versions 2.7+ and 3.2+.")
 (define-public poetry
   (package
     (name "poetry")
-    (version "1.1.5")
+    (version "1.1.11")
     ;; Poetry can only be built from source with Poetry.
     (source
      (origin
@@ -15703,7 +15897,7 @@ database, file, dict stores.  Cachy supports python versions 2.7+ and 3.2+.")
        (uri (pypi-uri "poetry" version))
        (sha256
         (base32
-         "1dvx08ksv5wnsj45db23921rj136akmcnxa0kmlsddf3wbh6wcka"))))
+         "17pnf2j4adlm9fhyg5jkkvs8bzcigb6nj72vr0687fxybzsj4zbx"))))
     (build-system python-build-system)
     (arguments
      `(#:tests? #f ;; Pypi does not have tests.
@@ -16179,13 +16373,13 @@ characters, mouse support, and auto suggestions.")
 (define-public python-jedi
   (package
     (name "python-jedi")
-    (version "0.17.2")
+    (version "0.18.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "jedi" version))
        (sha256
-        (base32 "080xyf97ifabdz7jp8clg00b8zv5g33fva1fb2xf80q6fndpvvc6"))))
+        (base32 "1as9v6kv49j11al2mzjh72dd5mxxnfcjv0z5dbmwi6aalqk7c4vl"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -16197,8 +16391,10 @@ characters, mouse support, and auto suggestions.")
                (invoke "python" "-m" "pytest" "-vv"))
              #t)))))
     (native-inputs
-     `(("python-pytest" ,python-pytest)
-       ("python-docopt" ,python-docopt)))
+     `(("python-docopt" ,python-docopt)
+       ("python-colorama" ,python-colorama)
+       ("python-django" ,python-django-2.2)
+       ("python-pytest" ,python-pytest)))
     (propagated-inputs
      `(("python-parso" ,python-parso)))
     (home-page "https://github.com/davidhalter/jedi")
@@ -16211,9 +16407,6 @@ on a deeper level than many other static analysis frameworks for Python.
 Jedi understands docstrings and you can use Jedi autocompletion in your REPL as
 well.")
     (license license:expat)))
-
-(define-public python2-jedi
-  (package-with-python2 python-jedi))
 
 (define-public ptpython
   (package
@@ -18583,13 +18776,13 @@ current test, while only declaring the test-specific fields")
 (define-public python-translate-toolkit
   (package
     (name "python-translate-toolkit")
-    (version "2.1.0")
+    (version "3.5.1")
     (source
      (origin
        (method url-fetch)
-       (uri (pypi-uri "translate-toolkit" version ".tar.bz2"))
+       (uri (pypi-uri "translate-toolkit" version ".tar.gz"))
        (sha256
-        (base32 "1vlkwrg83vb17jc36pmwh2b7jphwf390lz0jw8hakcg16qhwypvq"))))
+        (base32 "020pp7pbpnavxd41z90vyzzx06ci57mx9drkgbsb89wxxx4gal9v"))))
     (build-system python-build-system)
     (native-inputs
      `(("python-pytest" ,python-pytest)
@@ -18617,8 +18810,18 @@ current test, while only declaring the test-specific fields")
 several utilities, as well as an API for building localization tools.")
     (license license:gpl2+)))
 
+;; Required for virtaal, newer versions do not build with python2
 (define-public python2-translate-toolkit
-  (package-with-python2 python-translate-toolkit))
+  (package-with-python2
+    (package
+      (inherit python-translate-toolkit)
+      (version "2.1.0")
+      (source
+       (origin
+         (method url-fetch)
+         (uri (pypi-uri "translate-toolkit" version ".tar.bz2"))
+         (sha256
+          (base32 "1vlkwrg83vb17jc36pmwh2b7jphwf390lz0jw8hakcg16qhwypvq")))))))
 
 (define-public python-packaging
   (package
@@ -21240,13 +21443,13 @@ time-based (TOTP) passwords.")
 (define-public python-parso
   (package
     (name "python-parso")
-    (version "0.7.1")
+    (version "0.8.2")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "parso" version))
        (sha256
-        (base32 "1f9fc99mjx0h2ad4mgsid728nnmw58hvnq3411g8ljlr9dr49fna"))))
+        (base32 "161k8771m7w60qakyvrwf9q62lvakmix7mpfylpy7713qs939f0j"))))
     (native-inputs
      `(("python-pytest" ,python-pytest)))
     (build-system python-build-system)
@@ -22043,13 +22246,53 @@ tool).")
        (uri (pypi-uri "numcodecs" version))
        (sha256
         (base32
-         "0kbfr8pl3x9glsypbq8hzim003f16ml1b1cvgrh4w1sdvgal6j7g"))))
+         "0kbfr8pl3x9glsypbq8hzim003f16ml1b1cvgrh4w1sdvgal6j7g"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           (delete-file-recursively "c-blosc")
+           (for-each delete-file '("numcodecs/blosc.c"
+                                   "numcodecs/compat_ext.c"
+                                   "numcodecs/lz4.c"
+                                   "numcodecs/vlen.c"
+                                   "numcodecs/zstd.c"))))))
     (build-system python-build-system)
+    (arguments
+     `(#:tests? #false ; TODO: unclear why numcodecs.* are not found
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'disable-avx2
+           (lambda _
+             (setenv "DISABLE_NUMCODECS_AVX2" "1")))
+         (add-after 'unpack 'unbundle
+           (lambda _
+             (substitute* "setup.py"
+               (("sources=sources \\+ blosc_sources,")
+                "sources=sources,")
+               (("extra_compile_args=extra_compile_args")
+                "extra_compile_args=list(base_compile_args)")
+               (("'numcodecs.zstd',")
+                "'numcodecs.zstd', libraries=['zstd'], ")
+               (("'numcodecs.lz4',")
+                "'numcodecs.lz4', libraries=['lz4'], ")
+               (("'numcodecs.blosc',")
+                "'numcodecs.blosc', libraries=['blosc'], "))))
+         (replace 'check
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (invoke "pytest" "-vv")))))))
+    (inputs
+     `(("c-blosc" ,c-blosc)
+       ("lz4" ,lz4)
+       ("zlib" ,zlib)
+       ("zstd" ,zstd "lib")))
     (propagated-inputs
      `(("python-numpy" ,python-numpy)
        ("python-msgpack" ,python-msgpack)))
     (native-inputs
-     `(("python-pytest" ,python-pytest)
+     `(("python-cython" ,python-cython)
+       ("python-pytest" ,python-pytest)
        ("python-setuptools-scm" ,python-setuptools-scm)))
     (home-page "https://github.com/zarr-developers/numcodecs")
     (synopsis "Buffer compression and transformation codecs")
@@ -23436,7 +23679,7 @@ time-or-computationally-expensive properties quick and easy and works in Python
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0yi5y9pfpbc4bc4ibr8cblif8ls1wf3k0zawyx86r2qwxxkkyd6k"))))
+        (base32 "1q05pzca3wfwgnbg03l3bagnhh348yx68w4aa91rg3g8zlviwjz1"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-branca" ,python-branca)
@@ -25429,13 +25672,13 @@ dictionaries.")
 (define-public pyzo
   (package
     (name "pyzo")
-    (version "4.11.2")
+    (version "4.11.4")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "pyzo" version))
        (sha256
-        (base32 "1jk5f79lj09vnsdk9h01w21p9h49z2hhf8xhkx8471pjbg9vrlzr"))))
+        (base32 "18djnzx9wwlhxk0v2gcpmwnn3iw572n7gkdyh7ghh92yxck6qqkl"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -25443,8 +25686,7 @@ dictionaries.")
          (add-before 'check 'fix-home-directory
            (lambda _
              ;; Tests fail with "Permission denied: '/homeless-shelter'".
-             (setenv "HOME" "/tmp")
-             #t)))
+             (setenv "HOME" "/tmp"))))
        ;; Tests fail with "Uncaught Python exception: python: undefined
        ;; symbol: objc_getClass".
        #:tests? #f))
@@ -27333,6 +27575,184 @@ objects in the combined source, and how they define or use each other.  The
 graph can be output for rendering by GraphViz or yEd.")
     (license license:gpl2)))
 
+(define-public python-multipledispatch
+  (package
+    (name "python-multipledispatch")
+    (version "0.6.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "multipledispatch" version))
+       (sha256
+        (base32
+         "1slblghfjg9fdi9zpd7gmrkvfbv20nrdgnrymcnbky8bzm8i9ax7"))))
+    (build-system python-build-system)
+    (propagated-inputs `(("python-six" ,python-six)))
+    (home-page "https://github.com/mrocklin/multipledispatch/")
+    (synopsis "Multiple dispatch for Python based on pattern matching")
+    (description "This library provides an efficient mechanism for overloading
+function implementations based on the types of the arguments.")
+    (license license:bsd-3)))
+
+(define-public python-logical-unification
+  (package
+    (name "python-logical-unification")
+    (version "0.4.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "logical-unification" version))
+       (sha256
+        (base32
+         "0j57953hi7kg2rl0163vzjzsvzdyjimnklhx6idf5vaqqf1d3p1j"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-multipledispatch" ,python-multipledispatch)
+       ("python-toolz" ,python-toolz)))
+    (home-page "https://github.com/pythological/unification/")
+    (synopsis "Logical unification in Python for solving symbolic expressions")
+    (description "This library provides algorithms and data types for solving
+symbolic expressions in pure Python using the technique of logical unification.")
+    (license license:bsd-3)))
+
+(define-public python-cons
+  (package
+    (name "python-cons")
+    (version "0.4.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "cons" version))
+       (sha256
+        (base32
+         "0w9giq196wps7mbm47c4shdzs5yvwvqajqzkim2p92i51sm5qgvm"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("python-pytest" ,python-pytest-6)
+       ("python-toml" ,python-toml)))
+    (propagated-inputs
+     `(("python-logical-unification" ,python-logical-unification)))
+    (home-page "https://github.com/pythological/python-cons")
+    (synopsis "Cons cell data structures and related algorithms for Python")
+    (description
+     "This library implements algorithms and data structures for Lisp-style
+cons cells in Python.")
+    (license license:lgpl3+)))
+
+(define-public python-etuples
+  (package
+    (name "python-etuples")
+    (version "0.3.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "etuples" version))
+       (sha256
+        (base32
+         "0jhfyp177v37rl0i7wqfx7q6s5qkz027hl283d1x8d0vm3w0zqc8"))))
+    (build-system python-build-system)
+    (propagated-inputs
+     `(("python-cons" ,python-cons)
+       ("python-multipledispatch" ,python-multipledispatch)))
+    (home-page "https://github.com/pythological/etuples")
+    (synopsis "S-expressions in Python")
+    (description
+     "This library implements eval'able S-expression in Python using tuple-like objects.")
+    (license license:asl2.0)))
+
+(define-public python-minikanren
+  (package
+    (name "python-minikanren")
+    (version "1.0.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/pythological/kanren")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0g7wfj5hxalwz7k1301nsjqhjpzsif1bj6wjm2x2kavlm2ypv9jc"))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases (modify-phases %standard-phases
+                  (replace 'check
+                    (lambda* (#:key tests? #:allow-other-keys)
+                      (when tests?
+                        (invoke "python" "-m" "pytest" "-v" "tests/" "kanren/"))
+                      #t)))))
+    (native-inputs
+     `(("python-coveralls" ,python-coveralls)
+       ("python-pydocstyle" ,python-pydocstyle)
+       ("python-pytest" ,python-pytest)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-pylint" ,python-pylint)
+       ("python-black" ,python-black)
+       ("python-sympy" ,python-sympy)
+       ("python-versioneer" ,python-versioneer)
+       ("python-coverage" ,python-coverage)
+       ("python-pre-commit" ,python-pre-commit)))
+    (propagated-inputs
+     `(("python-toolz" ,python-toolz)
+       ("python-cons" ,python-cons)
+       ("python-multipledispatch" ,python-multipledispatch)
+       ("python-etuples" ,python-etuples)
+       ("python-logical-unification" ,python-logical-unification)))
+    (home-page "https://github.com/pythological/kanren")
+    (synopsis "Relational logic programming in pure Python")
+    (description
+     "The minikanren library provides an algorithmic core for computer algebra
+systems in Python.")
+    (license license:bsd-3)))
+
+(define-public python-dotenv
+  (package
+    (name "python-dotenv")
+    (version "0.19.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "python-dotenv" version))
+       (sha256
+        (base32 "0pv5ygpr6syc6zkw21in4ysqs3k7qaxk9m1g5pzlafwm3silkpm5"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? inputs outputs #:allow-other-keys)
+             (when tests?
+               (add-installed-pythonpath inputs outputs)
+               (setenv "PATH" (string-append (getenv "PATH") ":"
+                                             (assoc-ref outputs "out") "/bin"))
+               ;; Skip the ipython tests.
+               (delete-file "tests/test_ipython.py")
+               (invoke "python" "-m" "pytest")))))))
+    (propagated-inputs
+     `(("python-click" ,python-click)))
+    (native-inputs
+     `(("python-mock" ,python-mock)
+       ("python-pytest" ,python-pytest)
+       ("python-sh" ,python-sh)))
+    (home-page "https://github.com/theskumar/python-dotenv")
+    (synopsis "Setup environment variables according to .env files")
+    (description
+     "This package provides the @code{python-dotenv} Python module to read
+key-value pairs from a @code{.env} file and set them as environment variables.")
+    (license license:bsd-3)))
+
+(define-public python-dotenv-0.13.0
+  (package (inherit python-dotenv)
+    (name "python-dotenv")
+    (version "0.13.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "python-dotenv" version))
+       (sha256
+        (base32
+         "0x5dagmfn31phrbxlwacw3s4w5vibv8fxqc62nqcdvdhjsy0k69v"))))))
+
 (define-public date2name
   (let ((commit "6c8f37277e8ec82aa50f90b8921422be30c4e798")
         (revision "1"))
@@ -27786,3 +28206,145 @@ simple mock/record and a complete capture/replay framework.")
      "Ijson is an iterative JSON parser with standard Python iterator
 interfaces.")
     (license license:bsd-3)))
+
+(define-public python-orgparse
+  (package
+    (name "python-orgparse")
+    (version "0.3.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "orgparse" version))
+       (sha256
+        (base32 "14iv4pg3rma9560plg0w943x04mr2cmrssda43y2d1x9acrd2n71"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest" "-vv" "orgparse/tests")))))))
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-setuptools-scm" ,python-setuptools-scm)))
+    (home-page "https://github.com/karlicoss/orgparse")
+    (synopsis "Emacs Org mode parser in Python")
+    (description
+     "This package is a Python module for reading Emacs Org mode files.")
+    (license license:bsd-3)))
+
+(define-public python-sgmllib3k
+  (package
+    (name "python-sgmllib3k")
+    (version "1.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "sgmllib3k" version))
+       (sha256
+        (base32 "1s8jm3dgqabgf8x96931scji679qkhvczlv3qld4qxpsicfgns3q"))))
+    (build-system python-build-system)
+    ;; Requires a test.html input that is not supplied
+    (arguments
+     `(#:tests? #f))
+    (home-page "https://pypi.org/project/sgmllib3k/")
+    ;; Actual homepage seems to be down
+    ;; (home-page "https://hg.hardcoded.net/sgmllib")
+    (synopsis "Python 3 port of sgmllib")
+    (description
+     "This package provides an unmaintained port of sgmllib to Python 3.
+It is used to parse text files formatted in @acronym{SGML,Standard Generalized
+Mark-up Language}.")
+    (license license:bsd-3)))
+
+(define-public dynaconf
+  (package
+    (name "dynaconf")
+    (version "3.1.7")
+    (source
+     (origin
+       (method git-fetch)
+       (uri
+        (git-reference
+         (url "https://github.com/rochacbruno/dynaconf")
+         (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0pjyjsdzairpn5vq8nzddhxwxmr18grn272nj31wcy2ipwdl3c3h"))
+       (patches (search-patches "dynaconf-unvendor-deps.patch"))
+       (modules '((guix build utils)))
+       (snippet '(begin
+                   ;; Remove vendored dependencies
+                   (let ((unvendor '("click" "dotenv" "ruamel" "toml")))
+                     (with-directory-excursion "dynaconf/vendor"
+                       (for-each delete-file-recursively unvendor))
+                     (with-directory-excursion "dynaconf/vendor_src"
+                       (for-each delete-file-recursively unvendor)))))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? outputs #:allow-other-keys)
+             (when tests?
+               (setenv "PATH"
+                       (string-append (assoc-ref outputs "out") "/bin:"
+                                      (getenv "PATH")))
+               ;; These tests depend on hvac and a live Vault process.
+               (delete-file "tests/test_vault.py")
+               (invoke "make" "test_only")))))))
+    (propagated-inputs
+     `(("python-click" ,python-click)
+       ("python-configobj" ,python-configobj)
+       ("python-dotenv" ,python-dotenv-0.13.0)
+       ("python-ruamel.yaml" ,python-ruamel.yaml)
+       ("python-toml" ,python-toml)))
+    (native-inputs
+     `(("python-django" ,python-django)
+       ("python-flask" ,python-flask)
+       ("python-pytest" ,python-pytest-6)
+       ("python-pytest-cov" ,python-pytest-cov)
+       ("python-pytest-mock" ,python-pytest-mock)))
+    (home-page "https://www.dynaconf.com/")
+    (synopsis "The dynamic configurator for your Python project")
+    (description
+     "This package provides @code{dynaconf} the dynamic configurator manager for
+your Python project.  It provides features such as:
+
+@itemize
+@item Inspired by the @url{https://12factor.net/config, 12-factor application guide};
+@item Settings management (default values, validation, parsing, templating);
+@item Protection of sensitive information (passwords/tokens);
+@item Multiple file formats @code{toml|yaml|json|ini|py} and also customizable
+loaders;
+@item Full support for environment variables to override existing settings
+(dotenv support included);
+@item Optional layered system for multiple environments @code{[default,
+development, testing, production]};
+@item Built-in support for Hashicorp Vault and Redis as settings and secrets storage;
+@item Built-in extensions for Django and Flask web frameworks;
+@item CLI for common operations such as @code{init, list, write, validate, export}.
+@end itemize")
+    (license license:expat)))
+
+(define-public python-iwlib
+  (package
+    (name "python-iwlib")
+    (version "1.7.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "iwlib" version))
+       (sha256
+        (base32 "18bd35wn7zclalpqbry42pf7bjrdggxkkw58mc0k1vkhg9czc1d8"))))
+    (build-system python-build-system)
+    (inputs
+     `(("wireless-tools" ,wireless-tools)))
+    (propagated-inputs `(("python-cffi" ,python-cffi)))
+    (home-page "https://github.com/nhoad/python-iwlib")
+    (synopsis "Python module to interface with iwlib")
+    (description
+     "This package provides a Python interface to iw wireless tools.")
+    (license license:gpl2)))

@@ -23,6 +23,8 @@
 ;;; Copyright © 2021 Alexandru-Sergiu Marton <brown121407@posteo.ro>
 ;;; Copyright © 2021 Dmitry Polyakov <polyakov@liltechdude.xyz>
 ;;; Copyright © 2020-2021 James Smith <jsubuntuxp@disroot.org>
+;;; Copyright © 2021 Ekaitz Zarraga <ekaitz@elenq.tech>
+;;; Copyright © 2021 Andy Tai <atai@atai.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -111,7 +113,7 @@
 (define-public bullet
   (package
     (name "bullet")
-    (version "2.89")
+    (version "3.17")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -120,7 +122,7 @@
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "10ncf2z474jnv7p5lv01ak2mk2hib3rj5rz1zr8v2v5pnciqbijl"))
+                "0x1ghxbkvqr910sp01sjf4hlfy4sdgn2jx2qf0dsi697bzq1f3mr"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -130,9 +132,7 @@
                               '("Gwen" "clsocket" "enet" "glad" "imgui"
                                 "lua-5.2.3" "midi" "minizip" "openvr"
                                 "optionalX11" "serial" "zlib")))
-                  ;; These need files from ThirdPartyLibs.
-                  (substitute* "Extras/CMakeLists.txt"
-                    (("BulletRobotics") ""))
+
                   ;; Tests fail on linking, cannot find -lBussIK.
                   (substitute* "test/CMakeLists.txt"
                     ((" InverseDynamics")
@@ -145,6 +145,12 @@
                                "-DBUILD_CPU_DEMOS=OFF"
                                "-DBUILD_OPENGL3_DEMOS=OFF"
                                "-DBUILD_BULLET2_DEMOS=OFF"
+                               ;; Extras/BulletRoboticsGUI needs files from
+                               ;; ThirdPartyLibs
+                               "-DBUILD_BULLET_ROBOTICS_GUI_EXTRA=OFF"
+                               ;; Extras/BulletRobotics needs files from
+                               ;; ThirdPartyLibs
+                               "-DBUILD_BULLET_ROBOTICS_EXTRA=OFF"
                                (string-append  "-DCMAKE_CXX_FLAGS=-fPIC "
                                                (or (getenv "CXXFLAGS") "")))
        #:phases
@@ -1014,6 +1020,59 @@ etc.")
 games.  In addition to basic pixel editing features, Aseprite can assist in
 the creation of animations, tiled graphics, texture atlases, and more.")
     (home-page "https://www.aseprite.org/")
+    (license license:gpl2+)))
+
+(define-public libresprite
+  (package
+    (name "libresprite")
+    (version "1.0")
+    ;; TODO: Unbundle third party software.
+    ;; - duktape is bundled inside the project but it's hard to unbundle:
+    ;;   there are many differences from a version to the next and it is not
+    ;;   really designed to work as a shared lib.
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/LibreSprite/LibreSprite")
+                    (commit (string-append "v" version))
+                    (recursive? #t)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0djbjjh21ahlxzh0b0jp4mpfycam8h9157i4wbxkd618fraadhbp"))))
+    (build-system cmake-build-system)
+    (arguments
+     '(#:configure-flags
+       (list "-DWITH_WEBP_SUPPORT=1")
+       ;; Tests are unmaintained
+       #:tests? #f))
+    (native-inputs
+     `(("gcc@10" ,gcc-10)               ; Requires 8.5 or higher
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("curl" ,curl)
+       ("freetype" ,freetype)
+       ("giflib" ,giflib)
+       ("googletest" ,googletest)
+       ("libjpeg" ,libjpeg-turbo)
+       ("libpng" ,libpng)
+       ("libwebp" ,libwebp)
+       ("libx11" ,libx11)
+       ("libxext" ,libxext)
+       ("libxxf86dga" ,libxxf86dga)
+       ("libxxf86vm" ,libxxf86vm)
+       ("lua" ,lua)                     ; Optional
+       ("pixman" ,pixman)
+       ("sdl2" ,sdl2)
+       ("sdl2-image" ,sdl2-image)
+       ("tinyxml" ,tinyxml)
+       ("zlib" ,zlib)))
+    (synopsis "Animated sprite editor and pixel art tool")
+    (description "LibreSprite is a tool for creating 2D pixel art for video
+games.  In addition to basic pixel editing features, it can assist in the
+creation of animations, tiled graphics, texture atlases, and more.
+LibreSprite is a fork of the latest GPLv2 commit of Aseprite.")
+    (home-page "https://libresprite.github.io/")
     (license license:gpl2+)))
 
 (define-public qqwing

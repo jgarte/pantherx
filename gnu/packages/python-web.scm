@@ -45,6 +45,8 @@
 ;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2021 Pradana Aumars <paumars@courrier.dev>
 ;;; Copyright © 2021 Arun Isaac <arunisaac@systemreboot.net>
+;;; Copyright © 2021 jgart <jgart@dismail.de>
+;;; Copyright © 2021 Alice Brenon <alice.brenon@ens-lyon.fr>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -78,6 +80,7 @@
   #:use-module (gnu packages groff)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages libffi)
+  #:use-module (gnu packages node)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-build)
@@ -85,6 +88,7 @@
   #:use-module (gnu packages python-crypto)
   #:use-module (gnu packages python-science)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages qt)
   #:use-module (gnu packages serialization)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages texinfo)
@@ -640,14 +644,14 @@ over a different origin than that of the web application.")
 (define-public python-furl
   (package
     (name "python-furl")
-    (version "2.0.0")
+    (version "2.1.3")
     (source
       (origin
         (method url-fetch)
         (uri (pypi-uri "furl" version))
         (sha256
           (base32
-            "1v2lakx03d5w8954a39ki44xv5mllnq0a0avhxykv9hrzg0yvjpx"))))
+            "0knc76pm8pzigs3bpx9fccfsfxqrgblqphar46hq9i364vz8hqas"))))
     (build-system python-build-system)
     (propagated-inputs
      `(("python-six" ,python-six)
@@ -4044,23 +4048,23 @@ authentication for Flask routes.")
 (define-public python-uritemplate
   (package
     (name "python-uritemplate")
-    (version "3.0.1")
+    (version "4.1.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "uritemplate" version))
        (sha256
         (base32
-         "1bkwmgr0ia9gcn4bszs2xlvml79f0bi2s4a87xg22ky9rq8avy2s"))))
+         "1w14a775d92mx9pdhb5zimifpfr2lfcn0vfdpjagcy9vbkyfsij3"))))
     (build-system python-build-system)
     (home-page "https://uritemplate.readthedocs.org")
     (synopsis "Library to deal with URI Templates")
     (description "@code{uritemplate} provides Python library to deal with URI
 Templates.")
-    (license license:bsd-2)))
-
-(define-public python2-uritemplate
-  (package-with-python2 python-uritemplate))
+    ;; The software is made available under the terms of *either* of the
+    ;; licenses found in LICENSE.APACHE or LICENSE.BSD.  Contributions
+    ;; are made under *both* licenses (excerpt from the LICENSE file).
+    (license (list license:bsd-2 license:asl2.0))))
 
 (define-public python-publicsuffix
   (package
@@ -4392,9 +4396,6 @@ Google search engine.  Its module is called @code{googlesearch}.")
     (synopsis "Core Python library for accessing Google APIs")
     (description "Python client library for Google's discovery based APIs")
     (license license:asl2.0)))
-
-(define-public python2-google-api-client
-  (package-with-python2 python-google-api-client))
 
 (define-public python-hawkauthlib
   (package
@@ -5944,6 +5945,46 @@ Agent is a web crawler.  It uses the list of registered robots from
 using a pure Python implementation.")
     (license license:bsd-3)))
 
+(define-public python-pyjsparser
+  (package
+    (name "python-pyjsparser")
+    (version "2.7.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pyjsparser" version))
+       (sha256
+        (base32 "0ycmf9fsvwliqmm1n6sfz7x71y7i2kbfgn39d8lsbiccfxmxlq5y"))))
+    (build-system python-build-system)
+    (home-page "https://github.com/PiotrDabkowski/pyjsparser")
+    (synopsis "Fast JavaScript parser")
+    (description "This package provides a fast JavaScript parser (based on
+esprima.js)")
+    (license license:expat)))
+
+(define-public python-js2py
+  (package
+    (name "python-js2py")
+    (version "0.71")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "Js2Py" version))
+       (sha256
+        (base32 "1kkzkys6dfcbdv51vqxr9cmak350ab4mmykb8dysx60lvl4i06x4"))))
+    (build-system python-build-system)
+    (arguments '(#:tests? #false)) ; none included
+    (propagated-inputs
+     `(("python-pyjsparser" ,python-pyjsparser)
+       ("python-six" ,python-six)
+       ("python-tzlocal" ,python-tzlocal)))
+    (home-page "https://github.com/PiotrDabkowski/Js2Py")
+    (synopsis "JavaScript to Python translator")
+    (description
+     "This package provides a JavaScript to Python translator and a JavaScript
+interpreter written in pure Python.")
+    (license license:expat)))
+
 (define-public python-http-ece
   (package
     (name "python-http-ece")
@@ -5981,26 +6022,26 @@ Encoding for HTTP.")
 (define-public python-cloudscraper
   (package
     (name "python-cloudscraper")
-    (version "1.2.48")
+    (version "1.2.58")
     (source
      (origin
-       (method url-fetch)
-       (uri (pypi-uri "cloudscraper" version))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/VeNoMouS/cloudscraper")
+             ;; Corresponds to 1.2.58
+             (commit "f3a3d067ea8b5238e9a0948aed0c3fa0d9c29b96")))
        (sha256
-        (base32 "0qjxzb0z5bprvmdhx42ayqhlhi2h49d9dwc0vvycj817s71f2sxv"))
+        (base32 "18fbp086imabjxly04rrchbf6n6m05bpd150zxbw7z2w3mjnpsqd"))
        (modules '((guix build utils)))
        (snippet
         '(with-directory-excursion "cloudscraper"
            (for-each delete-file
-                     '("captcha/2captcha.py"
-                       "captcha/9kw.py"
-                       "captcha/anticaptcha.py"
-                       "captcha/deathbycaptcha.py"))
+                     '("captcha/9kw.py"
+                       "captcha/anticaptcha.py"))
            (substitute* "__init__.py"
              ;; Perhaps it's a joke, but don't promote proprietary software.
              (("([Th]is feature is not available) in the .*'" _ prefix)
-              (string-append prefix ".'")))
-           #t))))
+              (string-append prefix ".'")))))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -6011,12 +6052,25 @@ Encoding for HTTP.")
            (lambda _
              (with-directory-excursion "cloudscraper"
                (for-each delete-file
-                         '("interpreters/js2py.py"
-                           "interpreters/v8.py")))
-             #t)))))
+                         '("interpreters/v8.py")))))
+         (add-after 'unpack 'fix-references
+           (lambda _
+             (substitute* "cloudscraper/interpreters/nodejs.py"
+               (("'node'")
+                (string-append "'" (which "node") "'")))))
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest" "-vv"
+                       "-k" "not test_getCookieString_challenge_js_challenge1_16_05_2020")))))))
+    (inputs
+     `(("node" ,node)))
     (propagated-inputs
-     `(("python-requests" ,python-requests)
+     `(("python-js2py" ,python-js2py)
+       ("python-polling2" ,python-polling2)
+       ("python-requests" ,python-requests)
        ("python-requests-toolbelt" ,python-requests-toolbelt-0.9.1)
+       ("python-responses" ,python-responses)
        ("python-pyparsing" ,python-pyparsing-2.4.7)))
     (native-inputs
      `(("python-pytest" ,python-pytest)))
@@ -6312,6 +6366,48 @@ Only the RGB colorspace is supported.  Conversion to/from the HSL colorspace
 can be handled by the @code{colorsys} module in the Python standard library.")
     (license license:bsd-3)))
 
+(define-public python-woob
+  (package
+    (name "python-woob")
+    (version "3.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "woob" version))
+       (sha256
+        (base32 "09hpxy5zhn2b8li0xjf3zd7s46lawb0315p5mdcsci3bj3s4v1j7"))))
+    (build-system python-build-system)
+    ;; A small number of tests for optional applications fails due to missing
+    ;; inputs.
+    (arguments `(#:tests? #f))
+    (propagated-inputs
+     `(("python-babel" ,python-babel)
+       ("python-colorama" ,python-colorama)
+       ("python-cssselect" ,python-cssselect)
+       ("python-dateutil" ,python-dateutil)
+       ("python-feedparser" ,python-feedparser)
+       ("python-html2text" ,python-html2text)
+       ("python-lxml" ,python-lxml)
+       ("python-pillow" ,python-pillow)
+       ("python-prettytable" ,python-prettytable)
+       ("python-pyqt" ,python-pyqt)
+       ("python-pyyaml" ,python-pyyaml)
+       ("python-requests" ,python-requests)
+       ("python-six" ,python-six)
+       ("python-unidecode" ,python-unidecode)))
+    (native-inputs
+     `(("python-coverage" ,python-coverage)
+       ("python-flake8" ,python-flake8)
+       ("python-nose" ,python-nose)
+       ("python-selenium" ,python-selenium)
+       ("python-xunitparser" ,python-xunitparser)))
+    (home-page "https://woob.tech/")
+    (synopsis "Woob, Web Outside Of Browsers")
+    (description "Woob is a collection of applications able to interact with
+websites, without requiring the user to open them in a browser.  It also
+provides well-defined APIs to talk to websites lacking one.")
+    (license license:lgpl3+)))
+
 (define-public python-flask-combo-jsonapi
   (package
     (name "python-flask-combo-jsonapi")
@@ -6349,4 +6445,33 @@ compliant with the @uref{https://jsonapi.org, JSON:API 1.0} specification.
 It tries to combine the power of Flask-Restless with the flexibility of
 Flask-RESTful to quickly build APIs that fit the complexity of existing
 real-life projects with legacy data and diverse storage providers.")
+    (license license:expat)))
+
+(define-public python-mwparserfromhell
+  (package
+    (name "python-mwparserfromhell")
+    (version "0.6.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "mwparserfromhell" version))
+       (sha256
+        (base32 "0zh9zaqbac18s7mivqk8am9xw97lfkgcj9hhxj0d4208pkqpkmqs"))))
+    (build-system python-build-system)
+    (native-inputs
+     `(("python-pytest" ,python-pytest)
+       ("python-pytest-runner" ,python-pytest-runner)))
+    (home-page "https://github.com/earwig/mwparserfromhell")
+    (synopsis "Python parser for MediaWiki wikicode")
+    (description
+     "The MediaWiki Parser From Hell is a python library package that provides
+a parser for MediaWiki.
+
+It exposes parses as normal string objects with additional methods giving
+access to the special Wikicode features it contains (hyperlinks, tags,
+templates…).  The parser doesn't interpolate strings at all, it remains at a
+purely formal level.
+
+Full documentation may be found at
+@uref{https://mwparserfromhell.readthedocs.io, ReadTheDocs}")
     (license license:expat)))

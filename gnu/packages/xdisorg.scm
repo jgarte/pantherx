@@ -27,7 +27,7 @@
 ;;; Copyright © 2019 Wiktor Żelazny <wzelazny@vurv.cz>
 ;;; Copyright © 2019 Kyle Andrews <kyle.c.andrews@gmail.com>
 ;;; Copyright © 2019, 2020 Josh Holland <josh@inv.alid.pw>
-;;; Copyright © 2019 Tanguy Le Carrour <tanguy@bioneland.org>
+;;; Copyright © 2019, 2021 Tanguy Le Carrour <tanguy@bioneland.org>
 ;;; Copyright © 2020, 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2020 David Wilson <david@daviwil.com>
 ;;; Copyright © 2020 Ivan Vilata i Balaguer <ivan@selidor.net>
@@ -103,6 +103,7 @@
   #:use-module (gnu packages haskell-xyz)
   #:use-module (gnu packages icu4c)
   #:use-module (gnu packages image)
+  #:use-module (gnu packages libbsd)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages m4)
@@ -116,6 +117,7 @@
   #:use-module (gnu packages qt)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages tcl)
+  #:use-module (gnu packages terminals)
   #:use-module (gnu packages xml)
   #:use-module (gnu packages xorg)
   #:use-module (gnu packages)
@@ -768,7 +770,7 @@ move windows, switch between desktops, etc.).")
 (define-public scrot
   (package
     (name "scrot")
-    (version "1.6")
+    (version "1.7")
     (source
      (origin
        (method git-fetch)
@@ -778,7 +780,7 @@ move windows, switch between desktops, etc.).")
          (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1qanx2xx9m5l995csqzfcm1ks2nhk90zga1wzbkjjl75ga4iik2h"))))
+        (base32 "0rls08mpalx4xp5ysmg7m5lgx9q8g8m8q40m47f11mqa84z88nd1"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("autoconf" ,autoconf)
@@ -788,6 +790,7 @@ move windows, switch between desktops, etc.).")
     (inputs
      `(("giblib" ,giblib)
        ("imlib2" ,imlib2)
+       ("libbsd" ,libbsd)
        ("libx11" ,libx11)
        ("libxcomposite" ,libxcomposite)
        ("libxext" ,libxext)
@@ -1204,14 +1207,14 @@ compact configuration syntax.")
 (define-public rxvt-unicode
   (package
     (name "rxvt-unicode")
-    (version "9.26")
+    (version "9.30")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://dist.schmorp.de/rxvt-unicode/Attic/"
                                   name "-" version ".tar.bz2"))
               (sha256
                (base32
-                "12y9p32q0v7n7rhjla0j2g9d5rj2dmwk20c9yhlssaaxlawiccb4"))))
+                "0badnkjsn3zps24r5iggj8k5v4f00npc77wqg92pcn1q5z8r677y"))))
     (build-system gnu-build-system)
     (arguments
      ;; This sets the destination when installing the necessary terminal
@@ -1239,8 +1242,7 @@ compact configuration syntax.")
                            TryExec=~@*~a/bin/urxvt~@
                            Icon=~@
                            Type=Application~%"
-                           output)))
-               #t)))
+                           output))))))
          (add-after 'install 'install-desktop-urxvtc
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((output (assoc-ref outputs "out"))
@@ -1257,10 +1259,10 @@ compact configuration syntax.")
                            TryExec=~@*~a/bin/urxvtc~@
                            Icon=~@
                            Type=Application~%"
-                           output)))
-               #t))))))
+                           output)))))))))
     (inputs
-     `(("libXft" ,libxft)
+     `(("libptytty" ,libptytty)
+       ("libXft" ,libxft)
        ("libX11" ,libx11)
        ("libXt" ,libxt)))
     (native-inputs
@@ -2455,7 +2457,7 @@ The cutbuffer and clipboard selection are always synchronized.")
 (define-public jgmenu
   (package
     (name "jgmenu")
-    (version "4.3.0")
+    (version "4.4.0")
     (source
      (origin
        (method git-fetch)
@@ -2464,7 +2466,7 @@ The cutbuffer and clipboard selection are always synchronized.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "13y4ra2hjfqbn2vxyyn4ar5iqklbabyfwksbryc2gzxspw1vz4zq"))))
+        (base32 "08dyygclayyipa0p2qsxqa3fsfyflkrkhpi25dkc3ybkicvynk24"))))
     (build-system gnu-build-system)
     (native-inputs
      `(("cppcheck" ,cppcheck)

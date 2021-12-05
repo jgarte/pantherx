@@ -4773,6 +4773,8 @@ their web site.")
         (base32
          "0x0hm9brh3j71645pydvlkrwxaaca9dnwd7xahwjyjaz882s200v"))))
     (build-system python-build-system)
+    (propagated-inputs
+     `(("python-sgmllib3k" ,python-sgmllib3k)))
     (arguments
      '(#:tests? #f))
     (home-page
@@ -6002,13 +6004,13 @@ deployments.")
   (package
     (name "varnish")
     (home-page "https://varnish-cache.org/")
-    (version "7.0.0")
+    (version "7.0.1")
     (source (origin
               (method url-fetch)
               (uri (string-append home-page "_downloads/varnish-" version ".tgz"))
               (sha256
                (base32
-                "11z0pa618lh925ih67wmp1gqk7i46l486j4spjy71g1n3w5mqylc"))))
+                "0q265fzarz5530g8lasvfpgks8z1kq1yh7rn88bn2qfly3pmpry4"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags (list (string-append "LDFLAGS=-Wl,-rpath=" %output "/lib")
@@ -6145,7 +6147,7 @@ used to start services with both privileged and non-privileged port numbers.")
 (define-public tidy-html
   (package
     (name "tidy-html")
-    (version "5.7.28")
+    (version "5.8.0")
     (source
      (origin
        (method git-fetch)
@@ -6155,7 +6157,7 @@ used to start services with both privileged and non-privileged port numbers.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "01k5sqwgcsr26i8031v1yr2r8qcy9a5w7sj800660haszgfbjz2f"))))
+         "1vd50q6xqxvidaclinsm89p6r0494wj72j1gpk32vkkhhx15cddz"))))
     (build-system cmake-build-system)
     (outputs '("out"
                "static"))               ; 1.3MiB of .a files
@@ -7666,7 +7668,7 @@ compressed JSON header blocks.
 (define-public hpcguix-web
   (package
     (name "hpcguix-web")
-    (version "0.1.0")
+    (version "0.2.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -7675,7 +7677,7 @@ compressed JSON header blocks.
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "02lz5k1hhkwfz3nr3lsd69icsz6n0q82z047d3svi09qpxw6y0cj"))))
+                "1l856d1vr63ns1sp9fm6v97p71mx00769k6lwzqzppsb9clksnwp"))))
     (build-system gnu-build-system)
     (arguments
      `(#:modules ((guix build gnu-build-system)
@@ -7699,9 +7701,10 @@ compressed JSON header blocks.
                     (git      (assoc-ref inputs "guile-git"))
                     (bs       (assoc-ref inputs "guile-bytestructures"))
                     (json     (assoc-ref inputs "guile-json"))
+                    (zlib     (assoc-ref inputs "guile-zlib"))
                     (guile-cm (assoc-ref inputs
                                          "guile-commonmark"))
-                    (deps (list guile gcrypt git bs guile-cm guix json))
+                    (deps (list guile gcrypt git bs zlib guile-cm guix json))
                     (effective
                      (read-line
                       (open-pipe* OPEN_READ
@@ -7726,15 +7729,15 @@ compressed JSON header blocks.
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
        ("uglify-js" ,uglify-js)
-       ("pkg-config" ,pkg-config)))
+       ("pkg-config" ,pkg-config)
+       ("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))))
     (inputs
      `(("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))
        ("guix" ,guix)
-       ("bash-minimal" ,bash-minimal)))           ;for 'wrap-program'
-    (propagated-inputs
-     `(("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))
+       ("guile-zlib" ,guile-zlib)
        ("guile-commonmark" ,guile-commonmark)
-       ("guile-json" ,guile-json-4)))
+       ("guile-json" ,guile-json-4)
+       ("bash-minimal" ,bash-minimal)))
     (home-page "https://github.com/UMCUGenetics/hpcguix-web")
     (synopsis "Web interface for cluster deployments of Guix")
     (description "Hpcguix-web provides a web interface to the list of packages

@@ -860,7 +860,7 @@ Agency.")
        ("perl-mojolicious" ,perl-mojolicious)))
     (home-page "https://metacpan.org/release/Business-ISBN")
     (synopsis "Work with International Standard Book Numbers")
-    (description "This modules provides tools to deal with International
+    (description "This module provides tools to deal with International
 Standard Book Numbers, including ISBN-10 and ISBN-13.")
     (license license:artistic2.0)))
 
@@ -879,7 +879,7 @@ Standard Book Numbers, including ISBN-10 and ISBN-13.")
     (build-system perl-build-system)
     (home-page "https://metacpan.org/release/Business-ISSN")
     (synopsis "Work with International Standard Serial Numbers")
-    (description "This modules provides tools to deal with International
+    (description "This module provides tools to deal with International
 Standard Serial Numbers.")
     (license (package-license perl))))
 
@@ -899,7 +899,7 @@ Standard Serial Numbers.")
      `(("perl-tie-cycle" ,perl-tie-cycle)))
     (home-page "https://metacpan.org/release/Business-ISMN")
     (synopsis "Work with International Standard Music Numbers")
-    (description "This modules provides tools to deal with International
+    (description "This module provides tools to deal with International
 Standard Music Numbers.")
     (license (package-license perl))))
 
@@ -5399,6 +5399,17 @@ for immediate access from Perl.")
         (base32
          "1b3sr39813di3j1kwbgn1xq2z726rhjjdw809ydzgmshj26jb1gi"))))
     (build-system perl-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((make (assoc-ref inputs "make")))
+             (substitute* "lib/Inline/C.pm"
+               (("'\"make\"'")
+                (string-append "'\"" make "/bin/make\"'"))
+               (("'\"make install\"'")
+                (string-append "'\"" make "/bin/make install\"'")))))))))
     (native-inputs
      `(("perl-file-copy-recursive" ,perl-file-copy-recursive)
        ("perl-file-sharedir-install" ,perl-file-sharedir-install)
@@ -5916,7 +5927,7 @@ logging mechanism.")
 throughout programs and projects.  Every message will be logged with
 stacktraces, timestamps and so on.  You can use built-in handlers
 immediately, or after the fact when you inspect the error stack.  It
-is highly configurable and let's you even provide your own handlers
+is highly configurable and lets you even provide your own handlers
 for dealing with messages.")
    (license (package-license perl))))
 
@@ -9471,7 +9482,7 @@ a functional interface.")
 (define-public perl-sub-exporter
   (package
     (name "perl-sub-exporter")
-    (version "0.987")
+    (version "0.988")
     (source
      (origin
        (method url-fetch)
@@ -9480,7 +9491,7 @@ a functional interface.")
              version ".tar.gz"))
        (sha256
         (base32
-         "1ml3n1ck4ln9qjm2mcgkczj1jb5n1fkscz9c4x23v4db0glb4g2l"))))
+         "03040vk227icdkb0hvxplck2y6rglj67s1rgf12z3465ss3lhci3"))))
     (build-system perl-build-system)
     (propagated-inputs
      `(("perl-data-optlist" ,perl-data-optlist)
@@ -10633,7 +10644,7 @@ operations can also be performed on the IxHash.")
     (home-page "https://metacpan.org/release/Tie-Handle-Offset")
     (synopsis "Special file handle that hides the beginning of a file")
     (description
-     "This modules provides a file handle that hides the beginning of a file,
+     "This module provides a file handle that hides the beginning of a file,
 by modifying the @code{seek()} and @code{tell()} calls.")
     (license license:asl2.0)))
 
@@ -11529,14 +11540,14 @@ files, using JSON::PP and/or CPAN::Meta::YAML.")
 (define-public perl-scalar-list-utils
   (package
     (name "perl-scalar-list-utils")
-    (version "1.56")
+    (version "1.60")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://cpan/authors/id/P/PE/PEVANS/"
                            "Scalar-List-Utils-" version ".tar.gz"))
        (sha256
-        (base32 "0nxb29x7i2w6kjxq188n131b56bsqj1ykrxjcjp6sgpv81ym7f0m"))))
+        (base32 "01szp3agmww6gj3hwqbpi8csn9675qcc7dw828r8y00z0bcbm1f6"))))
     (build-system perl-build-system)
     (home-page "https://metacpan.org/release/Scalar-List-Utils")
     (synopsis "Common Scalar and List utility subroutines")

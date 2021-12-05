@@ -46,6 +46,8 @@
 ;;; Copyright © 2021 qblade <qblade@protonmail.com>
 ;;; Copyright © 2021 lasnesne <lasnesne@lagunposprasihopre.org>
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
+;;; Copyright © 2021 jgart <jgart@dismail.de>
+;;; Copyright © 2021 Disseminate Dissent <disseminatedissent@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -83,6 +85,7 @@
   #:use-module (gnu packages bison)
   #:use-module (gnu packages build-tools) ;for meson-0.55
   #:use-module (gnu packages calendar)
+  #:use-module (gnu packages check)
   #:use-module (gnu packages datastructures)
   #:use-module (gnu packages docbook)
   #:use-module (gnu packages documentation)
@@ -101,6 +104,7 @@
   #:use-module (gnu packages image)
   #:use-module (gnu packages imagemagick)
   #:use-module (gnu packages libevent)
+  #:use-module (gnu packages libffi)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lisp-check)
   #:use-module (gnu packages lisp-xyz)
@@ -116,12 +120,15 @@
   #:use-module (gnu packages pretty-print)
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-crypto)
+  #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages readline)
   #:use-module (gnu packages serialization)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages suckless)
   #:use-module (gnu packages texinfo)
   #:use-module (gnu packages textutils)
+  #:use-module (gnu packages time)
   #:use-module (gnu packages video)
   #:use-module (gnu packages web)
   #:use-module (gnu packages xdisorg)
@@ -542,6 +549,60 @@ subscribe to events.")
 
 (define-public python2-i3-py
   (package-with-python2 python-i3-py))
+
+(define-public qtile
+  (package
+    (name "qtile")
+    (version "0.18.1")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (pypi-uri "qtile" version))
+        (sha256
+          (base32 "14hb26xkza7brvkd4276j60mxd3zsas72ih6y0cq3j060izm1865"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:tests? #f ; Tests require Xvfb and writable temp/cache space
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-paths
+           (lambda* (#:key inputs #:allow-other-keys)
+             (substitute* "libqtile/pangocffi.py"
+               (("^gobject = ffi.dlopen.*")
+                 (string-append "gobject = ffi.dlopen(\""
+                  (assoc-ref inputs "glib") "/lib/libgobject-2.0.so.0\")\n"))
+                (("^pango = ffi.dlopen.*")
+                 (string-append "pango = ffi.dlopen(\""
+                  (assoc-ref inputs "pango") "/lib/libpango-1.0.so.0\")\n"))
+                (("^pangocairo = ffi.dlopen.*")
+                 (string-append "pangocairo = ffi.dlopen(\""
+                  (assoc-ref inputs "pango") "/lib/libpangocairo-1.0.so.0\")\n"))))))))
+    (inputs
+      `(("glib" ,glib)
+        ("pango" ,pango)
+        ("pulseaudio" ,pulseaudio)))
+    (propagated-inputs
+      `(("python-cairocffi" ,python-cairocffi)
+        ("python-cffi" ,python-cffi)
+        ("python-dateutil" ,python-dateutil)
+        ("python-dbus-next" ,python-dbus-next)
+        ("python-iwlib" ,python-iwlib)
+        ("python-keyring" ,python-keyring)
+        ("python-mpd2" ,python-mpd2)
+        ("python-pyxdg" ,python-pyxdg)
+        ("python-xcffib" ,python-xcffib)))
+    (native-inputs
+      `(("pkg-config" ,pkg-config)
+        ("python-flake8" ,python-flake8)
+        ("python-pep8-naming" ,python-pep8-naming)
+        ("python-psutil" ,python-psutil)
+        ("python-pytest-cov" ,python-pytest-cov)
+        ("python-setuptools-scm" ,python-setuptools-scm)))
+    (home-page "http://qtile.org")
+    (synopsis "Hackable tiling window manager written and configured in Python")
+    (description "Qtile is simple, small, and extensible.  It's easy to write
+your own layouts, widgets, and built-in commands.")
+    (license license:expat)))
 
 (define-public quickswitch-i3
   (let ((commit "ed692b1e8f43b95bd907ced26238ce8ccb2ed28f")
@@ -1685,7 +1746,7 @@ display a clock or apply image manipulation techniques to the background image."
 (define-public waybar
   (package
     (name "waybar")
-    (version "0.9.7")
+    (version "0.9.8")
     (source
      (origin
        (method git-fetch)
@@ -1694,7 +1755,7 @@ display a clock or apply image manipulation techniques to the background image."
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "17cn4d3dx92v40jd9vl41smp8hh3gf5chd1j2f7l1lrpfpnllg5x"))))
+        (base32 "109a49f064ma5js2d7maribmfalswbmmhq2fraa7hfz5pf2jxs2w"))))
     (build-system meson-build-system)
     (inputs `(("date" ,date)
               ("fmt" ,fmt)
@@ -1705,6 +1766,7 @@ display a clock or apply image manipulation techniques to the background image."
               ("libinput" ,libinput)
               ("libmpdclent" ,libmpdclient)
               ("libnl" ,libnl)
+              ("libxml2" ,libxml2)
               ("pulseaudio" ,pulseaudio)
               ("spdlog" ,spdlog)
               ("wayland" ,wayland)))
@@ -2567,6 +2629,78 @@ read and write, and compatible with JSON.")
      "Hikari is a stacking Wayland compositor with additional tiling
 capabilities.  It is heavily inspired by the Calm Window manager(cwm).")
     (license license:bsd-2)))
+
+(define-public devour
+  (package
+    (name "devour")
+    (version "12")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/salman-abedin/devour")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1qq5l6d0fn8azg7sj7a4m2jsmhlpswl5793clcxs1p34vy4wb2lp"))))
+    (build-system gnu-build-system)
+    (inputs
+     `(("libx11" ,libx11)))
+    (arguments
+     `(#:tests? #f                      ;no tests
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))           ;no configure script
+       #:make-flags
+       (list (string-append "CC=" ,(cc-for-target))
+             (string-append "BIN_DIR=" %output "/bin"))))
+    (home-page "https://github.com/salman-abedin/devour")
+    (synopsis "X11 window swallower")
+    (description
+     "@command{devour} hides your current window before launching an external
+program and unhides it after quitting.")
+    (license license:gpl2)))
+
+(define-public trayer-srg
+  (package
+    (name "trayer-srg")
+    (version "1.1.8")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/sargon/trayer-srg")
+             (commit (string-append "trayer-" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "1mvhwaqa9bng9wh3jg3b7y8gl7nprbydmhg963xg0r076jyzv0cg"))))
+    (native-inputs
+     `(("libxmu" ,libxmu)
+       ("pkg-config" ,pkg-config)))
+    (inputs
+     `(("libx11" ,libx11)
+       ("gdk-pixbuf" ,gdk-pixbuf)
+       ("gtk+" ,gtk+-2)))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:tests? #f ; There are no tests.
+       #:make-flags
+       (let ((out (assoc-ref %outputs "out")))
+         (list (string-append "CC=" ,(cc-for-target))
+               (string-append "PREFIX=" %output)))
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'configure
+           (lambda* (#:key configure-flags #:allow-other-keys)
+             (apply invoke "./configure" configure-flags))))))
+    (home-page "https://github.com/sargon/trayer-srg")
+    (synopsis "Minimal GTK based system tray")
+    (description
+     "@command{trayer} is small program designed to provide systray
+functionality present in GNOME/KDE desktop enviroments for window managers
+which do not support it.")
+    (license license:expat)))
 
 (define-public wlogout
   (package

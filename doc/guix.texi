@@ -30,7 +30,7 @@ Copyright @copyright{} 2015, 2016 Mathieu Lirzin@*
 Copyright @copyright{} 2014 Pierre-Antoine Rault@*
 Copyright @copyright{} 2015 Taylan Ulrich Bayırlı/Kammer@*
 Copyright @copyright{} 2015, 2016, 2017, 2019, 2020, 2021 Leo Famulari@*
-Copyright @copyright{} 2015, 2016, 2017, 2018, 2019, 2020 Ricardo Wurmus@*
+Copyright @copyright{} 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ricardo Wurmus@*
 Copyright @copyright{} 2016 Ben Woodcroft@*
 Copyright @copyright{} 2016, 2017, 2018, 2021 Chris Marusich@*
 Copyright @copyright{} 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner@*
@@ -98,6 +98,7 @@ Copyright @copyright{} 2021 pukkamustard@*
 Copyright @copyright{} 2021 Alice Brenon@*
 Copyright @copyright{} 2021 Andrew Tropin@*
 Copyright @copyright{} 2021 Sarah Morgensen@*
+Copyright @copyright{} 2021 Josselin Poiret@*
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -319,6 +320,7 @@ System Configuration
 * operating-system Reference::  Detail of operating-system declarations.
 * File Systems::                Configuring file system mounts.
 * Mapped Devices::              Block device extra processing.
+* Swap Space::                  Backing RAM with disk space.
 * User Accounts::               Specifying user accounts.
 * Keyboard Layout::             How the system interprets key strokes.
 * Locales::                     Language and cultural convention settings.
@@ -2492,13 +2494,24 @@ mkfs.ext4 -L my-root /dev/sda2
 If you are instead planning to encrypt the root partition, you can use
 the Cryptsetup/LUKS utilities to do that (see @inlinefmtifelse{html,
 @uref{https://linux.die.net/man/8/cryptsetup, @code{man cryptsetup}},
-@code{man cryptsetup}} for more information).  Assuming you want to
-store the root partition on @file{/dev/sda2}, the command sequence would
-be along these lines:
+@code{man cryptsetup}} for more information).
+
+@quotation Warning
+Note that GRUB can unlock LUKS2 devices since version 2.06, but only
+supports the PBKDF2 key derivation function, which is not the default
+for @command{cryptsetup luksFormat}.  You can check which key derivation
+function is being used by a device by running @command{cryptsetup
+luksDump @var{device}}, and looking for the PBKDF field of your
+keyslots.
+@end quotation
+
+Assuming you want to store the root partition on @file{/dev/sda2}, the
+command sequence to format it as a LUKS2 partition would be along these
+lines:
 
 @example
-cryptsetup luksFormat /dev/sda2
-cryptsetup open --type luks /dev/sda2 my-partition
+cryptsetup luksFormat --type luks2 --pbkdf pbkdf2 /dev/sda2
+cryptsetup open /dev/sda2 my-partition
 mkfs.ext4 -L my-root /dev/mapper/my-partition
 @end example
 
@@ -2515,10 +2528,9 @@ system relative to this path.  If you have opted for @file{/boot/efi} as an
 EFI mount point for example, mount it at @file{/mnt/boot/efi} now so it is
 found by @code{guix system init} afterwards.
 
-Finally, if you plan to use one or more swap partitions (@pxref{Memory
-Concepts, swap space,, libc, The GNU C Library Reference Manual}), make
-sure to initialize them with @command{mkswap}.  Assuming you have one
-swap partition on @file{/dev/sda3}, you would run:
+Finally, if you plan to use one or more swap partitions (@pxref{Swap
+Space}), make sure to initialize them with @command{mkswap}.  Assuming
+you have one swap partition on @file{/dev/sda3}, you would run:
 
 @example
 mkswap /dev/sda3
@@ -11464,7 +11476,7 @@ a container similar to the one the build daemon creates:
 $ guix build -K foo
 @dots{}
 $ cd /tmp/guix-build-foo.drv-0
-$ guix shell --no-grafts -C foo strace gdb
+$ guix shell --no-grafts -C -D foo strace gdb
 [env]# source ./environment-variables
 [env]# cd foo-1.2
 @end example
@@ -11723,11 +11735,17 @@ information, including package dependencies.  For maximum efficiency, it
 is recommended to install the @command{unzip} utility, so that the
 importer can unzip Python wheels and gather data from them.
 
-The command below imports metadata for the @code{itsdangerous} Python
-package:
+The command below imports metadata for the latest version of the
+@code{itsdangerous} Python package:
 
 @example
 guix import pypi itsdangerous
+@end example
+
+You can also ask for a specific version:
+
+@example
+guix import pypi itsdangerous@@1.1.0
 @end example
 
 @table @code
@@ -11827,6 +11845,12 @@ The command command below imports metadata for the Cairo R package:
 guix import cran Cairo
 @end example
 
+You can also ask for a specific version:
+
+@example
+guix import cran rasterVis@@0.50.3
+@end example
+
 When @option{--recursive} is added, the importer will traverse the
 dependency graph of the given upstream package recursively and generate
 package expressions for all those packages that are not yet in Guix.
@@ -11863,33 +11887,20 @@ guix import cran --archive=git https://github.com/immunogenomics/harmony
 @item texlive
 @cindex TeX Live
 @cindex CTAN
-Import metadata from @uref{https://www.ctan.org/, CTAN}, the
-comprehensive TeX archive network for TeX packages that are part of the
-@uref{https://www.tug.org/texlive/, TeX Live distribution}.
+Import TeX package information from the TeX Live package database for
+TeX packages that are part of the @uref{https://www.tug.org/texlive/,
+TeX Live distribution}.
 
-Information about the package is obtained through the XML API provided
-by CTAN, while the source code is downloaded from the SVN repository of
-the Tex Live project.  This is done because the CTAN does not keep
-versioned archives.
+Information about the package is obtained from the TeX Live package
+database, a plain text file that is included in the @code{texlive-bin}
+package.  The source code is downloaded from possibly multiple locations
+in the SVN repository of the Tex Live project.
 
 The command command below imports metadata for the @code{fontspec}
 TeX package:
 
 @example
 guix import texlive fontspec
-@end example
-
-When @option{--archive=@var{directory}} is added, the source code is
-downloaded not from the @file{latex} sub-directory of the
-@file{texmf-dist/source} tree in the TeX Live SVN repository, but from
-the specified sibling @var{directory} under the same root.
-
-The command below imports metadata for the @code{ifxetex} package from
-CTAN while fetching the sources from the directory
-@file{texmf/source/generic}:
-
-@example
-guix import texlive --archive=generic ifxetex
 @end example
 
 @item json
@@ -13988,6 +13999,7 @@ instance to support new system services.
 * operating-system Reference::  Detail of operating-system declarations.
 * File Systems::                Configuring file system mounts.
 * Mapped Devices::              Block device extra processing.
+* Swap Space::                  Backing RAM with disk space.
 * User Accounts::               Specifying user accounts.
 * Keyboard Layout::             How the system interprets key strokes.
 * Locales::                     Language and cultural convention settings.
@@ -14156,7 +14168,7 @@ configuration, but with a few modifications.
 
 @cindex encrypted disk
 The configuration for a typical ``desktop'' usage, with an encrypted
-root partition, the X11 display
+root partition, a swap file on the root partition, the X11 display
 server, GNOME and Xfce (users can choose which of these desktop
 environments to use at the log-in screen by pressing @kbd{F1}), network
 management, power management, and more, would look like this:
@@ -14354,38 +14366,9 @@ A list of mapped devices.  @xref{Mapped Devices}.
 @item @code{file-systems}
 A list of file systems.  @xref{File Systems}.
 
-@cindex swap devices
-@cindex swap space
 @item @code{swap-devices} (default: @code{'()})
-A list of UUIDs, file system labels, or strings identifying devices or
-files to be used for ``swap
-space'' (@pxref{Memory Concepts,,, libc, The GNU C Library Reference
-Manual}).  Here are some examples:
-
-@table @code
-@item (list (uuid "4dab5feb-d176-45de-b287-9b0a6e4c01cb"))
-Use the swap partition with the given UUID@.  You can learn the UUID of a
-Linux swap partition by running @command{swaplabel @var{device}}, where
-@var{device} is the @file{/dev} file name of that partition.
-
-@item (list (file-system-label "swap"))
-Use the partition with label @code{swap}.  Again, the
-@command{swaplabel} command allows you to view and change the label of a
-Linux swap partition.
-
-@item (list "/swapfile")
-Use the file @file{/swapfile} as swap space.
-
-@item (list "/dev/sda3" "/dev/sdb2")
-Use the @file{/dev/sda3} and @file{/dev/sdb2} partitions as swap space.
-We recommend referring to swap devices by UUIDs or labels as shown above
-instead.
-@end table
-
-It is possible to specify a swap file in a file system on a mapped
-device (under @file{/dev/mapper}), provided that the necessary device
-mapping and file system are also specified.  @xref{Mapped Devices} and
-@ref{File Systems}.
+@cindex swap devices
+A list of swap spaces.  @xref{Swap Space}.
 
 @item @code{users} (default: @code{%base-user-accounts})
 @itemx @code{groups} (default: @code{%base-groups})
@@ -14975,7 +14958,8 @@ It is also desirable to encrypt swap space, since swap space may contain
 sensitive data.  One way to accomplish that is to use a swap file in a
 file system on a device mapped via LUKS encryption.  In this way, the
 swap file is encrypted because the entire device is encrypted.
-@xref{Preparing for Installation,,Disk Partitioning}, for an example.
+@xref{Swap Space}, or @xref{Preparing for Installation,,Disk
+Partitioning}, for an example.
 
 A RAID device formed of the partitions @file{/dev/sda1} and @file{/dev/sdb1}
 may be declared as follows:
@@ -15006,6 +14990,106 @@ be declared as follows:
 Devices @file{/dev/mapper/vg0-alpha} and @file{/dev/mapper/vg0-beta} can
 then be used as the @code{device} of a @code{file-system} declaration
 (@pxref{File Systems}).
+
+@node Swap Space
+@section Swap Space
+@cindex swap space
+
+Swap space, as it is commonly called, is a disk area specifically
+designated for paging: the process in charge of memory management
+(the Linux kernel or Hurd's default pager) can decide that some memory
+pages stored in RAM which belong to a running program but are unused
+should be stored on disk instead.  It unloads those from the RAM,
+freeing up precious fast memory, and writes them to the swap space.  If
+the program tries to access that very page, the memory management
+process loads it back into memory for the program to use.
+
+A common misconception about swap is that it is only useful when small
+amounts of RAM are available to the system.  However, it should be noted
+that kernels often use all available RAM for disk access caching to make
+I/O faster, and thus paging out unused portions of program memory will
+expand the RAM available for such caching.
+
+For a more detailed description of how memory is managed from the
+viewpoint of a monolithic kernel, @xref{Memory
+Concepts,,, libc, The GNU C Library Reference Manual}.
+
+The Linux kernel has support for swap partitions and swap files: the
+former uses a whole disk partition for paging, whereas the second uses a
+file on a file system for that (the file system driver needs to support
+it).  On a comparable setup, both have the same performance, so one
+should consider ease of use when deciding between them.  Partitions are
+``simpler'' and do not need file system support, but need to be
+allocated at disk formatting time (logical volumes notwithstanding),
+whereas files can be allocated and deallocated at any time.
+
+Note that swap space is not zeroed on shutdown, so sensitive data (such
+as passwords) may linger on it if it was paged out.  As such, you should
+consider having your swap reside on an encrypted device (@pxref{Mapped
+Devices}).
+
+@deftp {Data Type} swap-space
+Objects of this type represent swap spaces.  They contain the following
+members:
+
+@table @asis
+@item @code{target}
+The device or file to use, either a UUID, a @code{file-system-label} or
+a string, as in the definition of a @code{file-system} (@pxref{File
+Systems}).
+
+@item @code{dependencies} (default: @code{'()})
+A list of @code{file-system} or @code{mapped-device} objects, upon which
+the availability of the space depends.  Note that just like for
+@code{file-system} objects, dependencies which are needed for boot and
+mounted in early userspace are not managed by the Shepherd, and so
+automatically filtered out for you.
+
+@item @code{priority} (default: @code{#f})
+Only supported by the Linux kernel.  Either @code{#f} to disable swap
+priority, or an integer between 0 and 32767.  The kernel will first use
+swap spaces of higher priority when paging, and use same priority spaces
+on a round-robin basis.  The kernel will use swap spaces without a set
+priority after prioritized spaces, and in the order that they appeared in
+(not round-robin).
+
+@item @code{discard?} (default: @code{#f})
+Only supported by the Linux kernel.  When true, the kernel will notify
+the disk controller of discarded pages, for example with the TRIM
+operation on Solid State Drives.
+
+@end table
+@end deftp
+
+Here are some examples:
+
+@lisp
+(swap-space (target (uuid "4dab5feb-d176-45de-b287-9b0a6e4c01cb")))
+@end lisp
+
+Use the swap partition with the given UUID@.  You can learn the UUID of a
+Linux swap partition by running @command{swaplabel @var{device}}, where
+@var{device} is the @file{/dev} file name of that partition.
+
+@lisp
+(swap-space
+  (target (file-system-label "swap"))
+  (dependencies (list lvm-device)))
+@end lisp
+
+Use the partition with label @code{swap}, which can be found after the
+@var{lvm-device} mapped device has been opened.  Again, the
+@command{swaplabel} command allows you to view and change the label of a
+Linux swap partition.
+
+@lisp
+(swap-space
+  (target "/btrfs/swapfile")
+  (dependencies (list btrfs-fs)))
+@end lisp
+
+Use the file @file{/btrfs/swapfile} as swap space, which is present on the
+@var{btrfs-fs} filesystem.
 
 @node User Accounts
 @section User Accounts
@@ -18639,8 +18723,7 @@ and tty8.
 @lisp
 (use-modules (gnu services)
              (gnu services desktop)
-             (gnu services xorg)
-             (srfi srfi-1))  ;for 'remove'
+             (gnu services xorg))
 
 (operating-system
   ;; ...
@@ -19529,7 +19612,7 @@ Defaults to @samp{1048576}.
 Specifies the maximum amount of time to allow between files in a
 multiple file print job, in seconds.
 
-Defaults to @samp{300}.
+Defaults to @samp{900}.
 @end deftypevr
 
 @deftypevr {@code{cups-configuration} parameter} string page-log-format
@@ -19740,7 +19823,7 @@ Defaults to @samp{#f}.
 @deftypevr {@code{cups-configuration} parameter} non-negative-integer timeout
 Specifies the HTTP request timeout, in seconds.
 
-Defaults to @samp{300}.
+Defaults to @samp{900}.
 
 @end deftypevr
 
@@ -26540,6 +26623,12 @@ complete example}.
 
 @item @code{package} (default: @code{hpcguix-web})
 The hpcguix-web package to use.
+
+@item @code{address} (default: @code{"127.0.0.1"})
+The IP address to listen to.
+
+@item @code{port} (default: @code{5000})
+The port number to listen to.
 @end table
 @end deftp
 
@@ -30048,6 +30137,53 @@ Return the name of @var{platform}---a string such as @code{"arm"}.
 @end deffn
 
 
+@subsubheading QEMU Guest Agent
+
+@cindex emulation
+
+The QEMU guest agent provides control over the emulated system to the
+host.  The @code{qemu-guest-agent} service runs the agent on Guix
+guests.  To control the agent from the host, open a socket by invoking
+QEMU with the following arguments:
+
+@example
+qemu-system-x86_64 \
+	-chardev socket,path=/tmp/qga.sock,server=on,wait=off,id=qga0 \
+	-device virtio-serial \
+	-device virtserialport,chardev=qga0,name=org.qemu.guest_agent.0 \
+	...
+@end example
+
+This creates a socket at @file{/tmp/qga.sock} on the host.  Once the
+guest agent is running, you can issue commands with @code{socat}:
+
+@example
+$ guix shell socat -- socat unix-connect:/tmp/qga.sock stdio
+@{"execute": "guest-get-host-name"@}
+@{"return": @{"host-name": "guix"@}@}
+@end example
+
+See @url{https://wiki.qemu.org/Features/GuestAgent,QEMU guest agent
+documentation} for more options and commands.
+
+@defvr {Scheme Variable} qemu-guest-agent-service-type
+Service type for the QEMU guest agent service.
+@end defvr
+
+@deftp {Data Type} qemu-guest-agent-configuration
+Configuration for the @code{qemu-guest-agent} service.
+
+@table @asis
+@item @code{qemu} (default: @code{qemu-minimal})
+The QEMU package to use.
+
+@item @code{device} (default: @code{""})
+File name of the device or socket the agent uses to communicate with the
+host.  If empty, QEMU uses a default file name.
+@end table
+@end deftp
+
+
 @subsubheading The Hurd in a Virtual Machine
 
 @cindex @code{hurd}
@@ -32332,12 +32468,6 @@ running an @dfn{agent}.  The build daemon is still used to build the
 derivations, but the Guix Build Coordinator manages allocating builds
 and working with the results.
 
-@quotation Note
-This service is considered experimental.  Configuration options may be
-changed in a backwards-incompatible manner, and not all features have
-been thorougly tested.
-@end quotation
-
 The Guix Build Coordinator consists of one @dfn{coordinator}, and one or
 more connected @dfn{agent} processes.  The coordinator process handles
 clients submitting builds, and allocating builds to agents.  The agent
@@ -33177,6 +33307,17 @@ Enable or disable debug output.
 
 @item @code{enable-iptables?} (default @code{#t})
 Enable or disable the addition of iptables rules.
+
+@item @code{environment-variables} (default: @code{()})
+List of environment variables to set for @command{dockerd}.
+
+This must be a list of strings where each string has the form
+@samp{@var{key}=@var{value}} as in this example:
+
+@lisp
+(list "LANGUAGE=eo:ca:eu"
+      "TMPDIR=/tmp/dockerd")
+@end lisp
 
 @end table
 @end deftp
@@ -34365,8 +34506,8 @@ passed.
 @cindex virtual machine
 @cindex VM
 @anchor{guix system vm}
-Build a virtual machine that contains the operating system declared in
-@var{file}, and return a script to run that virtual machine (VM).
+Build a virtual machine (VM) that contains the operating system declared
+in @var{file}, and return a script to run that VM.
 
 @quotation Note
 The @code{vm} action and others below
@@ -34383,6 +34524,12 @@ emulated machine:
 
 @example
 $ /gnu/store/@dots{}-run-vm.sh -m 1024 -smp 2 -nic user,model=virtio-net-pci
+@end example
+
+It's possible to combine the two steps into one:
+
+@example
+$ $(guix system vm my-config.scm) -m 1024 -smp 2 -nic user,model=virtio-net-pci
 @end example
 
 The VM shares its store with the host system.
@@ -34408,8 +34555,17 @@ store of the host can then be mounted.
 The @option{--full-boot} option forces a complete boot sequence, starting
 with the bootloader.  This requires more disk space since a root image
 containing at least the kernel, initrd, and bootloader data files must
-be created.  The @option{--image-size} option can be used to specify the
-size of the image.
+be created.
+
+The @option{--image-size} option can be used to specify the size of the
+image.
+
+The @option{--no-graphic} option will instruct @command{guix system} to
+spawn a headless VM that will use the invoking tty for IO.  Among other
+things, this enables copy-pasting, and scrollback.  Use the @kbd{ctrl-a}
+prefix to issue QEMU commands; e.g. @kbd{ctrl-a h} prints a help,
+@kbd{ctrl-a x} quits the VM, and @kbd{ctrl-a c} switches between the
+QEMU monitor and the VM.
 
 @cindex System images, creation in various formats
 @cindex Creating system images in various formats
@@ -35047,7 +35203,7 @@ VM@.  To enable that you'll also have to pass the following flags to @command{qe
 @example
 -device virtio-serial-pci,id=virtio-serial0,max_ports=16,bus=pci.0,addr=0x5
 -chardev spicevmc,name=vdagent,id=vdagent
--device virtserialport,nr=1,bus=virtio-serial0.0,chardev=vdagent,
+-device virtserialport,nr=1,bus=virtio-serial0.0,chardev=vdagent,\
 name=com.redhat.spice.0
 @end example
 
@@ -35871,9 +36027,8 @@ The @command{guix home import} command reads some of the ``dot files''
 such as @file{~/.bashrc} found in your home directory and copies them to
 the given directory, @file{~/src/guix-config} in this case; it also
 reads the contents of your profile, @file{~/.guix-profile}, and, based
-on that, it outputs a Home configuration that resembles your current
-configuration.  You can dump that configuration to a file and you're
-ready to go!
+on that, it populates @file{~/src/guix-config/home-configuration.scm}
+with a Home configuration that resembles your current configuration.
 
 A simple setup can include Bash and a custom text configuration, like in
 the example below.  Don't be afraid to declare home environment parts,
@@ -35915,6 +36070,14 @@ guix home reconfigure config.scm
 
 This ``builds'' your home environment and creates @file{~/.guix-home}
 pointing to it.  Voilà!
+
+@quotation Note
+Make sure the operating system has elogind, systemd, or a similar
+mechanism to create the XDG run-time directory and has the
+@env{XDG_RUNTIME_DIR} variable set.  Failing that, the
+@file{on-first-login} script will not execute anything, and processes
+like user Shepherd and its descendants will not start.
+@end quotation
 
 @node Configuring the Shell
 @section Configuring the Shell
@@ -36597,33 +36760,14 @@ $ guix home list-generations 10d
 @item import
 Generate a @dfn{home environment} from the packages in the default
 profile and configuration files found in the user's home directory.  The
-configuration files will be copied to the specified directory.  Note
-that not every home service that exists is supported (@pxref{Home
-Services}).
+configuration files will be copied to the specified directory, and a
+@file{home-configuration.scm} will be populated with the home
+environment.  Note that not every home service that exists is supported
+(@pxref{Home Services}).
 
 @example
 $ guix home import ~/guix-config
-;; This "home-environment" file can be passed to 'guix home reconfigure'
-;; to reproduce the content of your profile.  This is "symbolic": it only
-;; specifies package names.  To reproduce the exact same profile, you also
-;; need to capture the channels being used, as returned by "guix describe".
-;; See the "Replicating Guix" section in the manual.
-
-(use-modules
-  (gnu home)
-  (gnu packages)
-  (gnu home services shells))
-
-(home-environment
-  (packages
-    (map specification->package
-         (list "glibc-locales" "nss-certs" "nss")))
-  (services
-    (list (service
-            home-bash-service-type
-            (home-bash-configuration
-              (bashrc
-                (list (local-file "/home/charlie/guix-config/.bashrc"))))))))
+guix home: '/home/alice/guix-config' populated with all the Home configuration files
 @end example
 
 @end table

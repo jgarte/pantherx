@@ -504,6 +504,12 @@ tree binary files.  These are board description files used by Linux and BSD.")
   ;; https://lists.denx.de/pipermail/u-boot/2021-October/462728.html
   (search-patch "u-boot-allow-disabling-openssl.patch"))
 
+(define %u-boot-rk3399-enable-emmc-phy-patch
+  ;; Fix emmc boot on rockpro64 and pinebook-pro, this was a regression
+  ;; therefore should hopefully be fixed when updating u-boot.
+  ;; https://lists.denx.de/pipermail/u-boot/2021-November/466329.html
+  (search-patch "u-boot-rk3399-enable-emmc-phy.patch"))
+
 (define u-boot
   (package
     (name "u-boot")
@@ -512,7 +518,8 @@ tree binary files.  These are board description files used by Linux and BSD.")
 	      (patches
                (list %u-boot-rockchip-inno-usb-patch
                      %u-boot-allow-disabling-openssl-patch
-                     %u-boot-sifive-prevent-relocating-initrd-fdt))
+                     %u-boot-sifive-prevent-relocating-initrd-fdt
+                     %u-boot-rk3399-enable-emmc-phy-patch))
               (method url-fetch)
               (uri (string-append
                     "https://ftp.denx.de/pub/u-boot/"
@@ -535,7 +542,7 @@ tree binary files.  These are board description files used by Linux and BSD.")
     (build-system  gnu-build-system)
     (home-page "https://www.denx.de/wiki/U-Boot/")
     (synopsis "ARM bootloader")
-    (description "U-Boot is a bootloader used mostly for ARM boards. It
+    (description "U-Boot is a bootloader used mostly for ARM boards.  It
 also initializes the boards (RAM etc).")
     (license license:gpl2+)))
 
@@ -734,7 +741,7 @@ board-independent tools.")))
     (package
       (inherit base)
       (name "u-boot-am335x-boneblack")
-      (description "U-Boot is a bootloader used mostly for ARM boards. It
+      (description "U-Boot is a bootloader used mostly for ARM boards.  It
 also initializes the boards (RAM etc).
 
 This U-Boot is built for the BeagleBone Black, which was removed upstream,
@@ -854,7 +861,7 @@ device while it's being turned on (and a while longer).")
   (let ((base (make-u-boot-package "novena" "arm-linux-gnueabihf")))
     (package
       (inherit base)
-      (description "U-Boot is a bootloader used mostly for ARM boards. It
+      (description "U-Boot is a bootloader used mostly for ARM boards.  It
 also initializes the boards (RAM etc).
 
 This U-Boot is built for Novena.  Be advised that this version, contrary

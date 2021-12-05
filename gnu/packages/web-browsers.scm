@@ -577,7 +577,7 @@ driven and does not detract you from your daily work.")
 (define-public nyxt
   (package
     (name "nyxt")
-    (version "2.2.0")
+    (version "2.2.3")
     (source
      (origin
        (method git-fetch)
@@ -586,11 +586,11 @@ driven and does not detract you from your daily work.")
              (commit version)))
        (sha256
         (base32
-         "0l8x32fsvk2gbymcda1yc0ggnsymjazqd58vmi05ifiiv7jwxyjw"))
+         "1v1szbj44pwxh3k70fvg78xjfkab29dqnlafa722sppdyqd06cqp"))
        (file-name (git-file-name "nyxt" version))))
     (build-system gnu-build-system)
     (arguments
-     `(#:make-flags (list "nyxt" "NYXT_INTERNAL_QUICKLISP=false"
+     `(#:make-flags (list "nyxt" "NYXT_SUBMODULES=false"
                           (string-append "DESTDIR=" (assoc-ref %outputs "out"))
                           "PREFIX=")
        #:strip-binaries? #f             ; Stripping breaks SBCL binaries.
@@ -685,15 +685,15 @@ driven and does not detract you from your daily work.")
        ("gobject-introspection" ,gobject-introspection)))
     (synopsis "Extensible web-browser in Common Lisp")
     (home-page "https://nyxt.atlas.engineer")
-    (description "Nyxt is a keyboard-oriented, extensible web browser designed
-for power users.  Conceptually inspired by Emacs and Vim, it has familiar
-key-bindings (Emacs, vi, CUA), and is fully configurable in Common Lisp.")
+    (description "Nyxt is a keyboard-oriented, extensible web-browser designed
+for power users.  The application has familiar Emacs and VI key-bindings and
+is fully configurable and extensible in Common Lisp.")
     (license license:bsd-3)))
 
 (define-public lagrange
   (package
     (name "lagrange")
-    (version "1.7.2")
+    (version "1.8.2")
     (source
      (origin
        (method url-fetch)
@@ -701,13 +701,20 @@ key-bindings (Emacs, vi, CUA), and is fully configurable in Common Lisp.")
         (string-append "https://git.skyjake.fi/skyjake/lagrange/releases/"
                        "download/v" version "/lagrange-" version ".tar.gz"))
        (sha256
-        (base32 "1fr7p0pjli9clsgr0a1fp1pr119r9zqx43dvhc1g91bj742mxhfa"))))
+        (base32 "1wb4gqn32sja2qik04chlcl743arr6c844zczy1a2aad5103cnip"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           ;; TODO: unbundle fonts.
+           (delete-file-recursively "lib/fribidi")
+           (delete-file-recursively "lib/harfbuzz")))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #false                  ;no tests
        #:configure-flags (list "-DTFDN_ENABLE_SSE41=OFF")))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     `(("pkg-config" ,pkg-config)
+       ("zip" ,zip)))
     (inputs
      `(("fribidi" ,fribidi)
        ("harfbuzz" ,harfbuzz)
@@ -809,7 +816,7 @@ http, and https via third-party applications.")
 (define-public tinmop
   (package
     (name "tinmop")
-    (version "0.8.3")
+    (version "0.9.2")
     (source
      (origin
        (method git-fetch)
@@ -818,13 +825,17 @@ http, and https via third-party applications.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "117p1wxi5swmqw429qrswxz2zvp1dcaw2145gk6zxlgwln48qxl8"))))
+        (base32 "1cgx2g2kryfmcwqzzjzcpbdc6zzj10xc52gz0cj2dx5ylc0yg7k3"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("curl" ,curl)
+     `(("automake" ,automake)
+       ("autoreconf" ,autoconf)
        ("gettext" ,gnu-gettext)
-       ("gnupg" ,gnupg)
-       ("sbcl" ,sbcl)))
+       ("mandoc" , mandoc)
+       ("nano" ,nano)
+       ("openssl" ,openssl)
+       ("sbcl" ,sbcl)
+       ("xdg-utils" ,xdg-utils)))
     (inputs
      `(("access" ,sbcl-access)
        ("alexandria" ,sbcl-alexandria)
@@ -847,8 +858,6 @@ http, and https via third-party applications.")
        ("local-time" ,sbcl-local-time)
        ("log4cl" ,sbcl-log4cl)
        ("marshal" ,sbcl-marshal)
-       ("nano" ,nano)
-       ("openssl" ,openssl)
        ("osicat" ,sbcl-osicat)
        ("parse-number" ,sbcl-parse-number)
        ("percent-encoding" ,sbcl-percent-encoding)
@@ -856,8 +865,7 @@ http, and https via third-party applications.")
        ("sxql-composer" ,sbcl-sxql-composer)
        ("tooter" ,sbcl-tooter)
        ("unix-opts" ,sbcl-unix-opts)
-       ("usocket" ,sbcl-usocket)
-       ("xdg-utils" ,xdg-utils)))
+       ("usocket" ,sbcl-usocket)))
     (arguments
      `(#:tests? #f
        #:strip-binaries? #f
@@ -867,11 +875,24 @@ http, and https via third-party applications.")
            (lambda _
              (setenv "HOME" "/tmp")
              #t))
+         (add-after 'unpack 'fix-configure.ac
+           (lambda _
+              (delete-file "configure")
+              (substitute* "configure.ac"
+                (("AC_PATH_PROG.+CURL")
+                 "dnl")
+                (("AC_PATH_PROGS.+GIT")
+                 "dnl")
+                (("AC_PATH_PROG.+GPG")
+                 "dnl"))
+               #t))
          (add-after 'configure 'fix-asdf
            (lambda* (#:key inputs #:allow-other-keys)
              (substitute* "Makefile.in"
                (("LISP_COMPILER) ")
-                "LISP_COMPILER) --eval \"(require 'asdf)\" --eval \"(push \\\"$$(pwd)/\\\" asdf:*central-registry*)\"  "))
+                (string-concatenate
+                 '("LISP_COMPILER) --eval \"(require 'asdf)\" "
+                   "--eval \"(push \\\"$$(pwd)/\\\" asdf:*central-registry*)\"  "))))
              #t)))))
     (synopsis "Gemini and pleroma client with a terminal interface")
     (description
@@ -883,14 +904,14 @@ interface.")
 (define-public telescope
   (package
     (name "telescope")
-    (version "0.5.2")
+    (version "0.6.1")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/omar-polo/telescope/releases/download/"
                            version "/telescope-" version ".tar.gz"))
        (sha256
-        (base32 "0phvwhxvm63y68cyvzw5dk60yjzfv6bpxf5c4bl08daj3ia48fbk"))))
+        (base32 "1hm9gi6yz62h8yh2br85bgycr2xaf5lr7z4gl0p25g7d7qb53ixd"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ;no tests

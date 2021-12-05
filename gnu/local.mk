@@ -519,6 +519,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/sawfish.scm			\
   %D%/packages/scanner.scm			\
   %D%/packages/scheme.scm			\
+  %D%/packages/spreadsheet.scm			\
   %D%/packages/screen.scm			\
   %D%/packages/scribus.scm			\
   %D%/packages/scsi.scm				\
@@ -585,7 +586,6 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/video.scm			\
   %D%/packages/vim.scm				\
   %D%/packages/virtualization.scm		\
-  %D%/packages/visidata.scm			\
   %D%/packages/vlang.scm			\
   %D%/packages/vnc.scm				\
   %D%/packages/vpn.scm				\
@@ -870,24 +870,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/avahi-localstatedir.patch		\
   %D%/packages/patches/avidemux-install-to-lib.patch		\
   %D%/packages/patches/awesome-reproducible-png.patch		\
-  %D%/packages/patches/aws-c-auth-cmake-prefix.patch		\
-  %D%/packages/patches/aws-c-auth-disable-networking-tests.patch\
-  %D%/packages/patches/aws-c-cal-cmake-prefix.patch		\
-  %D%/packages/patches/aws-c-compression-cmake-prefix.patch	\
-  %D%/packages/patches/aws-c-event-stream-cmake-prefix.patch  \
-  %D%/packages/patches/aws-c-http-cmake-prefix.patch		\
-  %D%/packages/patches/aws-c-http-disable-networking-tests.patch\
-  %D%/packages/patches/aws-c-mqtt-cmake-prefix.patch		\
-  %D%/packages/patches/aws-c-io-cmake-prefix.patch		\
-  %D%/packages/patches/aws-c-io-disable-networking-tests.patch	\
-  %D%/packages/patches/aws-c-s3-cmake-prefix.patch		\
-  %D%/packages/patches/aws-c-s3-disable-networking-tests.patch	\
-  %D%/packages/patches/aws-checksums-cmake-prefix.patch		\
-  %D%/packages/patches/aws-crt-cpp-cmake-prefix.patch		\
-  %D%/packages/patches/aws-crt-cpp-disable-networking-tests.patch	\
-  %D%/packages/patches/aws-sdk-cpp-cmake-prefix.patch		\
-  %D%/packages/patches/aws-sdk-cpp-disable-networking-tests.patch	\
-  %D%/packages/patches/aws-sdk-cpp-disable-werror.patch		\
+  %D%/packages/patches/aws-c-auth-install-private-headers.patch	\
   %D%/packages/patches/azr3.patch				\
   %D%/packages/patches/bash-reproducible-linux-pgrp-pipe.patch	\
   %D%/packages/patches/bash-completion-directories.patch	\
@@ -968,6 +951,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/collectd-5.11.0-noinstallvar.patch		\
   %D%/packages/patches/combinatorial-blas-awpm.patch		\
   %D%/packages/patches/combinatorial-blas-io-fix.patch		\
+  %D%/packages/patches/coq-fix-envvars.patch			\
   %D%/packages/patches/coreutils-ls.patch			\
   %D%/packages/patches/cpuinfo-system-libraries.patch		\
   %D%/packages/patches/crawl-upgrade-saves.patch		\
@@ -1011,6 +995,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/dstat-skip-devices-without-io.patch	\
   %D%/packages/patches/dune-istl-2.7-fix-non-mpi-tests.patch	\
   %D%/packages/patches/dvd+rw-tools-add-include.patch 		\
+  %D%/packages/patches/dynaconf-unvendor-deps.patch		\
   %D%/packages/patches/ecl-16-format-directive-limit.patch	\
   %D%/packages/patches/ecl-16-ignore-stderr-write-error.patch	\
   %D%/packages/patches/ecl-16-libffi.patch			\
@@ -1128,7 +1113,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/gdk-pixbuf-CVE-2020-29385.patch		\
   %D%/packages/patches/gdm-default-session.patch		\
   %D%/packages/patches/geary-CVE-2020-24661.patch		\
-  %D%/packages/patches/genimage-signedness.patch		\
+  %D%/packages/patches/genimage-mke2fs-test.patch		\
   %D%/packages/patches/geoclue-config.patch			\
   %D%/packages/patches/ghc-8.0-fall-back-to-madv_dontneed.patch	\
   %D%/packages/patches/ghc-testsuite-dlopen-pie.patch		\
@@ -1275,9 +1260,9 @@ dist_patch_DATA =						\
   %D%/packages/patches/hurd-cross.patch				\
   %D%/packages/patches/hurd-xattr.patch				\
   %D%/packages/patches/hydra-disable-darcs-test.patch		\
-  %D%/packages/patches/icecat-78-makeicecat.patch		\
   %D%/packages/patches/icecat-makeicecat.patch			\
   %D%/packages/patches/icecat-avoid-bundled-libraries.patch	\
+  %D%/packages/patches/icecat-CVE-2021-43527.patch		\
   %D%/packages/patches/icecat-use-older-reveal-hidden-html.patch	\
   %D%/packages/patches/icecat-use-system-graphite2+harfbuzz.patch	\
   %D%/packages/patches/icecat-use-system-media-libs.patch	\
@@ -1535,6 +1520,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/nnpack-system-libraries.patch		\
   %D%/packages/patches/nsis-env-passthru.patch			\
   %D%/packages/patches/nsis-source-date-epoch.patch		\
+  %D%/packages/patches/nss-CVE-2021-43527.patch			\
   %D%/packages/patches/nss-increase-test-timeout.patch		\
   %D%/packages/patches/nss-3.56-pkgconfig.patch			\
   %D%/packages/patches/nvi-assume-preserve-path.patch		\
@@ -1550,7 +1536,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/ocaml-dose3-Fix-for-ocaml-4.06.patch	\
   %D%/packages/patches/ocaml-dose3-dont-make-printconf.patch	\
   %D%/packages/patches/ocaml-dose3-Install-mli-cmx-etc.patch	\
-  %D%/packages/patches/ocaml-ppx-variants-ppxlib-api-change.patch	\
+  %D%/packages/patches/ocaml-qcheck-fix-test-whitespace.patch	\
   %D%/packages/patches/omake-fix-non-determinism.patch	\
   %D%/packages/patches/oneko-remove-nonfree-characters.patch	\
   %D%/packages/patches/onnx-optimizer-system-library.patch	\
@@ -1734,7 +1720,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/ripperx-missing-file.patch		\
   %D%/packages/patches/rpcbind-CVE-2017-8779.patch		\
   %D%/packages/patches/rtags-separate-rct.patch			\
-  %D%/packages/patches/racket-minimal-backport-1629887.patch    \
   %D%/packages/patches/racket-minimal-sh-via-rktio.patch	\
   %D%/packages/patches/remake-impure-dirs.patch			\
   %D%/packages/patches/restic-0.9.6-fix-tests-for-go1.15.patch	\
@@ -1752,6 +1737,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/rust-1.25-accept-more-detailed-gdb-lines.patch \
   %D%/packages/patches/rust-1.45-linker-locale.patch		\
   %D%/packages/patches/rust-1.48-linker-locale.patch		\
+  %D%/packages/patches/rust-adblock-ignore-live-tests.patch		\
   %D%/packages/patches/rust-bootstrap-stage0-test.patch		\
   %D%/packages/patches/rust-coresimd-doctest.patch		\
   %D%/packages/patches/rust-ndarray-remove-blas-src-dep.patch	\
@@ -1760,6 +1746,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/rust-nettle-sys-disable-vendor.patch	 \
   %D%/packages/patches/rust-reproducible-builds.patch		 \
   %D%/packages/patches/rust-openssl-sys-no-vendor.patch	\
+  %D%/packages/patches/rust-shell2batch-lint-fix.patch		\
   %D%/packages/patches/sbc-fix-build-non-x86.patch		\
   %D%/packages/patches/sbcl-burgled-batteries3-fix-signals.patch	\
   %D%/packages/patches/sbcl-clml-fix-types.patch		\
@@ -1842,6 +1829,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/u-boot-rockchip-inno-usb.patch		\
   %D%/packages/patches/u-boot-sifive-prevent-reloc-initrd-fdt.patch	\
   %D%/packages/patches/u-boot-riscv64-fix-extlinux.patch	\
+  %D%/packages/patches/u-boot-rk3399-enable-emmc-phy.patch	\
   %D%/packages/patches/ucx-tcp-iface-ioctl.patch		\
   %D%/packages/patches/ungoogled-chromium-extension-search-path.patch	\
   %D%/packages/patches/ungoogled-chromium-ffmpeg-compat.patch	\
