@@ -1169,9 +1169,8 @@ USER-PARTITION if it is encrypted, or the plain file-name otherwise."
      (lambda (key-file)
        (syslog "formatting and opening LUKS entry ~s at ~s~%"
                label file-name)
-       (system* "cryptsetup" "-q" "luksFormat" "--type" "luks2"
-                "--pbkdf" "pbkdf2" file-name key-file)
-       (system* "cryptsetup" "open"
+       (system* "cryptsetup" "-q" "luksFormat" file-name key-file)
+       (system* "cryptsetup" "open" "--type" "luks"
                 "--key-file" key-file file-name label)))))
 
 (define (luks-close user-partition)
@@ -1419,9 +1418,11 @@ USER-PARTITIONS, or return nothing."
             (let* ((uuids (map (lambda (file)
                                  (uuid->string (read-partition-uuid file)))
                                swap-devices)))
-              `((swap-devices (list ,@(map (lambda (uuid)
-                                             `(uuid ,uuid))
-                                           uuids))))))
+              `((swap-devices
+                 (list ,@(map (lambda (uuid)
+                                `(swap-space
+                                  (target (uuid ,uuid))))
+                              uuids))))))
       ,@(if (null? encrypted-partitions)
             '()
             `((mapped-devices

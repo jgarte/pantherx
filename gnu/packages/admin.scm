@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
 ;;; Copyright © 2014, 2015, 2016, 2018, 2019, 2020 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2020, 2021 Eric Bavier <bavier@posteo.net>
@@ -35,6 +35,7 @@
 ;;; Copyright © 2020, 2021 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Vincent Legoll <vincent.legoll@gmail.com>
 ;;; Copyright © 2020 Morgan Smith <Morgan.J.Smith@outlook.com>
+;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Zheng Junjie <873216071@qq.com>
 ;;; Copyright © 2021 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2021 qblade <qblade@protonmail.com>
@@ -44,6 +45,7 @@
 ;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
 ;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
+;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -128,6 +130,7 @@
   #:use-module (gnu packages perl)
   #:use-module (gnu packages perl-check)
   #:use-module (gnu packages pkg-config)
+  #:use-module (gnu packages polkit)
   #:use-module (gnu packages popt)
   #:use-module (gnu packages python)
   #:use-module (gnu packages python-crypto)
@@ -177,13 +180,9 @@
                 "supath=/run/setuid-programs/su"))
              #t)))))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("libtool" ,libtool)
-       ("pkg-config" ,pkg-config)))
+     (list autoconf automake libtool pkg-config))
     (inputs
-     `(("glib" ,glib)
-       ("gtk+" ,gtk+-2)))
+     (list glib gtk+-2))
     (synopsis "Graphical front end for @command{su}")
     (description
      "Ktsuss stands for ``Keep the @command{su} simple, stupid''.
@@ -205,16 +204,15 @@ simplicity in mind.")
         (base32 "15xp47sz7kk1ciffw3f5xw2jg2mb2lqrbr3q6p4bkbz5dap9iy8p"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("bison" ,bison)
-       ("flex" ,flex)))
+     (list bison flex))
     (inputs
-     `(("libgcrypt" ,libgcrypt)
-       ("libgpg-error" ,libgpg-error)
-       ("libmhash" ,libmhash)
-       ("pcre:static" ,pcre "static")
-       ("pcre" ,pcre)
-       ("zlib:static" ,zlib "static")
-       ("zlib" ,zlib)))
+     (list libgcrypt
+           libgpg-error
+           libmhash
+           `(,pcre "static")
+           pcre
+           `(,zlib "static")
+           zlib))
     (synopsis "File and directory integrity checker")
     (description
      "AIDE (Advanced Intrusion Detection Environment) is a file and directory
@@ -241,10 +239,9 @@ usual file attributes can be checked for inconsistencies.")
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("which" ,which)))
+     (list pkg-config which))
     (inputs
-     `(("ncurses" ,ncurses)))
+     (list ncurses))
     (arguments
      `(#:tests? #f                      ; no test suite
        #:make-flags
@@ -276,23 +273,28 @@ and provides a \"top-like\" mode (monitoring).")
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0x9zr0x3xvk4qkb6jnda451d5iyrl06cz1bjzjsm0lxvjj3fabyk"))))
+                "0x9zr0x3xvk4qkb6jnda451d5iyrl06cz1bjzjsm0lxvjj3fabyk"))
+              (modules '((guix build utils)))
+              (snippet
+               '(begin
+                  ;; Build with -O1 to work around <https://bugs.gnu.org/48368>.
+                  (substitute* "Makefile.in"
+                    (("compile --target")
+                     "compile -O1 --target"))))))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags '("--localstatedir=/var")
        #:make-flags '("GUILE_AUTO_COMPILE=0")))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-
-       ;; This is the Guile we use as a cross-compiler...
-       ("guile" ,guile-3.0)))
+     (list pkg-config
+           ;; This is the Guile we use as a cross-compiler...
+           guile-3.0))
     (inputs
      ;; ... and this is the one that appears in shebangs when cross-compiling.
-     `(("guile" ,guile-3.0)
-
-       ;; The 'shepherd' command uses Readline when used interactively.  It's
-       ;; an unusual use case though, so we don't propagate it.
-       ("guile-readline" ,guile-readline)))
+     (list guile-3.0
+           ;; The 'shepherd' command uses Readline when used interactively.  It's
+           ;; an unusual use case though, so we don't propagate it.
+           guile-readline))
     (synopsis "System service manager")
     (description
      "The GNU Shepherd is a daemon-managing daemon, meaning that it supervises
@@ -307,22 +309,18 @@ interface and is based on GNU Guile.")
     (inherit shepherd)
     (name "guile2.2-shepherd")
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("guile" ,guile-2.2)))
+     (list pkg-config guile-2.2))
     (inputs
-     `(("guile" ,guile-2.2)
-       ("guile2.2-readline" ,guile2.2-readline)))))
+     (list guile-2.2 guile2.2-readline))))
 
 (define-public guile2.0-shepherd
   (package
     (inherit shepherd)
     (name "guile2.0-shepherd")
     (native-inputs
-     `(("help2man" ,help2man)
-       ("pkg-config" ,pkg-config)
-       ("guile" ,guile-2.0)))
+     (list help2man pkg-config guile-2.0))
     (inputs
-     `(("guile" ,guile-2.0)))
+     (list guile-2.0))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -399,8 +397,7 @@ inspired by @command{vi}.")
                                       ,(dirname (which "readlink"))))))
              #t)))))
     (inputs
-     `(("python" ,python)
-       ("util-linux" ,util-linux))) ; contains sfdisk for growpart
+     (list python util-linux)) ; contains sfdisk for growpart
     (home-page "https://launchpad.net/cloud-utils")
     (synopsis "Set of utilities for cloud computing environments")
     (description
@@ -634,7 +631,7 @@ console.")
 (define-public htop
   (package
     (name "htop")
-    (version "3.1.1")
+    (version "3.1.2")
     (source
      (origin
        (method git-fetch)
@@ -642,14 +639,13 @@ console.")
              (url "https://github.com/htop-dev/htop")
              (commit version)))
        (sha256
-        (base32 "19xnqnavpxbyix2gp1p3lbhlaawx0gdklx3aq4x4ylrxml2nwyi6"))
+        (base32 "024qhrlmqgwmn6bwb5yiff9bhhdabryiphzx8y654k8r8vqi59j4"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (inputs
-     `(("ncurses" ,ncurses)))
+     (list ncurses))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)))
+     (list autoconf automake python-minimal-wrapper))     ; for scripts/MakeHeader.py
     (home-page "https://htop.dev")
     (synopsis "Interactive process viewer")
     (description
@@ -693,7 +689,7 @@ memory, disks, network and processes.")
         (base32 "1fwmiwvs8ax9az3hbp1p79x6m3wq73pn3vkbhcg9jvps4wv8wcwb"))))
     (build-system python-build-system)
     (inputs
-     `(("python-psutil" ,python-psutil)))
+     (list python-psutil))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -750,15 +746,14 @@ re-executing them as necessary.")
 (define-public inetutils
   (package
     (name "inetutils")
-    (version "1.9.4")
+    (version "2.0")
     (source (origin
              (method url-fetch)
              (uri (string-append "mirror://gnu/inetutils/inetutils-"
                                  version ".tar.gz"))
-             (patches (search-patches "inetutils-hurd.patch"))
              (sha256
               (base32
-               "05n65k4ixl85dc6rxc51b1b732gnmm8xnqi424dy9f1nz7ppb3xy"))))
+               "0j1nb69bhg29cm4xkqqjh2ln1zqcj2lnpm92v638lpwrs11dypxl"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags '("--localstatedir=/var"
@@ -779,10 +774,17 @@ re-executing them as necessary.")
                                    "--disable-uucpd"
                                    "--disable-whois")
                                  '()))
+       ;; Make sure that canonical "coreutils" package is not referred.
+       #:make-flags
+       (list (string-append "CPPFLAGS=-DPATHDEF_CP=\\\""
+                            (assoc-ref %build-inputs "coreutils*")
+                            "/bin/cp\\\""))
        ;; On some systems, 'libls.sh' may fail with an error such as:
        ;; "Failed to tell switch -a apart from -A".
        #:parallel-tests? #f))
-    (inputs `(("ncurses" ,ncurses)
+    (inputs `(("coreutils*" ,coreutils)
+              ("shadow" ,shadow)    ;for login (used in telnetd and rlogind)
+              ("ncurses" ,ncurses)
               ("readline" ,readline)))        ;for 'ftp'
     (native-inputs (if (member (%current-system)
                                (package-supported-systems net-tools))
@@ -817,6 +819,7 @@ hostname.")
        '(,@(if (hurd-target?)
              '()
              '("--with-libpam"))
+          "shadow_cv_logdir=/var/log"
           "ac_cv_func_setpgrp_void=yes")
 
        #:phases
@@ -913,7 +916,7 @@ login, passwd, su, groupadd, and useradd.")
                (mkdir-p man8))
              #t)))
        #:tests? #f))                              ; no tests
-    (inputs `(("shadow" ,shadow)))
+    (inputs (list shadow))
 
     (home-page "https://sourceforge.net/projects/mingetty")
     (synopsis "Getty for the text console")
@@ -938,6 +941,11 @@ to allow automatic login and starting any app.")
     (build-system trivial-build-system)
     (arguments
      `(#:modules ((guix build utils))
+       ;; This package consists solely of architecture-independent
+       ;; tables. Cross-compilation is pointless! Make sure we'll
+       ;; always get the same derivation.
+       #:target #f
+       #:allowed-references ()
        #:builder (begin
                    (use-modules (guix build utils)
                                 (srfi srfi-26))
@@ -957,8 +965,7 @@ to allow automatic login and starting any app.")
                                (map (cut string-append etc "/" <>)
                                     '("services" "protocols" "rpc")))
                      #t))))
-    (native-inputs `(("tar" ,tar)
-                     ("xz" ,xz)))
+    (native-inputs (list tar xz))
     (synopsis "IANA protocol, port, and RPC number assignments")
     (description
      "This package provides the /etc/services, /etc/protocols, and /etc/rpc
@@ -1033,9 +1040,8 @@ would need and has several interesting built-in capabilities.")
                (install-file "nc.1" man)
                (install-file "debian/copyright" doc)
                (copy-recursively "debian/examples" examples)))))))
-    (inputs `(("libbsd" ,libbsd)))
-    (native-inputs `(("pkg-config" ,pkg-config)
-                     ("quilt" ,quilt)))
+    (inputs (list libbsd))
+    (native-inputs (list pkg-config quilt))
     (home-page "https://packages.debian.org/sid/netcat-openbsd")
     (synopsis "Read and write data over TCP/IP")
     (description
@@ -1117,7 +1123,7 @@ recursive runs on the generated subnets.  (also IPv6)
                       (let ((out (assoc-ref outputs "out")))
                         (install-file "prips"
                                       (string-append out "/bin"))))))))
-    (native-inputs `(("perl-test-harness" ,perl-test-harness)))
+    (native-inputs (list perl-test-harness))
     (synopsis "Tool that prints the IP addresses in a given range")
     (description "Prips can be used to print all of the IP addresses in
  a given range.  This allows the enhancement of tools only work
@@ -1138,8 +1144,7 @@ recursive runs on the generated subnets.  (also IPv6)
                "053hfp7s66lnilm1ii4jrjmy44wpa2cwwh6f0sl8cyz0mm813x4b"))))
     (build-system gnu-build-system)
     (arguments '(#:configure-flags '("alive_cv_nice_ping=yes")))
-    (inputs `(("guile" ,guile-2.0)
-              ("inetutils" ,inetutils)))
+    (inputs (list guile-2.0 inetutils))
     (home-page "https://www.gnu.org/software/alive/")
     (synopsis "Autologin and keep-alive daemon")
     (description
@@ -1150,7 +1155,7 @@ connection alive.")
 (define-public isc-dhcp
   (let* ((bind-major-version "9")
          (bind-minor-version "11")
-         (bind-patch-version "32")
+         (bind-patch-version "36")
          (bind-release-type "")         ; for patch release, use "-P"
          (bind-release-version "")      ; for patch release, e.g. "6"
          (bind-version (string-append bind-major-version
@@ -1257,8 +1262,7 @@ connection alive.")
                       (sed       (assoc-ref inputs "sed*")))
                  (substitute* "client/scripts/linux"
                    (("/sbin/ip")
-                    (string-append (assoc-ref inputs "iproute")
-                                   "/sbin/ip")))
+                    (search-input-file inputs "/sbin/ip")))
 
                  (mkdir-p libexec)
                  (copy-file "client/scripts/linux"
@@ -1287,8 +1291,7 @@ connection alive.")
                  #t))))))
 
       (native-inputs
-       `(("perl" ,perl)
-         ("file" ,file)))
+       (list perl file))
 
       (inputs `(("inetutils" ,inetutils)
                 ;; TODO(core-updates): simply make this unconditional
@@ -1310,7 +1313,7 @@ connection alive.")
                                         "/bind-" bind-version ".tar.gz"))
                     (sha256
                      (base32
-                      "0hhkb4d14hvly2751cxl2s2xyim3bri8qaisgkcm456xfi5wpy6b"))))
+                      "108nh7hha4r0lb5hf1fn7lqaascvhsrghpz6afm5lf9vf2vgqly9"))))
 
                 ("coreutils*" ,coreutils)
                 ("sed*" ,sed)))
@@ -1339,12 +1342,12 @@ tools: server, client, and relay agent.")
         (base32 "1df827m3vkjq2bcs5y9wg2cygvpdwl8ppl446qqhyym584gz54nl"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("bison" ,bison)
-       ("check" ,check)
-       ("flex" ,flex)
-       ("pkg-config" ,pkg-config)))
+     (list autoconf
+           automake
+           bison
+           check
+           flex
+           pkg-config))
     (arguments
      `(#:configure-flags '("--with-check")))
     (home-page "https://radvd.litech.org/")
@@ -1369,8 +1372,7 @@ message.  These messages are required for IPv6 stateless autoconfiguration.")
                 "1m5x26vlbymp90k1qh0w3nj2nxzyvfrmfmwpj17k81dgri55ya7d"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("bison" ,bison)
-       ("flex" ,flex)))
+     (list bison flex))
     (arguments
      ;; There are some tests in testprogs/, but no automated test suite.
      `(#:tests? #f
@@ -1404,9 +1406,8 @@ network statistics collection, security monitoring, network debugging, etc.")
                (base32
                 "1ghfs5gifzrk3813zf9zalfbjs70wg6llz6q31k180r7zf2nkcvr"))))
     (build-system gnu-build-system)
-    (inputs `(("libpcap" ,libpcap)
-              ("openssl" ,openssl)))
-    (native-inputs `(("perl" ,perl)))        ; for tests
+    (inputs (list libpcap openssl))
+    (native-inputs (list perl))        ; for tests
     (home-page "https://www.tcpdump.org/")
     (synopsis "Network packet analyzer")
     (description
@@ -1429,11 +1430,9 @@ through the network interface controller.")
                 "1855np7c4b0bqzhf1l1dyzxb90fpnvrirdisajhci5am6als31z9"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("glib" ,glib)
-       ("ncurses" ,ncurses)
-       ("libpcap" ,libpcap)))
+     (list glib ncurses libpcap))
     (home-page
      "https://web.archive.org/web/20160703195221/http://jnettop.kubs.info/wiki/")
     (synopsis "Visualize network traffic by bandwidth use")
@@ -1502,26 +1501,26 @@ by bandwidth they use.")
                   (find-files "." ".*")))
                #t))))))
     (native-inputs
-     `(("perl-cpan-changes" ,perl-cpan-changes)
-       ("perl-file-slurp" ,perl-file-slurp)
-       ("perl-file-which" ,perl-file-which)
-       ("perl-module-build" ,perl-module-build)
-       ("perl-readonly" ,perl-readonly)
-       ("perl-test-differences" ,perl-test-differences)
-       ("perl-test-distmanifest" ,perl-test-distmanifest)
-       ("perl-test-perltidy" ,perl-test-perltidy)
-       ("perl-test-pod" ,perl-test-pod)
-       ("perl-test-pod-coverage" ,perl-test-pod-coverage)
-       ("perl-test-trap" ,perl-test-trap)
-       ("perltidy" ,perltidy)))
+     (list perl-cpan-changes
+           perl-file-slurp
+           perl-file-which
+           perl-module-build
+           perl-readonly
+           perl-test-differences
+           perl-test-distmanifest
+           perl-test-perltidy
+           perl-test-pod
+           perl-test-pod-coverage
+           perl-test-trap
+           perltidy))
     (inputs
-     `(("perl-exception-class" ,perl-exception-class)
-       ("perl-sort-naturally" ,perl-sort-naturally)
-       ("perl-tk" ,perl-tk)
-       ("perl-try-tiny" ,perl-try-tiny)
-       ("perl-x11-protocol" ,perl-x11-protocol)
-       ("perl-x11-protocol-other" ,perl-x11-protocol-other)
-       ("xterm" ,xterm)))
+     (list perl-exception-class
+           perl-sort-naturally
+           perl-tk
+           perl-try-tiny
+           perl-x11-protocol
+           perl-x11-protocol-other
+           xterm))
     ;; The clusterssh.sourceforge.net address requires login to view
     (home-page "https://sourceforge.net/projects/clusterssh/")
     (synopsis "Secure concurrent multi-server terminal control")
@@ -1530,6 +1529,53 @@ by bandwidth they use.")
 console window to allow commands to be interactively run on multiple servers
 over ssh connections.")
     (license license:gpl2+)))
+
+(define-public realmd
+  (package
+    (name "realmd")
+    (version "0.17.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/freedesktop/realmd")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "1c6q2a86kk2f1akzc36nh52hfwsmmc0mbp6ayyjxj4zsyk9zx5bf"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:configure-flags '("--with-systemd-unit-dir=no"
+                           "--with-systemd-journal=no"
+                           "--with-distro=GNU guix"
+                           "--disable-doc")
+       #:phases
+       (modify-phases %standard-phases
+         (add-before 'install 'fix-service
+           (lambda* (#:key outputs #:allow-other-keys)
+             ;; GNU Guix does not have service config file, therefore we remove
+             ;; the line that copies the file.
+             (substitute* "Makefile"
+               ((".*/service/realmd-.*") "")))))))
+    (native-inputs
+     `(("autoconf" ,autoconf)
+       ("automake" ,automake)
+       ("glib-bin" ,glib "bin")
+       ("intltool" ,intltool)
+       ("pkg-config" ,pkg-config)
+       ("python" ,python)))
+    (inputs
+     (list glib mit-krb5 openldap polkit))
+    (synopsis "DBus service for network authentication")
+    (description "This package provides an on demand system DBus service.
+It allows callers to configure network authentication and domain membership
+in a standard way.  Realmd discovers information about the domain or realm
+automatically and does not require complicated configuration in order to join
+a domain or realm.  Dbus system service that manages discovery and enrollment in
+realms/domains like Active Directory or IPA.")
+    (home-page "https://www.freedesktop.org/software/realmd/")
+    (license license:lgpl2.1+)))
 
 (define-public rename
   (package
@@ -1561,9 +1607,7 @@ over ssh connections.")
                   (find-files "." ".*")))
                #t))))))
     (native-inputs
-     `(("perl-module-build" ,perl-module-build)
-       ("perl-test-pod" ,perl-test-pod)
-       ("perl-test-pod-coverage" ,perl-test-pod-coverage)))
+     (list perl-module-build perl-test-pod perl-test-pod-coverage))
     (home-page "https://metacpan.org/pod/distribution/File-Rename/rename.PL")
     (synopsis "Perl extension for renaming multiple files")
     (description
@@ -1609,8 +1653,7 @@ at once based on a Perl regular expression.")
                     (lambda* (#:key inputs #:allow-other-keys)
                       (substitute* "rc/rc"
                         (("/usr/sbin/sendmail")
-                         (string-append (assoc-ref inputs "mailutils")
-                                        "/bin/mail")))
+                         (search-input-file inputs "/bin/mail")))
                       #t))
                   (add-after 'unpack 'fix-configure
                     (lambda* (#:key inputs native-inputs #:allow-other-keys)
@@ -1646,9 +1689,7 @@ at once based on a Perl regular expression.")
                   (add-after 'install 'install-info
                     (lambda _
                       (invoke "make" "install-info"))))))
-    (native-inputs `(("texinfo" ,texinfo)
-                     ("automake" ,automake)
-                     ("util-linux" ,util-linux))) ; for 'cal'
+    (native-inputs (list texinfo automake util-linux)) ; for 'cal'
     (inputs `(("coreutils*" ,coreutils)
               ("mailutils" ,mailutils)))
     (home-page "https://www.gnu.org/software/rottlog/")
@@ -1737,10 +1778,7 @@ system administrator.")
        ;; the chroot's /etc/passwd doesn't have it.  Turn off the tests.
        #:tests? #f))
     (native-inputs
-     ;; XXX TODO: Remove on next rebuild cycle.
-     (if (hurd-target?)
-         '()
-         `(("groff" ,groff))))
+     (list groff))
     (inputs
      `(("coreutils" ,coreutils)
        ,@(if (hurd-target?)
@@ -1804,7 +1842,7 @@ commands and their arguments.")
        (list (string-append "CC=" ,(cc-for-target)))
        #:tests? #f))                 ; no test suite
     (native-inputs
-     `(("bison" ,bison)))
+     (list bison))
     (home-page "https://github.com/Duncaen/OpenDoas")
     (synopsis "Portable version of OpenBSD's doas command")
     (description "Doas is a minimal replacement for the venerable sudo.  It was
@@ -1899,11 +1937,9 @@ features of sudo with a fraction of the codebase.")
                                         "/lib"))
       #:tests? #f))
     (inputs
-     `(("readline" ,readline)
-       ("libnl" ,libnl)
-       ("openssl" ,openssl)))
+     (list readline libnl openssl))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (home-page "https://w1.fi/wpa_supplicant/")
     (synopsis "Connecting to WPA and WPA2-protected wireless networks")
     (description
@@ -1924,8 +1960,8 @@ command.")
 (define-public wpa-supplicant
   (package (inherit wpa-supplicant-minimal)
     (name "wpa-supplicant")
-    (inputs `(("dbus" ,dbus)
-              ,@(package-inputs wpa-supplicant-minimal)))
+    (inputs (modify-inputs (package-inputs wpa-supplicant-minimal)
+              (prepend dbus)))
     (arguments
      (substitute-keyword-arguments (package-arguments wpa-supplicant-minimal)
        ((#:phases phases)
@@ -1951,14 +1987,12 @@ command.")
   (package
     (inherit wpa-supplicant)
     (name "wpa-supplicant-gui")
-    (inputs `(("qtbase" ,qtbase-5)
-              ("qtsvg" ,qtsvg)
-              ,@(package-inputs wpa-supplicant)))
+    (inputs (modify-inputs (package-inputs wpa-supplicant)
+              (prepend qtbase-5 qtsvg)))
     (native-inputs
      ;; For icons.
-     `(("imagemagick" ,imagemagick)
-       ("inkscape" ,inkscape)
-       ,@(package-native-inputs wpa-supplicant)))
+     (modify-inputs (package-native-inputs wpa-supplicant)
+       (prepend imagemagick inkscape)))
     (arguments
      `(#:phases (modify-phases %standard-phases
                   (add-after 'unpack 'chdir
@@ -2050,11 +2084,10 @@ command.")
                          (string-append "LIBDIR=" (assoc-ref %outputs "out")
                                         "/lib"))
       #:tests? #f))
-    (native-inputs `(("pkg-config" ,pkg-config)))
+    (native-inputs (list pkg-config))
 
     ;; There's an optional dependency on SQLite.
-    (inputs `(("openssl" ,openssl)
-              ("libnl" ,libnl)))
+    (inputs (list openssl libnl))
     (home-page "https://w1.fi/hostapd/")
     (synopsis "Daemon for Wi-Fi access points and authentication servers")
     (description
@@ -2149,8 +2182,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
                (base32
                 "06wsrl1118sl9z76p9sh53zvzv5hpm82qks896d8slx5dgnzrrll"))))
     (build-system gnu-build-system)
-    (native-inputs `(("flex" ,flex)
-                     ("bison" ,bison)))
+    (native-inputs (list flex bison))
     (arguments
      `(#:make-flags (list (string-append "PREFIX=" %output)
                           (string-append "CC=" ,(cc-for-target))
@@ -2184,8 +2216,7 @@ development, not the kernel implementation of ACPI.")
         (base32 "1l2ik5iwmb8vxa2aqdy62zfy3zfzbpq5a0pgpka2vvlw9ivpqy5p"))))
     (build-system python-build-system)
     (inputs
-     `(("python-psutil" ,python-psutil)
-       ("python-urwid" ,python-urwid)))
+     (list python-psutil python-urwid))
     (home-page "https://github.com/amanusk/s-tui")
     (synopsis "Interactive terminal stress test and monitoring tool")
     (description
@@ -2206,8 +2237,7 @@ utilization, temperature and power.")
                 "09shpd85g8dvpiw0mnwykss676g0s7lbi8ab37xjinb5lfff960p"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)))
+     (list autoconf automake))
     (home-page "https://packages.debian.org/sid/stress")
     (synopsis "Impose load on and stress test a computer system")
     (description
@@ -2237,9 +2267,7 @@ system is under heavy load.")
                 "116bgpbkh3c96h6vq0880rmnpb5kbnnlvvkpsrcib6928bj8lfvi"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("flex" ,flex)))
+     (list autoconf automake flex))
     (arguments
      `(#:phases (modify-phases %standard-phases
                   (add-after 'unpack 'delete-configure
@@ -2273,14 +2301,14 @@ characters can be replaced as well, as can UTF-8 characters.")
                 "1zlh44w67py416hkvw6nrfmjickc2d43v51vcli5p374d5sw84ql"))))
     (build-system gnu-build-system)
     (inputs
-     `(("ntfs-3g" ,ntfs-3g)
-       ("util-linux" ,util-linux "lib")
-       ("openssl" ,openssl)
-       ;; FIXME: add reiserfs.
-       ("zlib" ,zlib)
-       ("e2fsprogs" ,e2fsprogs)
-       ("libjpeg" ,libjpeg-turbo)
-       ("ncurses" ,ncurses)))
+     (list ntfs-3g
+           `(,util-linux "lib")
+           openssl
+           ;; FIXME: add reiserfs.
+           zlib
+           e2fsprogs
+           libjpeg-turbo
+           ncurses))
     (home-page "https://www.cgsecurity.org/wiki/TestDisk")
     (synopsis "Data recovery tool")
     (description
@@ -2429,7 +2457,7 @@ various ways that may be running with too much privilege.")
                (base32
                 "1mlc25sd5rgj5xmzcllci47inmfdw7cp185fday6hc9rwqkqmnaw"))))
     (build-system gnu-build-system)
-    (inputs `(("libcap-ng" ,libcap-ng)))
+    (inputs (list libcap-ng))
     (home-page "https://www.smartmontools.org/")
     (synopsis "S.M.A.R.T. harddisk control and monitoring tools")
     (description
@@ -2454,8 +2482,7 @@ degradation and failure.")
         (base32 "1g9p50xhi2sp0hqxml4w2k0kq9jv988q2yxm347z5349dlxvap6d"))))
     (build-system gnu-build-system)
     (inputs
-     `(("ncurses" ,ncurses)
-       ("pcre2" ,pcre2)))
+     (list ncurses pcre2))
     (home-page "https://github.com/adrianlopezroche/fdupes")
     (synopsis "Identify duplicate files")
     (description
@@ -2548,7 +2575,7 @@ sys.argv[0] = re.sub(r'\\.([^/]*)-real$', r'\\1', sys.argv[0])
            (lambda _
              (substitute* "test/lib/ansible_test/_internal/ansible_util.py"
                (("PYTHONPATH=get_ansible_python_path\\(args\\)" all)
-                (string-append all "+ ':' + os.environ['PYTHONPATH']")))))
+                (string-append all "+ ':' + os.environ['GUIX_PYTHONPATH']")))))
          (add-after 'unpack 'patch-paths
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (substitute* "lib/ansible/module_utils/compat/selinux.py"
@@ -2585,27 +2612,24 @@ sys.argv[0] = re.sub(r'\\.([^/]*)-real$', r'\\1', sys.argv[0])
                ;; devel/test/utils/shippable/shippable.sh.
                (invoke "ansible-test" "units" "-v")))))))
     (native-inputs
-     `(("openssh" ,openssh)
-       ("openssl" ,openssl)
-       ("python-mock" ,python-mock)
-       ("python-pycrypto" ,python-pycrypto)
-       ("python-pytest" ,python-pytest)
-       ("python-pytest-forked" ,python-pytest-forked)
-       ("python-pytest-mock" ,python-pytest-mock)
-       ("python-pytest-xdist" ,python-pytest-xdist)
-       ("python-pytz" ,python-pytz)))
+     (list openssh
+           openssl
+           python-mock
+           python-pycrypto
+           python-pytest
+           python-pytest-forked
+           python-pytest-mock
+           python-pytest-xdist
+           python-pytz))
     (inputs                    ;optional dependencies captured in wrap scripts
-     `(("libselinux" ,libselinux)
-       ("python-paramiko" ,python-paramiko)
-       ("python-passlib" ,python-passlib)
-       ("python-pexpect" ,python-pexpect)
-       ("sshpass" ,sshpass)))
+     (list libselinux python-paramiko python-passlib python-pexpect
+           sshpass))
     (propagated-inputs      ;core dependencies listed in egg-info/requires.txt
-     `(("python-cryptography" ,python-cryptography)
-       ("python-jinja2" ,python-jinja2)
-       ("python-pyyaml" ,python-pyyaml)
-       ("python-packaging" ,python-packaging) ;for version number parsing
-       ("python-resolvelib" ,python-resolvelib-0.5)))
+     (list python-cryptography
+           python-jinja2
+           python-pyyaml
+           python-packaging ;for version number parsing
+           python-resolvelib-0.5))
     (home-page "https://www.ansible.com/")
     (synopsis "Radically simple IT automation")
     (description "Ansible aims to be a radically simple IT automation system.
@@ -2632,16 +2656,16 @@ provides the following commands:
 (define-public ansible
   (package
     (name "ansible")
-    (version "4.4.0")
+    (version "4.7.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ansible" version))
        (sha256
-        (base32 "031n22j0lsmh69x6i6gkva81j68b4yzh1pbg3q2h4bknl85q46ag"))))
+        (base32 "0aab9id6dqfw2111r731c7y1p77dpzczynmgl4d989p3a7n54z0b"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("ansible-core" ,ansible-core)))
+     (list ansible-core))
     ;; The Ansible collections are found by ansible-core via PYTHONPATH; the
     ;; following search path ensures that they are found even when Python is
     ;; not present in the profile.
@@ -2651,7 +2675,7 @@ provides the following commands:
      ;; variable in the tests/cpan.scm test.
      (list (search-path-specification
             (variable "PYTHONPATH")
-            (files (list "lib/python3.8/site-packages")))))
+            (files (list "lib/python3.9/site-packages")))))
     (home-page "https://www.ansible.com/")
     (synopsis "Radically simple IT automation")
     (description "Ansible aims to be a radically simple IT automation system.
@@ -2681,18 +2705,17 @@ modules and plugins that extend Ansible.")
                         "debops-debops-defaults-fall-back-to-less.patch"))))
     (build-system python-build-system)
     (native-inputs
-     `(("git" ,git)))
+     (list git))
     (inputs
-     `(("ansible" ,ansible)
-       ("encfs" ,encfs)
-       ("fuse" ,fuse)
-       ("util-linux" ,util-linux)  ;; for umount
-       ("findutils" ,findutils)
-       ("gnupg" ,gnupg)
-       ("which" ,which)))
+     (list ansible
+           encfs
+           fuse
+           util-linux ;; for umount
+           findutils
+           gnupg
+           which))
     (propagated-inputs
-     `(("python-future" ,python-future)
-       ("python-distro" ,python-distro)))
+     (list python-future python-distro))
     (arguments
      `(#:tests? #f
        #:phases
@@ -2843,8 +2866,7 @@ limits.")
         (base32 "1rgpsh70manr2dydna9da4x7p8ahii7dgdgwir5fka340n1wrcws"))))
     (build-system gnu-build-system)
     (native-inputs                      ; for tests
-     `(("python-mock" ,python-mock)
-       ("python-pytest" ,python-pytest)))
+     (list python-mock python-pytest))
     (inputs
      `(("python" ,python-wrapper)))
     (arguments
@@ -2917,8 +2939,10 @@ the command line.")
                 "15sgkdyijb7vbxpxjavh5qm5nvyii3fqcg9mzvw7fx8s6zmfwczp"))))
     (build-system gnu-build-system)
     (inputs
-      `(("libpcap" ,libpcap)
-        ("ncurses" ,ncurses)))
+      (list libpcap ncurses))
+    (arguments
+      ;; Fix build failure with GCC 10
+     '(#:configure-flags '("CFLAGS=-O2 -g -fcommon")))
     (synopsis "Monitor network usage")
     (description "Iftop does for network usage what @command{top} does
 for CPU usage.  It listens to network traffic on a named interface and
@@ -2949,8 +2973,7 @@ displays a table of current bandwidth usage by pairs of hosts.")
                      ""))
                   #t))))
     (inputs
-     `(("openssl" ,openssl)
-       ("libgcrypt" ,libgcrypt)))
+     (list openssl libgcrypt))
     (build-system gnu-build-system)
     (arguments
      '(#:configure-flags
@@ -2992,28 +3015,26 @@ platform-specific methods.")
   (package
     (name "audit")
     (home-page "https://people.redhat.com/sgrubb/audit/")
-    (version "2.8.5")
+    (version "3.0.6")
     (source (origin
               (method url-fetch)
               (uri (string-append home-page "audit-" version ".tar.gz"))
               (sha256
                (base32
-                "1dzcwb2q78q7x41shcachn7f4aksxbxd470yk38zh03fch1l2p8f"))))
+                "0pnc9wzslks9p6kxw0llp1n8h8yg0frcxl3x84fl0hisa5vlvr63"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags (list "--with-python=no"
                                "--disable-static")))
     (inputs
-     `(("openldap" ,openldap)
-       ("gnutls" ,gnutls)
-       ("sasl" ,cyrus-sasl)))
+     (list openldap gnutls cyrus-sasl))
     (synopsis "User-space component to the Linux auditing system")
     (description
-     "auditd is the user-space component to the Linux auditing system, which
-allows logging of system calls made by user-land processes.  It's responsible
-for writing audit records to the disk.  Viewing the logs is done with the
-@code{ausearch} or @code{aureport} utilities.  Configuring the audit rules is
-done with the @code{auditctl} utility.")
+     "This is the user-space component to the Linux auditing system, which
+allows logging of system calls made by user-land processes.  @command{auditd} is
+responsible for writing audit records to the disk.  Viewing the logs is done
+with the @code{ausearch} or @code{aureport} utilities.  Configuring the audit
+rules is done with the @code{auditctl} utility.")
     (license license:gpl2+)))
 
 (define-public nmap
@@ -3081,7 +3102,7 @@ done with the @code{auditctl} utility.")
                  "install-nping")
                (make ndiff "install-ndiff")
                (wrap-program (string-append ndiff "/bin/ndiff")
-                 `("PYTHONPATH" prefix
+                 `("GUIX_PYTHONPATH" prefix
                    (,(python-path ndiff)))))))
          ;; These are the tests that do not require network access.
          (replace 'check
@@ -3136,7 +3157,7 @@ results (ndiff), and a packet generation and response analysis tool (nping).")
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((out (assoc-ref outputs "out")))
                (wrap-program (string-append out "/bin/dstat")
-                 `("PYTHONPATH" ":" prefix (,(getenv "PYTHONPATH"))))
+                 `("GUIX_PYTHONPATH" ":" prefix (,(getenv "GUIX_PYTHONPATH"))))
                #t))))))
     (inputs
      `(("python" ,python-wrapper)
@@ -3185,16 +3206,10 @@ throughput (in the same interval).")
                (("settings\\.init\\(\\)") ""))
              (invoke "py.test" "-v"))))))
     (propagated-inputs
-     `(("python-colorama" ,python-colorama)
-       ("python-decorator" ,python-decorator)
-       ("python-psutil" ,python-psutil)
-       ("python-pyte" ,python-pyte)
-       ("python-six" ,python-six)))
+     (list python-colorama python-decorator python-psutil python-pyte
+           python-six))
     (native-inputs
-     `(("go" ,go)
-       ("python-mock" ,python-mock)
-       ("python-pytest" ,python-pytest)
-       ("python-pytest-mock" ,python-pytest-mock)))
+     (list go python-mock python-pytest python-pytest-mock))
     (home-page "https://github.com/nvbn/thefuck")
     (synopsis "Correct mistyped console command")
     (description
@@ -3259,7 +3274,7 @@ produce uniform output across heterogeneous networks.")
        ("gettext" ,gettext-minimal)
        ("libnotify" ,libnotify)))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (synopsis "Lightweight battery icon for the system tray")
     (description "cbatticon is a lightweight battery icon that displays
 the status of your battery in the system tray.")
@@ -3290,9 +3305,9 @@ the status of your battery in the system tray.")
          #:make-flags (list (string-append "PREFIX="
                                            (assoc-ref %outputs "out")))))
       (inputs
-       `(("libx11" ,libx11)))
+       (list libx11))
       (native-inputs
-       `(("pkg-config" ,pkg-config)))
+       (list pkg-config))
       (synopsis "Scriptable launcher menu")
       (description "Interrobang is a scriptable launcher menu with a customizable
 shortcut syntax and completion options.")
@@ -3329,11 +3344,9 @@ shortcut syntax and completion options.")
                (("pam-util/vector\n")  ""))
              #t)))))
     (inputs
-     `(("linux-pam" ,linux-pam)
-       ("mit-krb5" ,mit-krb5)))
+     (list linux-pam mit-krb5))
     (native-inputs
-     `(("perl" ,perl)
-       ("perl-test-pod" ,perl-test-pod))) ; required for tests
+     (list perl perl-test-pod)) ; required for tests
     (synopsis "Kerberos PAM module")
     (description
      "Pam-krb5 is a Kerberos PAM module for either MIT Kerberos or Heimdal.
@@ -3410,10 +3423,9 @@ Kerberos and Heimdal and FAST is supported with recent MIT Kerberos.")
     (source
      (sunxi-tools-source version))
     (native-inputs
-     `(("sunxi-target-tools" ,sunxi-target-tools)
-       ("pkg-config" ,pkg-config)))
+     (list sunxi-target-tools pkg-config))
     (inputs
-     `(("libusb" ,libusb)))
+     (list libusb))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no tests exist
@@ -3520,6 +3532,7 @@ buffers.")
 (define-public igt-gpu-tools
   (package
     (name "igt-gpu-tools")
+    ;; You should very likely remove the 'fix-meson.build phase when upgrading.
     (version "1.26")
     (source
      (origin
@@ -3532,20 +3545,30 @@ buffers.")
         (base32 "0m124pqv7zna25jnvk566c4kk628jr0w8mgnp8mr5xqz9cprgczm"))))
     (build-system meson-build-system)
     (arguments
-     `(#:tests? #f))            ; many of the tests try to load kernel modules
+     `(#:tests? #f              ; many of the tests try to load kernel modules
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'find-rst2man.py
+           (lambda _
+             (substitute* "man/meson.build"
+               (("'rst2man'") "'rst2man.py'"))))
+         (add-after 'unpack 'fix-meson.build
+           ;; Fix ‘ERROR: Function does not take positional arguments.’
+           (lambda _
+             (substitute* "lib/meson.build"
+               (("f\\.underscorify\\(f\\)")
+                "f.underscorify()")))))))
     (inputs
-     `(("cairo" ,cairo)
-       ("elfutils" ,elfutils)           ; libdw
-       ("eudev" ,eudev)
-       ("kmod" ,kmod)
-       ("libdrm" ,libdrm)
-       ("libpciaccess" ,libpciaccess)
-       ("libunwind" ,libunwind)
-       ("procps" ,procps)))
+     (list cairo
+           elfutils ; libdw
+           eudev
+           kmod
+           libdrm
+           libpciaccess
+           libunwind
+           procps))
     (native-inputs
-     `(("bison" ,bison)
-       ("flex" ,flex)
-       ("pkg-config" ,pkg-config)))
+     (list bison flex pkg-config python-docutils))
     (home-page "https://gitlab.freedesktop.org/drm/igt-gpu-tools")
     (synopsis "Tools for development and testing of the Intel DRM driver")
     (description "IGT GPU Tools is a collection of tools for development and
@@ -3619,8 +3642,7 @@ you are running, what theme or icon set you are using, etc.")
                          (string-append out "/share/doc/" ,name "-" ,version))
            (substitute* (string-append out "/bin/screenfetch")
              (("/usr/bin/env bash")
-              (string-append (assoc-ref %build-inputs "bash")
-                             "/bin/bash")))
+              (search-input-file %build-inputs "/bin/bash")))
            (wrap-program
                (string-append out "/bin/screenfetch")
              `("PATH" ":" prefix
@@ -3630,14 +3652,11 @@ you are running, what theme or icon set you are using, etc.")
                                 (assoc-ref %build-inputs "xprop") "/bin"))))
            (substitute* (string-append out "/bin/screenfetch")
              (("#!#f")
-              (string-append "#!" (assoc-ref %build-inputs "bash")
-                             "/bin/bash")))))))
+              (string-append "#!"
+                             (search-input-file %build-inputs
+                                                "/bin/bash"))))))))
     (inputs
-     `(("bash" ,bash)
-       ("bc" ,bc)
-       ("scrot" ,scrot)
-       ("xdpyinfo" ,xdpyinfo)
-       ("xprop" ,xprop)))
+     (list bash bc scrot xdpyinfo xprop))
     (home-page "https://github.com/KittyKatt/screenFetch")
     (synopsis "System information script")
     (description "Bash screenshot information tool which can be used to
@@ -3673,7 +3692,7 @@ everyone's screenshots nowadays.")
                   (output (assoc-ref %outputs "out"))
                   (bindir (string-append output "/bin"))
                   (docdir (string-append output "/share/doc/ufetch-" ,version))
-                  (tput (string-append (assoc-ref %build-inputs "tput") "/bin/tput")))
+                  (tput   (search-input-file %build-inputs "/bin/tput")))
              (install-file (string-append source "/LICENSE") docdir)
              (setenv "PATH" (string-append (assoc-ref %build-inputs "bash") "/bin"))
              (mkdir-p bindir)
@@ -3710,7 +3729,7 @@ everyone's screenshots nowadays.")
                  (base32
                   "1md40av6i3xvvwig5jzhy4kf3s5sgxxk35r0vcyrjd8qyndk927l"))))
       (build-system trivial-build-system)
-      (inputs `(("bash" ,bash)))
+      (inputs (list bash))
       (arguments
        `(#:modules ((guix build utils))
          #:builder
@@ -3736,20 +3755,19 @@ information tool.")
 (define-public nnn
   (package
     (name "nnn")
-    (version "4.1.1")
+    (version "4.4")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/jarun/nnn/releases/download/v"
                            version "/nnn-v" version ".tar.gz"))
        (sha256
-        (base32 "1fnf35s3b2nfp18s712n5vhg6idx4rfgwdfv74nc2933v9l2dq7h"))))
+        (base32 "0lqn7pyy8c1vy29vn8ad4x23cw67cy1d21ghns6f3w9a1h7kyjp0"))))
     (build-system gnu-build-system)
     (inputs
-     `(("ncurses" ,ncurses)
-       ("readline" ,readline)))
+     (list ncurses readline))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (arguments
      `(#:tests? #f                      ; no tests
        #:phases
@@ -3798,18 +3816,14 @@ hard-coded.")
            (lambda _
              (setenv "NO_CONFIGURE" "yet"))))))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("autoconf-archive" ,autoconf-archive)
-       ("automake" ,automake)
-       ("glib" ,glib "bin")             ; for glib-genmarshal, etc.
-       ("gtk-doc" ,gtk-doc)
-       ("pkg-config" ,pkg-config)))
+     (list autoconf
+           autoconf-archive
+           automake
+           `(,glib "bin") ; for glib-genmarshal, etc.
+           gtk-doc
+           pkg-config))
     (inputs
-     `(("dbus-glib" ,dbus-glib)
-       ("libevdev" ,libevdev)
-       ("libxml2" ,libxml2)
-       ("upower" ,upower)
-       ("xz" ,xz)))
+     (list dbus-glib libevdev libxml2 upower xz))
     (home-page "https://01.org/linux-thermal-daemon/")
     (synopsis "CPU scaling for thermal management")
     (description "The Linux Thermal Daemon helps monitor and control temperature
@@ -3833,7 +3847,7 @@ on systems running the Linux kernel.")
         (base32 "0q0c7bsf0pbl8napry1qyg0gl4pd8wn872h4mz9b56dx4rx90vqg"))))
     (build-system gnu-build-system)
     (inputs
-     `(("libpcap" ,libpcap)))
+     (list libpcap))
     (arguments
      `(#:test-target "regress"
        #:make-flags
@@ -3913,12 +3927,12 @@ late.")
                   #t))))
     (build-system gnu-build-system)
     (inputs
-     `(("mpi" ,openmpi)
-       ("munge" ,munge)
-       ("boost" ,boost)
-       ("libelf" ,libelf)
-       ("libgcrypt" ,libgcrypt)
-       ("libgpg-error" ,libgpg-error)))
+     (list openmpi
+           munge
+           boost
+           libelf
+           libgcrypt
+           libgpg-error))
     (synopsis "Infrastructue for large scale tool daemon launching")
     (description
      "LaunchMON is a software infrastructure that enables HPC run-time
@@ -3965,7 +3979,7 @@ Python loading in HPC environments.")
   (let ((real-name "inxi"))
     (package
       (name "inxi-minimal")
-      (version "3.3.09-1")
+      (version "3.3.10-1")
       (source
        (origin
          (method git-fetch)
@@ -3974,14 +3988,14 @@ Python loading in HPC environments.")
                (commit version)))
          (file-name (git-file-name real-name version))
          (sha256
-          (base32 "0m8acg7avnmwqnz59kvrj8rrzg68m228x366bdr3qphw4jqp9l62"))))
+          (base32 "1whzrxqybh9h3v4c3mkjmz82vhlixdsj586fs6cj9mjzs7x89gz8"))))
       (build-system trivial-build-system)
       (inputs
        `(("bash" ,bash-minimal)
          ("perl" ,perl)
          ("procps" ,procps)))
       (native-inputs
-       `(("gzip" ,gzip)))
+       (list gzip))
       (arguments
        `(#:modules ((guix build utils))
          #:builder
@@ -4087,11 +4101,9 @@ support forum.  It runs with the @code{/exec} command in most IRC clients.")
         (base32 "1sm99423hh90kr4wdjqi9sdrrpk65j2vz2hzj65zcxfxyr6khjci"))))
     (build-system meson-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("cairo" ,cairo)
-       ("libpng" ,libpng)
-       ("libx11" ,libx11)))
+     (list cairo libpng libx11))
     (home-page "https://gitlab.com/mildlyparallel/pscircle")
     (synopsis "Visualize Linux processes in a form of radial tree")
     (description
@@ -4125,15 +4137,12 @@ support forum.  It runs with the @code{/exec} command in most IRC clients.")
                 (("= find_library") "= "))
                #t))))))
     (inputs
-     `(("eudev" ,eudev)))
+     (list eudev))
     (propagated-inputs
-     `(("python-six" ,python-six)))
+     (list python-six))
     (native-inputs
-     `(("python-docutils" ,python-docutils)
-       ("python-hypothesis" ,python-hypothesis)
-       ("python-mock" ,python-mock)
-       ("python-pytest" ,python-pytest)
-       ("python-sphinx" ,python-sphinx)))
+     (list python-docutils python-hypothesis python-mock python-pytest
+           python-sphinx))
     (home-page "https://pyudev.readthedocs.io/")
     (synopsis "Python udev binding")
     (description "This package provides @code{udev} bindings for Python.")
@@ -4154,7 +4163,7 @@ support forum.  It runs with the @code{/exec} command in most IRC clients.")
         (base32 "08da6apzfkfjwasn4dxrlfxqfx7arl28apdzac5nvm0fhvws0dxk"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("perl" ,perl)))
+     (list perl))
     (arguments
      `(#:tests? #f                      ; no tests
        #:make-flags
@@ -4190,17 +4199,16 @@ cache of unix and unix-like systems.")
        (modify-phases %standard-phases
          (add-before 'build 'setenv-PATH
            (lambda _
-             (setenv "PYTHONPATH" (string-append "lib:" (getenv "PYTHONPATH"))))))))
+             (setenv "PYTHONPATH" "lib"))))))
     (propagated-inputs
-     `(("python-pygobject" ,python-pygobject)
-       ("python-pyudev" ,python-pyudev)
-
-       ;; For GUI.
-       ("python-pyyaml" ,python-pyyaml)
-       ("python-psutil" ,python-psutil)
-       ("python-xlib" ,python-xlib)
-       ("gtk+" ,gtk+)
-       ("python-pygobject" ,python-pygobject)))
+     (list python-pygobject
+           python-pyudev
+           ;; For GUI.
+           python-pyyaml
+           python-psutil
+           python-xlib
+           gtk+
+           python-pygobject))
     (home-page "https://pwr-solaar.github.io/Solaar/")
     (synopsis "Linux devices manager for the Logitech Unifying Receiver")
     (description "This package provides tools to manage clients of the
@@ -4298,7 +4306,7 @@ possible configuration issues.")
          "1x2fyd7wdqlj1r76ilal06cl2wmbz0ws6i3ys204sbjh1cj6dcl7"))))
     (build-system gnu-build-system)
     (inputs
-     `(("libpcap" ,libpcap)))
+     (list libpcap))
     (arguments
      `(#:tests? #f ;; No tests.
        #:configure-flags (list (string-append "--with-pcap-includes="
@@ -4328,8 +4336,7 @@ tcpdump and snoop.")
         (base32 "0832nh2qf9pisgwnbgx6hkylx5d7i416l19y3ly4ifv7k1p7mxqa"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("perl" ,perl)
-       ("pkg-config" ,pkg-config)))
+     (list perl pkg-config))
     (inputs
      `(("cryptsetup" ,cryptsetup)
        ("libhx" ,libhx)
@@ -4392,9 +4399,7 @@ supplied by the user when logging in.")
         (base32 "0rwvyyrdnw43pixp8h51rncq2inc9pbbj1j2191y5si00pjw34zr"))))
     (build-system python-build-system)
     (propagated-inputs
-     `(("python-pygments" ,python-pygments)
-       ("python-ruamel.yaml" ,python-ruamel.yaml)
-       ("python-xmltodict" ,python-xmltodict)))
+     (list python-pygments python-ruamel.yaml python-xmltodict))
     (home-page "https://github.com/kellyjonbrazil/jc")
     (synopsis "Convert the output of command-line tools to JSON")
     (description "@code{jc} JSONifies the output of many CLI tools and
@@ -4416,7 +4421,7 @@ file-types for easier parsing in scripts.")
                 "19i21fqz2m40cds9pb17brjxkczqagmx2f7mfb0xdvbygaply5wz"))))
     (build-system python-build-system)
     (inputs
-     `(("python-tabulate" ,python-tabulate)))
+     (list python-tabulate))
     (home-page "https://github.com/kellyjonbrazil/jtbl")
     (synopsis "Command-line tool to print JSON data as a table in the terminal")
     (description "@code{jtbl} accepts piped JSON data from stdin and outputs a
@@ -4470,7 +4475,7 @@ text table representation to stdout.")
                            "\nPATH=" (getenv "PATH"))))
          ;; check phase
          (setenv "TERM" "linux") ;set to tty for test
-         (invoke (string-append (assoc-ref %build-inputs "bats") "/bin/bats")
+         (invoke (search-input-file %build-inputs "/bin/bats")
                  "test")
          ;; install phase
          (install-file "hosts" (string-append %output "/bin"))
@@ -4514,10 +4519,9 @@ entries, providing commands to add, remove, comment, and search.")
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("libnl" ,libnl)
-       ("libpcap" ,libpcap)))
+     (list libnl libpcap))
     (arguments
      `(#:tests? #f ; None exist
        #:make-flags
@@ -4676,7 +4680,7 @@ disk utilization, priority, username, state, and exit code.")
                (install-file "novena-eeprom" out-bin)
                (install-file "novena-eeprom.8" out-share-man)))))))
     (inputs
-     `(("i2c-tools" ,i2c-tools)))
+     (list i2c-tools))
     (synopsis "Novena EEPROM editor")
     (description "This package provides an editor for the Novena EEPROM.
 Novena boards contain a device-dependent descriptive EEPROM that defines
@@ -4728,7 +4732,7 @@ the XMODEM/YMODEM/ZMODEM file transfer protocols.")
         (base32 "0sdamjzvmf6cxhjmd1rjvn7zm6k10fp5n6vabyxd3yl30cgrxw2i"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("perl" ,perl)))
+     (list perl))
     (arguments
      `(#:make-flags (list (string-append "CC=" ,(cc-for-target))
                           (string-append "PREFIX=" (assoc-ref %outputs "out")))
@@ -4759,7 +4763,7 @@ setup, maintenance, supervision, or any long-running processes.")
                   "058x04yp6bc77hbl3qchqm7pa8f9vqfl9jryr88m8pzl7kvpif54"))))
       (build-system trivial-build-system)
       (inputs
-       `(("lua" ,lua)))
+       (list lua))
       (arguments
        `(#:modules ((guix build utils))
          #:builder

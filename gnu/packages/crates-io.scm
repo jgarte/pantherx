@@ -12,6 +12,7 @@
 ;;; Copyright © 2020 André Batista <nandre@riseup.net>
 ;;; Copyright © 2020 Arun Isaac <arunisaac@systemreboot.net>
 ;;; Copyright © 2020 Antoine Côté <antoine.cote@posteo.net>
+;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 aecepoglu <aecepoglu@fastmail.fm>
 ;;; Copyright © 2021 Zheng Junjie <873216071@qq.com>
 ;;; Copyright © 2021 Alexandru-Sergiu Marton <brown121407@posteo.ro>
@@ -21,6 +22,7 @@
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
 ;;; Copyright © 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2021 Jacob Hrbek <kreyren@rixotstudio.cz>
+;;; Copyright © 2021 Zheng Junjie <873216071@qq.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1031,8 +1033,7 @@ deadlock, like the standard Barrier).")
         ("rust-serde-json" ,rust-serde-json-1)
         ("rust-sha2" ,rust-sha2-0.9)
         ("rust-tokio" ,rust-tokio-1.8))))
-    (native-inputs `(("pkg-config" ,pkg-config)
-                     ("openssl" ,openssl)))
+    (native-inputs (list pkg-config openssl))
     (home-page "https://github.com/brave/adblock-rust/")
     (synopsis "Adblock Plus syntax filter parsing and matching")
     (description "This package provides native Rust module for Adblock Plus
@@ -1195,7 +1196,7 @@ checksum, used in the zlib compression format.")
         (method url-fetch)
         (uri (crate-uri "adler32" version))
         (file-name
-          (string-append name "-" version ".crate"))
+          (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0bgks405vz823bphgwhj4l9h6vpfh900s0phfk4qqijyh9xhfysn"))))
@@ -2026,7 +2027,7 @@ escape codes.")
       (origin
         (method url-fetch)
         (uri (crate-uri "antidote" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "19g2sw2qa2ibnh4x7j1snk46593jgx6y7rnvva496ynq61af5z9l"))))
@@ -2042,7 +2043,7 @@ escape codes.")
 (define-public rust-anyhow-1
   (package
     (name "rust-anyhow")
-    (version "1.0.37")
+    (version "1.0.46")
     (source
      (origin
        (method url-fetch)
@@ -2051,7 +2052,7 @@ escape codes.")
         (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
-         "11kaqp25lchr2ckyc46zm6blzndnw0w2w8qv0sp8z4xcxqgw2rzf"))))
+         "0w0zm1bqk5kbk834r4xszlzqiln4vw5k1lnlswyjkh24khi2ia1s"))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-development-inputs
@@ -2266,20 +2267,21 @@ coverage-guided, mutation-based fuzzers.")
 (define-public rust-arboard-1
   (package
     (name "rust-arboard")
-    (version "1.1.0")
+    (version "1.2.1")
     (source
      (origin
        (method url-fetch)
        (uri (crate-uri "arboard" version))
        (file-name (string-append name "-" version ".tar.gz"))
        (sha256
-        (base32 "0wpyv732fxkplmiwik1sbgdlnbk748w1aqpkc71gn5lm2ns9w545"))))
+        (base32 "1a5qfmpzcf5rwlwsligf9z1gzndpvj0jncc4s3k3z5g214c4l127"))))
     (build-system cargo-build-system)
     (arguments
      `(#:skip-build? #t
        #:cargo-inputs
        (("rust-clipboard-win" ,rust-clipboard-win-4)
         ("rust-core-graphics" ,rust-core-graphics-0.21)
+        ("rust-env-logger" ,rust-env-logger-0.8)
         ("rust-image" ,rust-image-0.23)
         ("rust-lazy-static" ,rust-lazy-static-1)
         ("rust-libc" ,rust-libc-0.2)
@@ -2287,9 +2289,11 @@ coverage-guided, mutation-based fuzzers.")
         ("rust-objc-foundation" ,rust-objc-foundation-0.1)
         ("rust-objc-id" ,rust-objc-id-0.1)
         ("rust-scopeguard" ,rust-scopeguard-1)
+        ("rust-simple-logger" ,rust-simple-logger-1)
         ("rust-thiserror" ,rust-thiserror-1)
         ("rust-winapi" ,rust-winapi-0.3)
-        ("rust-xcb" ,rust-xcb-0.9))))
+        ("rust-wl-clipboard-rs" ,rust-wl-clipboard-rs-0.4)
+        ("rust-x11rb" ,rust-x11rb-0.8))))
     (home-page "https://github.com/ArturKovacs/arboard")
     (synopsis "Image and text handling for the OS clipboard")
     (description
@@ -2373,6 +2377,71 @@ coverage-guided, mutation-based fuzzers.")
      "This package provides a procedural macro compatible with clap's
 @code{arg_enum}.")
     (license license:expat)))
+
+(define-public rust-argh-shared-0.1
+  (package
+    (name "rust-argh-shared")
+    (version "0.1.6")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "argh_shared" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "0crzkzr4mq9gyys3m0idgsfwwrwd4dk70scp7rspvb2fmgd01piq"))))
+    (build-system cargo-build-system)
+    (arguments `(#:skip-build? #t))
+    (home-page "https://github.com/google/argh")
+    (synopsis "Derive-based argument parsing optimized for code size")
+    (description "Derive-based argument parsing optimized for code size")
+    (license license:bsd-3)))
+
+(define-public rust-argh-derive-0.1
+  (package
+    (name "rust-argh-derive")
+    (version "0.1.6")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "argh_derive" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "13qz9i9frdjl1v9aqw5b2cs7wn3h34x2xkpsi9wcl1hcpjd23ba8"))))
+    (build-system cargo-build-system)
+    (arguments
+      `(#:skip-build?
+        #t
+        #:cargo-inputs
+        (("rust-argh-shared" ,rust-argh-shared-0.1)
+         ("rust-heck" ,rust-heck-0.3)
+         ("rust-proc-macro2" ,rust-proc-macro2-1)
+         ("rust-quote" ,rust-quote-1)
+         ("rust-syn" ,rust-syn-1))))
+    (home-page "https://github.com/google/argh")
+    (synopsis "Derive-based argument parsing optimized for code size")
+    (description "Derive-based argument parsing optimized for code size")
+    (license license:bsd-3)))
+
+(define-public rust-argh-0.1
+  (package
+    (name "rust-argh")
+    (version "0.1.6")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "argh" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "1gy9y69d38q7f5147kj823swgggc3m30x7z2z1lrjpwpsxncf8zh"))))
+    (build-system cargo-build-system)
+    (arguments
+      `(#:cargo-inputs
+        (("rust-argh-derive" ,rust-argh-derive-0.1)
+         ("rust-argh-shared" ,rust-argh-shared-0.1))))
+    (home-page "https://github.com/google/argh")
+    (synopsis "Derive-based argument parser optimized for code size")
+    (description "Derive-based argument parser optimized for code size")
+    (license license:bsd-3)))
 
 (define-public rust-argon2rs-0.2
   (package
@@ -2702,10 +2771,9 @@ a re-write of the official Arrow crate using transmute-free operations.")
         ("rust-tokio" ,rust-tokio-1)
         ("rust-url" ,rust-url-2))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("libxml2" ,libxml2)
-       ("openssl" ,openssl)))
+     (list libxml2 openssl))
     (home-page "https://gitlab.com/news-flash/article_scraper")
     (synopsis "Scrap article contents from the web")
     (description "This package provides a crate to scrap article contents from
@@ -4066,7 +4134,7 @@ methods.")
      (origin
        (method url-fetch)
        (uri (crate-uri "atty" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "1s7yslcs6a28c5vz7jwj63lkfgyx8mx99fdirlhi9lbhhzhrpcyr"))))
@@ -4082,6 +4150,26 @@ methods.")
     (description
      "This package provides a simple interface for querying atty.")
     (license license:expat)))
+
+(define-public rust-atty-0.2.11
+  (package
+    (inherit rust-atty-0.2)
+    (name "rust-atty")
+    (version "0.2.11")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "atty" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "0lln6vaczj521qqjbaqnb81w5p6xk4fjfkg33r0m22cm4f3mnzcs"))))
+    (arguments
+      `(#:skip-build?
+        #t
+        #:cargo-inputs
+        (("rust-libc" ,rust-libc-0.2)
+         ("rust-termion" ,rust-termion-1)
+         ("rust-winapi" ,rust-winapi-0.3))))))
 
 (define-public rust-autocfg-1
   (package
@@ -4113,7 +4201,7 @@ methods.")
       (origin
         (method url-fetch)
         (uri (crate-uri "autocfg" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1chwgimpx5z7xbag7krr9d8asxfqbh683qhgl9kn3hxk2l0djj8x"))))
@@ -4444,7 +4532,7 @@ trace (backtrace) at runtime in a Rust program.")
       (origin
         (method url-fetch)
         (uri (crate-uri "backtrace-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "16a3igz22q9lnnjjr77f4k8ci48v8zdwrs67khx3h7wx3jzfpyqq"))))
@@ -4665,7 +4753,7 @@ c6e7d37.  However, this package works only up to 128 bytes.")
       (origin
         (method url-fetch)
         (uri (crate-uri "base-x" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1hfy0wv7j5ynd73yk1vyr32pqa77rp15lkrc54f8ky9c6hcbc80v"))))
@@ -4747,7 +4835,7 @@ Cow.")
       (origin
         (method url-fetch)
         (uri (crate-uri "bencher" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1x8p2xblgqssay8cdykp5pkfc0np0jk5bs5cx4f5av097aav9zbx"))))
@@ -4994,7 +5082,7 @@ bindings to C and C++ libraries.")
         (base32
          "0hxlvy9q9984rr3rqaxwmgxjrd9wh11mcc161hv3shz6b7jkrcbm"))))
     (inputs
-     `(("clang" ,clang)))
+     (list clang))
     (arguments
      `(#:cargo-inputs
        (("rust-bitflags" ,rust-bitflags-1)
@@ -5063,7 +5151,7 @@ bindings to C and C++ libraries.")
         ("rust-diff" ,rust-diff-0.1)
         ("rust-shlex" ,rust-shlex-0.1))))
     (inputs
-     `(("clang" ,clang)))))
+     (list clang))))
 
 (define-public rust-bindgen-0.53
   (package
@@ -5700,7 +5788,7 @@ types.")
       (origin
         (method url-fetch)
         (uri (crate-uri "bitflags" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "14qnd5nq8p2almk79m4m8ydqhd413yaxsyjp5xd19g3mikzf47fg"))))
@@ -6047,7 +6135,7 @@ BLAKE2bp hash functions.")
       (origin
         (method url-fetch)
         (uri (crate-uri "blas-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0h14zjycwc76v15h8qll9z1xiryvmpvsb5gam97pqpdjrrwv5c8k"))))
@@ -8014,7 +8102,7 @@ messages.")
         (base32 "17p0y0yk68pzsnpmaklhiqrrlrrv0ld8nhbg4qflmgibshi8b69p"))))
     (build-system cargo-build-system)
     (native-inputs
-     `(("capnproto" ,capnproto)))
+     (list capnproto))
     (arguments
      `(#:cargo-inputs
        (("rust-capnp" ,rust-capnp-0.13)
@@ -8151,7 +8239,6 @@ capabilities.")
      `(;; The test suite is disabled as the internal 'cargo-test-macro' and
        ;; 'cargo-test-support' crates are not included in the release.
        #:tests? #f
-       #:rust ,rust-1.52        ;transitively inherited from rust-sized-chunks
        #:cargo-inputs
        (("rust-anyhow" ,rust-anyhow-1)
         ("rust-atty" ,rust-atty-0.2)
@@ -8211,12 +8298,9 @@ capabilities.")
         ("rust-walkdir" ,rust-walkdir-2)
         ("rust-winapi" ,rust-winapi-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("curl" ,curl)
-       ("libssh2" ,libssh2)
-       ("openssl" ,openssl)
-       ("zlib" ,zlib)))
+     (list curl libssh2 openssl zlib))
     (home-page "https://crates.io")
     (synopsis "Package manager for Rust")
     (description "Cargo, a package manager for Rust.  This package provides
@@ -8337,7 +8421,7 @@ supported by Cargo.")
       (origin
         (method url-fetch)
         (uri (crate-uri "cargon" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1cszlab7jk736p0lb50ag4l9nv72m7j41bwrmygl0lr4iz0350w2"))))
@@ -8412,7 +8496,7 @@ box''.")
       (origin
         (method url-fetch)
         (uri (crate-uri "cblas-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0rgsn3klhhh09d8qf3b87zl4rwk93l2g0qzh9hhb0lff5kcfrzmn"))))
@@ -8434,7 +8518,7 @@ box''.")
       (origin
         (method url-fetch)
         (uri (crate-uri "cc" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0j7d7h4n81z5f22l3v8ggjvvw8m64636nlaqax4x1y44da1rc12c"))))
@@ -8494,7 +8578,7 @@ that need to represent UTF-16 data as 8-bit characters.")
        #:cargo-development-inputs
        (("rust-clang-sys" ,rust-clang-sys-0.28))))
     (inputs
-     `(("clang" ,clang)))
+     (list clang))
     (home-page "https://github.com/jethrogb/rust-cexpr")
     (synopsis "C expression parser and evaluator")
     (description
@@ -8596,7 +8680,7 @@ chain, the first matching branch is the item that gets emitted.")
       (origin
         (method url-fetch)
         (uri (crate-uri "cfg-if" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "08h80ihs74jcyp24cd75wwabygbbdgl05k6p5dmq8akbr78vv1a7"))))
@@ -8962,7 +9046,7 @@ transfer coding.")
          "0695kfrqx7n091fzm6msbqg2q2kyhka64q08lm63f3l9d964i8cx"))))
     (build-system cargo-build-system)
     (inputs
-     `(("clang" ,clang)))
+     (list clang))
     (arguments
      `(#:cargo-inputs
        (("rust-glob" ,rust-glob-0.3)
@@ -9055,7 +9139,7 @@ traits.")
       (origin
         (method url-fetch)
         (uri (crate-uri "clang-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1r50dwy5hj5gq07dn0qf8222d07qv0970ymx0j8n9779yayc3w3f"))))
@@ -9206,7 +9290,7 @@ Command Line Argument Parser.")
      (origin
        (method url-fetch)
        (uri (crate-uri "clap" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "00i065a58987k1sbzqmlz721rw521zcg08jmsh40gi3khp3qmr9p"))))
@@ -9262,7 +9346,7 @@ Command Line Argument Parser.")
       (origin
         (method url-fetch)
         (uri (crate-uri "clicolors-control" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "07klix8nbpwk0cg1k4h0kkiijm1jxvrzndqdkr7dqr6xvkjjw24h"))))
@@ -9402,7 +9486,7 @@ or to a file as well.")
       (origin
         (method url-fetch)
         (uri (crate-uri "cloudabi" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0rv4yf5jlldfkynzrw687s00f4x12ypw7axv71vawhy6h4i52i23"))))
@@ -9426,7 +9510,7 @@ contains all syscalls and related types.")
       (origin
         (method url-fetch)
         (uri (crate-uri "cloudabi" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0kxcg83jlihy0phnd2g8c2c303px3l2p3pkjz357ll6llnd5pz6x"))))
@@ -9496,7 +9580,7 @@ Cipher-based Message Authentication Code (CMAC).")
       (origin
         (method url-fetch)
         (uri (crate-uri "cmake" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1fv346ipxmvff6qrnh78rild0s8k72ilfjkdsrk869562y62cmhf"))))
@@ -10052,7 +10136,7 @@ idiomatic wrappers for Mac OS X's CommonCrypto library.")
       (origin
         (method url-fetch)
         (uri (crate-uri "compiler_builtins" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1rhj6ccmfkh9gcxnxgjq4fg257yi4f9325nfzsphbmxwkrg06sq3"))))
@@ -10484,7 +10568,7 @@ generation.")
      (origin
        (method url-fetch)
        (uri (crate-uri "constant_time_eq" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "1g3vp04qzmk6cpzrd19yci6a95m7ap6wy7wkwgiy2pjklklrfl14"))))
@@ -10971,7 +11055,7 @@ intrinsics.")
      (origin
        (method url-fetch)
        (uri (crate-uri "core-foundation-sys" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "0fzsw1j9g1x598yhwklg59l15hwzc0pyvs01w9fg2kin4598mjp7"))))))
@@ -11198,7 +11282,7 @@ to @code{is_x86_feature_detected}.")
         ("rust-lazy-static" ,rust-lazy-static-1)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (inputs
-     `(("gperftools" ,gperftools)))
+     (list gperftools))
     (home-page "https://github.com/AtheMathmo/cpuprofiler")
     (synopsis "Bindings to Google's cpu profiler")
     (description "This package provides bindings to Google's cpu profiler.")
@@ -11260,10 +11344,7 @@ to @code{is_x86_feature_detected}.")
         ("rust-serde-json" ,rust-serde-json-1)
         ("rust-url" ,rust-url-2))))
     (native-inputs
-     `(("curl" ,curl)
-       ("openssl" ,openssl)
-       ("pkg-config" ,pkg-config)
-       ("zlib" ,zlib)))
+     (list curl openssl pkg-config zlib))
     (home-page "https://github.com/rust-lang/cargo")
     (synopsis "Helpers for interacting with @url{crates.io}")
     (description "This package provides helpers for interacting with
@@ -12412,7 +12493,7 @@ algorithms.")
         ("rust-openssl" ,rust-openssl-0.10)
         ("rust-winapi" ,rust-winapi-0.3))))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://github.com/malept/crypto-hash")
     (synopsis "Wrapper for OS-level cryptographic hash functions")
     (description "This package provides a wrapper for OS-level cryptographic
@@ -12881,12 +12962,9 @@ use with bindgen.")
         ("rust-mio" ,rust-mio-0.6)
         ("rust-mio-extras" ,rust-mio-extras-2))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("curl" ,curl)
-       ("nghttp2" ,nghttp2)
-       ("openssl" ,openssl)
-       ("zlib" ,zlib)))
+     (list curl nghttp2 openssl zlib))
     (home-page "https://github.com/alexcrichton/curl-rust")
     (synopsis "Rust bindings to libcurl for making HTTP requests")
     (description
@@ -12924,12 +13002,9 @@ requests")
        #:cargo-development-inputs
        (("rust-cfg-if" ,rust-cfg-if-1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("curl" ,curl)
-       ("nghttp2" ,nghttp2)
-       ("openssl" ,openssl)
-       ("zlib" ,zlib)))
+     (list curl nghttp2 openssl zlib))
     (home-page "https://github.com/alexcrichton/curl-rust")
     (synopsis "Native bindings to the libcurl library")
     (description
@@ -13006,7 +13081,6 @@ attributes.")
     (build-system cargo-build-system)
     (arguments
      `(#:tests? #f  ; Cannot compile cxx-test-suite.
-       #:rust ,rust-1.48    ; or newer
        #:cargo-inputs
        (("rust-cc" ,rust-cc-1)
         ("rust-cxxbridge-flags" ,rust-cxxbridge-flags-1)
@@ -13066,8 +13140,7 @@ attributes.")
           "0shmkgv3cnh06ws1p555znj1hh23phynaz73rgnz95gradsdwnwg"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.48    ; or newer
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-cc" ,rust-cc-1)
         ("rust-codespan-reporting" ,rust-codespan-reporting-0.11)
         ("rust-lazy-static" ,rust-lazy-static-1)
@@ -13127,8 +13200,7 @@ crate into a Cargo build.")
           "08v366jxd2vc8jc2cbvrga0866pwfcaq6hl8yylfx0vhs2n53j53"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.48    ; or newer
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-cc" ,rust-cc-1)
         ("rust-codespan-reporting" ,rust-codespan-reporting-0.11)
         ("rust-proc-macro2" ,rust-proc-macro2-1)
@@ -13233,8 +13305,7 @@ crate (implementation detail).")
           "0gkwvihw74dh8p3fz3552wnxanrpwmwfy38ylz2z8knjq0y8y4v3"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.48    ; or newer
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-clang-ast" ,rust-clang-ast-0.1)
         ("rust-flate2" ,rust-flate2-1)
         ("rust-memmap" ,rust-memmap-0.7)
@@ -13579,7 +13650,7 @@ for Rust.")
       (origin
         (method url-fetch)
         (uri (crate-uri "data-encoding" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "027rcrwdschrkdr2n9d24gnh03vl41qmvhjqn9vn6z1njy2n0flr"))))
@@ -13699,9 +13770,9 @@ sizes.  Big-endian order is used.  WARNING: Block must be aligned!")
        #:cargo-development-inputs
        (("rust-tempfile" ,rust-tempfile-3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("dbus" ,dbus)))
+     (list dbus))
     (home-page "https://github.com/diwic/dbus-rs")
     (synopsis "Rust bindings to D-Bus")
     (description "This package provides Rust bindings to D-Bus.")
@@ -13744,9 +13815,9 @@ sizes.  Big-endian order is used.  WARNING: Block must be aligned!")
     (arguments
      `(#:cargo-inputs (("rust-dbus" ,rust-dbus-0.9))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("dbus" ,dbus)))
+     (list dbus))
     (home-page "https://github.com/diwic/dbus-rs")
     (synopsis "Framework for writing D-Bus method handlers (legacy)")
     (description
@@ -13932,7 +14003,7 @@ written in rust.")
       (origin
         (method url-fetch)
         (uri (crate-uri "defmac" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "14cqfvc0f1pkd6gdhjxa2wv3iibqprc0n203ims8lvg96752ynfm"))))
@@ -13952,7 +14023,7 @@ written in rust.")
       (origin
         (method url-fetch)
         (uri (crate-uri "defmac" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "17giv0n0n1r64z0dahfvkjy3ys517jxyhs8sd9lmgvcljpjyryxa"))))))
@@ -14140,6 +14211,31 @@ for arbitrary structs.")
         #:cargo-development-inputs
         (("rust-pretty-assertions" ,rust-pretty-assertions-0.6))))))
 
+(define-public rust-derive-builder-0.7
+  (package
+    (inherit rust-derive-builder-0.9)
+    (name "rust-derive-builder")
+    (version "0.7.2")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "derive_builder" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "1m34zpj6fw764g7s368r2wgazp154m24d4rshbgn18fdlfk3zi9s"))))
+    (arguments
+      `(#:skip-build? #t
+        #:cargo-inputs
+        (("rust-compiletest-rs" ,rust-compiletest-rs-0.3)
+         ("rust-darling" ,rust-darling-0.9)
+         ("rust-derive-builder-core" ,rust-derive-builder-core-0.5)
+         ("rust-env-logger" ,rust-env-logger-0.5)
+         ("rust-log" ,rust-log-0.4)
+         ("rust-proc-macro2" ,rust-proc-macro2-0.4)
+         ("rust-quote" ,rust-quote-0.6)
+         ("rust-skeptic" ,rust-skeptic-0.13)
+         ("rust-syn" ,rust-syn-0.15))))))
+
 (define-public rust-derive-builder-0.5
   (package
     (inherit rust-derive-builder-0.9)
@@ -14215,6 +14311,27 @@ for arbitrary structs.")
         ("rust-syn" ,rust-syn-1))
        #:cargo-development-inputs
        (("rust-pretty-assertions" ,rust-pretty-assertions-0.6))))))
+
+(define-public rust-derive-builder-core-0.5
+  (package
+    (inherit rust-derive-builder-core-0.9)
+    (name "rust-derive-builder-core")
+    (version "0.5.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "derive_builder_core" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "0drbjk6n8ywls8cmhp4r8xkyjsja0wk3854cn5mj8g1km4ys5202"))))
+    (arguments
+      `(#:skip-build? #t
+        #:cargo-inputs
+        (("rust-darling" ,rust-darling-0.9)
+         ("rust-log" ,rust-log-0.4)
+         ("rust-proc-macro2" ,rust-proc-macro2-0.4)
+         ("rust-quote" ,rust-quote-0.6)
+         ("rust-syn" ,rust-syn-0.15))))))
 
 (define-public rust-derive-builder-core-0.2
   (package
@@ -14580,7 +14697,7 @@ example.")
          "0hpmwrc0zx3zvpgwp9zrm6wj8d8i8q8990grlrnfzlivbi6zqyq4"))))
     (build-system cargo-build-system)
     (native-inputs
-     `(("sqlite" ,sqlite)))
+     (list sqlite))
     (arguments
      `(#:cargo-inputs
        (("rust-bigdecimal" ,rust-bigdecimal-0.1)
@@ -14768,6 +14885,23 @@ Diesel.")
      "This crate provides all necessary tools for comparing word sequences.")
     (license license:expat)))
 
+(define-public rust-diffr-lib-0.1
+  (package
+    (name "rust-diffr-lib")
+    (version "0.1.3")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "diffr-lib" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+         (base32 "0id3hpblvvcw4ydcd1cc7wgcwqjbh3grlihrmd8zp7k0d2h47i3g"))))
+    (build-system cargo-build-system)
+    (home-page "https://github.com/mookid/diffr")
+    (synopsis "Implementation of Myers diff algorithm")
+    (description "An implementation of Myers diff algorithm.")
+    (license license:expat)))
+
 (define-public rust-diffs-0.3
   (package
     (name "rust-diffs")
@@ -14804,8 +14938,7 @@ diff.")
         (base32 "0lsn5h1mfa8x7bfg9yqgr52p7drigpwgm5q8qh4r07dmfd5g43rw"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.52 ; fix for E0658
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-diffus-derive" ,rust-diffus-derive-0.10)
         ("rust-indexmap" ,rust-indexmap-1)
         ("rust-itertools" ,rust-itertools-0.10)
@@ -15059,8 +15192,7 @@ standard locations of directories for config, cache and other data.")
        (("rust-cfg-if" ,rust-cfg-if-0.1)
         ("rust-dirs-sys" ,rust-dirs-sys-0.3))))
     (inputs
-     `(("rust-cfg-if" ,rust-cfg-if-0.1)
-       ("rust-dirs-sys" ,rust-dirs-sys-0.3)))))
+     (list rust-cfg-if-0.1 rust-dirs-sys-0.3))))
 
 (define-public rust-dirs-1
   (package
@@ -15071,7 +15203,7 @@ standard locations of directories for config, cache and other data.")
       (origin
         (method url-fetch)
         (uri (crate-uri "dirs" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "009rrhzj9pxyncmm2vhlj70npg0cgggv2hjbbkiwdl9vccq8kmrz"))))
@@ -15150,10 +15282,8 @@ other data.")
         ("rust-redox-users" ,rust-redox-users-0.3)
         ("rust-winapi" ,rust-winapi-0.3))))
     (inputs
-     `(("rust-cfg-if" ,rust-cfg-if-0.1)
-       ("rust-libc" ,rust-libc-0.2)
-       ("rust-redox-users" ,rust-redox-users-0.3)
-       ("rust-winapi" ,rust-winapi-0.3)))
+     (list rust-cfg-if-0.1 rust-libc-0.2 rust-redox-users-0.3
+           rust-winapi-0.3))
     (home-page "https://github.com/soc/dirs-sys-rs")
     (synopsis
      "System-level helper functions for the dirs and directories crates")
@@ -15191,7 +15321,7 @@ and @code{directories} crates.")
       (origin
         (method url-fetch)
         (uri (crate-uri "discard" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1h67ni5bxvg95s91wgicily4ix7lcw7cq0a5gy9njrybaibhyb91"))))
@@ -15278,7 +15408,7 @@ Google's diff-match-patch.")
      `(#:cargo-inputs
        (("rust-libloading" ,rust-libloading-0.6))))
     (inputs
-     `(("rust-libloading" ,rust-libloading-0.6)))
+     (list rust-libloading-0.6))
     (home-page "https://github.com/vberger/dlib")
     (synopsis "Helper macros for manually loading optional system libraries")
     (description
@@ -15344,7 +15474,7 @@ not support network, only raw protocol parser.")
       (origin
         (method url-fetch)
         (uri (crate-uri "doc-comment" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "15rsqxgarfpb1yim9sbp9yfgj7p2dq6v51c6bq1a62paii9ylgcj"))))
@@ -15577,6 +15707,28 @@ for graphs.")
 Rust.")
     (license license:expat)))
 
+(define-public rust-dotenv-0.13
+  (package
+    (inherit rust-dotenv-0.15)
+    (name "rust-dotenv")
+    (version "0.13.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "dotenv" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "11jdifvvwbn60gf5iq2awyq9fik1d9xk7rhch332nwwnkhks3l60"))))
+    (arguments
+      `(#:skip-build? #t
+        #:cargo-inputs
+        (("rust-clap" ,rust-clap-2)
+         ("rust-failure" ,rust-failure-0.1)
+         ("rust-lazy-static" ,rust-lazy-static-1)
+         ("rust-regex" ,rust-regex-1))
+        #:cargo-development-inputs
+        (("rust-tempdir" ,rust-tempdir-0.3))))))
+
 (define-public rust-dotenv-0.10
   (package
     (inherit rust-dotenv-0.15)
@@ -15651,7 +15803,7 @@ Rust.")
       (origin
         (method url-fetch)
         (uri (crate-uri "dtoa" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0phbm7i0dpn44gzi07683zxaicjap5064w62pidci4fhhciv8mza"))))
@@ -15673,7 +15825,7 @@ floating-point primitives to an @code{io::Write}.")
       (origin
         (method url-fetch)
         (uri (crate-uri "dtoa" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0g96cap6si1g6wi62hsdk2fnj3sf5vd4i97zj6163j8hhnsl3n0d"))))))
@@ -16122,7 +16274,7 @@ signing, and verification in pure Rust.")
         ("rust-failure-derive" ,rust-failure-derive-0.1)
         ("rust-lazy-static" ,rust-lazy-static-1))))
     (inputs
-     `(("clang" ,clang)))
+     (list clang))
     (home-page "https://github.com/ubolonton/emacs-module-rs")
     (synopsis "Library for creating Emacs's dynamic modules")
     (description
@@ -16172,7 +16324,7 @@ Emacs' support for dynamic modules.")
      `(#:cargo-inputs
        (("rust-bindgen" ,rust-bindgen-0.48))))
     (inputs
-     `(("clang" ,clang)))
+     (list clang))
     (home-page "https://github.com/ubolonton/emacs-module-rs")
     (synopsis "Raw FFI for emacs-module")
     (description "This module provides a high-level binding to emacs-module:
@@ -17356,9 +17508,9 @@ blocking data structures.")
        (("rust-cmake" ,rust-cmake-0.1)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("expat" ,expat)))
+     (list expat))
     (home-page "http://www.libexpat.org/")
     (synopsis "XML parser library written in C")
     (description "XML parser library written in C")
@@ -17551,7 +17703,7 @@ fallible format macro.")
       (origin
         (method url-fetch)
         (uri (crate-uri "fallible-iterator" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1xq759lsr8gqss7hva42azn3whgrbrs2sd9xpn92c5ickxm1fhs4"))))
@@ -17710,9 +17862,9 @@ floats.")
        (("rust-bio" ,rust-bio-0.33)
         ("rust-parasailors" ,rust-parasailors-0.3))))
     (inputs
-     `(("zlib" ,zlib)))
+     (list zlib))
     (native-inputs
-     `(("libtool" ,libtool)))
+     (list libtool))
     (home-page "https://github.com/aseyboldt/fastq-rs")
     (synopsis "Parser for fastq files")
     (description "This package provides a parser for fastq files.")
@@ -17891,9 +18043,9 @@ Atom, RSS 2.0, RSS 1.0, RSS 0.x and JSON Feed")
         ("rust-rand" ,rust-rand-0.8)
         ("rust-tokio" ,rust-tokio-1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://gitlab.com/news-flash/feedbin_api")
     (synopsis  "Rust implementation of the Feedbin REST API")
     (description
@@ -17930,9 +18082,9 @@ Atom, RSS 2.0, RSS 1.0, RSS 0.x and JSON Feed")
        (("rust-dotenv" ,rust-dotenv-0.15)
         ("rust-tokio" ,rust-tokio-1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://gitlab.com/news-flash/feedly_api")
     (synopsis "Rust implementation of the feedly REST API")
     (description
@@ -18084,9 +18236,9 @@ Atom, RSS 2.0, RSS 1.0, RSS 0.x and JSON Feed")
        (("rust-dotenv" ,rust-dotenv-0.15)
         ("rust-tokio" ,rust-tokio-1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://gitlab.com/news-flash/fever_api")
     (synopsis "Rust implementation of the Fever API")
     (description
@@ -18126,7 +18278,7 @@ sparse files.")
       (origin
         (method url-fetch)
         (uri (crate-uri "filetime" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1s71cb7hzkk4ahc5j53w8933gnxv2giyj7v0za5hbbk37ahwyd0x"))))
@@ -18159,7 +18311,7 @@ representation.")
       (origin
         (method url-fetch)
         (uri (crate-uri "findshlibs" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1n2vagn0q5yim32hxkwi1cjgp3yn1dm45p7z8nw6lapywihhs9mi"))))
@@ -18217,7 +18369,7 @@ cross platform API.")
       (origin
         (method url-fetch)
         (uri (crate-uri "fixedbitset" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0kg03p777wc0dajd9pvlcnsyrwa8dhqwf0sd9r4dw0p82rs39arp"))))
@@ -18237,7 +18389,7 @@ cross platform API.")
       (origin
         (method url-fetch)
         (uri (crate-uri "fixedbitset" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0czam11mi80dbyhf4rd4lz0ihcf7vkfchrdcrn45wbs0h40dxm46"))))))
@@ -18617,7 +18769,7 @@ crate.")
       (origin
         (method url-fetch)
         (uri (crate-uri "fnv" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1ww56bi1r5b8id3ns9j3qxbi7w5h005rzhiryy0zi9h97raqbb9g"))))
@@ -18783,7 +18935,7 @@ implementation that is more efficient for smaller hash keys.")
       (origin
         (method url-fetch)
         (uri (crate-uri "foreign-types-shared" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0kanxlif1vp0ffh2r9l610jqbkmb3183yqykxq1z5w1vay2rn7y6"))))))
@@ -18930,8 +19082,7 @@ values to other threads.")
        #:cargo-development-inputs
        (("rust-unicode-normalization" ,rust-unicode-normalization-0.1))))
     (inputs
-     `(("freetype" ,freetype)
-       ("zlib" ,zlib)))))
+     (list freetype zlib))))
 
 (define-public rust-freetype-sys-0.13
   (package
@@ -18977,8 +19128,7 @@ values to other threads.")
         ("rust-libz-sys" ,rust-libz-sys-1)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (inputs
-     `(("freetype" ,freetype)
-       ("zlib" ,zlib)))))
+     (list freetype zlib))))
 
 (define-public rust-fs2-0.4
   (package
@@ -19013,7 +19163,7 @@ duplication.")
      (origin
        (method url-fetch)
        (uri (crate-uri "fs_extra" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "151k6dr35mhq5d8pc8krhw55ajhkyiv0pm14s7zzlc5bc9fp28i0"))))
     (build-system cargo-build-system)
@@ -19181,7 +19331,7 @@ strings (> 1 billion is possible).")
       (origin
         (method url-fetch)
         (uri (crate-uri "fuchsia-cprng" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1fnkqrbz7ixxzsb04bsz9p0zzazanma8znfdqjvh39n14vapfvx0"))))
@@ -19202,7 +19352,7 @@ pseudorandom number generator")
       (origin
         (method url-fetch)
         (uri (crate-uri "fuchsia-zircon" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "10jxc5ks1x06gpd0xg51kcjrxr35nj6qhx2zlc5n7bmskv3675rf"))))
@@ -19225,7 +19375,7 @@ pseudorandom number generator")
       (origin
         (method url-fetch)
         (uri (crate-uri "fuchsia-zircon-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "19zp2085qsyq2bh1gvcxq1lb8w6v6jj9kbdkhpdjrl95fypakjix"))))
@@ -19324,7 +19474,7 @@ zero allocations, composability, and iterator-like interfaces.")
       (origin
         (method url-fetch)
         (uri (crate-uri "futures" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1vq3cw37knnd0afw3rcjzh71i2l01v5m4ysinrrqdvnn2ql0z60v"))))
@@ -19447,7 +19597,7 @@ featuring zero allocations, composability, and iterator-like interfaces.")
       (origin
         (method url-fetch)
         (uri (crate-uri "futures-core-preview" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "02n66jkjhpy210dv24pz0j30lvyin5kzlrb50p1j7x8yzdin4nxk"))))
@@ -19468,7 +19618,7 @@ featuring zero allocations, composability, and iterator-like interfaces.")
       (origin
         (method url-fetch)
         (uri (crate-uri "futures-cpupool" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1r32456gpblzfvnkf60545v8acqk7gh5zhyhi1jn669k9gicv45b"))))
@@ -19602,7 +19752,7 @@ for the @code{futures-rs} library.")
       (origin
         (method url-fetch)
         (uri (crate-uri "futures-io-preview" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1npb04xbn2gw5rjllz88cb88fql44xxfkgcidjjj26fva3j4m4gl"))))
@@ -19808,7 +19958,7 @@ the @code{futures-rs} library.")
       (origin
         (method url-fetch)
         (uri (crate-uri "futures-sink-preview" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1v7y5qvgvl0d6hd9s4k7bd5qrj2gdlrs5yfl22v5pxv9dgpliwc6"))))
@@ -20547,7 +20697,7 @@ platforms.")
       (origin
         (method url-fetch)
         (uri (crate-uri "getopts" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1mgb3qvivi26gs6ihqqhh8iyhp3vgxri6vwyrwg28w0xqzavznql"))))
@@ -21054,7 +21204,7 @@ dirty state into your program.")
 (define-public rust-git2-0.13
   (package
     (name "rust-git2")
-    (version "0.13.20")
+    (version "0.13.24")
     (source
      (origin
        (method url-fetch)
@@ -21063,7 +21213,7 @@ dirty state into your program.")
         (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
-         "1fkc2gzcnl4ci3rja9mc5jl2ygl3fkc1fgym3rcwby216ac1x0yr"))))
+         "07rlxwvl5iyyqwh0mci5v27lbicf9qiqm60maw1srz7i51x00pl4"))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-inputs
@@ -21082,10 +21232,7 @@ dirty state into your program.")
      `(("pkg-config" ,pkg-config)
        ("git" ,git-minimal)))           ;for a single test
     (inputs
-     `(("libgit2" ,libgit2)
-       ("libssh2" ,libssh2)
-       ("openssl" ,openssl)
-       ("zlib" ,zlib)))
+     (list libgit2 libssh2 openssl zlib))
     (home-page "https://github.com/rust-lang/git2-rs")
     (synopsis "Rust bindings to libgit2")
     (description
@@ -21391,7 +21538,7 @@ OpenGL's old and error-prone API.")
       (origin
         (method url-fetch)
         (uri (crate-uri "glob" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0x25wfr7vg3mzxc9x05dcphvd3nwlcmbnxrvwcvrrdwplcrrk4cv"))))
@@ -21417,7 +21564,7 @@ shell style patterns.")
       (origin
         (method url-fetch)
         (uri (crate-uri "glob" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1ysvi72slkw784fcsymgj4308c3y03gwjjzqxp80xdjnkbh8vqcb"))))))
@@ -21719,8 +21866,7 @@ the regex engine it uses pluggable.")
        (("rust-grep-matcher" ,rust-grep-matcher-0.1)
         ("rust-pcre2" ,rust-pcre2-0.2))))
     (native-inputs
-     `(("pcre2" ,pcre2)
-       ("pkg-config" ,pkg-config)))
+     (list pcre2 pkg-config))
     (home-page
      "https://github.com/BurntSushi/ripgrep")
     (synopsis "Use PCRE2 with the grep crate")
@@ -22523,7 +22669,7 @@ that don't require dynamic memory allocation.")
      (origin
        (method url-fetch)
        (uri (crate-uri "heapsize" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "0q94q9ppqjgrw71swiyia4hgby2cz6dldp7ij57nkvhd6zmfcy8n"))))
@@ -22548,7 +22694,7 @@ heap.")
       (origin
         (method url-fetch)
         (uri (crate-uri "heapsize" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0dmwc37vgsdjzk10443dj4f23439i9gch28jcwzmry3chrwx8v2m"))))
@@ -22565,7 +22711,7 @@ heap.")
       (origin
         (method url-fetch)
         (uri (crate-uri "heapsize_plugin" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1i72isf699q9jl167g2kg4xd6h3cd05rc79zaph58aqjy0g0m9y9"))))
@@ -22588,7 +22734,7 @@ total runtime size of an object on the heap")
       (origin
         (method url-fetch)
         (uri (crate-uri "heck" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1b56s2c1ymdd0qmy31bw0ndhm31hcdamnhg3npp7ssrmc1ag9jw7"))))
@@ -22662,7 +22808,7 @@ hexadecimal representation.")
       (origin
         (method url-fetch)
         (uri (crate-uri "hex" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0xsdcjiik5j750j67zk42qdnmm4ahirk3gmkmcqgq7qls2jjcl40"))))))
@@ -22676,7 +22822,7 @@ hexadecimal representation.")
      (origin
        (method url-fetch)
        (uri (crate-uri "hex" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "1ajkw40qzn2ygnqjj9w584f6l31wi318258n84pn2hax8la2i8nn"))))))
 
@@ -23024,7 +23170,7 @@ Hash-based Message Authentication Code algorithm} for SHA1.")
       (origin
         (method url-fetch)
         (uri (crate-uri "hostname" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0kprf862qaa7lwdms6aw7f3275h0j2rwhs9nz5784pm8hdmb9ki1"))))
@@ -23869,9 +24015,9 @@ with hyper.")
         (base32
          "1vcfyz7dxavf4brns15afmj5fxz88lbn05rrpbfqsnybdp2sqyfr"))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (arguments
      `(#:cargo-inputs
        (("rust-bytes" ,rust-bytes-0.5)
@@ -24769,7 +24915,7 @@ immutable interval tree.")
       (origin
         (method url-fetch)
         (uri (crate-uri "iovec" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0ph73qygwx8i0mblrf110cj59l00gkmsgrpzz1rm85syz5pymcxj"))))
@@ -24881,11 +25027,9 @@ enum like Option/Result.")
         ("rust-test-case" ,rust-test-case-1)
         ("rust-tracing-subscriber" ,rust-tracing-subscriber-0.2))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("curl" ,curl)
-       ("openssl" ,openssl)
-       ("zlib" ,zlib)))
+     (list curl openssl zlib))
     (home-page "https://github.com/sagebind/isahc")
     (synopsis "Practical HTTP client")
     (description
@@ -25220,7 +25364,7 @@ and functions.")
       (origin
         (method url-fetch)
         (uri (crate-uri "itoa" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "13nxqrfnh83a7x5rw4wq2ilp8nxvwy74dxzysdg59dbxqk0agdxq"))))
@@ -25256,7 +25400,7 @@ primitives to an @code{io::Write}.")
      (origin
        (method url-fetch)
        (uri (crate-uri "itoa" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "18g7p2hrb3dk84z3frfgmszfc9hjb4ps9vp99qlb1kmf9gm8hc5f"))))))
@@ -25315,7 +25459,7 @@ primitives to an @code{io::Write}.")
                        (string-append jemalloc "/lib/libjemalloc_pic.a")))
              #t)))))
     (native-inputs
-     `(("jemalloc" ,jemalloc)))
+     (list jemalloc))
     (home-page "https://github.com/gnzlbg/jemallocator")
     (synopsis "Rust FFI bindings to jemalloc")
     (description "This package provides Rust FFI bindings to jemalloc.")
@@ -25395,7 +25539,7 @@ primitives to an @code{io::Write}.")
                        (string-append jemalloc "/lib/libjemalloc_pic.a")))
              #t)))))
     (native-inputs
-     `(("jemalloc" ,jemalloc)))))
+     (list jemalloc))))
 
 (define-public rust-jetscii-0.5
   (package
@@ -25410,8 +25554,7 @@ primitives to an @code{io::Write}.")
         (base32 "1x4z5ixlxv1wa70d3d6ad3n8qxz6z00i13zwnv219v45qcwybbnb"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.52 ; fix for E0658
-       #:cargo-development-inputs
+     `(#:cargo-development-inputs
        (("rust-lazy-static" ,rust-lazy-static-1)
         ("rust-memmap" ,rust-memmap-0.7)
         ("rust-proptest" ,rust-proptest-1)
@@ -25675,7 +25818,7 @@ wasm-bindgen crate.")
       (origin
         (method url-fetch)
         (uri (crate-uri "json" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1rg9jxf6bpbwis3ixd5ak8rp37him7n4z8awz4ssrxl6hyplbhlj"))))
@@ -25811,7 +25954,7 @@ debugging.")
       (origin
         (method url-fetch)
         (uri (crate-uri "kernel32-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1389av0601a9yz8dvx5zha9vmkd6ik7ax0idpb032d28555n41vm"))))
@@ -25878,7 +26021,7 @@ kernel32.")
       (origin
         (method url-fetch)
         (uri (crate-uri "language-tags" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "16hrjdpa827carq5x4b8zhas24d8kg4s16m6nmmn1kb7cr5qh7d9"))))
@@ -26104,7 +26247,7 @@ generated by LALRPOP.")
       (origin
         (method url-fetch)
         (uri (crate-uri "lazy_static" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0in6ikhw8mgl33wjv6q6xfrb5b9jr16q8ygjy803fay4zcisvaz2"))))
@@ -26114,7 +26257,7 @@ generated by LALRPOP.")
        #:cargo-development-inputs
        (("rust-doc-comment" ,rust-doc-comment-0.3))))
     (inputs
-     `(("rust-spin" ,rust-spin-0.5)))
+     (list rust-spin-0.5))
     (home-page  "https://github.com/rust-lang-nursery/lazy-static.rs")
     (synopsis "Macro for declaring lazily evaluated statics in Rust")
     (description
@@ -26526,9 +26669,9 @@ macros on libc without stdlib.")
      `(#:cargo-inputs
        (("rust-pkg-config" ,rust-pkg-config-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("dbus" ,dbus)))
+     (list dbus))
     (home-page "https://github.com/diwic/dbus-rs")
     (synopsis "FFI bindings to libdbus")
     (description "This package provides FFI bindings to libdbus.")
@@ -26632,7 +26775,7 @@ algorithm and related formats (ZLIB, GZIP).")
 (define-public rust-libgit2-sys-0.12
   (package
     (name "rust-libgit2-sys")
-    (version "0.12.21+1.1.0")
+    (version "0.12.25+1.3.0")
     (source
      (origin
        (method url-fetch)
@@ -26641,7 +26784,7 @@ algorithm and related formats (ZLIB, GZIP).")
         (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
-         "09b85x3gpvq0d7v1mhg4f3w1b3skzlpbikrx9j2rwarbsyn1n9w6"))))
+         "1axsdyb2i67pn85vh8sb2z037n88fiiwqghkzsr1jrcdy2g1cs4g"))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-inputs
@@ -26652,11 +26795,9 @@ algorithm and related formats (ZLIB, GZIP).")
         ("rust-openssl-sys" ,rust-openssl-sys-0.9)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("libgit2" ,libgit2)
-       ("openssl" ,openssl)
-       ("zlib" ,zlib)))
+     (list libgit2 openssl zlib))
     (home-page "https://github.com/rust-lang/git2-rs")
     (synopsis "Native bindings to the libgit2 library")
     (description
@@ -26757,8 +26898,7 @@ loading utilities.")
        (("rust-libc" ,rust-libc-0.2)
         ("rust-static-assertions" ,rust-static-assertions-1))))
     (inputs
-     `(("rust-cfg-if" ,rust-cfg-if-1)
-       ("rust-winapi" ,rust-winapi-0.3)))))
+     (list rust-cfg-if-1 rust-winapi-0.3))))
 
 (define-public rust-libloading-0.5
   (package
@@ -26768,7 +26908,7 @@ loading utilities.")
       (origin
         (method url-fetch)
         (uri (crate-uri "libloading" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0lyply8rcqc8agajzxs7bq6ivba9dnn1i68kgb9z2flnfjh13cgj"))))
@@ -26907,8 +27047,7 @@ allocator.")
         ("rust-cc" ,rust-cc-1)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (inputs
-     `(("nghttp2" ,nghttp2 "lib")
-       ("pkg-config" ,pkg-config)))
+     (list `(,nghttp2 "lib") pkg-config))
     (home-page "https://github.com/alexcrichton/nghttp2-rs")
     (synopsis "FFI bindings for libnghttp2 (nghttp2)")
     (description
@@ -26955,11 +27094,9 @@ allocator.")
         ("rust-tempdir" ,rust-tempdir-0.3)
         ("rust-toml" ,rust-toml-0.4))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("clang" ,clang)
-       ("nettle" ,nettle)
-       ("openssl" ,openssl)))
+     (list clang nettle openssl))
     (home-page "https://pijul.org/")
     (synopsis "Library component of the pijul version control system")
     (description
@@ -27008,9 +27145,9 @@ file.
          (add-before 'check 'set-HOME
            (lambda _ (setenv "HOME" "/tmp") #t)))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("pulseaudio" ,pulseaudio)))
+     (list pulseaudio))
     (home-page "https://github.com/jnqnfe/pulse-binding-rust")
     (synopsis "Binding for the PulseAudio libpulse library")
     (description
@@ -27040,9 +27177,9 @@ library.")
         ("rust-pkg-config" ,rust-pkg-config-0.3)
         ("rust-winapi" ,rust-winapi-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("pulseaudio" ,pulseaudio)))
+     (list pulseaudio))
     (home-page "https://github.com/jnqnfe/pulse-binding-rust")
     (synopsis "FFI bindings for the PulseAudio")
     (description
@@ -27063,7 +27200,7 @@ library.")
         (base32 "17gqc2mwih81j3ds479gl5zmsxqzzrcrj3yyv62vh34bgy8n82r9"))))
     (build-system cargo-build-system)
     (inputs
-     `(("sqlite" ,sqlite)))
+     (list sqlite))
     (arguments
      `(#:skip-build? #t
        #:cargo-inputs
@@ -27090,7 +27227,7 @@ library.")
        (sha256
         (base32 "1g9gbjjpm9phhs991abkzmacszibp94m5nrh331ycd99y9ci1lv4"))))
     (inputs
-     `(("sqlite" ,sqlite)))
+     (list sqlite))
     (arguments
      `(#:skip-build? #t
        #:cargo-inputs
@@ -27150,7 +27287,7 @@ library.")
         (base32 "104n0s4f46zprppjq6y82y0wjh1r2cgwzw26w914yj30rizy1cbj"))))
     (build-system cargo-build-system)
     (inputs
-     `(("sqlite" ,sqlite)))
+     (list sqlite))
     (arguments
      `(#:cargo-inputs
        ;; build dependencies
@@ -27181,9 +27318,9 @@ library.")
        (("rust-criterion" ,rust-criterion-0.3)
         ("rust-rayon" ,rust-rayon-1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("libxml2" ,libxml2)))
+     (list libxml2))
     (home-page "https://github.com/KWARC/rust-libxml")
     (synopsis "Rust wrapper for libxml2")
     (description "This package provides a Rust wrapper for libxml2, the XML
@@ -27231,8 +27368,7 @@ C parser and toolkit developed for the GNOME project.")
         ("rust-pkg-config" ,rust-pkg-config-0.3)
         ("rust-vcpkg" ,rust-vcpkg-0.2))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("zlib" ,zlib)))
+     (list pkg-config zlib))
     (home-page "https://github.com/rust-lang/libz-sys")
     (synopsis "Bindings to the system libz library")
     (description
@@ -27460,11 +27596,9 @@ punctuation.")
         ("rust-pkg-config" ,rust-pkg-config-0.3)
         ("rust-vcpkg" ,rust-vcpkg-0.2))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("libssh2" ,libssh2)
-       ("openssl" ,openssl)
-       ("zlib" ,zlib)))
+     (list libssh2 openssl zlib))
     (home-page "https://github.com/alexcrichton/ssh2-rs")
     (synopsis "Native bindings to the libssh2 library")
     (description
@@ -27496,9 +27630,9 @@ punctuation.")
        (("rust-rand" ,rust-rand-0.4)
         ("rust-tempdir" ,rust-tempdir-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("lmdb" ,lmdb)))
+     (list lmdb))
     (home-page "https://github.com/mozilla/lmdb-rs")
     (synopsis "Safe Rust bindings for LMDB")
     (description "This package provides idiomatic and safe APIs for interacting
@@ -27532,9 +27666,9 @@ with lmdb.")
         ("rust-cc" ,rust-cc-1)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("lmdb" ,lmdb)))
+     (list lmdb))
     (home-page "https://github.com/mozilla/lmdb-rs")
     (synopsis "Rust bindings for liblmdb")
     (description "This package provides rust bindings for liblmdb.")
@@ -27674,7 +27808,7 @@ by inspecting the system for user preference.")
       (origin
         (method url-fetch)
         (uri (crate-uri "lock_api" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0b24q9mh258xa52ap636q1sxz0j5vrnp0hwbbh7ddjka3wwz3sv2"))))
@@ -27691,7 +27825,7 @@ by inspecting the system for user preference.")
      (origin
        (method url-fetch)
        (uri (crate-uri "log" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "04175hv0v62shd82qydq58a48k3bjijmk54v38zgqlbxqkkbpfai"))))
     (build-system cargo-build-system)
@@ -27966,10 +28100,10 @@ image together with its neighboring pixels.")
         ("rust-flate2" ,rust-flate2-1)
         ("rust-image" ,rust-image-0.20)
         ("rust-itoa" ,rust-itoa-0.4)
-        ("rust-linked-hash-map" ,rust-linked-hash-map-0.4)
+        ("rust-linked-hash-map" ,rust-linked-hash-map-0.5)
         ("rust-log" ,rust-log-0.4)
         ("rust-lzw" ,rust-lzw-0.10)
-        ("rust-nom" ,rust-nom-5)
+        ("rust-nom" ,rust-nom-6)
         ("rust-pom" ,rust-pom-3)
         ("rust-rayon" ,rust-rayon-1)
         ("rust-time" ,rust-time-0.2))))
@@ -28214,8 +28348,7 @@ server (LSP).")
         ("rust-cc" ,rust-cc-1)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("xz" ,xz)))
+     (list pkg-config xz))
     (home-page "https://github.com/alexcrichton/xz2-rs")
     (synopsis "Bindings to liblzma for lzma and xz stream encoding/decoding")
     (description
@@ -28479,7 +28612,7 @@ platform-independently.")
       (origin
         (method url-fetch)
         (uri (crate-uri "maplit" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "07b5kjnhrrmfhgqm9wprjw8adx6i225lqp49gasgqg74lahnabiy"))))
@@ -28627,7 +28760,7 @@ statement, the first matching branch is the item that gets emitted.")
       (origin
         (method url-fetch)
         (uri (crate-uri "matches" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "020axl4q7rk9vz90phs7f8jas4imxal9y9kxl4z4v7a6719mrz3z"))))
@@ -28793,7 +28926,7 @@ parallelize and optimize.")
       (origin
         (method url-fetch)
         (uri (crate-uri "matrixmultiply" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "13s7nfd3dfcsrixld2lk8c563ih5xzczl2w36hprfc016rkfrxyl"))))
@@ -28813,7 +28946,7 @@ parallelize and optimize.")
       (origin
         (method url-fetch)
         (uri (crate-uri "matrixmultiply" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "00p0fpjhm45qdzi37mgv7ggsy8b9gqvq4999yrbgyn1dxkf6gbfw"))))
@@ -28901,7 +29034,7 @@ parallelize and optimize.")
      (origin
        (method url-fetch)
        (uri (crate-uri "md5" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "0wcps37hrhz59fkhf8di1ppdnqld6l1w5sdy7jp7p51z0i4c8329"))))
     (build-system cargo-build-system)
@@ -28921,7 +29054,7 @@ parallelize and optimize.")
       (origin
         (method url-fetch)
         (uri (crate-uri "md5" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "17b2xm4h4cvxsdjsf3kdrzqv2za60kak961xzi5kmw6g6djcssvy"))))))
@@ -29087,7 +29220,7 @@ for searching bytes.")
       (origin
         (method url-fetch)
         (uri (crate-uri "memmap" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0ns7kkd1h4pijdkwfvw4qlbbmqmlmzwlq3g2676dcl5vwyazv1b5"))))
@@ -29116,7 +29249,7 @@ file IO.")
       (origin
         (method url-fetch)
         (uri (crate-uri "memmap" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1zy6s0ni0lx9rjzq3gq2zz9r8zgjmbp02332g3gsj4fyhv4s5zz2"))))))
@@ -29646,9 +29779,9 @@ migration mechanism.")
        #:cargo-development-inputs
        (("rust-tempdir" ,rust-tempdir-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("sqlite" ,sqlite)))
+     (list sqlite))
     (home-page "https://diesel.rs")
     (synopsis "Code generation macros for Diesel's embedded migrations")
     (description "This package provides code generation macros for Diesel's
@@ -29685,7 +29818,7 @@ drop-in allocator.")
       (origin
         (method url-fetch)
         (uri (crate-uri "mime" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "13dcm9lh01hdwfjcg74ppljyjfj1c6w3a3cwkhxf0w8wa37cfq1a"))))
@@ -29791,9 +29924,9 @@ file's MIME type by its extension.")
        (("rust-dotenv" ,rust-dotenv-0.15)
         ("rust-tokio" ,rust-tokio-1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://gitlab.com/news-flash/miniflux_api")
     (synopsis "Rust implementation of the Miniflux REST API")
     (description
@@ -29855,7 +29988,7 @@ streaming API for miniz_oxide.")
       (origin
         (method url-fetch)
         (uri (crate-uri "miniz_oxide" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "198n4hfpq0qcxf275l6fpzh7b9cl7ck2xs6pjgpds74bazv9yrxa"))))
@@ -29915,7 +30048,7 @@ drop-in replacement for miniz.")
       (origin
         (method url-fetch)
         (uri (crate-uri "miniz-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "00l2r4anm8g35x0js2zfdnwfbrih9m43vphdpb77c5ga3kjkm7hy"))))
@@ -30181,7 +30314,7 @@ possible over the OS abstractions.")
      (origin
        (method url-fetch)
        (uri (crate-uri "miow" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "15sqdhh29dqgw5xh59clwv6scbsbvdkbmdc16hbfvyq7b2sw2css"))))
     (build-system cargo-build-system)
@@ -30208,7 +30341,7 @@ IOCP and Async I/O abstractions.")
       (origin
         (method url-fetch)
         (uri (crate-uri "miow" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "06g9b8sqlh5gxakwqq4rrib07afwanfnxgxajrldwcgk3hxjy7wc"))))
@@ -30375,7 +30508,7 @@ checking.")
       (origin
         (method url-fetch)
         (uri (crate-uri "modifier" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0n3fmgli1nsskl0whrfzm1gk0rmwwl6pw1q4nb9sqqmn5h8wkxa1"))))
@@ -30431,10 +30564,9 @@ checking.")
        (("rust-dbus" ,rust-dbus-0.6)
         ("rust-glib" ,rust-glib-0.10))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("dbus" ,dbus)
-       ("glib" ,glib)))
+     (list dbus glib))
     (home-page "https://gitlab.gnome.org/World/Rust/mpris-player")
     (synopsis "Library for creating MPRIS2 media players over D-Bus")
     (description "This package provides a library for creating MPRIS2 media
@@ -30654,7 +30786,7 @@ library.")
        (("rust-pkg-config" ,rust-pkg-config-0.3)
         ("rust-vcpkg" ,rust-vcpkg-0.2))))
     (native-inputs
-     `(("mariadb" ,mariadb "lib")))
+     (list `(,mariadb "lib")))
     (home-page "https://github.com/sgrif/mysqlclient-sys")
     (synopsis "Auto-generated rust bindings for libmysqlclient")
     (description "This package provides auto-generated rust bindings for
@@ -31081,9 +31213,9 @@ IO of Windows's named pipes.")
          "0cjirf6n4i2lw65iaww8d4hahv3cbfm5ka9hlansvnbfgzwadzq9"))))
     (build-system cargo-build-system)
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (arguments
      `(#:cargo-inputs
        (("rust-bindgen" ,rust-bindgen-0.55)
@@ -31128,9 +31260,9 @@ IO of Windows's named pipes.")
        (("rust-hex" ,rust-hex-0.4)
         ("rust-test-cert-gen" ,rust-test-cert-gen-0.1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://github.com/sfackler/rust-native-tls")
     (synopsis "Wrapper over a platform's native TLS implementation")
     (description
@@ -31490,7 +31622,7 @@ in Rust that can compile to WebAssembly.")
       (origin
         (method url-fetch)
         (uri (crate-uri "net2" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "126g3fgfxp06zimc1l9iyxnn9cif1hjsg7sd81nlls5nnyghsma2"))))
@@ -31523,11 +31655,9 @@ types as proposed in RFC 1158.")
        (patches (search-patches "rust-nettle-disable-vendor.patch"))))
     (build-system cargo-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("clang" ,clang)
-       ("gmp" ,gmp)
-       ("nettle" ,nettle)))
+     (list clang gmp nettle))
     (arguments
      `(#:skip-build? #t ;; provides nothing, has no tests
        #:cargo-inputs
@@ -31572,10 +31702,9 @@ cryptographic library.")
        (patches (search-patches "rust-nettle-sys-disable-vendor.patch"))))
     (build-system cargo-build-system)
     (native-inputs
-     `(("clang" ,clang)
-       ("pkg-config" ,pkg-config)))
+     (list clang pkg-config))
     (inputs
-     `(("nettle" ,nettle)))
+     (list nettle))
     (arguments
      `(#:cargo-inputs
        (("rust-bindgen" ,rust-bindgen-0.51)
@@ -31625,8 +31754,7 @@ release (fork of debug_unreachable)")
         (base32 "0r3hz725kblxr6mhl8rkf2bffzmyya0ib3xr3jk5zm8x2jlpvlq6"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.52 ; some inputs fail with E0658
-       #:tests? #f ; FIXME: "error reading DNS system conf" from reqwest
+     `(#:tests? #f ; FIXME: "error reading DNS system conf" from reqwest
        #:cargo-inputs
        (("rust-article-scraper" ,rust-article-scraper-1)
         ("rust-async-trait" ,rust-async-trait-0.1)
@@ -31671,11 +31799,9 @@ release (fork of debug_unreachable)")
        (("rust-tempfile" ,rust-tempfile-3)
         ("rust-tokio" ,rust-tokio-1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("libxml2" ,libxml2)
-       ("openssl" ,openssl)
-       ("sqlite" ,sqlite)))
+     (list libxml2 openssl sqlite))
     (home-page "https://gitlab.com/news-flash/news_flash")
     (synopsis "Base library for NewsFlash")
     (description "This package provides the base library for the NewsFlash
@@ -31708,9 +31834,9 @@ feed reader.")
        (("rust-dotenv" ,rust-dotenv-0.15)
         ("rust-tokio" ,rust-tokio-1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://gitlab.com/news-flash/newsblur_api/")
     (synopsis "Rust implementation of the NewsBlur API")
     (description
@@ -32044,10 +32170,7 @@ while still providing platform specific APIs.")
         ("rust-sysctl" ,rust-sysctl-0.1)
         ("rust-tempfile" ,rust-tempfile-3))))
     (inputs
-     `(("rust-bitflags" ,rust-bitflags-1)
-       ("rust-cc" ,rust-cc-1)
-       ("rust-cfg-if" ,rust-cfg-if-0.1)
-       ("rust-libc" ,rust-libc-0.2)))))
+     (list rust-bitflags-1 rust-cc-1 rust-cfg-if-0.1 rust-libc-0.2))))
 
 (define-public rust-nix-0.17
   (package
@@ -32140,6 +32263,26 @@ while still providing platform specific APIs.")
 to nl80211 and receive messages.")
     (license license:expat)))
 
+(define-public rust-no-color-0.1
+  (package
+    (name "rust-no-color")
+    (version "0.1.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "no_color" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "1m0x6i5q1jav2jgajkg4irrkfgv4lakpdvmj310b90wswdyy9xdx"))))
+    (build-system cargo-build-system)
+    (arguments `(#:skip-build? #t))
+    (home-page "https://github.com/sitkevij/no_color")
+    (synopsis "Library to detect NO_COLOR environment variable")
+    (description
+"@code{no_color} is a rust library for detecting if the @code{NO_COLOR}
+environment variable is set.")
+    (license license:expat)))
+
 (define-public rust-no-panic-0.1
   (package
     (name "rust-no-panic")
@@ -32199,7 +32342,7 @@ without the @code{std}.")
       (origin
         (method url-fetch)
         (uri (crate-uri "nodrop" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1fz1v9r8ijacf0hlq0pdv5l9mz8vgqg1snmhvpjmi9aci1b4mvvj"))))
@@ -32222,7 +32365,7 @@ without the @code{std}.")
       (origin
         (method url-fetch)
         (uri (crate-uri "nodrop-union" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1h59pph19rxanyqcaid8pg73s7wmzdx3zhjv5snlim5qx606zxkc"))))
@@ -32270,7 +32413,7 @@ implementation (which is unstable / requires nightly).")
                        (string-append jemalloc "/lib/libjemalloc_pic.a")))
              #t)))))
     (native-inputs
-     `(("jemalloc" ,jemalloc)))
+     (list jemalloc))
     (home-page "https://github.com/Geal/nom")
     (synopsis
      "Byte-oriented, zero-copy, parser combinators library")
@@ -32670,10 +32813,9 @@ varying noise for textural use and graphical display.")
              (substitute* "Cargo.toml"
                (("version = \"0.3.2\"") "version = \"0.5.0\"")))))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)
-       ("notmuch" ,notmuch)))
+     (list openssl notmuch))
     (home-page "https://github.com/vhdirk/notmuch-rs")
     (synopsis "Rust interface and bindings for Notmuch")
     (description
@@ -33454,7 +33596,7 @@ mathematics.")
       (origin
         (method url-fetch)
         (uri (crate-uri "num-traits" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0c9whknf2dm74a3cqirafy6gj83a76gl56g4v3g19k6lkwz13rcj"))))
@@ -33491,7 +33633,7 @@ giga, kibi.")
       (origin
         (method url-fetch)
         (uri (crate-uri "numtoa" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1vs9rhggqbql1p26x8nkha1j06wawwgb2jp5fs88b5gi7prvvy5q"))))
@@ -33515,8 +33657,6 @@ giga, kibi.")
         (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "0y5azgk8ds43m1sd5pc4hhakxzxkfcfscl24y8gsbvwdznxjqavv"))))
-    (arguments
-     `(#:rust ,rust-1.52)) ; fix for E0658
     (build-system cargo-build-system)
     (home-page "https://github.com/CasualX/obfstr")
     (synopsis "Compile time string constant obfuscation for Rust")
@@ -34207,7 +34347,7 @@ the default program configured on the system.")
       (origin
         (method url-fetch)
         (uri (crate-uri "openssl-probe" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1pijrdifgsdwd45b08c2g0dsmnhz7c3kmagb70839ngrd7d29bvp"))))
@@ -34242,9 +34382,9 @@ system for OpenSSL.")
         ("rust-pkg-config" ,rust-pkg-config-0.3)
         ("rust-vcpkg" ,rust-vcpkg-0.2))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://github.com/sfackler/rust-openssl")
     (synopsis "FFI bindings to OpenSSL")
     (description
@@ -34328,8 +34468,7 @@ system for OpenSSL.")
         (base32 "0zr7f101inkz3rknl0r3q0qkklfxhqrji7yxmqixajfn3m5mbjfa"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.52 ; fix for E0658
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-regex" ,rust-regex-1)
         ("rust-serde" ,rust-serde-1)
         ("rust-strong-xml" ,rust-strong-xml-0.6)
@@ -34613,7 +34752,7 @@ platform-native strings.")
       (origin
         (method url-fetch)
         (uri (crate-uri "owning_ref" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1kjj9m28wjv452jw49p1mp3d8ql058x78v4bz00avr7rvsnmpxbg"))))
@@ -34854,9 +34993,9 @@ normally prevent moving a type that has been borrowed from.")
        #:cargo-inputs
        (("rust-libc" ,rust-libc-0.2))))
     (inputs
-     `(("zlib" ,zlib)))
+     (list zlib))
     (native-inputs
-     `(("libtool" ,libtool)))
+     (list libtool))
     (home-page "https://github.com/anp/parasailors")
     (synopsis "Bindings to the parasail pairwise genetic sequence alignment library")
     (description
@@ -34888,9 +35027,9 @@ sequence alignment library.")
        (("rust-libc" ,rust-libc-0.2)
         ("rust-parasail-sys" ,rust-parasail-sys-0.2))))
     (inputs
-     `(("zlib" ,zlib)))
+     (list zlib))
     (native-inputs
-     `(("libtool" ,libtool)))
+     (list libtool))
     (home-page "https://github.com/anp/parasailors")
     (synopsis "SIMD accelerated pairwise genetic sequence alignment")
     (description "This package provides SIMD accelerated pairwise genetic
@@ -34957,7 +35096,7 @@ sequence alignment tools.")
       (origin
         (method url-fetch)
         (uri (crate-uri "parity-wasm" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "03qycy21avz4970zc7aj8rj5h4wvi4qsrc90a6hpws1a56mglf8y"))))
@@ -35737,7 +35876,7 @@ in pure Rust.")
        (("rust-libc" ,rust-libc-0.2)
         ("rust-pkg-config" ,rust-pkg-config-0.3)
         ("rust-winapi" ,rust-winapi-0.3))))
-    (inputs `(("libpcap" ,libpcap)))
+    (inputs (list libpcap))
     (home-page "https://github.com/jmmk/rustcap")
     (synopsis "Low-level bindings to libpcap")
     (description "This package provides low-level Rust bindings to the libpcap
@@ -35765,8 +35904,7 @@ library.")
         ("rust-pcre2-sys" ,rust-pcre2-sys-0.2)
         ("rust-thread-local" ,rust-thread-local-1))))
     (native-inputs
-     `(("pcre2" ,pcre2)
-       ("pkg-config" ,pkg-config)))
+     (list pcre2 pkg-config))
     (home-page "https://github.com/BurntSushi/rust-pcre2")
     (synopsis "High level wrapper library for PCRE2")
     (description
@@ -35796,8 +35934,7 @@ library.")
         ("rust-pkg-config" ,rust-pkg-config-0.3)
         ("rust-cc" ,rust-cc-1))))
     (native-inputs
-     `(("pcre2" ,pcre2)
-       ("pkg-config" ,pkg-config)))
+     (list pcre2 pkg-config))
     (home-page
      "https://github.com/BurntSushi/rust-pcre2")
     (synopsis "Low level bindings to PCRE2")
@@ -35903,7 +36040,7 @@ pdqsort.")
       (origin
         (method url-fetch)
         (uri (crate-uri "peeking_take_while" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "16bhqr6rdyrp12zv381cxaaqqd0pwysvm1q8h2ygihvypvfprc8r"))))
@@ -36019,7 +36156,7 @@ runtime support for rust-peg grammars.  To use rust-peg, see the peg crate.")
       (origin
         (method url-fetch)
         (uri (crate-uri "percent-encoding" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0bp3zrsk3kr47fbpipyczidbbx4g54lzxdm77ni1i3qws10mdzfl"))))
@@ -36039,7 +36176,7 @@ runtime support for rust-peg grammars.  To use rust-peg, see the peg crate.")
       (origin
         (method url-fetch)
         (uri (crate-uri "percent-encoding" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0cgq08v1fvr6bs5fvy390cz830lq4fak8havdasdacxcw790s09i"))))))
@@ -36125,7 +36262,7 @@ perf_event_open system call, with associated types and constants.")
       (origin
         (method url-fetch)
         (uri (crate-uri "permutohedron" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0b1pzh48j86v46wxngch6k1kx9cdw3jr3lwa86gd6jd4bmxzz1xn"))))
@@ -36574,7 +36711,7 @@ function data structures.")
       (origin
         (method url-fetch)
         (uri (crate-uri "pico-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1q5pg0ms6szz6b5h26h4k40zb76zbwwjgyigac4wly9qngdj4yl5"))))
@@ -36762,7 +36899,7 @@ written with declarative macros.")
       (origin
         (method url-fetch)
         (uri (crate-uri "pkg-config" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0k4860955riciibxr8bhnklp79jydp4xfylwdn5v9kj96hxlac9q"))))
@@ -36780,7 +36917,7 @@ written with declarative macros.")
                                "/bin/pkg-config\"")))
              #t)))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (home-page "https://github.com/rust-lang/pkg-config-rs")
     (synopsis "Library to run the pkg-config system tool")
     (description
@@ -36821,7 +36958,7 @@ network packet formats.")
       (origin
         (method url-fetch)
         (uri (crate-uri "plain" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "19n1xbxb4wa7w891268bzf6cbwq4qvdb86bik1z129qb0xnnnndl"))))
@@ -36927,7 +37064,7 @@ both WASM and native applications")
       (origin
         (method url-fetch)
         (uri (crate-uri "plugin" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1q7nghkpvxxr168y2jnzh3w7qc9vfrby9n7ygy3xpj0bj71hsshs"))))
@@ -36999,7 +37136,7 @@ both WASM and native applications")
       (origin
         (method url-fetch)
         (uri (crate-uri "pocket-resources" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1n2i5vmi8fdbw89wm5nz1ws1z9f1qax911p6ksg4scmdg23z6df1"))))
@@ -37717,8 +37854,7 @@ UDP.")
           "1hnid1d78zrr8ph12lpvp5b2cpx2fsqqgqs2yn1q23c6g7jix1y7"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.46    ; or later
-       #:tests? #f          ; tests require postgres server.
+     `(#:tests? #f          ; tests require postgres server.
        #:cargo-inputs
        (("rust-bytes" ,rust-bytes-1)
         ("rust-fallible-iterator" ,rust-fallible-iterator-0.2)
@@ -37924,7 +38060,7 @@ and Postgres values.")
       (origin
         (method url-fetch)
         (uri (crate-uri "ppv-lite86" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1shj4q7jwj0azssr8cg51dk3kh7d4lg9rmbbz1kbqk971vc5wyi3"))))
@@ -37954,7 +38090,7 @@ for x86.")
        (("rust-pkg-config" ,rust-pkg-config-0.3)
         ("rust-vcpkg" ,rust-vcpkg-0.2))))
     (native-inputs
-     `(("postgresql" ,postgresql)))
+     (list postgresql))
     (home-page "https://crates.io/crates/pq-sys")
     (synopsis "Auto-generated rust bindings for libpq")
     (description "This package provides auto-generated rust bindings for
@@ -38596,7 +38732,7 @@ in your code.")
       (origin
         (method url-fetch)
         (uri (crate-uri "proc-macro2" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0f3h0zl5w5090ajmmvpmhkpr4iwqnn5rip3afacabhc657vwmn7h"))))
@@ -38608,7 +38744,7 @@ in your code.")
        #:cargo-development-inputs
        (("rust-quote" ,rust-quote-1))))
     (inputs
-     `(("rust-unicode-xid" ,rust-unicode-xid-0.2)))
+     (list rust-unicode-xid-0.2))
     (home-page "https://github.com/alexcrichton/proc-macro2")
     (synopsis "Stable implementation of the upcoming new `proc_macro` API")
     (description "This package provides a stable implementation of the upcoming new
@@ -39481,7 +39617,7 @@ implementation.")
       (origin
         (method url-fetch)
         (uri (crate-uri "quick-error" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "18z6r2rcjvvf8cn92xjhm2qc3jpd1ljvcbf12zv0k9p565gmb4x9"))))
@@ -39502,7 +39638,7 @@ to write.")
       (origin
         (method url-fetch)
         (uri (crate-uri "quick-error" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1q6za3v78hsspisc197bg3g7rpc989qycy8ypr8ap8igv10ikl51"))))))
@@ -39844,7 +39980,7 @@ integers, floats, tuples, booleans, lists, strings, options and results.")
       (origin
         (method url-fetch)
         (uri (crate-uri "quote" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "19rjmfqzk26rxbgxy5j2ckqc2v12sw2xw8l4gi8bzpn2bmsbkl63"))))
@@ -40112,7 +40248,7 @@ useful types and distributions, and some randomness-related algorithms.")
      (origin
        (method url-fetch)
        (uri (crate-uri "rand" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "00sdaimkbz491qgi6qxkv582yivl32m2jd401kzbn94vsiwicsva"))))
@@ -40139,7 +40275,7 @@ useful types and distributions, and some randomness-related algorithms.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1jl4449jcl4wgmzld6ffwqj5gwxrp8zvx8w573g1z368qg6xlwbd"))))
@@ -40221,7 +40357,7 @@ useful types and distributions, and some randomness-related algorithms.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0v679h38pjjqj5h4md7v2slsvj6686qgcn7p9fbw3h43iwnk1b34"))))
@@ -40281,7 +40417,7 @@ useful types and distributions, and some randomness-related algorithms.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_chacha" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1vxwyzs4fy1ffjc8l00fsyygpiss135irjf7nyxgq2v0lqf3lvam"))))
@@ -40343,7 +40479,7 @@ tools for implementation.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_core" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1p09ynysrq1vcdlmcqnapq4qakl2yd1ng3kxh3qscpx09k2a6cww"))))
@@ -40361,7 +40497,7 @@ tools for implementation.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_core" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0jzdgszfa4bliigiy4hi66k7fs3gfwi2qxn8vik84ph77fwdwvvs"))))
@@ -40503,7 +40639,7 @@ generator that uses the HC-128 algorithm.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_hc" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0g31sqwpmsirdlwr0svnacr4dbqyz339im4ssl9738cjgfpjjcfa"))))
@@ -40520,7 +40656,7 @@ generator that uses the HC-128 algorithm.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_hc" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1i0vl8q5ddvvy0x8hf1zxny393miyzxkwqnw31ifg6p0gdy6fh3v"))))
@@ -40589,7 +40725,7 @@ Add, and Count\" which are the principal bitwise operations employed.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_isaac" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "027flpjr4znx2csxk7gxb7vrf9c7y5mydmvg5az2afgisp4rgnfy"))))
@@ -40609,7 +40745,7 @@ Add, and Count\" which are the principal bitwise operations employed.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_jitter" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "16z387y46bfz3csc42zxbjq89vcr1axqacncvv8qhyy93p4xarhi"))))
@@ -40660,7 +40796,7 @@ generator based on timing jitter.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_os" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0wahppm0s64gkr2vmhcgwc0lij37in1lgfxg5rbgqlz0l5vgcxbv"))))
@@ -40684,7 +40820,7 @@ generator based on timing jitter.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_pcg" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1w47awndfhgcc31zbji66pwndqmc6lsyairqi9b17f82f19riqbx"))))
@@ -40711,7 +40847,7 @@ generator based on timing jitter.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_pcg" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0ab4h6s6x3py833jk61lwadq83qd1c8bih2hgi6yps9rnv0x1aqn"))))
@@ -40739,7 +40875,7 @@ generator based on timing jitter.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_pcg" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0i0bdla18a8x4jn1w0fxsbs3jg7ajllz6azmch1zw33r06dv1ydb"))))
@@ -40807,7 +40943,7 @@ generator based on timing jitter.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rand_xorshift" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0p2x8nr00hricpi2m6ca5vysiha7ybnghz79yqhhx6sl4gkfkxyb"))))
@@ -41069,7 +41205,7 @@ libcore.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rawpointer" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1qy1qvj17yh957vhffnq6agq0brvylw27xgks171qrah75wmg8v0"))))
@@ -41091,7 +41227,7 @@ and @code{ptrdistance}.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rawpointer" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "06ghpm9y7gacks78s3maakha07kbnwrxif5q37r2l7z1sali3b7b"))))))
@@ -41262,7 +41398,7 @@ reference counting.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rdrand" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1cjq0kwx1bk7jx3kzyciiish5gqsj7620dm43dc52sr8fzmm9037"))))
@@ -41376,7 +41512,7 @@ owned memory.")
       (origin
         (method url-fetch)
         (uri (crate-uri "redox_syscall" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1kh59fpwy33w9nwd5iyc283yglq8pf2s41hnhvl48iax9mz0zk21"))))
@@ -41390,7 +41526,7 @@ owned memory.")
       (origin
         (method url-fetch)
         (uri (crate-uri "redox-termios" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0xhgvdh62mymgdl3jqrngl8hr4i8xwpnbsxnldq0l47993z1r2by"))))
@@ -42047,9 +42183,9 @@ uses finite automata and guarantees linear time matching on all inputs.")
         ("rust-tokio" ,rust-tokio-0.2)
         ("rust-wasm-bindgen-test" ,rust-wasm-bindgen-test-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))))
+     (list openssl))))
 
 (define-public rust-reqwest-0.9
   (package
@@ -42135,7 +42271,7 @@ uses finite automata and guarantees linear time matching on all inputs.")
       (origin
         (method url-fetch)
         (uri (crate-uri "resolv-conf" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0jlzifww1h7j23jnjj49xz8q0fpd9rqpd0ks8c4y651vgw9lx0qi"))))
@@ -42345,9 +42481,9 @@ Rust Language Server.")
        (("rust-byteorder" ,rust-byteorder-1)
         ("rust-tempfile" ,rust-tempfile-3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("lmdb" ,lmdb)))
+     (list lmdb))
     (home-page "https://github.com/mozilla/rkv")
     (synopsis "Typed key-value storage")
     (description "This package provides a typed key-value storage solution.")
@@ -43132,7 +43268,7 @@ please consider using @code{async-std} or @code{tokio}.")
              (setenv "RUSTC_BOOTSTRAP" "1")
              #t)))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))))
+     (list pkg-config))))
 
 (define-public rust-rusqlite-0.19
   (package
@@ -43170,7 +43306,7 @@ please consider using @code{async-std} or @code{tokio}.")
         ("rust-unicase" ,rust-unicase-2)
         ("rust-uuid" ,rust-uuid-0.7))))
     (inputs
-     `(("sqlite" ,sqlite)))))
+     (list sqlite))))
 
 (define-public rust-rust-argon2-0.7
   (package
@@ -43279,8 +43415,7 @@ password hashing function.")
           "10k58hf367626d4akl7ifyk5qwqphfs5x6z1yay22pkyc6w7q4h1"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.46    ; or later
-       #:tests? #f          ; not all test files included.
+     `(#:tests? #f          ; not all test files included.
        #:cargo-inputs
        (("rust-arbitrary" ,rust-arbitrary-1)
         ("rust-arrayvec" ,rust-arrayvec-0.5)
@@ -43946,7 +44081,7 @@ It is automatically published using the compiler repository at
       (origin
         (method url-fetch)
         (uri (crate-uri "rustc-demangle" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "10qp42sl1wrdbgbbh8rnay2grm976z7hqgz32c4y09l1c071qsac"))))
@@ -44067,7 +44202,7 @@ forth, as well as the ability to create custom thread-pools with ThreadPool.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rustc-serialize" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1nkg3vasg7nk80ffkazizgiyv3hb1l9g3d8h17cajbkx538jiwfw"))))
@@ -44114,7 +44249,7 @@ decoding.")
       (origin
         (method url-fetch)
         (uri (crate-uri "rustc-std-workspace-core" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1309xhwyai9xpz128xrfjqkmnkvgjwddznmj7brbd8i8f58zamhr"))))
@@ -45022,7 +45157,7 @@ deserialization framework.")
       (origin
         (method url-fetch)
         (uri (crate-uri "ryu" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0xlx9ybzncrb7d6r9533g8ydlg6mr252pfzl4g9cqaqkpvk24mjk"))))
@@ -45270,7 +45405,7 @@ computation (experimental)")
       (origin
         (method url-fetch)
         (uri (crate-uri "safemem" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0wp0d2b2284lw11xhybhaszsczpbq1jbdklkxgifldcknmy3nw7g"))))
@@ -45305,7 +45440,7 @@ computation (experimental)")
       (origin
         (method url-fetch)
         (uri (crate-uri "same-file" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "00h5j1w87dmhnvbv9l8bic3y7xxsnjmssvifw2ayvgx9mb1ivz4k"))))
@@ -45417,7 +45552,7 @@ motivation for writing this library.
       (origin
         (method url-fetch)
         (uri (crate-uri "schannel" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "08d0p5iy574vdrax4l3laazic0crj7rp7vp3if5rrfkcdfq51xc7"))))
@@ -45463,7 +45598,7 @@ server functionality.")
       (origin
         (method url-fetch)
         (uri (crate-uri "scoped_threadpool" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1a26d3lk40s9mrf4imhbik7caahmw2jryhhb6vqv6fplbbgzal8x"))))
@@ -45492,7 +45627,7 @@ non-'static references in parallel.")
       (origin
         (method url-fetch)
         (uri (crate-uri "scoped-tls" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1hj8lifzvivdb1z02lfnzkshpvk85nkgzxsy2hc0zky9wf894spa"))))
@@ -45515,7 +45650,7 @@ library's old @code{scoped_thread_local!} macro for providing scoped access to
       (origin
         (method url-fetch)
         (uri (crate-uri "scoped-tls" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0a2bn9d2mb07c6l16sadijy4p540g498zddfxyiq4rsqpwrglbrk"))))))
@@ -45528,7 +45663,7 @@ library's old @code{scoped_thread_local!} macro for providing scoped access to
       (origin
         (method url-fetch)
         (uri (crate-uri "scopeguard" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1kbqm85v43rq92vx7hfiay6pmcga03vrjbbfwqpyj3pwsg3b16nj"))))
@@ -45553,7 +45688,7 @@ with one of the implemented strategies.")
         (method url-fetch)
         (uri (crate-uri "scopeguard" version))
         (file-name
-          (string-append name "-" version ".crate"))
+          (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "09sy9wbqp409pkwmqni40qmwa99ldqpl48pp95m1xw8sc19qy9cl"))))))
@@ -45915,7 +46050,7 @@ statistical guarantees.")
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-inputs (("rust-libc" ,rust-libc-0.2))))
-    (inputs `(("libseccomp" ,libseccomp)))
+    (inputs (list libseccomp))
     (home-page "https://github.com/polachok/seccomp-sys")
     (synopsis "Low-level bindings to libseccomp")
     (description "This package provides low-level bindings to libseccomp.")
@@ -46120,7 +46255,7 @@ macOS and iOS.")
       (origin
         (method url-fetch)
         (uri (crate-uri "security-framework-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "15gqhhi206lzynd0pcbswxhvqc4p9bmpl2h9qnwfnpb16zy96573"))))
@@ -46390,7 +46525,7 @@ Semantic Versioning.")
       (origin
         (method url-fetch)
         (uri (crate-uri "semver-parser" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1ahqhvgpzhcsd28id7xnrjv4419i9yyalhm7d7zi430qx0hi2vml"))))))
@@ -46404,7 +46539,7 @@ Semantic Versioning.")
       (origin
         (method url-fetch)
         (uri (crate-uri "semver-parser" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "18vhypw6zgccnrlm5ps1pwa0khz7ry927iznpr88b87cagr1v2iq"))))))
@@ -46461,7 +46596,7 @@ thread.  If any of these constraints is violated, a panic occurs.")
         ("rust-rand" ,rust-rand-0.7)
         ("rust-rand-isaac" ,rust-rand-isaac-0.2))))
     (inputs
-     `(("zlib" ,zlib)))
+     (list zlib))
     (home-page "https://github.com/markschl/seq_io")
     (synopsis "Fast FASTA, FASTQ and FASTX parsing")
     (description "This library provides readers for the the following sequence
@@ -46536,10 +46671,9 @@ fragment of code.")
        #:cargo-development-inputs
        (("rust-rpassword" ,rust-rpassword-3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("clang" ,clang)
-       ("nettle" ,nettle)))
+     (list clang nettle))
     (home-page "https://sequoia-pgp.org/")
     (synopsis "OpenPGP data types and associated machinery")
     (description
@@ -47000,7 +47134,7 @@ TOML/JSON/MessagePack strings and serializable values.")
       (origin
         (method url-fetch)
         (uri (crate-uri "serde-derive" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0ccg4m7ww6mfs5vjdbdifri2kf1wyd4difjnqnraph2gssaw54ck"))))
@@ -47722,7 +47856,7 @@ functionality and without weak references.")
        (("rust-libc" ,rust-libc-0.2)
         ("rust-servo-fontconfig-sys" ,rust-servo-fontconfig-sys-4))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
      `(("fontconfig" ,fontconfig)))))
 
@@ -47776,7 +47910,7 @@ functionality and without weak references.")
         ("rust-servo-freetype-sys" ,rust-servo-freetype-sys-4)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
      `(("fontconfig" ,fontconfig)))))
 
@@ -47802,9 +47936,9 @@ functionality and without weak references.")
        (("rust-cmake" ,rust-cmake-0.1)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("freetype" ,freetype)))
+     (list freetype))
     (home-page "https://www.freetype.org/")
     (synopsis "Rust wrapper around freetype")
     (description
@@ -48389,7 +48523,7 @@ some context).")
      (origin
        (method url-fetch)
        (uri (crate-uri "shlex" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "0gf773p2snqpw69rzh8s1wdlq8dc8c1ypmiv516il1fdyb46i9a2"))))
     (build-system cargo-build-system)
@@ -48408,7 +48542,7 @@ words, like Python's shlex.")
       (origin
         (method url-fetch)
         (uri (crate-uri "shlex" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1lmv6san7g8dv6jdfp14m7bdczq9ss7j7bgsfqyqjc3jnjfippvz"))))
@@ -48805,6 +48939,32 @@ extensions.")
     (description "This package provides a diff library for Rust.")
     (license license:asl2.0)))
 
+(define-public rust-simple-logger-1
+  (package
+    (name "rust-simple-logger")
+    (version "1.13.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "simple-logger" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "01wz5xjpski45xq8v1bg8g05flj5h1sl63aabl2c6kj0hz337pmp"))))
+    (build-system cargo-build-system)
+    (arguments
+      `(#:cargo-inputs
+        (("rust-atty" ,rust-atty-0.2)
+         ("rust-chrono" ,rust-chrono-0.4)
+         ("rust-colored" ,rust-colored-1)
+         ("rust-log" ,rust-log-0.4)
+         ("rust-winapi" ,rust-winapi-0.3))))
+    (home-page "https://github.com/borntyping/rust-simple_logger")
+    (synopsis "Logger with a readable output format")
+    (description
+      "This package provides a logger that prints all messages with
+a readable output format")
+    (license license:expat)))
+
 (define-public rust-simple-mutex-1
   (package
     (name "rust-simple-mutex")
@@ -48913,8 +49073,7 @@ variants in pure Rust.")
          "07ix5fsdnpf2xsb0k5rbiwlmsicm2237fcx7blirp9p7pljr5mhn"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.52                ;requires the "if in const fn" feature
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-arbitrary" ,rust-arbitrary-1)
         ("rust-array-ops" ,rust-array-ops-0.1)
         ("rust-bitmaps" ,rust-bitmaps-2)
@@ -48986,7 +49145,7 @@ designed for @code{immutable.rs}.")
       (origin
         (method url-fetch)
         (uri (crate-uri "slab" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1y59xsa27jk84sxzswjk60xcjf8b4fm5960jwpznrrcmasyva4f1"))))
@@ -49611,8 +49770,7 @@ escaped text to recover the original string.")
         (base32 "1v4f132rk9wxiw8hb3kgnixirzr8kbfhg2lgsf4b85vbg02a0jfn"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.52 ; fix for E0658
-       #:cargo-inputs (("rust-serde" ,rust-serde-1))))
+     `(#:cargo-inputs (("rust-serde" ,rust-serde-1))))
     (home-page "https://github.com/emilk/snake_case")
     (synopsis "String-like type that only contains non-empty snake_case")
     (description
@@ -49661,8 +49819,7 @@ algorithm.  Includes streaming compression and decompression.")
           "18ny6m1gnf6cwp5ax0b5hr36w6yg16z7faj76b31aq2jghhgqgcy"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.46    ; or later
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-libc" ,rust-libc-0.2)
         ("rust-winapi" ,rust-winapi-0.3))))
     (home-page "https://github.com/rust-lang/socket2")
@@ -49682,7 +49839,7 @@ maximal amount of configuration possible intended.")
      (origin
        (method url-fetch)
        (uri (crate-uri "socket2" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "0vldz14mxqxnjqb6an2pj7mgclv7nrk45cpscwq7g3fj2c0mfbhj"))))
     (arguments
@@ -49729,7 +49886,7 @@ maximal amount of configuration possible intended.")
       (origin
         (method url-fetch)
         (uri (crate-uri "sourcefile" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1lwa6973zs4bgj29my7agfjgk4nw9hp6j7dfnr13nid85fw7rxsb"))))
@@ -49847,7 +50004,7 @@ track of where each new file and line starts.")
       (origin
         (method url-fetch)
         (uri (crate-uri "spin" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0b84m6dbzrwf2kxylnw82d3dr8w06av7rfkr8s85fb5f43rwyqvf"))))
@@ -50013,6 +50170,45 @@ SPIR-V.")
     (description "Simple SPMC channel")
     (license (list license:expat license:asl2.0))))
 
+(define-public rust-rspotify-0.10
+  (package
+    (name "rust-rspotify")
+    (version "0.10.0")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "rspotify" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "196wd157l3fn6hlyixgffhl2x516g4fpa3s91arhcikiifsppzgf"))))
+    (build-system cargo-build-system)
+    (arguments
+      `(#:skip-build? #t
+        #:cargo-inputs
+        (("rust-base64" ,rust-base64-0.10)
+         ("rust-chrono" ,rust-chrono-0.4)
+         ("rust-derive-builder" ,rust-derive-builder-0.7)
+         ("rust-dotenv" ,rust-dotenv-0.13)
+         ("rust-env-logger" ,rust-env-logger-0.6)
+         ("rust-failure" ,rust-failure-0.1)
+         ("rust-itertools" ,rust-itertools-0.8)
+         ("rust-lazy-static" ,rust-lazy-static-1)
+         ("rust-log" ,rust-log-0.4)
+         ("rust-percent-encoding" ,rust-percent-encoding-1)
+         ("rust-rand" ,rust-rand-0.6)
+         ("rust-random" ,rust-random-0.12)
+         ("rust-reqwest" ,rust-reqwest-0.10)
+         ("rust-serde" ,rust-serde-1)
+         ("rust-serde-derive" ,rust-serde-derive-1)
+         ("rust-serde-json" ,rust-serde-json-1)
+         ("rust-url" ,rust-url-1)
+         ("rust-webbrowser" ,rust-webbrowser-0.5))))
+    (home-page "https://github.com/ramsayleung/rspotify")
+    (synopsis "Spotify API wrapper")
+    (description "This package provides wrapper API forSpotify streaming
+service.")
+    (license license:expat)))
+
 (define-public rust-spsc-buffer-0.1
   (package
     (name "rust-spsc-buffer")
@@ -50090,7 +50286,7 @@ to the same address.")
       (origin
         (method url-fetch)
         (uri (crate-uri "stacker" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "12igajfgqz96c7vcwi91xdfsphawik6g36ndlglqih0a7bqw8vyr"))))
@@ -50213,7 +50409,7 @@ management.")
       (origin
         (method url-fetch)
         (uri (crate-uri "static-assertions" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0gsl6xmw10gvn3zs1rv99laj5ig7ylffnh71f9l34js4nr4r7sx2"))))
@@ -50234,7 +50430,7 @@ are met.")
       (origin
         (method url-fetch)
         (uri (crate-uri "static-assertions" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1lw33i89888yb3x29c6dv4mrkg3534n0rlg3r7qzh4p58xmv6gkz"))))))
@@ -50419,6 +50615,32 @@ in @code{stb_truetype.h} from C to Rust.")
 codebase.")
     (license license:expat)))
 
+(define-public rust-stderrlog-0.4
+  (package
+    (name "rust-stderrlog")
+    (version "0.4.3")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "stderrlog" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "09bzvmx2lzyycr1xfcvfwnvqsjg9kb4w22hb19bjqid5j2dyxr9j"))))
+    (build-system cargo-build-system)
+    (arguments
+      `(#:skip-build? #t
+        #:cargo-inputs
+        (("rust-atty" ,rust-atty-0.2.11)
+         ("rust-chrono" ,rust-chrono-0.4)
+         ("rust-log" ,rust-log-0.4)
+         ("rust-termcolor" ,rust-termcolor-1)
+         ("rust-thread-local" ,rust-thread-local-0.3.4))))
+    (home-page "https://github.com/cardoe/stderrlog-rs")
+    (synopsis "Logger that logs to stderr")
+    (description "This package provides logger that logs to stderr based
+on verbosity specified")
+    (license (list license:expat license:asl2.0))))
+
 (define-public rust-stdweb-0.4
   (package
     (name "rust-stdweb")
@@ -50527,7 +50749,7 @@ you to define custom reference types outside of the @code{stdweb} library.")
       (origin
         (method url-fetch)
         (uri (crate-uri "stdweb-internal-runtime" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1h0nkppb4r8dbrbms2hw9n5xdcs392m0r5hj3b6lsx3h6fx02dr1"))))
@@ -50547,7 +50769,7 @@ crate.")
       (origin
         (method url-fetch)
         (uri (crate-uri "stdweb-internal-test-macro" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0wx3jlm98qrg1pdw149fprzs9x3x3igqkm5ll23jv2v62yddfrjf"))))
@@ -50689,7 +50911,7 @@ iterated over only by reference rather than by value.")
       (origin
         (method url-fetch)
         (uri (crate-uri "streaming-stats" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0iz5dlq51w5hxjrv6a4hpf8rrj91kgvy0s9mhj0j12il9v771mmh"))))
@@ -50964,8 +51186,7 @@ file.")
         (base32 "1gxy34j42x5a572cfkkhmxamrm764pswj5r3wcwi0bwfc4xgn68x"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.52 ; fix for E0658
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-jetscii" ,rust-jetscii-0.5)
         ("rust-lazy-static" ,rust-lazy-static-1)
         ("rust-log" ,rust-log-0.4)
@@ -51035,7 +51256,7 @@ and Jaro-Winkler.")
      (origin
        (method url-fetch)
        (uri (crate-uri "strsim" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "0k497pv882qn3q977ckznm13vxx927g8s1swvcv68j3c1pccwik4"))))))
@@ -51049,7 +51270,7 @@ and Jaro-Winkler.")
       (origin
         (method url-fetch)
         (uri (crate-uri "strsim" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0sjsm7hrvjdifz661pjxq5w4hf190hx53fra8dfvamacvff139cf"))))))
@@ -52057,7 +52278,7 @@ a syntax tree of Rust source code.")
       (origin
         (method url-fetch)
         (uri (crate-uri "synstructure_test_traits" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1b3fs2b9kc1gy9dilaxqjbdl4z0mlrbbxjzkprdx953rif1c3q66"))))
@@ -52328,7 +52549,7 @@ no_std compatible by default, only relying on alloc.")
         ("rust-seccomp-sys" ,rust-seccomp-sys-0.1)
         ("rust-strum" ,rust-strum-0.19)
         ("rust-strum-macros" ,rust-strum-macros-0.19))))
-    (inputs `(("libseccomp" ,libseccomp)))
+    (inputs (list libseccomp))
     (home-page "https://github.com/kpcyrd/syscallz-rs")
     (synopsis "Simple seccomp library for rust")
     (description "Simple seccomp library for rust")
@@ -52641,7 +52862,7 @@ without a mutable reference.")
       (origin
         (method url-fetch)
         (uri (crate-uri "tar" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1lr6v3cpkfxd2lk5ll2jd8wr1xdskwj35smnh5sfb8xvzzxnn6dk"))))
@@ -53232,9 +53453,9 @@ streams.")
         ("rust-tectonic-cfg-support" ,rust-tectonic-cfg-support-0.1)
         ("rust-tectonic-dep-support" ,rust-tectonic-dep-support-0.1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("libpng" ,libpng)))
+     (list libpng))
     (home-page "https://tectonic-typesetting.github.io/")
     (synopsis "Xdvipdfmx's PDF, XDV, and image I/O APIs in C, as a Rust crate")
     (description
@@ -53345,7 +53566,7 @@ a C API.")
       (origin
         (method url-fetch)
         (uri (crate-uri "tempdir" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1n5n86zxpgd85y0mswrp5cfdisizq2rv3la906g6ipyc03xvbwhm"))))
@@ -53370,7 +53591,7 @@ deleting all contents when it's dropped.")
      (origin
        (method url-fetch)
        (uri (crate-uri "tempfile" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "08pbf3c1i42382dc44dil5bgiawcsi0qk6zdibw10f69rxiwdhfs"))))
     (build-system cargo-build-system)
@@ -53551,7 +53772,7 @@ template language.")
       (origin
         (method url-fetch)
         (uri (crate-uri "term" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1wbh8ngqkqr3f6wz902yplf60bd5yapnckvrkgmzp5nffi7n8qzs"))))
@@ -53569,7 +53790,7 @@ template language.")
       (origin
         (method url-fetch)
         (uri (crate-uri "term" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32 "109jmzddq1kz6wm2ndgddy7yrlqcw2i36ygxl0fcymc0sda7w1zj"))))
     (arguments
@@ -53674,7 +53895,7 @@ library.")
      (origin
        (method url-fetch)
        (uri (crate-uri "termcolor" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "1x65i1ny4m6z1by62ra6wdcrd557p2ysm866x0pg60zby2cxizid"))))
     (build-system cargo-build-system)
@@ -53783,7 +54004,7 @@ writing colored text to a terminal.")
       (origin
         (method url-fetch)
         (uri (crate-uri "termion" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "01f9787d5nx445bqbj644v38bn0hl2swwjy9baz0dnbqi6fyqb62"))))
@@ -53809,7 +54030,7 @@ writing colored text to a terminal.")
       (origin
         (method url-fetch)
         (uri (crate-uri "termios" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "09any1p4jp4bphvb5ikagnvwjc3xn2djchy96nkpa782xb2j1dkj"))))
@@ -54112,7 +54333,7 @@ handle Unicode characters correctly.")
       (origin
         (method url-fetch)
         (uri (crate-uri "thread-id" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1h90v19fjz3x9b25ywh68z5yf2zsmm6h5zb4rl302ckbsp4z9yy7"))))
@@ -54157,7 +54378,7 @@ different for every thread.")
      (origin
        (method url-fetch)
        (uri (crate-uri "thread_local" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "1gccp3grndpi6dyhzylz4hkqnkzc1xyri98n0xwwhnn90i7d4640"))))
     (build-system cargo-build-system)
@@ -54181,13 +54402,32 @@ different for every thread.")
       (origin
         (method url-fetch)
         (uri (crate-uri "thread_local" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "06rzik99p8c5js8238yhc8rk6np543ylb1dy9nrw5v80j0r3xdf6"))))
     (arguments
      `(#:skip-build? #t
        #:cargo-inputs (("rust-lazy-static" ,rust-lazy-static-1))))))
+
+(define-public rust-thread-local-0.3.4
+  (package
+    (inherit rust-thread-local-0.3)
+    (name "rust-thread-local")
+    (version "0.3.4")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "thread_local" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "055vj0ddb6vh0zaqdlxssfqzzpgs4ll5l5j7nqvabdzfgasw95qn"))))
+    (build-system cargo-build-system)
+    (arguments
+      `(#:skip-build? #t
+        #:cargo-inputs
+        (("rust-lazy-static" ,rust-lazy-static-0.2)
+         ("rust-unreachable" ,rust-unreachable-1))))))
 
 (define-public rust-thread-local-0.2
   (package
@@ -54240,7 +54480,7 @@ contention between workers when delivering jobs.")
       (origin
         (method url-fetch)
         (uri (crate-uri "threadpool" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0rd89n1q7vy47w4c32cnynibffv9kj3jy3dwr0536n9lbw5ckw72"))))
@@ -54301,9 +54541,9 @@ fixed set of worker threads.")
        (("rust-libc" ,rust-libc-0.2)
         ("rust-pkg-config" ,rust-pkg-config-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("libsodium" ,libsodium)))
+     (list libsodium))
     (home-page "https://nest.pijul.com/pijul_org/thrussh")
     (synopsis "Straightforward bindings to libsodium")
     (description
@@ -54466,7 +54706,7 @@ interoperable with the standard library, and is mostly compatible with
       (origin
         (method url-fetch)
         (uri (crate-uri "time" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0f14wrgxj7ya2v4msg5mni7046bsm2angm7cn3pd3yv04gpm12na"))))
@@ -55358,7 +55598,7 @@ futures efficiently")
       (origin
         (method url-fetch)
         (uri (crate-uri "tokio-mock-task" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1y7q83qfk9ljjfvs82b453pmz9x1v3d6kr4x55j8mal01s6790dw"))))
@@ -55556,9 +55796,9 @@ OpenSSL.")
        (("rust-futures" ,rust-futures-0.3)
         ("rust-tokio" ,rust-tokio-0.2))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))))
+     (list openssl))))
 
 (define-public rust-tokio-openssl-0.3
   (package
@@ -55596,8 +55836,7 @@ OpenSSL.")
           "12rb390i3af7zb0z2idhaf6l2m6snypwdiwjw84rmyz4qy1i6ard"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.46
-       #:tests? #f                      ;require postgresql
+     `(#:tests? #f                      ;require postgresql
        #:cargo-inputs
        (("rust-async-trait" ,rust-async-trait-0.1)
         ("rust-byteorder" ,rust-byteorder-1)
@@ -56321,9 +56560,9 @@ pool.")
         ("rust-tokio-util" ,rust-tokio-util-0.3)
         ("rust-winapi" ,rust-winapi-0.3))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (home-page "https://tokio.rs")
     (synopsis "TLS/SSL streams for Tokio")
     (description "An implementation of TLS/SSL streams for Tokio giving an
@@ -56587,7 +56826,7 @@ stream-based WebSocket implementation.")
       (origin
         (method url-fetch)
         (uri (crate-uri "toml" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1apcmjrrjw429pjw7mqlmdwwd67g8305vwqy4kw3swr612bl44d3"))))
@@ -56830,7 +57069,7 @@ automatically instrumenting functions.")
      (origin
        (method url-fetch)
        (uri (crate-uri "tracing-core" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "0pvbgv301vw6dq4krc14yqbyyixb42lcs4s57xw05llkgy9f63gm"))))
     (build-system cargo-build-system)
@@ -57151,7 +57390,7 @@ be used directly.  See @code{rust-trackable} for more information.")
       (origin
         (method url-fetch)
         (uri (crate-uri "traitobject" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0yb0n8822mr59j200fyr2fxgzzgqljyxflx9y8bdy3rlaqngilgg"))))
@@ -57183,6 +57422,38 @@ be used directly.  See @code{rust-trackable} for more information.")
     (description
      "This package provides a library for moving files and folders to the
 recycle bin.")
+    (license license:expat)))
+
+(define-public rust-tree-magic-0.2
+  (package
+    (name "rust-tree-magic")
+    (version "0.2.3")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "tree_magic" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (sha256
+          (base32 "0adndj775gjcvkf7yxdfj3pl39fcdiibswwgff23lm9yrrkr7ndi"))))
+    (build-system cargo-build-system)
+    (arguments
+      `(#:skip-build?
+        #t
+        #:cargo-inputs
+        (("rust-clap" ,rust-clap-2)
+         ("rust-fnv" ,rust-fnv-1)
+         ("rust-lazy-static" ,rust-lazy-static-1)
+         ("rust-nom" ,rust-nom-3)
+         ("rust-num-cpus" ,rust-num-cpus-1)
+         ("rust-parking-lot" ,rust-parking-lot-0.10)
+         ("rust-petgraph" ,rust-petgraph-0.5)
+         ("rust-scoped-threadpool" ,rust-scoped-threadpool-0.1)
+         ("rust-tabwriter" ,rust-tabwriter-1)
+         ("rust-walkdir" ,rust-walkdir-2))))
+    (home-page "https://github.com/aahancoc/tree_magic/")
+    (synopsis "Determines the MIME type")
+    (description "This package determines the MIME type of a file by
+traversing a filetype tree.")
     (license license:expat)))
 
 (define-public rust-treeline-0.1
@@ -57431,9 +57702,9 @@ extension for the Trust-DNS client to use native-tls for TLS.")
         ("rust-tokio-tls" ,rust-tokio-tls-0.3)
         ("rust-trust-dns-proto" ,rust-trust-dns-proto-0.19))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))))
+     (list openssl))))
 
 (define-public rust-trust-dns-native-tls-0.18
   (package
@@ -57531,9 +57802,9 @@ extension for the Trust-DNS client to use tokio-openssl for TLS.")
        (("rust-openssl" ,rust-openssl-0.10)
         ("rust-tokio" ,rust-tokio-0.2))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))))
+     (list openssl))))
 
 (define-public rust-trust-dns-openssl-0.18
   (package
@@ -57961,9 +58232,9 @@ the Trust-DNS client to use rustls for TLS.")
        #:cargo-development-inputs
        (("rust-openssl" ,rust-openssl-0.10))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))))
+     (list openssl))))
 
 (define-public rust-trust-dns-rustls-0.18
   (package
@@ -58006,9 +58277,9 @@ the Trust-DNS client to use rustls for TLS.")
         (base32
          "0vbh2y7w2s5gcw33fn4hb5f927kgjm6603vw63slg9riikmsiq43"))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (arguments
      `(#:cargo-test-flags
        '("--release" "--" "--skip=tests::test_tls_client_stream_ipv4")
@@ -58032,7 +58303,7 @@ the Trust-DNS client to use rustls for TLS.")
      (origin
        (method url-fetch)
        (uri (crate-uri "try_from" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "12wdd4ja7047sd3rx70hv2056hyc8gcdllcx3a41g1rnw64kng98"))))
@@ -58054,7 +58325,7 @@ the Trust-DNS client to use rustls for TLS.")
       (origin
         (method url-fetch)
         (uri (crate-uri "try-lock" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "10p36rx6pqi9d0zr876xa8vksx2m66ha45myakl50rn08dxyn176"))))
@@ -58129,8 +58400,44 @@ the Trust-DNS client to use rustls for TLS.")
 parser.")
     (license (list license:expat license:asl2.0))))
 
+(define-public rust-tui-0.16
+  (package
+    (name "rust-tui")
+    (version "0.16.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (crate-uri "tui" version))
+       (file-name (string-append name "-" version ".tar.gz"))
+       (sha256
+        (base32 "08qcdjmi8sn2xyh38ilr17i9bn89ic2aaqx3rybyv7h44x7cxj1r"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:skip-build? #t
+       #:cargo-inputs
+       (("rust-bitflags" ,rust-bitflags-1)
+        ("rust-cassowary" ,rust-cassowary-0.3)
+        ("rust-crossterm" ,rust-crossterm-0.20)
+        ("rust-easycurses" ,rust-easycurses-0.12)
+        ("rust-pancurses" ,rust-pancurses-0.16)
+        ("rust-rustbox" ,rust-rustbox-0.11)
+        ("rust-serde" ,rust-serde-1)
+        ("rust-termion" ,rust-termion-1)
+        ("rust-unicode-segmentation" ,rust-unicode-segmentation-1)
+        ("rust-unicode-width" ,rust-unicode-width-0.1))
+       #:cargo-development-inputs
+       (("rust-argh" ,rust-argh-0.1)
+        ("rust-rand" ,rust-rand-0.8))))
+    (home-page "https://github.com/fdehau/tui-rs")
+    (synopsis "Library to build rich terminal user interfaces or dashboards")
+    (description
+     "This package provides a library to build rich terminal user interfaces
+or dashboards.")
+    (license license:expat)))
+
 (define-public rust-tui-0.15
   (package
+    (inherit rust-tui-0.16)
     (name "rust-tui")
     (version "0.15.0")
     (source
@@ -58140,7 +58447,6 @@ parser.")
        (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "0w9azg9zj1nnwcwbra9pxrwy47ab0m2bhanbkchydv8lscx8y7c6"))))
-    (build-system cargo-build-system)
     (arguments
      `(#:skip-build? #t
        #:cargo-inputs
@@ -58153,13 +58459,7 @@ parser.")
         ("rust-serde" ,rust-serde-1)
         ("rust-termion" ,rust-termion-1)
         ("rust-unicode-segmentation" ,rust-unicode-segmentation-1)
-        ("rust-unicode-width" ,rust-unicode-width-0.1))))
-    (home-page "https://github.com/fdehau/tui-rs")
-    (synopsis "Library to build rich terminal user interfaces or dashboards")
-    (description
-     "This package provides a library to build rich terminal user interfaces
-or dashboards.")
-    (license license:expat)))
+        ("rust-unicode-width" ,rust-unicode-width-0.1))))))
 
 (define-public rust-tui-0.14
   (package
@@ -58327,7 +58627,7 @@ strings.")
       (origin
         (method url-fetch)
         (uri (crate-uri "typeable" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "11w8dywgnm32hb291izjvh4zjd037ccnkk77ahk63l913zwzc40l"))))
@@ -58412,7 +58712,7 @@ deserialization.")
       (origin
         (method url-fetch)
         (uri (crate-uri "typemap" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1xm1gbvz9qisj1l6d36hrl9pw8imr8ngs6qyanjnsad3h0yfcfv5"))))
@@ -58434,7 +58734,7 @@ deserialization.")
       (origin
         (method url-fetch)
         (uri (crate-uri "typenum" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0cvbksljz61ian21fnn0h51kphl0pwpzb932bv4s0rwy1wh8lg1p"))))
@@ -58482,7 +58782,7 @@ Unicode character database.")
       (origin
         (method url-fetch)
         (uri (crate-uri "ucd-trie" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1hh6kyzh5xygwy96wfmsf8v8czlzhps2lgbcyhj1xzy1w1xys04g"))))
@@ -58505,7 +58805,7 @@ Unicode character database.")
       (origin
         (method url-fetch)
         (uri (crate-uri "ucd-util" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "13ng291mkc9b132jjf4laj76f5nqm5qd2447rm8bry3wxbdc5kaw"))))
@@ -58988,7 +59288,7 @@ boundaries according to Unicode Standard Annex #29 rules.")
         (method url-fetch)
         (uri (crate-uri "unicode-xid" version))
         (file-name
-          (string-append name "-" version ".crate"))
+          (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0r6mknipyy9vpz8mwmxvkx65ff2ha1n2pxqjj6f46lcn8yrhpzpp"))))
@@ -59008,7 +59308,7 @@ or XID_Continue properties according to Unicode Standard Annex #31.")
       (origin
         (method url-fetch)
         (uri (crate-uri "unicode-xid" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1z57lqh4s18rr4x0j4fw4fmp9hf9346h0kmdgqsqx0fhjr3k0wpw"))))))
@@ -59119,7 +59419,7 @@ whitespace from a string.")
       (origin
         (method url-fetch)
         (uri (crate-uri "unreachable" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0mps2il4xy2mjqc3appas27hhn2xmvixc3bzzhfrjj74gy3i0a1q"))))
@@ -59142,7 +59442,7 @@ whitespace from a string.")
       (origin
         (method url-fetch)
         (uri (crate-uri "unsafe-any" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0zwwphsqkw5qaiqmjwngnfpv9ym85qcsyj7adip9qplzjzbn00zk"))))
@@ -59184,7 +59484,7 @@ whitespace from a string.")
       (origin
         (method url-fetch)
         (uri (crate-uri "untrusted" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0jkbqaj9d3v5a91pp3wp9mffvng1nhycx6sh4qkdd9qyr62ccmm1"))))
@@ -59739,7 +60039,7 @@ a part of rav1e.")
       (origin
         (method url-fetch)
         (uri (crate-uri "vcpkg" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1yvrd2b97j4hv5bfhcj3al0dpkbzkdsr6dclxqz3zqm50rhwl2xh"))))
@@ -59783,7 +60083,7 @@ a part of rav1e.")
       (origin
         (method url-fetch)
         (uri (crate-uri "vec_map" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1481w9g1dw9rxp3l6snkdqihzyrd2f8vispzqmwjwsdyhw8xzggi"))))
@@ -59856,7 +60156,7 @@ designed for reexporting.")
       (origin
         (method url-fetch)
         (uri (crate-uri "version_check" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32 "1vbaqdf802qinsq8q20w8w0qn2pv0rkq5p73ijcblrwxcvjp5adm"))))
     (build-system cargo-build-system)
@@ -59880,7 +60180,7 @@ If that fails, no determination is made, and calls return None.")
       (origin
         (method url-fetch)
         (uri (crate-uri "version_check" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1pf91pvj8n6akh7w6j5ypka6aqz08b3qpzgs0ak2kjf4frkiljwi"))))))
@@ -60001,7 +60301,7 @@ version numbers.")
       (origin
         (method url-fetch)
         (uri (crate-uri "void" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0zc8f0ksxvmhvgx4fdg0zyn6vdnbxd2xv9hfx4nhzg6kbs4f80ka"))))
@@ -60381,7 +60681,7 @@ result.")
        (method url-fetch)
        (uri (crate-uri "wasi" version))
        (file-name
-        (string-append name "-" version ".crate"))
+        (string-append name "-" version ".tar.gz"))
        (sha256
         (base32
          "1ir3pd4phdfml0cbziw9bqp7mnk0vfp9biy8bh25lln6raml4m7x"))))
@@ -60605,7 +60905,7 @@ attribute that is not in the shared backend crate.")
       (origin
         (method url-fetch)
         (uri (crate-uri "wasm-bindgen-shared" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0n3ir6gq27np22l6m96y342a6fphk1pkbzbfqx6g364kgzfi2y3y"))))
@@ -60751,7 +61051,7 @@ attribute that is not in the shared backend crate.")
       (origin
         (method url-fetch)
         (uri (crate-uri "wasm-bindgen-test-macro" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "19bvmw8mqlwh6wkbzgs3cnlkywrv8q2kkqggz6y0p158930xm287"))))
@@ -60843,6 +61143,44 @@ WebAssembly binary files.")
      "This crate is a library to execute commands in response to file
 modifications.")
     (license license:asl2.0)))
+
+(define-public rust-wl-clipboard-rs-0.4
+  (package
+    (name "rust-wl-clipboard-rs")
+    (version "0.4.1")
+    (source
+      (origin
+        (method url-fetch)
+        (uri (crate-uri "wl-clipboard-rs" version))
+        (file-name (string-append name "-" version ".tar.gz"))
+        (patches (search-patches "rust-wl-clipboard-rs-newer-wl.patch"))
+        (sha256
+          (base32 "1252cm67pkrr6ik5ys2cdyfr2zzw6ds7v351i1cmyi94yiv01l13"))))
+    (build-system cargo-build-system)
+    (arguments
+      `(#:skip-build? #t
+        #:cargo-inputs
+        (("rust-derive-new" ,rust-derive-new-0.5)
+         ("rust-derive-more" ,rust-derive-more-0.99)
+         ("rust-exitfailure" ,rust-exitfailure-0.5)
+         ("rust-failure" ,rust-failure-0.1)
+         ("rust-libc" ,rust-libc-0.2)
+         ("rust-log" ,rust-log-0.4)
+         ("rust-mime-guess" ,rust-mime-guess-2)
+         ("rust-nix" ,rust-nix-0.18)
+         ("rust-os-pipe" ,rust-os-pipe-0.9)
+         ("rust-stderrlog" ,rust-stderrlog-0.4)
+         ("rust-structopt" ,rust-structopt-0.3)
+         ("rust-tempfile" ,rust-tempfile-3)
+         ("rust-tree-magic" ,rust-tree-magic-0.2)
+         ("rust-wayland-client" ,rust-wayland-client-0.28)
+         ("rust-wayland-commons" ,rust-wayland-commons-0.28)
+         ("rust-wayland-protocols" ,rust-wayland-protocols-0.28))))
+    (home-page "https://github.com/YaLTeR/wl-clipboard-rs")
+    (synopsis "Access to the Wayland clipboard")
+    (description "This package provides access to the Wayland clipboard
+for terminal and other window-less applications.")
+    (license (list license:expat license:asl2.0))))
 
 (define-public rust-web-sys-0.3
   (package
@@ -61350,7 +61688,7 @@ terms of allowing LLVM's auto-vectorizer to do its job.")
       (origin
         (method url-fetch)
         (uri (crate-uri "widestring" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "13565qy4jhpg4x0xw8mwxzzsh0p8c93p5208lh6kpwp0q01y6qx7"))))
@@ -61397,7 +61735,7 @@ command-line, uniformly on all platforms")
       (origin
         (method url-fetch)
         (uri (crate-uri "winapi" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "06gl025x418lchw1wxj64ycr7gha83m44cjr5sarhynd9xkrm0sw"))))
@@ -61408,8 +61746,8 @@ command-line, uniformly on all platforms")
        (("winapi-i686-pc-windows-gnu" ,rust-winapi-i686-pc-windows-gnu-0.4)
         ("winapi-x86-64-pc-windows-gnu" ,rust-winapi-x86-64-pc-windows-gnu-0.4))))
     (inputs
-     `(("rust-winapi-i686-pc-windows-gnu" ,rust-winapi-i686-pc-windows-gnu-0.4)
-       ("rust-winapi-x86-64-pc-windows-gnu" ,rust-winapi-x86-64-pc-windows-gnu-0.4)))
+     (list rust-winapi-i686-pc-windows-gnu-0.4
+           rust-winapi-x86-64-pc-windows-gnu-0.4))
     (home-page "https://github.com/retep998/winapi-rs")
     (synopsis "Raw FFI bindings for all of Windows API")
     (description
@@ -61426,7 +61764,7 @@ command-line, uniformly on all platforms")
       (origin
         (method url-fetch)
         (uri (crate-uri "winapi" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0yh816lh6lf56dpsgxy189c2ai1z3j8mw9si6izqb6wsjkbcjz8n"))))
@@ -61440,7 +61778,7 @@ command-line, uniformly on all platforms")
       (origin
         (method url-fetch)
         (uri (crate-uri "winapi-build" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "1g4rqsgjky0a7530qajn2bbfcrl2v0zb39idgdws9b1l7gp5wc9d"))))
@@ -61484,7 +61822,7 @@ i686-pc-windows-gnu target.  Please don't use this crate directly, depend on
       (origin
         (method url-fetch)
         (uri (crate-uri "winapi-util" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0y71bp7f6d536czj40dhqk0d55wfbbwqfp2ymqf1an5ibgl6rv3h"))))
@@ -61498,6 +61836,27 @@ i686-pc-windows-gnu target.  Please don't use this crate directly, depend on
 winapi.")
     (license (list license:unlicense
                    license:expat))))
+
+(define-public rust-winapi-wsapoll-0.1
+  (package
+    (name "rust-winapi-wsapoll")
+    (version "0.1.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (crate-uri "winapi-wsapoll" version))
+       (file-name (string-append name "-" version ".tar.gz"))
+       (sha256
+        (base32 "0vnzlcm6yrlx0xdx4g7zr41n84aj73h0p8fwh0m60mbiyl873ha4"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:skip-build? #t
+       #:cargo-inputs
+       (("rust-winapi" ,rust-winapi-0.3))))
+    (home-page "https://github.com/psychon/winapi-wsapoll")
+    (synopsis "Safe wrapper around WSAPoll")
+    (description "This package provides safe wrapper around WSAPoll.")
+    (license (list license:expat license:asl2.0))))
 
 (define-public rust-winapi-x86-64-pc-windows-gnu-0.4
   (package
@@ -61532,7 +61891,7 @@ x86_64-pc-windows-gnu target.  Please don't use this crate directly, depend on
       (origin
         (method url-fetch)
         (uri (crate-uri "wincolor" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "017x33ljndwc76cp5z9llgndn0nh7v8jcjaykbizkawmwy9n3pyp"))))
@@ -61730,7 +62089,7 @@ trust these primitives.")
       (origin
         (method url-fetch)
         (uri (crate-uri "winutil" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0vkyl3fbbf05n5ph5yz8sfaccrk9x3qsr25560w6w68ldf5i7bvx"))))
@@ -61801,7 +62160,7 @@ serialization.")
       (origin
         (method url-fetch)
         (uri (crate-uri "ws2_32-sys" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0ppscg5qfqaw0gzwv2a4nhn5bn01ff9iwn6ysqnzm4n8s3myz76m"))))
@@ -61904,7 +62263,7 @@ languages.")
       (origin
         (method url-fetch)
         (uri (crate-uri "xattr" version))
-        (file-name (string-append name "-" version ".crate"))
+        (file-name (string-append name "-" version ".tar.gz"))
         (sha256
          (base32
           "0k556fb6f5jc907975j9c8iynl2fqz3rf0w6fiig83i4yi0kfk14"))))
@@ -61945,12 +62304,9 @@ extended attributes.")
         ("rust-log" ,rust-log-0.4)
         ("rust-x11" ,rust-x11-2))))
     (inputs
-     `(("libx11" ,libx11)
-       ("libxcb" ,libxcb)
-       ("xcb-proto" ,xcb-proto)))
+     (list libx11 libxcb xcb-proto))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("python" ,python)))
+     (list pkg-config python))
     (home-page "https://github.com/rtbo/rust-xcb")
     (synopsis "Rust bindings and wrappers for XCB")
     (description
@@ -61987,7 +62343,7 @@ extended attributes.")
      (origin
        (method url-fetch)
        (uri (crate-uri "xdg" version))
-       (file-name (string-append name "-" version ".crate"))
+       (file-name (string-append name "-" version ".tar.gz"))
        (sha256
         (base32 "0mws8a0fr3cqk5nh7aq9lmkmhzghvasqy4mhw6nnza06l4d6i2fh"))))
     (build-system cargo-build-system)
@@ -62225,8 +62581,7 @@ parser.")
         ("rust-rand" ,rust-rand-0.5)
         ("rust-tokio-core" ,rust-tokio-core-0.1))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("xz" ,xz)))
+     (list pkg-config xz))
     (home-page "https://github.com/alexcrichton/xz2-rs")
     (synopsis "Rust bindings to liblzma")
     (description "This package provides Rust bindings to liblzma providing
@@ -62898,8 +63253,7 @@ file into an in-memory tree structure.")
          "0gsgcs1nn38r40973l6zr1v4d85f4s9qyl32n5f20jphf5z9ba1w"))))
     (build-system cargo-build-system)
     (arguments
-     `(#:rust ,rust-1.52                ;for rust-sized-chunks
-       #:cargo-inputs
+     `(#:cargo-inputs
        (("rust-arbitrary" ,rust-arbitrary-0.4)
         ("rust-bitmaps" ,rust-bitmaps-2)
         ("rust-proptest" ,rust-proptest-0.9)

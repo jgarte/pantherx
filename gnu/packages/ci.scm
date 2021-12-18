@@ -73,8 +73,8 @@
                 (file-name (string-append name "-" version "-checkout")))))))
 
 (define-public cuirass
-  (let ((commit "df8837ce3eedc5d47ec6f3a0088e2c7044087b1c")
-        (revision "6"))
+  (let ((commit "7160b182a0d4c9aa71460ad9c4d866b440027bbd")
+        (revision "7"))
     (package
       (name "cuirass")
       (version (git-version "1.1.0" revision commit))
@@ -87,7 +87,7 @@
          (file-name (git-file-name name version))
          (sha256
           (base32
-           "1r2gqigp3vlr5i1nqq9bhgmdzs54awr4iqyrr2nq7s5ml4yivn8y"))))
+           "1zpldqzrn4ifp0bzh9af4djjjn7bgmyk37qr4qrx3dm1v0jzjgdr"))))
       (build-system gnu-build-system)
       (arguments
        `(#:modules ((guix build utils)
@@ -168,28 +168,24 @@
                    `("GUILE_LOAD_COMPILED_PATH" ":" prefix (,objs)))
                  #t))))))
       (inputs
-       `(("guile" ,guile-3.0/libgc-7)
-         ("guile-avahi" ,guile-avahi)
-         ("guile-fibers" ,guile-fibers)
-         ("guile-gcrypt" ,guile-gcrypt)
-         ("guile-json" ,guile-json-4)
-         ("guile-simple-zmq" ,guile-simple-zmq)
-         ("guile-squee" ,guile-squee-dev)
-         ("guile-git" ,guile-git)
-         ("guile-zlib" ,guile-zlib)
-         ("guile-mastodon" ,guile-mastodon)
-         ("gnutls" ,gnutls)
-         ("mailutils" ,mailutils)
-         ;; FIXME: this is propagated by "guile-git", but it needs to be among
-         ;; the inputs to add it to GUILE_LOAD_PATH.
-         ("guile-bytestructures" ,guile-bytestructures)
-         ("guix" ,guix)))
+       (list guile-3.0-latest
+             guile-avahi
+             guile-fibers
+             guile-gcrypt
+             guile-json-4
+             guile-simple-zmq
+             guile-squee-dev
+             guile-git
+             guile-zlib
+             guile-mastodon
+             gnutls
+             mailutils
+             ;; FIXME: this is propagated by "guile-git", but it needs to be among
+             ;; the inputs to add it to GUILE_LOAD_PATH.
+             guile-bytestructures
+             guix))
       (native-inputs
-       `(("autoconf" ,autoconf)
-         ("automake" ,automake)
-         ("pkg-config" ,pkg-config)
-         ("texinfo" ,texinfo)
-         ("ephemeralpg" ,ephemeralpg)))
+       (list autoconf automake pkg-config texinfo ephemeralpg))
       (native-search-paths
        ;; For HTTPS access, Cuirass itself honors these variables, with the
        ;; same semantics as Git and OpenSSL (respectively).
@@ -275,11 +271,7 @@ intended as a replacement for Hydra.")
 
              #t)))))
     (inputs
-     `(("capnproto" ,capnproto)
-       ("rapidjson" ,rapidjson)
-       ("sqlite" ,sqlite)
-       ("boost" ,boost)
-       ("zlib" ,zlib)))
+     (list capnproto rapidjson sqlite boost zlib))
     (native-inputs
      `(("googletest" ,googletest)
        ("uglifyjs" ,node-uglify-js)

@@ -25,6 +25,84 @@
 (channel-news
  (version 0)
 
+ (entry (commit "223f1b1eb3707f1d3ef91200dd616ee6c8b77db0")
+        (title
+         (en "Improved static networking support on Guix System")
+         (de "Bessere Unterstützung für statische Netzwerkanbindungen auf Guix System")
+         (fr "Meilleure prise en charge de réseaux statiques sur Guix System"))
+        (body
+         (en "Support for declarative static networking setup on Guix System
+has been improved.  It now allows you to list IPv4 and IPv6 addresses in
+routes in a flexible way, similar to what you would do with the @command{ip}
+command, but in a declarative fashion, as in this example:
+
+@lisp
+;; Static networking for one NIC, IPv4-only.
+(service static-networking-service-type
+         (list (static-networking
+                (addresses
+                 (list (network-address
+                        (device \"eno1\")
+                        (value \"10.0.2.15/24\"))))
+                (routes
+                 (list (network-route
+                        (destination \"default\")
+                        (gateway \"10.0.2.2\"))))
+                (name-servers '(\"10.0.2.3\")))))
+@end lisp
+
+The @code{static-networking-service} procedure remains available but is
+deprecated.  Run @command{info \"(guix) Networking Setup\"} for more
+information.")
+         (de "Die deklarative Konfiguration für statische Netzwerkanbindungen
+auf Guix System wurde verbessert.  Sie können jetzt die IPv4- und
+IPv6-Adressen in Routen flexibel auflisten, ähnlich wie Sie es mit dem
+@command{ip}-Befehl tun würden, aber auf deklarative Weise wie in diesem
+Beispiel:
+
+@lisp
+;; Statische Netzwerkkonfiguration mit einer Netzwerkkarte, nur IPv4.
+(service static-networking-service-type
+         (list (static-networking
+                (addresses
+                 (list (network-address
+                        (device \"eno1\")
+                        (value \"10.0.2.15/24\"))))
+                (routes
+                 (list (network-route
+                        (destination \"default\")
+                        (gateway \"10.0.2.2\"))))
+                (name-servers '(\"10.0.2.3\")))))
+@end lisp
+
+Die Prozedur @code{static-networking-service} gibt es noch, aber sie gilt als
+veraltet.  Führen Sie @command{info \"(guix) Networking Setup\"} aus für
+weitere Informationen.")
+         (fr "La configuration déclarative et statique du réseau est mieux
+prise en charge sur Guix System.  Il est maintenant possible d'énumérer des
+adresses IPv6 et IPv4 et les chemins avec plus de flexibilité, un peu comme ce
+qu'on peut faire avec la commande @command{ip} mais de manière déclarative,
+comme dans cet exemple :
+
+@lisp
+;; Réseau statique à une seule interface, IPv4 seulement.
+(service static-networking-service-type
+         (list (static-networking
+                (addresses
+                 (list (network-address
+                        (device \"eno1\")
+                        (value \"10.0.2.15/24\"))))
+                (routes
+                 (list (network-route
+                        (destination \"default\")
+                        (gateway \"10.0.2.2\"))))
+                (name-servers '(\"10.0.2.3\")))))
+@end lisp
+
+La procédure @code{static-networking-service} reste disponible mais elle est
+obsolète.  Lancer @command{info \"(guix) Networking Setup\"} pour plus
+d'informations.")))
+
  (entry (commit "52cb5cf5b852117b5151a67af187d80764849ad3")
         (title
           (en "Icedove 91: profile folder moved to @file{~/.thunderbird}")
@@ -258,6 +336,90 @@ Voir @command{info \"(guix.fr) Répliquer Guix\"}.
 Ce recours à Software Heritage fonctionne aussi pour les autres clones Git que
 Guix peut faire, comme lorsqu'on utilise @option{--with-commit} et les options
 de transformation de paquet similaires.")))
+
+ (entry (commit "db4681a4c17d282a661552f2f57e5c453d02e414")
+        (title
+         (en "@code{gdm-service-type} now supports Wayland")
+         (de "@code{gdm-service-type} bietet nun Unterstützung für Wayland")
+         (fr "@code{gdm-service-type} prend maintenant en charge Wayland"))
+        (body
+         (en "@code{gdm-service-type} has been updated to support being launched
+as a Wayland client, and to launch Wayland sessions. The @code{wayland?} boolean
+field in @code{gdm-configuration} controls whether GDM starts in Wayland or X
+mode. See @command{info \"(guix) X Window\"} for more information.
+
+Wayland mode for GDM will soon become the default in Guix, so if your
+hardware doesn't support Wayland (Nvidia users are the most concerned here),
+please consider disabling it now.")
+         (de "@code{gdm-service-type} wurde um Unterstützung dafür
+aktualisiert, als Wayland-Client gestartet zu werden und Wayland-Sitzungen zu
+starten.  Der Boolesche Wert im Feld @code{wayland?} in
+@code{gdm-configuration} bestimmt, ob GDM im Wayland- oder X-Modus gestartet
+wird.  Siehe @command{info \"(guix.de) X Window\"} für weitere Informationen.
+
+Bald wird der Wayland-Modus für GDM die Vorgabeeinstellung in Guix werden,
+daher sollten Sie, wenn Ihre Hardware kein Wayland unterstützt (Nvidia-Nutzer
+betrifft dies am ehesten), ihn jetzt ausdrücklich abschalten.")
+         (fr "@code{gdm-service-type} a été mis à jour et peut maintenant être
+lancé comme client Wayland, ainsi que lancer des sessions Wayland. Le champ
+booléen @code{wayland?} de @code{gdm-configuration} contrôle le mode dans lequel
+GDM est lancé (Wayland ou X). Pour plus d'informations, voir
+@command{info \"(guix) X Window\"} (en anglais).
+
+GDM sera bientôt lancé en mode Wayland par défaut sur Guix, donc si votre matériel
+ne le prend pas en charge (les utilisateur·ices de cartes Nvidia sont les plus
+concerné·es), merci de le désactiver dès maintenant.")))
+
+ (entry (commit "f23803af2018a148fb088f2516d79c20d6bf95f0")
+        (title
+         (en "Input labels can now be omitted in package definitions")
+         (de "Eingaben in Paketdefinitionen brauchen keine Bezeichnungen mehr"))
+        (body
+         (en "If you have written package definitions before, you may know
+that package inputs required a bit of boilerplate: each input needs to have an
+associated label (a string), which you can refer to in ``build-side code''.
+
+Input labels are now unnecessary, meaning that you can write code like:
+
+@lisp
+(package
+  ;; @dots{}
+  (inputs (list libunistring libffi libgc)))
+@end lisp
+
+Notice that the @code{inputs} field is simplified compared to the ``old
+style''.  When needed, you can now use g-expressions (gexps) to refer to
+another package in build-side code.  Additionally, the new
+@code{modify-inputs} macro facilitates common operations on inputs---deleting,
+replacing, adding inputs.
+
+To ease transition to the ``new style'', a new @command{guix style} command is
+provided.  Run @command{info \"(guix) Invoking guix style\"} for more info.")
+         (de "Wenn Sie bereits Paketdefinitionen verfasst haben,
+erinnern Sie sich vielleicht, dass Sie für Paketeingaben manches
+doppelt schreiben mussten: Jede Eingabe wird assoziiert mit einer
+Bezeichnung (als Zeichenkette), auf die Sie sich in
+„erstellungsseitigem Code“ beziehen können.
+
+Diese Eingabebezeichnungen sind @emph{nicht} mehr nötig.  Sie können
+jetzt solchen Code schreiben:
+
+@lisp
+(package
+  ;; …
+  (inputs (list libunistring libffi libgc)))
+@end lisp
+
+Achten Sie auf das gegenüber früher vereinfachte @code{inputs}-Feld.
+Wenn nötig können Sie in erstellungsseitigem Code G-Ausdrücke (gexps)
+benutzen, um andere Pakete zu referenzieren.  Des Weiteren erleichtert
+das Makro @code{modify-inputs} geläufige Operationen auf Eingaben —
+das Löschen, Ersetzen, Hinzufügen von Eingaben.
+
+Um den Übergang zum „neuen Stil“ zu erleichtern, steht ein neuer
+Befehl @command{guix style} zur Verfügung.  Führen Sie @command{info
+\"(guix) Invoking guix style\"} aus, um mehr Informationen zu
+erhalten.")))
 
  (entry (commit "82daab42811a2e3c7684ebdf12af75ff0fa67b99")
         (title

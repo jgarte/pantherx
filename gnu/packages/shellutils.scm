@@ -55,6 +55,44 @@
   #:use-module (gnu packages tmux)
   #:use-module (gnu packages vim))
 
+(define-public ascii
+  (package
+    (name "ascii")
+    (version "3.18")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "http://www.catb.org/~esr/ascii/"
+                                  "ascii-" version ".tar.gz"))
+              (sha256
+               (base32
+                "0b87vy06s8s3a8q70pqavsbk4m4ff034sdml2xxa6qfsykaj513j"))))
+    (build-system gnu-build-system)
+    (arguments `(#:make-flags
+                 (list (string-append "CC=" ,(cc-for-target))
+                       (string-append "PREFIX=" %output))
+                 #:phases
+                 (modify-phases %standard-phases
+                   (delete 'configure)
+                   (add-before 'install 'create-directories
+                     (lambda* (#:key outputs #:allow-other-keys)
+                       (let* ((out (assoc-ref outputs "out"))
+                              (bin (string-append out "/bin"))
+                              (man1 (string-append out "/share/man/man1")))
+                         (mkdir-p bin)
+                         (mkdir-p man1)))))
+                 #:tests? #f))
+    (home-page "http://www.catb.org/~esr/ascii/")
+    (synopsis "ASCII name and synonym chart")
+    (description
+      "The @code{ascii} utility provides easy conversion between various byte
+representations and the American Standard Code for Information Interchange
+(ASCII) character table.  It knows about a wide variety of hex, binary, octal,
+Teletype mnemonic, ISO/ECMA code point, slang names, XML entity names, and
+other representations.  Given any one on the command line, it will try to
+display all others.  Called with no arguments it displays a handy small ASCII
+chart.")
+    (license license:bsd-2)))
+
 (define-public boxes
   (package
     (name "boxes")
@@ -91,14 +129,11 @@
                            ("doc/boxes.1"  "share/man/man1/")
                            ("boxes-config" "etc/")))))))))
     (native-inputs
-     `(("bison" ,bison)
-       ("flex" ,flex)
-
-       ;; For the tests.
-       ("xxd" ,xxd)))
+     (list bison flex
+           ;; For the tests.
+           xxd))
     (inputs
-     `(("libunistring" ,libunistring)
-       ("pcre2" ,pcre2)))
+     (list libunistring pcre2))
     (home-page "https://boxes.thomasjensen.com")
     (synopsis "Command line ASCII boxes")
     (description
@@ -121,13 +156,13 @@ text.")
                 "1g3pij5qn2j7v7jjac2a63lxd97mcsgw6xq6k5p7835q9fjiid98"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("ruby" ,ruby)
-       ("ruby-byebug" ,ruby-byebug)
-       ("ruby-pry" ,ruby-pry)
-       ("ruby-rspec" ,ruby-rspec)
-       ("ruby-rspec-wait" ,ruby-rspec-wait)
-       ("tmux" ,tmux)
-       ("zsh" ,zsh)))
+     (list ruby
+           ruby-byebug
+           ruby-pry
+           ruby-rspec
+           ruby-rspec-wait
+           tmux
+           zsh))
     (arguments
      '(#:phases
        (modify-phases %standard-phases
@@ -171,7 +206,7 @@ as you type.")
                 "039g3n59drk818ylcyvkciv8k9mf739cv6v4vis1h9fv9whbcmwl"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("zsh" ,zsh)))
+     (list zsh))
     (arguments
      ;; FIXME: Tests fail when running test regexp
      ;; there is no pcre module in the Guix zsh package
@@ -295,7 +330,7 @@ between various shells or commands.")
                   (string-append "\"" libc "/lib/libc.so.6\"\n"))
                  (("\"df\"")
                   (string-append "\"" coreutils "/bin/df\"")))))))))
-    (inputs `(("coreutils" ,coreutils)))
+    (inputs (list coreutils))
     (home-page "https://github.com/andreafrancia/trash-cli")
     (synopsis "Trash can management tool")
     (description
@@ -348,11 +383,8 @@ are already there.")
                  (invoke "make" "clean")))
              #t)))))
     (native-inputs
-     `(("go-github-com-burntsushi-toml" ,go-github-com-burntsushi-toml)
-       ("go-github-com-direnv-go-dotenv" ,go-github-com-direnv-go-dotenv)
-       ("go-github-com-mattn-go-isatty" ,go-github-com-mattn-go-isatty)
-       ("go-golang-org-x-mod" ,go-golang-org-x-mod)
-       ("which" ,which)))
+     (list go-github-com-burntsushi-toml go-github-com-direnv-go-dotenv
+           go-github-com-mattn-go-isatty go-golang-org-x-mod which))
     (home-page "https://direnv.net/")
     (synopsis "Environment switcher for the shell")
     (description
@@ -403,7 +435,7 @@ below the current cursor position, scrolling the screen if necessary.")
 (define-public hstr
   (package
     (name "hstr")
-    (version "2.3")
+    (version "2.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -412,7 +444,7 @@ below the current cursor position, scrolling the screen if necessary.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1chmfdi1dwg3sarzd01nqa82g65q7wdr6hrnj96l75vikwsg986y"))))
+                "0xg10jyiq12bcygi6aa9qq9pki7bipdsvsza037p2iqix19jg0x8"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -426,12 +458,9 @@ below the current cursor position, scrolling the screen if necessary.")
                  (("ncursesw\\/curses.h") "ncurses.h")))
              #t)))))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("pkg-config" ,pkg-config)))
+     (list autoconf automake pkg-config))
     (inputs
-     `(("ncurses" ,ncurses)
-       ("readline" ,readline)))
+     (list ncurses readline))
     (synopsis "Navigate and search command history with shell history suggest box")
     (description "HSTR (HiSToRy) is a command-line utility that brings
 improved Bash and Zsh command completion from the history.  It aims to make
@@ -533,7 +562,7 @@ city, state, zip, or area code, it will check out.")
                    #t))))
     (build-system gnu-build-system)
     (inputs
-     `(("readline" ,readline)))
+     (list readline))
     (home-page "https://www.nongnu.org/renameutils/")
     (synopsis "File renaming utilities")
     (description "The file renaming utilities (renameutils for short) are a

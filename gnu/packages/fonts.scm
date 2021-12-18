@@ -35,7 +35,7 @@
 ;;; Copyright © 2020 Raghav Gururajan <raghavgururajan@disroot.org>
 ;;; Copyright © 2020, 2021 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2020 Zhu Zihao <all_but_last@163.com>
-;;; Copyright © 2020 Simen Endsjø <simendsjo@gmail.com>
+;;; Copyright © 2020, 2021 Simen Endsjø <simendsjo@gmail.com>
 ;;; Copyright © 2020 Tim Van den Langenbergh <tmt_vdl@gmx.com>
 ;;; Copyright © 2020 Nicolò Balzarotti <nicolo@nixo.xyz>
 ;;; Copyright © 2021 Antoine Côté <antoine.cote@posteo.net>
@@ -320,7 +320,7 @@ The Lato 2.010 family supports more than 100 Latin-based languages, over
                                    (find-files "." "")))))))
        #:test-target "tests"))
     ;; FreeFont anno 2012 requires a FontForge built with Python 2.
-    (native-inputs `(("fontforge" ,fontforge-20190801)))
+    (native-inputs (list fontforge-20190801))
     (home-page "https://www.gnu.org/software/freefont/")
     (synopsis "Unicode-encoded outline fonts")
     (description
@@ -393,7 +393,7 @@ and Bitstream Vera Sans Mono).
                          (find-files "." "\\.sfd$"))
                #t))))))
     (native-inputs
-     `(("fontforge" ,fontforge)))
+     (list fontforge))
     (home-page "http://www.linuxlibertine.org/")
     (synopsis "Serif and sans serif typefaces")
     (description "The Linux Libertine fonts is a set of typefaces containing
@@ -473,11 +473,7 @@ The unified Libertinus family consists of:
                (apply invoke "make" "install-otb" (string-append "prefix=" otb)
                       make-flags)))))))
     (native-inputs
-     `(("bdftopcf" ,bdftopcf)
-       ("font-util" ,font-util)
-       ("mkfontdir" ,mkfontdir)
-       ("pkg-config" ,pkg-config)
-       ("python" ,python)))
+     (list bdftopcf font-util mkfontdir pkg-config python))
     (home-page "http://terminus-font.sourceforge.net/")
     (synopsis "Simple bitmap programming font")
     (description "Terminus Font is a clean, fixed-width bitmap font, designed
@@ -784,7 +780,7 @@ for use at smaller text sizes")))
               (install-file "doc/unifont.info.gz"
                             (string-append bin "/share/info"))))))))
     (inputs
-     `(("perl" ,perl))) ; for utilities
+     (list perl)) ; for utilities
     (synopsis
      "Large bitmap font covering Unicode's Basic Multilingual Plane")
     (description
@@ -1279,7 +1275,7 @@ guix repl <<EOF
              (ice-9 string-fun)
              (gnu packages fonts))
 
-(let ((new-version "7.0.3")
+(let ((new-version "11.2.0")
       (iosevka-hashes #nil)
       (iosevka-fails #nil))
   (for-each (lambda (font)
@@ -1313,7 +1309,7 @@ EOF
 (define-public font-iosevka
   (package
     (name "font-iosevka")
-    (version "7.0.3")
+    (version "11.2.0")
     (source
      (origin
        (method url-fetch/zipbomb)
@@ -1321,7 +1317,7 @@ EOF
                            "/releases/download/v" version
                            "/ttc-iosevka-" version ".zip"))
        (sha256
-        (base32 "08n1c2j38vd1qrf18ilgvq6rl7z9yrsyq9ljf037yiw6zlphx4da"))))
+        (base32 "16a5bbjy9kn62pbrmam6jvcki4xvbakxbqzv72kkpz7p10b10vz7"))))
     (build-system font-build-system)
     (home-page "https://be5invis.github.io/Iosevka/")
     (synopsis "Coders' typeface, built from code")
@@ -1344,7 +1340,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "/releases/download/v" version
                            "/ttc-iosevka-slab-" version ".zip"))
        (sha256
-        (base32 "1ggrbl8gi2hv8yiw7vw8cajlv7nkz8i975165cayyzppjlrfs3nr"))))))
+        (base32 "068nd8wph44r9ka3fd7b5jhph505w08ibn3dmd7czdcp1fkr7dhi"))))))
 
 (define-public font-iosevka-term
   (package
@@ -1358,7 +1354,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "/releases/download/v" version
                            "/ttf-iosevka-term-" version ".zip"))
        (sha256
-        (base32 "1jmbp3hni99l92653b356nbmj45kd54kbl6c6ws1k5jxydrjglrh"))))
+        (base32 "0a22pnr74l87ajprcki3j3fc5cryfr5krpxang0b51grkdb9l724"))))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -1379,7 +1375,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "releases/download/v" version "/"
                            "ttf-iosevka-term-slab-" version ".zip"))
        (sha256
-        (base32 "19fc6jbkv0aif6ds9ddxaarz2ambzln7y6k2qjsczwlbznr8cf09"))))
+        (base32 "00nsykwa1r198wrh85d42vbjwpxxsmzdn3i4fighdrd3c99fbv60"))))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -1400,7 +1396,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "/releases/download/v" version
                            "/ttc-iosevka-aile-" version ".zip"))
        (sha256
-        (base32 "1bkrk4dqkj45fbaac2n61a5kwxs3bk6sdm5hanw7g2h4xb83fi8d"))))))
+        (base32 "11xajywv20ah6yg3a0sqv2lp5phg8yv268dw2myz3ciazwnvdpqq"))))))
 
 (define-public font-iosevka-curly
   (package
@@ -1414,7 +1410,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "releases/download/v" version  "/"
                            "ttc-iosevka-curly-" version ".zip"))
        (sha256
-        (base32 "12jdb38dlbwa58q0b0sf9sp1dcafzp9dcf71jf1wrlnn8047vxyx"))))))
+        (base32 "1ss11pdrk7k0kwbaklllz4mb961j6issjp53jpp7p9pvs4qad8xf"))))))
 
 (define-public font-iosevka-curly-slab
   (package
@@ -1428,7 +1424,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "releases/download/v" version  "/"
                            "ttc-iosevka-curly-slab-" version ".zip"))
        (sha256
-        (base32 "0zn21bxyj0ni4vbdarwam2piixzvkdk769vg3k4fl3h03q56cj24"))))))
+        (base32 "141jyarpmln5q3cjyq79nw9kfm55vaiy3cin3rlamghrhjw8wg9q"))))))
 
 (define-public font-iosevka-etoile
   (package
@@ -1442,7 +1438,7 @@ programming.  Iosevka is completely generated from its source code.")
                            "/releases/download/v" version
                            "/ttc-iosevka-etoile-" version ".zip"))
        (sha256
-        (base32 "0lnpdvv20g2bg6rwl0gv83bkbgfmkbyfxshhpw9vprfs2g8k6lil"))))))
+        (base32 "097b8acia49fqpsy3w6ldk73k4abn6z9mlkl1p4iw99k26ip1sy7"))))))
 
 (define-public font-sarasa-gothic
   (package
@@ -1464,7 +1460,7 @@ programming.  Iosevka is completely generated from its source code.")
                       (mkdir "source")
                       (chdir "source")
                       (invoke "7z" "x" source))))))
-    (native-inputs `(("p7zip" ,p7zip)))
+    (native-inputs (list p7zip))
     (home-page "https://github.com/be5invis/Sarasa-Gothic")
     (license license:silofl1.1)
     (synopsis "Sarasa Gothic / 更纱黑体 / 更紗黑體 / 更紗ゴシック / 사라사 고딕")
@@ -1580,7 +1576,7 @@ resolutions.")
          (base32
           "11ml7v4iyf3hr0fbnkwz8afb8vi58wbcfnmn4gyvrwh9jk5pybdr"))))
     (build-system font-build-system)
-    (native-inputs `(("unzip" ,unzip)))
+    (native-inputs (list unzip))
     (home-page "https://opendyslexic.org/")
     (synopsis "Font for dyslexics and high readability")
     (description "OpenDyslexic is a font designed to help readability for some
@@ -1608,7 +1604,7 @@ emphasis while still being readable.")
          "0wvvg5vnc950h8v23wfgjyi7rv89mgm5hqq6viqv0bxcc3azglxb"))))
     (build-system font-build-system)
     (native-inputs
-     `(("unzip" ,unzip)))
+     (list unzip))
     (home-page "https://openmoji.org")
     (synopsis "Font for rendering emoji characters")
     (description
@@ -1677,7 +1673,7 @@ ExtraLight, Light, Book, Medium, Semibold, Bold & ExtraBold")
                          (find-files "." "^Nachlieli.*\\.sfd$"))
                #t))))))
     (native-inputs
-     `(("fontforge" ,fontforge)))
+     (list fontforge))
     (home-page "http://culmus.sourceforge.net/")
     (synopsis "TrueType Hebrew Fonts for X11")
     (description "14 Hebrew trivial families.  Contain ASCII glyphs from various
@@ -1980,7 +1976,7 @@ in small sizes, the text looks crisper.")
                       (mkdir "source")
                       (chdir "source")
                       (invoke "tar" "xzf" source))))))
-    (native-inputs `(("tar" ,tar)))
+    (native-inputs (list tar))
     (home-page "https://github.com/cormullion/juliamono")
     (synopsis "Monospaced font for programming")
     (description
@@ -2205,7 +2201,7 @@ suitable for a wide range of uses.")
 (define-public font-cozette
   (package
     (name "font-cozette")
-    (version "1.9.3")
+    (version "1.13.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2214,21 +2210,28 @@ suitable for a wide range of uses.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0mb5ns6705piwgjw1g10czsakhyc1jnvxh342ixw8m5f1gf4595n"))))
+                "178i812n4sfsvid7jhnm683jlxqmrv4ck6qbb4nwyllhwg3gyq60"))))
     (build-system font-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
+         (add-after 'unpack 'dont-depend-on-git
+           (lambda _
+             (substitute* "build.py"
+               ;; Merely importing this module requires a git repository.
+               ;; We don't use get_changelog, so just disable the import.
+               (("from cozette_builder\\.changeloggen import get_changelog")
+                ""))))
          (add-before 'install 'build
            (lambda _
              (invoke "python3" "build.py" "fonts"))))))
     (native-inputs
-     `(("fontforge" ,fontforge)
-       ("python" ,python)
-       ("python-crayons" ,python-crayons)
-       ("python-fonttools" ,python-fonttools)
-       ("python-numpy" ,python-numpy)
-       ("python-pillow" ,python-pillow)))
+     (list fontforge
+           python
+           python-crayons
+           python-fonttools
+           python-numpy
+           python-pillow))
     (home-page "https://github.com/slavfox/Cozette")
     (synopsis "Bitmap programming font")
     (description "Cozette is a 6x13px (bounding box) bitmap font based on Dina

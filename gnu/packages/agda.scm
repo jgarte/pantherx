@@ -37,7 +37,7 @@
 (define-public agda
   (package
     (name "agda")
-    (version "2.6.2")
+    (version "2.6.2.1")
     (source
      (origin
        (method url-fetch)
@@ -45,32 +45,31 @@
              "https://hackage.haskell.org/package/Agda/Agda-"
              version ".tar.gz"))
        (sha256
-        (base32
-         "159hznnsxg7hlp80r1wqizyd7gwgnq0j13cm4d27cns0ganslb07"))))
+        (base32 "03dw7jfqr3ffik6avigm525djqh2gn5c3qwnb2h6298zkr9lch9w"))))
     (build-system haskell-build-system)
     (inputs
-     `(("ghc-aeson" ,ghc-aeson)
-       ("ghc-alex" ,ghc-alex)
-       ("ghc-async" ,ghc-async)
-       ("ghc-blaze-html" ,ghc-blaze-html)
-       ("ghc-boxes" ,ghc-boxes)
-       ("ghc-case-insensitive" ,ghc-case-insensitive)
-       ("ghc-data-hash" ,ghc-data-hash)
-       ("ghc-edit-distance" ,ghc-edit-distance)
-       ("ghc-equivalence" ,ghc-equivalence)
-       ("ghc-gitrev" ,ghc-gitrev)
-       ("ghc-happy" ,ghc-happy)
-       ("ghc-hashable" ,ghc-hashable)
-       ("ghc-hashtables" ,ghc-hashtables)
-       ("ghc-monad-control" ,ghc-monad-control)
-       ("ghc-murmur-hash" ,ghc-murmur-hash)
-       ("ghc-parallel" ,ghc-parallel)
-       ("ghc-regex-tdfa" ,ghc-regex-tdfa)
-       ("ghc-split" ,ghc-split)
-       ("ghc-strict" ,ghc-strict)
-       ("ghc-unordered-containers" ,ghc-unordered-containers)
-       ("ghc-uri-encode" ,ghc-uri-encode)
-       ("ghc-zlib" ,ghc-zlib)))
+     (list ghc-aeson
+           ghc-alex
+           ghc-async
+           ghc-blaze-html
+           ghc-boxes
+           ghc-case-insensitive
+           ghc-data-hash
+           ghc-edit-distance
+           ghc-equivalence
+           ghc-gitrev
+           ghc-happy
+           ghc-hashable
+           ghc-hashtables
+           ghc-monad-control
+           ghc-murmur-hash
+           ghc-parallel
+           ghc-regex-tdfa
+           ghc-split
+           ghc-strict
+           ghc-unordered-containers
+           ghc-uri-encode
+           ghc-zlib))
     (arguments
      `(#:modules ((guix build haskell-build-system)
                   (guix build utils)
@@ -81,15 +80,13 @@
          ;; This allows us to call the 'agda' binary before installing.
          (add-after 'unpack 'set-ld-library-path
            (lambda _
-             (setenv "LD_LIBRARY_PATH" (string-append (getcwd) "/dist/build"))
-             #t))
+             (setenv "LD_LIBRARY_PATH" (string-append (getcwd) "/dist/build"))))
          (add-after 'compile 'agda-compile
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (agda-compiler (string-append out "/bin/agda")))
                (for-each (cut invoke agda-compiler <>)
-                         (find-files (string-append out "/share") "\\.agda$"))
-               #t))))))
+                         (find-files (string-append out "/share") "\\.agda$"))))))))
     (home-page "https://wiki.portal.chalmers.se/agda/")
     (synopsis
      "Dependently typed functional programming language and proof assistant")
@@ -139,7 +136,7 @@ Agda.  It also aids the input of Unicode characters.")))
                 "0dlis6v6nzbscf713cmwlx8h9n2gxghci8y21qak3hp18gkxdp0g"))))
     (build-system gnu-build-system)
     (inputs
-     `(("agda" ,agda)))
+     (list agda))
     (arguments
      `(#:parallel-build? #f
        #:phases

@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013, 2017, 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014 Ian Denhardt <ian@zenhack.net>
 ;;; Copyright © 2015, 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
@@ -20,7 +20,9 @@
 ;;; Copyright © 2021 Stefan Reichör <stefan@xsteve.at>
 ;;; Copyright © 2021 Raghav Gururajan <rg@raghavgururajan.name>
 ;;; Copyright © 2021 jgart <jgart@dismail.de>
+;;; Copyright © 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2021 Zheng Junjie <873216071@qq.com>
+;;; Copyright © 2021 dissent <disseminatedissent@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -49,6 +51,7 @@
   #:use-module (guix build-system python)
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages algebra)
+  #:use-module (gnu packages backup)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages boost)
@@ -72,6 +75,7 @@
   #:use-module (gnu packages linux)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages ncurses)
+  #:use-module (gnu packages pdf)
   #:use-module (gnu packages perl)
   #:use-module (gnu packages perl-check)
   #:use-module (gnu packages photo)
@@ -225,24 +229,24 @@
                 "report at: https://issues.guix.gnu.org"))))
          (delete 'configure))))         ;no configure script
     (inputs
-     `(("bash" ,bash)
-       ("catimg" ,catimg)
-       ("chafa" ,chafa)
-       ("coreutils" ,coreutils)
-       ("curl" ,curl)
-       ("dmenu" ,dmenu)
-       ("fzf" ,fzf)
-       ("gawk" ,gawk)
-       ("grep" ,grep)
-       ("jp2a" ,jp2a)
-       ("jq" ,jq)
-       ("libnotify" ,libnotify)
-       ("mpv" ,mpv)
-       ("ncurses" ,ncurses)
-       ("python-ueberzug" ,python-ueberzug)
-       ("sed" ,sed)
-       ("util-linux" ,util-linux)
-       ("youtube-dl" ,youtube-dl)))
+     (list bash
+           catimg
+           chafa
+           coreutils
+           curl
+           dmenu
+           fzf
+           gawk
+           grep
+           jp2a
+           jq
+           libnotify
+           mpv
+           ncurses
+           python-ueberzug
+           sed
+           util-linux
+           youtube-dl))
     (synopsis "Watch PeerTube or YouTube videos from the terminal")
     (description "@code{ytfzf} is a POSIX script that helps you find PeerTube or
 YouTube videos without requiring API and opens/downloads them using mpv/ytdl.")
@@ -270,15 +274,14 @@ YouTube videos without requiring API and opens/downloads them using mpv/ytdl.")
              "exif=1"
              "inotify=1")))
     (native-inputs
-     `(("perl" ,perl)
-       ("perl-test-command" ,perl-test-command)))
-    (inputs `(("imlib2" ,imlib2)
-              ("curl" ,curl)
-              ("libexif" ,libexif)
-              ("libpng" ,libpng)
-              ("libxt" ,libxt)
-              ("libx11" ,libx11)
-              ("libxinerama" ,libxinerama)))
+     (list perl perl-test-command))
+    (inputs (list imlib2
+                  curl
+                  libexif
+                  libpng
+                  libxt
+                  libx11
+                  libxinerama))
     (native-search-paths
      ;; Feh allows overriding the libcurl builtin CA path (unset in Guix)
      ;; with the same variable as the `curl` command line HTTP tool.
@@ -301,7 +304,7 @@ actions.")
 (define-public geeqie
   (package
     (name "geeqie")
-    (version "1.5")
+    (version "1.6")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -309,26 +312,43 @@ actions.")
                     (commit (string-append "v" version))))
               (sha256
                (base32
-                "0nf45sh3pwsv98sppcrqj81b6mdi31n1sbc7gn88m8mhpfp1qq6k"))
-              (file-name (git-file-name name version))))
+                "1i9yd8lddp6b9s9vjjjzbpqj4bvwidxc6kiba6vdrk7dda5akyky"))
+              (file-name (git-file-name name version))
+              (patches (search-patches "geeqie-clutter.patch"))))
     (build-system gnu-build-system)
     (arguments
-     `( ;; Enable support for a "map" pane using GPS data.
-       #:configure-flags '("--enable-map"
-                           "--enable-gtk3")))
+     ;; Enable support for a "map" pane using GPS data.
+     `(#:configure-flags '("CFLAGS=-O2 -g -fcommon"
+                           "--enable-map"
+                           "--enable-gtk3")
+       #:phases (modify-phases %standard-phases
+                  (add-after 'unpack 'correctly-locate-aux-scripts
+                    ;; The git checkout has symlinks under the auxdir
+                    ;; directory pointing to /usr/share/automake-1.16/depcomp
+                    ;; and /usr/share/automake-1.16/install-sh, which causes
+                    ;; the configure phase to fail (see:
+                    ;; https://github.com/BestImageViewer/geeqie/issues/936).
+                    (lambda* (#:key inputs #:allow-other-keys)
+                      (let ((automake (assoc-ref inputs "automake")))
+                        (delete-file "auxdir/depcomp")
+                        (symlink (car (find-files automake "depcomp"))
+                                 "auxdir/depcomp")
+                        (delete-file "auxdir/install-sh")
+                        (symlink (car (find-files automake "install-sh"))
+                                 "auxdir/install-sh")))))))
     (inputs
-     `(("clutter" ,clutter)
-       ("libchamplain" ,libchamplain)
-       ("lcms" ,lcms)
-       ("exiv2" ,exiv2)
-       ("libpng" ,libpng)
-       ("gtk+" ,gtk+)))
+     (list clutter
+           libchamplain
+           lcms
+           exiv2
+           libpng
+           gtk+))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("glib" ,glib "bin")                       ; glib-gettextize
-       ("intltool" ,intltool)
-       ("pkg-config" ,pkg-config)))
+     (list autoconf
+           automake
+           `(,glib "bin") ; glib-gettextize
+           intltool
+           pkg-config))
     (home-page "http://www.geeqie.org/")
     (synopsis "Lightweight GTK+ based image viewer")
     (description
@@ -353,10 +373,8 @@ collection.  Geeqie was initially based on GQview.")
                (base32
                 "0hi9v0rdx47nys0wvm9xasdrafa34r5kq6crb074a0ipwmc60iiq"))))
     (build-system gnu-build-system)
-    (inputs `(("gtk+" ,gtk+-2)
-              ("libjpeg" ,libjpeg-turbo)))
-    (native-inputs `(("intltool"   ,intltool)
-                     ("pkg-config" ,pkg-config)))
+    (inputs (list gtk+-2 libjpeg-turbo))
+    (native-inputs (list intltool pkg-config))
     (synopsis "Simple and fast image viewer for X")
     (description "gpicview is a lightweight GTK+ 2.x based image viewer.
 It is the default image viewer on LXDE desktop environment.")
@@ -401,12 +419,12 @@ It is the default image viewer on LXDE desktop environment.")
            (lambda* (#:key make-flags #:allow-other-keys)
              (apply invoke "make" "-C" "icon" "install" make-flags))))))
     (inputs
-     `(("freetype" ,freetype)
-       ("giflib" ,giflib)
-       ("imlib2" ,imlib2)
-       ("libexif" ,libexif)
-       ("libx11" ,libx11)
-       ("libxft" ,libxft)))
+     (list freetype
+           giflib
+           imlib2
+           libexif
+           libx11
+           libxft))
     (home-page "https://github.com/muennich/sxiv")
     (synopsis "Simple X Image Viewer")
     (description
@@ -458,12 +476,12 @@ it and customize it for your needs.")
            (lambda* (#:key make-flags #:allow-other-keys)
              (apply invoke "make" "-C" "icon" "install" make-flags))))))
     (inputs
-     `(("freetype" ,freetype)
-       ("giflib" ,giflib)
-       ("imlib2" ,imlib2)
-       ("libexif" ,libexif)
-       ("libx11" ,libx11)
-       ("libxft" ,libxft)))
+     (list freetype
+           giflib
+           imlib2
+           libexif
+           libx11
+           libxft))
     (home-page "https://github.com/nsxiv/nsxiv")
     (synopsis "Neo Simple X Image Viewer")
     (description
@@ -562,7 +580,7 @@ your images.  Among its features are:
                                        "/bin/catimg.sh"))
              #t)))))
     (inputs
-     `(("imagemagick" ,imagemagick))) ; for the bash script version
+     (list imagemagick)) ; for the bash script version
     (home-page "https://github.com/posva/catimg")
     (synopsis "Render images in the terminal")
     (description
@@ -584,8 +602,7 @@ It supports JPEG, PNG and GIF formats.")
                 "188q0l63nfasqfvwbq4mwx2vh7wsfi2bq9n5nksddspl1qz01lnp"))))
     (build-system cmake-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("qttools" ,qttools)))
+     (list pkg-config qttools))
     (inputs
      `(("qtbase" ,qtbase-5)
        ("qtdeclarative" ,qtdeclarative)
@@ -614,10 +631,9 @@ It supports JPEG, PNG and GIF formats.")
              ;; not use 'OpenEXR.pc'.  Thus, we need to add
              ;; "$ilmbase/include/OpenEXR/" to the CPATH.
              (setenv "CPATH"
-                     (string-append (assoc-ref inputs "ilmbase")
-                                    "/include/OpenEXR"
-                                    ":" (or (getenv "CPATH") "")))
-             #t)))))
+                     (string-append
+                      (search-input-directory inputs "include/OpenEXR")
+                      ":" (or (getenv "CPATH") ""))))))))
     (home-page "http://qtpfsgui.sourceforge.net")
     (synopsis "High dynamic range (HDR) imaging application")
     (description
@@ -655,10 +671,7 @@ imaging.  It supports several HDR and LDR image formats, and it can:
            "05zl0dkjwbdcm2zlk4nz9w33amlqj8pbf32a8ymshc2356fqhhi5"))))
       (build-system python-build-system)
       (inputs
-       `(("p7zip" ,p7zip)
-         ("python-pillow" ,python-pillow)
-         ("python-pygobject" ,python-pygobject)
-         ("python-pycairo" ,python-pycairo)))
+       (list p7zip python-pillow python-pygobject python-pycairo))
       (arguments
        `(#:tests? #f                    ; FIXME: How do we run tests?
          #:phases
@@ -756,9 +769,7 @@ For PDF support, install the @emph{mupdf} package.")
                (("updateText\\(\\);") ""))
              #t)))))
     (inputs
-     `(("qtbase" ,qtbase-5)
-       ("qtsvg" ,qtsvg)
-       ("qtimageformats" ,qtimageformats)))
+     (list qtbase-5 qtsvg qtimageformats))
     (home-page "https://interversehq.com/qview/")
     (synopsis "Convenient and minimal image viewer")
     (description "qView is a Qt image viewer designed with visually
@@ -780,12 +791,9 @@ preloading.")
                 "18rb82bfqj1sj2g4irazx4lwq9q4b4k7my1r0q714vf9yhs41ls6"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("freetype" ,freetype)
-       ("libjpeg" ,libjpeg-turbo)
-       ("glib" ,glib)
-       ("imagemagick" ,imagemagick)))
+     (list freetype libjpeg-turbo glib imagemagick))
     (synopsis "Convert images to ANSI/Unicode characters")
     (description
      "Chafa is a command-line utility that converts all kinds of images,
@@ -822,17 +830,17 @@ displayed in a terminal.")
                   (string-append bin "/imv-")))
                #t))))))
     (inputs
-     `(("freeimage" ,freeimage)
-       ("glu" ,glu)
-       ("libheif" ,libheif)
-       ("libjpeg-turbo" ,libjpeg-turbo)
-       ("libinih" ,libinih)
-       ("libnsgif" ,libnsgif)
-       ("librsvg" ,librsvg-next)
-       ("libtiff" ,libtiff)
-       ("libxkbcommon" ,libxkbcommon)
-       ("pango" ,pango)
-       ("wayland" ,wayland)))
+     (list freeimage
+           glu
+           libheif
+           libjpeg-turbo
+           libinih
+           libnsgif
+           librsvg
+           libtiff
+           libxkbcommon
+           pango
+           wayland))
     (native-inputs
      `(("asciidoc" ,asciidoc)
        ("cmocka" ,cmocka)
@@ -881,9 +889,9 @@ with tiling window managers.  Features include:
               "$(PREFIX)/share/man"))))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ;; That is required for testing.
-       ("xorg-server" ,xorg-server-for-tests)))
+     (list pkg-config
+           ;; That is required for testing.
+           xorg-server-for-tests))
     (inputs
      `(("imlib2" ,imlib2)
        ("glib" ,glib)
@@ -923,6 +931,49 @@ brightness/contrast/gamma correction, pan with keyboard and mouse, flip,
 rotate left/right, jump/forward/backward images, filename filter and use it
 to set X desktop background.")
     (license license:gpl2)))
+
+(define-public pqiv
+  (package
+    (name "pqiv")
+    (version "2.12")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/phillipberndt/pqiv")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "18nvrqmlifh4m8nfs0d19sb9d1l3a95xc89qxqdr881jcxdsgflw"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     (list pkg-config))
+    (inputs
+     (list ffmpeg
+           gtk+
+           imagemagick
+           libarchive
+           libspectre
+           libwebp
+           poppler))
+    (arguments
+     `(#:tests? #f                      ;no tests
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'configure))           ;no configure script
+       #:make-flags
+       (list
+        (string-append "PREFIX=" (assoc-ref %outputs "out"))
+        (string-append "CC=" ,(cc-for-target))
+        (string-append "PKG_CONFIG=" ,(pkg-config-for-target)))))
+    (home-page "https://www.pberndt.com/Programme/Linux/pqiv")
+    (synopsis "Powerful image viewer with minimal UI")
+    (description
+     "pqiv is a GTK-3 based command-line image viewer with a minimal UI.
+It is highly customizable, can be fully controlled from scripts, and has
+support for various file formats including PDF, Postscript, video files and
+archives.")
+    (license license:gpl3+)))
 
 (define-public nomacs
   (package
@@ -1014,10 +1065,9 @@ synchronization of multiple instances.")
                (install-file "src/xzgv" bin))))) ; just install the executable
        #:tests? #f))                             ; no rule for target 'test'
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("gtk+" ,gtk+-2)
-       ("libexif" ,libexif)))
+     (list gtk+-2 libexif))
     (home-page "https://sourceforge.net/projects/xzgv/")
     (synopsis "Picture viewer for X with a thumbnail-based selector")
     (description

@@ -42,14 +42,14 @@
 (define-public drbd-utils
   (package
     (name "drbd-utils")
-    (version "9.19.0")
+    (version "9.19.1")
     (source (origin
               (method url-fetch)
               (uri (list (string-append "https://pkg.linbit.com/downloads/drbd"
                                         "/utils/drbd-utils-" version ".tar.gz")))
               (sha256
                (base32
-                "1bbw91hil55d2047r2bdhx2daxc1wqysra2qqm77iy1hcvnvy9rq"))
+                "1l99kcrb0j85wxxmrdihpx9bk1a4sdi7wlp5m1x5l24k8ck1m5cf"))
               (modules '((guix build utils)))
               (snippet
                '(begin
@@ -165,13 +165,9 @@ connection.  This package contains the userland utilities.")
                              (string-append infodir "/keepalived-figures"))
                #t))))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("python-sphinx" ,python-sphinx)
-       ("texinfo" ,texinfo)))
+     (list pkg-config python-sphinx texinfo))
     (inputs
-     `(("openssl" ,openssl)
-       ("libnfnetlink" ,libnfnetlink)
-       ("libnl" ,libnl)))
+     (list openssl libnfnetlink libnl))
     (home-page "https://www.keepalived.org/")
     (synopsis "Load balancing and high-availability frameworks")
     (description
@@ -204,8 +200,7 @@ independently or together to provide resilient infrastructures.")
                          ((".*test_uv_append.c.*") ""))
                        #t)))))
     (inputs
-     `(("libuv" ,libuv)
-       ("lz4" ,lz4)))
+     (list libuv lz4))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
@@ -245,15 +240,11 @@ snapshots).")
                ;; race condition when tearing down the test server.
                ((".*test_client.c.*") "")))))))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("libtool" ,libtool)
-       ("pkg-config" ,pkg-config)))
+     (list autoconf automake libtool pkg-config))
     (inputs
-     `(("libraft" ,libraft)
-       ("libuv" ,libuv)))
+     (list libraft libuv))
     (propagated-inputs
-     `(("sqlite" ,sqlite)))  ; dqlite.h includes sqlite3.h
+     (list sqlite))  ; dqlite.h includes sqlite3.h
     (build-system gnu-build-system)
     (synopsis "Distributed SQLite")
     (description "dqlite is a C library that implements an embeddable and replicated

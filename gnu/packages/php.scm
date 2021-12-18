@@ -70,7 +70,9 @@
               (sha256
                (base32
                 "1y0f1xgfi8cks6npdhrycg8r9g3q0pikqgf5h4xafpy8znmb61g3"))
-              (patches (search-patches "php-bug-74093-test.patch"))
+              (patches
+               (search-patches "php-bug-74093-test.patch"
+                               "php-openssl_x509_checkpurpose_basic.patch"))
               (modules '((guix build utils)))
               (snippet
                '(with-directory-excursion "ext"
@@ -196,6 +198,20 @@
                                 "sapi/cli/tests/cli_process_title_unix.phpt"
                                 "sapi/cli/tests/upload_2G.phpt"
                                 "Zend/tests/concat_003.phpt")))
+                   '())
+
+             ,@(if (target-ppc64le?)
+                   ;; Drop tests known to fail on powerpc64le.
+                   '((for-each delete-file
+                               (list
+                                ;; phpdbg watchpoints don't work.
+                                ;; Bug tracked upstream at:
+                                ;; https://bugs.php.net/bug.php?id=81408
+                                "sapi/phpdbg/tests/watch_001.phpt"
+                                "sapi/phpdbg/tests/watch_003.phpt"
+                                "sapi/phpdbg/tests/watch_004.phpt"
+                                "sapi/phpdbg/tests/watch_005.phpt"
+                                "sapi/phpdbg/tests/watch_006.phpt")))
                    '())
 
              ;; Drop tests that are known to fail.
@@ -327,7 +343,9 @@
                          ;; Expects an empty Array; gets one with " " in it.
                          "ext/pcre/tests/bug80118.phpt"
                          ;; Renicing a process fails in the build environment.
-                         "ext/standard/tests/general_functions/proc_nice_basic.phpt"))
+                         "ext/standard/tests/general_functions/proc_nice_basic.phpt"
+                         ;; Can fail on fast machines?
+                         "Zend/tests/bug74093.phpt"))
 
              ;; Accomodate two extra openssl errors flanking the expected one:
              ;; random number generator:RAND_{load,write}_file:Cannot open file
