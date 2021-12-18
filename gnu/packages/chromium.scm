@@ -336,7 +336,7 @@
                   (string-append "ungoogled-chromium-" category "-" name))))
     (sha256 (base32 hash))))
 
-(define %chromium-version "96.0.4664.45")
+(define %chromium-version "96.0.4664.110")
 (define %ungoogled-revision (string-append %chromium-version "-1"))
 (define %arch-revision "db2157b84924ce84201a8245e68a02f7d55f6491")
 (define %debian-revision "debian/90.0.4430.85-1")
@@ -367,12 +367,18 @@
     (file-name (git-file-name "ungoogled-chromium" %ungoogled-revision))
     (sha256
      (base32
-      "1k0kf5ika1sz489bcbn485kmdq1xp7ssa80gbqrpd60xihkhnrm3"))))
+      "098mfcd1lr2hhlic0i1l5gxsq71axvqnn4gayr4r9j6nbj9byf4h"))))
 
 (define %guix-patches
   (list (local-file
          (assume-valid-file-name
           (search-patch "ungoogled-chromium-extension-search-path.patch")))
+        (local-file
+         (assume-valid-file-name
+          (search-patch "ungoogled-chromium-RUNPATH.patch")))
+        (local-file
+         (assume-valid-file-name
+          (search-patch "ungoogled-chromium-accelerated-video-decode.patch")))
         (local-file
          (assume-valid-file-name
           (search-patch "ungoogled-chromium-ffmpeg-compat.patch")))
@@ -460,31 +466,6 @@
         `(cons "--enable-custom-modes"
                ,flags))))))
 
-;; 'make-ld-wrapper' can only work with an 'ld' executable, so we need
-;; this trick to make it wrap 'lld'.
-(define (make-lld-wrapper lld)
-  (define lld-as-ld
-    (computed-file "lld-ld"
-                   #~(begin
-                       (mkdir #$output)
-                       (mkdir (string-append #$output "/bin"))
-                       (symlink #$(file-append lld "/bin/lld")
-                                (string-append #$output "/bin/ld")))))
-
-  ;; Create a wrapper for LLD that inserts appropriate -rpath entries.
-  (define lld-wrapper
-    (make-ld-wrapper "lld-wrapper"
-                     #:binutils lld-as-ld))
-
-  ;; Clang looks for an 'ld.lld' executable, so we need to symlink it back.
-  (computed-file "lld-wrapped"
-                 #~(begin
-                     (mkdir #$output)
-                     (mkdir (string-append #$output "/bin"))
-                     (symlink #$(file-append lld-wrapper "/bin/ld")
-                              (string-append #$output "/bin/lld"))
-                     (symlink "lld" (string-append #$output "/bin/ld.lld")))))
-
 (define-public ungoogled-chromium
   (package
     (name "ungoogled-chromium")
@@ -502,14 +483,12 @@
                                   %chromium-version ".tar.xz"))
               (sha256
                (base32
-                "01q4fsf2cbx6g9nnaihvc5jj3ap8jq2gf16pnhf7ixzbhgcnm328"))
+                "1s3ilq0ik36qgqp7l88gfd1yx97zscn8yr2kprsrjfp9q8lrva9n"))
               (modules '((guix build utils)))
               (snippet (force ungoogled-chromium-snippet))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f
-       ;; FIXME: Chromiums RUNPATH lacks entries for some libraries.
-       #:validate-runpath? #f
        #:modules ((guix build gnu-build-system)
                   (guix build utils)
                   (srfi srfi-26))
@@ -690,6 +669,10 @@
                  (("libudev\\.so\\.1")
                   (string-append udev "/lib/libudev.so.1")))
 
+               (substitute* "third_party/dawn/src/dawn_native/vulkan/BackendVk.cpp"
+                 (("libvulkan\\.so\\.1")
+                  (search-input-file inputs "/lib/libvulkan.so.1")))
+
                (substitute*
                    '("ui/ozone/platform/x11/gl_ozone_glx.cc"
                      "ui/ozone/common/egl_util.cc"
@@ -787,6 +770,10 @@
                                       "resources.pak"
                                       "v8_context_snapshot.bin"
 
+                                      ;; Swiftshader ICD.
+                                      "libvk_swiftshader.so"
+                                      "vk_swiftshader_icd.json"
+
                                       ;; Chromium ships its own libGL
                                       ;; implementation called ANGLE.
                                       "libEGL.so" "libGLESv2.so"))
@@ -848,7 +835,7 @@
        ("clang" ,clang-12)
        ("gn" ,gn)
        ("gperf" ,gperf)
-       ("ld-wrapper" ,(make-lld-wrapper lld))
+       ("ld-wrapper" ,lld-as-ld-wrapper)
        ("ninja" ,ninja)
        ("node" ,node-lts)
        ("pkg-config" ,pkg-config)
@@ -876,7 +863,7 @@
        ("glib" ,glib)
        ("gtk+" ,gtk+)
        ("harfbuzz" ,harfbuzz-3.0)
-       ("icu4c" ,icu4c-69)
+       ("icu4c" ,icu4c)
        ("lcms" ,lcms)
        ("libevent" ,libevent)
        ("libffi" ,libffi)
@@ -899,9 +886,6 @@
        ("libxscrnsaver" ,libxscrnsaver)
        ("libxslt" ,libxslt)
        ("libxtst" ,libxtst)
-       ;; Newer kernel headers are required for userfaultfd support; remove
-       ;; after 'core-updates' merge.
-       ("linux-libre-headers" ,linux-libre-headers-5.10)
        ("mesa" ,mesa)
        ("minizip" ,minizip)
        ("mit-krb5" ,mit-krb5)
@@ -918,6 +902,7 @@
        ("udev" ,eudev)
        ("valgrind" ,valgrind)
        ("vulkan-headers" ,vulkan-headers)
+       ("vulkan-loader" ,vulkan-loader)
        ("wayland" ,wayland)
        ("xdg-utils" ,xdg-utils)))
     (native-search-paths

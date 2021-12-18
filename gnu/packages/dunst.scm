@@ -39,7 +39,7 @@
 (define-public dunst
   (package
     (name "dunst")
-    (version "1.7.1")
+    (version "1.7.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -48,7 +48,7 @@
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0v15fhwzcg7zfn092sry0f4qb6dccz9bb312y9dadg745wf3n9qw"))))
+                "1ra0ii805w3rrs0qqbjxzl6i79ksz42lnvbglw18h4igkza21kzj"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f                      ; no check target
@@ -63,22 +63,21 @@
        #:phases (modify-phases %standard-phases
                   (delete 'configure))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("perl" ,perl)                   ; for pod2man
-       ("which" ,which)))
+     (list pkg-config perl ; for pod2man
+           which))
     (inputs
-     `(("dbus" ,dbus)
-       ("gdk-pixbuf" ,gdk-pixbuf+svg)   ; for svg support
-       ("glib" ,glib)
-       ("cairo" ,cairo)
-       ("pango" ,pango)
-       ("libnotify" ,libnotify)         ; for dunstify
-       ("libx11" ,libx11)
-       ("libxscrnsaver" ,libxscrnsaver)
-       ("libxinerama" ,libxinerama)
-       ("libxrandr" ,libxrandr)
-       ("libxdg-basedir" ,libxdg-basedir)
-       ("wayland" ,wayland)))           ; for wayland support
+     (list dbus
+           librsvg ; for svg support
+           glib
+           cairo
+           pango
+           libnotify ; for dunstify
+           libx11
+           libxscrnsaver
+           libxinerama
+           libxrandr
+           libxdg-basedir
+           wayland))           ; for wayland support
     (home-page "https://dunst-project.org/")
     (synopsis "Customizable and lightweight notification daemon")
     (description

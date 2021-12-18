@@ -380,6 +380,20 @@
                               `(("python-setuptools" ,python-setuptools))))))
      (check-inputs-should-not-be-an-input-at-all pkg))))
 
+(test-assert "input labels: no warnings"
+  (let ((pkg (dummy-package "x"
+               (inputs `(("glib" ,glib)
+                         ("pkg-config" ,pkg-config))))))
+    (null? (check-input-labels pkg))))
+
+(test-equal "input labels: one warning"
+  "label 'pkgkonfig' does not match package name 'pkg-config'"
+  (single-lint-warning-message
+   (let ((pkg (dummy-package "x"
+                (inputs `(("glib" ,glib)
+                          ("pkgkonfig" ,pkg-config))))))
+     (check-input-labels pkg))))
+
 (test-equal "explicit #:sh argument to 'wrap-program' is acceptable"
   '()
   (let* ((phases
@@ -506,17 +520,17 @@
                                  (file-name "x.patch")))))))))
     (check-patch-file-names pkg)))
 
-(test-equal "patches: file name too long"
+(test-equal "patches: file name too long, which may break 'make dist'"
   (string-append "x-"
-                 (make-string 100 #\a)
-                 ".patch: file name is too long")
+                 (make-string 152 #\a)
+                 ".patch: file name is too long, which may break 'make dist'")
   (single-lint-warning-message
    (let ((pkg (dummy-package
                "x"
                (source
                 (dummy-origin
                  (patches (list (string-append "x-"
-                                               (make-string 100 #\a)
+                                               (make-string 152 #\a)
                                                ".patch"))))))))
      (check-patch-file-names pkg))))
 
@@ -586,7 +600,7 @@
       (single-lint-warning-message (check-patch-headers pkg)))))
 
 (test-equal "derivation: invalid arguments"
-  "failed to create x86_64-linux derivation: (wrong-type-arg \"map\" \"Wrong type argument: ~S\" (invalid-module) ())"
+  "failed to create x86_64-linux derivation: (match-error \"match\" \"no matching pattern\" invalid-module)"
   (match (let ((pkg (dummy-package "x"
                                    (arguments
                                     '(#:imported-modules (invalid-module))))))

@@ -71,8 +71,7 @@
                          (find-files "trusted.gpg" "\\.gpg$")))
              #t)))))
     (native-inputs
-     `(("gnupg" ,gnupg)
-       ("jetring" ,jetring)))
+     (list gnupg jetring))
     (home-page "https://packages.qa.debian.org/d/debian-archive-keyring.html")
     (synopsis "GnuPG archive keys of the Debian archive")
     (description
@@ -136,7 +135,7 @@ contains the archive keys used for that.")
                          (find-files "trusted.gpg" "\\.gpg$")))
              #t)))))
     (native-inputs
-     `(("gnupg" ,gnupg)))
+     (list gnupg))
     (home-page "https://tracker.debian.org/pkg/debian-ports-archive-keyring")
     (synopsis "GnuPG archive keys of the Debian ports archive")
     (description
@@ -177,8 +176,7 @@ contains the archive keys used for that.")
                                (find-files "." "ubuntu-[am].*\\.gpg$")))
                    #t)))
     (native-inputs
-     `(("tar" ,tar)
-       ("gzip" ,gzip)))
+     (list tar gzip))
     (home-page "https://launchpad.net/ubuntu/+source/ubuntu-keyring")
     (synopsis "GnuPG keys of the Ubuntu archive")
     (description
@@ -259,7 +257,7 @@ contains the archive keys used for that.")
        ("gnupg" ,gnupg)
        ("wget" ,wget)))
     (native-inputs
-     `(("perl" ,perl)))
+     (list perl))
     (home-page "https://tracker.debian.org/pkg/debootstrap")
     (synopsis "Bootstrap a basic Debian system")
     (description "Debootstrap is used to create a Debian base system from
@@ -283,10 +281,7 @@ unpacking them into a directory which can eventually be chrooted into.")
                 "1sbdjcb44g2s1zxjf9kxrp9drf9mmh6b49a9z3k428gmc6zsci4r"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("gettext" ,gettext-minimal)
-       ("po4a" ,po4a)))
+     (list autoconf automake gettext-minimal po4a))
     (home-page "https://packages.debian.org/unstable/debianutils")
     (synopsis "Miscellaneous shell utilities")
     (description
@@ -328,8 +323,7 @@ debian/copyright for more information.")))))
                             "PREFIX=/")
          #:phases (modify-phases %standard-phases (delete 'configure))))
       (inputs
-       `(("wget" ,wget)
-         ("perl" ,perl)))
+       (list wget perl))
       (home-page "http://apt-mirror.github.io/")
       (synopsis "Script for mirroring a Debian repository")
       (description
@@ -341,7 +335,7 @@ other apt sources typically provided by open source developers.")
 (define-public dpkg
   (package
     (name "dpkg")
-    (version "1.20.9")
+    (version "1.21.0")
     (source
       (origin
         (method git-fetch)
@@ -350,8 +344,7 @@ other apt sources typically provided by open source developers.")
                (commit version)))
         (file-name (git-file-name name version))
         (sha256
-         (base32
-          "16wlb8hwbdvxar187bjd4pzdzj95g3l2ryi2khqqmwbyca4sjm1n"))))
+         (base32 "0g33cyd0qbyfdrphcw8m8ikj2hxqpjbyxbhvnp751515c8hgc4rx"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
@@ -360,8 +353,7 @@ other apt sources typically provided by open source developers.")
            (lambda _
              (patch-shebang "get-version")
              (with-output-to-file ".dist-version"
-               (lambda () (display ,version)))
-             #t))
+               (lambda () (display ,version)))))
          (add-after 'unpack 'set-perl-libdir
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (let ((out  (assoc-ref outputs "out"))
@@ -369,8 +361,7 @@ other apt sources typically provided by open source developers.")
                (setenv "PERL_LIBDIR"
                        (string-append out
                                       "/lib/perl5/site_perl/"
-                                      ,(package-version perl)))
-               #t))))))
+                                      ,(package-version perl)))))))))
     (native-inputs
      `(("autoconf" ,autoconf)
        ("automake" ,automake)
@@ -379,12 +370,12 @@ other apt sources typically provided by open source developers.")
        ("pkg-config" ,pkg-config)
        ("perl-io-string" ,perl-io-string)))
     (inputs
-     `(("bzip2" ,bzip2)
-       ("libmd" ,libmd)
-       ("ncurses" ,ncurses)
-       ("perl" ,perl)
-       ("xz" ,xz)
-       ("zlib" ,zlib)))
+     (list bzip2
+           libmd
+           ncurses
+           perl
+           xz
+           zlib))
     (home-page "https://wiki.debian.org/Teams/Dpkg")
     (synopsis "Debian package management system")
     (description "This package provides the low-level infrastructure for
@@ -429,15 +420,14 @@ handling the installation and removal of Debian software packages.")
                           (string-append zsh "_reprepro"))
                #t))))))
     (inputs
-     `(("bdb" ,bdb)
-       ("bzip2" ,bzip2)
-       ("gpgme" ,gpgme)
-       ("libarchive" ,libarchive)
-       ("xz" ,xz)
-       ("zlib" ,zlib)))
+     (list bdb
+           bzip2
+           gpgme
+           libarchive
+           xz
+           zlib))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)))
+     (list autoconf automake))
     (home-page "https://salsa.debian.org/brlink/reprepro")
     (synopsis "Debian package repository producer")
     (description "Reprepro is a tool to manage a repository of Debian packages

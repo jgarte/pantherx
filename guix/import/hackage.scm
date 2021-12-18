@@ -5,6 +5,7 @@
 ;;; Copyright © 2018 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2019 Robert Vollmert <rob@vllmrt.net>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
+;;; Copyright © 2021 Sarah Morgensen <iskarian@mgsn.dev>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -32,7 +33,7 @@
   #:use-module ((guix utils) #:select (package-name->name+version
                                        canonical-newline-port))
   #:use-module (guix http-client)
-  #:use-module ((guix import utils) #:select (factorize-uri recursive-import))
+  #:use-module (guix import utils)
   #:use-module (guix import cabal)
   #:use-module (guix store)
   #:use-module (gcrypt hash)
@@ -267,14 +268,12 @@ the hash of the Cabal file."
      hackage-dependencies))
 
   (define dependencies
-    (map (lambda (name)
-           (list name (list 'unquote (string->symbol name))))
+    (map string->symbol
          (map hackage-name->package-name
               hackage-dependencies)))
 
   (define native-dependencies
-    (map (lambda (name)
-           (list name (list 'unquote (string->symbol name))))
+    (map string->symbol
          (map hackage-name->package-name
               hackage-native-dependencies)))
   
@@ -284,8 +283,8 @@ the hash of the Cabal file."
        '())
       ((inputs ...)
        (list (list input-type
-                   (list 'quasiquote inputs))))))
-  
+                   `(list ,@inputs))))))
+
   (define (maybe-arguments)
     (match (append (if (not include-test-dependencies?)
                        '(#:tests? #f)
@@ -316,7 +315,7 @@ the hash of the Cabal file."
         ,@(maybe-arguments)
         (home-page ,(cabal-package-home-page cabal))
         (synopsis ,(cabal-package-synopsis cabal))
-        (description ,(cabal-package-description cabal))
+        (description ,(beautify-description (cabal-package-description cabal)))
         (license ,(string->license (cabal-package-license cabal))))
      (append hackage-dependencies hackage-native-dependencies))))
 

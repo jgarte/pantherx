@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2013, 2015 Andreas Enge <andreas@enge.fr>
-;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015 Sou Bunnbu <iyzsong@gmail.com>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2021 Efraim Flashner <efraim@flashner.co.il>
@@ -16,6 +16,8 @@
 ;;; Copyright © 2020, 2021 Jonathan Brielmaier <jonathan.brielmaier@web.de>
 ;;; Copyright © 2020 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2021 Brice Waegeneire <brice@waegenei.re>
+;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
+;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Baptiste Strazzul <bstrazzull@hotmail.fr>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -117,9 +119,9 @@
        ("pkg-config" ,pkg-config)
        ("python" ,python-2)))
     (propagated-inputs
-     `(("nspr" ,nspr))) ; in the Requires.private field of mozjs-17.0.pc
+     (list nspr)) ; in the Requires.private field of mozjs-17.0.pc
     (inputs
-     `(("zlib" ,zlib)))
+     (list zlib))
     (arguments
      `(;; XXX: parallel build fails, lacking:
        ;;   mkdir -p "system_wrapper_js/"
@@ -194,8 +196,7 @@ in C/C++.")
                                 '("--host=aarch64-unknown-linux-gnu")
                                 '())))))))))
     (inputs
-     `(("libffi" ,libffi)
-       ("zlib" ,zlib)))))
+     (list libffi zlib))))
 
 (define-public mozjs-38
   (package
@@ -278,10 +279,7 @@ in C/C++.")
        ("pkg-config" ,pkg-config)
        ("python-2" ,python-2)))
     (inputs
-     `(("libffi" ,libffi)
-       ("readline" ,readline)
-       ("icu4c" ,icu4c)
-       ("zlib" ,zlib)))))
+     (list libffi readline icu4c zlib))))
 
 (define-public mozjs-52
   ;; No releases yet at <https://archive.mozilla.org/pub/spidermonkey/releases/>.
@@ -342,15 +340,13 @@ in C/C++.")
                (let ((out (assoc-ref outputs "out")))
                  (setenv "SHELL" (which "sh"))
                  (setenv "CONFIG_SHELL" (which "sh"))
-                 (setenv "AUTOCONF" (string-append (assoc-ref inputs "autoconf")
-                                                   "/bin/autoconf"))
+                 (setenv "AUTOCONF" (which "autoconf"))
                  (apply invoke "./configure"
                         (cons (string-append "--prefix=" out)
                               configure-flags))))))))
       (native-inputs
-       `(("autoconf" ,autoconf-2.13)
-         ("automake" ,automake)
-         ,@(package-native-inputs mozjs-38))))))
+       (modify-inputs (package-native-inputs mozjs-38)
+         (prepend autoconf-2.13 automake))))))
 
 (define-public mozjs-60
   ;; No releases yet at <https://archive.mozilla.org/pub/spidermonkey/releases/>.
@@ -359,7 +355,7 @@ in C/C++.")
   ;; we take the Debian version instead, because it is easier to work with.
   (package
     (inherit mozjs-38)
-    (version "60.2.3-2")
+    (version "60.2.3-4")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -368,27 +364,49 @@ in C/C++.")
               (file-name (git-file-name "mozjs" version))
               (sha256
                (base32
-                "091w050rwzrdcbgyi934k2viyccmlqxrp13sm2mql71mabb5dai6"))))
+                "1xl6avsj9gkgma71p56jzs7nasc767k3n1frnmri5pad4rj94bij"))))
     (arguments
      `(#:tests? #f ; FIXME: all tests pass, but then the check phase fails anyway.
        #:test-target "check-jstests"
        #:configure-flags
-       '("--enable-ctypes"
-         "--enable-optimize"
-         "--enable-pie"
-         "--enable-readline"
-         "--enable-shared-js"
-         "--enable-system-ffi"
-         "--with-system-nspr"
-         "--with-system-zlib"
-         "--with-system-icu"
-         "--with-intl-api"
-         ;; This is important because without it gjs will segfault during the
-         ;; configure phase.  With jemalloc only the standalone mozjs console
-         ;; will work.
-         "--disable-jemalloc")
+       ;; TODO(core-updates): unconditionally use 'quasiquote
+       ,#~(#$(if (%current-target-system)
+                 #~quasiquote
+                 #~quote)
+           ("--enable-ctypes"
+            "--enable-optimize"
+            "--enable-pie"
+            "--enable-readline"
+            "--enable-shared-js"
+            "--enable-system-ffi"
+            "--with-system-nspr"
+            #$@(if (%current-target-system)
+                   #~(,(string-append "--with-nspr-prefix="
+                                      #$(this-package-input "nspr")))
+                   #~())
+            "--with-system-zlib"
+            "--with-system-icu"
+            "--with-intl-api"
+            ;; This is important because without it gjs will segfault during the
+            ;; configure phase.  With jemalloc only the standalone mozjs console
+            ;; will work.
+            "--disable-jemalloc"
+            ;; Mozilla deviates from Autotools conventions due to historical
+            ;; reasons.
+            #$@(if (%current-target-system)
+                   #~(#$(string-append
+                         "--host="
+                         (nix-system->gnu-triplet (%current-system)))
+                      #$(string-append "--target=" (%current-target-system)))
+                   #~())))
        #:phases
        (modify-phases %standard-phases
+         ;; Make sure pkg-config will be found.
+         ,@(if (%current-target-system)
+               `((add-before 'configure 'set-PKG-CONFIG
+                   (lambda _
+                     (setenv "PKG_CONFIG" ,(pkg-config-for-target)))))
+               '())
          (replace 'configure
            (lambda* (#:key inputs outputs configure-flags #:allow-other-keys)
              ;; The configure script does not accept environment variables as
@@ -399,8 +417,7 @@ in C/C++.")
                (chdir "run-configure-from-here")
                (setenv "SHELL" (which "sh"))
                (setenv "CONFIG_SHELL" (which "sh"))
-               (setenv "AUTOCONF" (string-append (assoc-ref inputs "autoconf")
-                                                 "/bin/autoconf"))
+               (setenv "AUTOCONF" (which "autoconf"))
                (apply invoke "../js/src/configure"
                       (cons (string-append "--prefix=" out)
                             configure-flags))
@@ -422,7 +439,7 @@ in C/C++.")
 (define-public mozjs-78
   (package
     (inherit mozjs-60)
-    (version "78.6.1")
+    (version "78.15.0")
     (source (origin
               (method url-fetch)
               ;; TODO: Switch to IceCat source once available on ftp.gnu.org.
@@ -431,7 +448,7 @@ in C/C++.")
                                   version "esr.source.tar.xz"))
               (sha256
                (base32
-                "1kp75838a38x4h0w98qn01g9asn7jlgm64bz7n70353bnr6bf1qd"))))
+                "0l91cxdc5v9fps79ckb1kid4gw6v5qng1jd9zvaacwaiv628shx4"))))
     (arguments
      `(#:imported-modules ,%cargo-utils-modules ;for `generate-all-checksums'
        #:modules ((guix build cargo-utils)
@@ -458,12 +475,6 @@ in C/C++.")
          "--with-intl-api")
        #:phases
        (modify-phases %standard-phases
-         (add-after 'unpack 'patch-StructuredClone.h
-           (lambda _
-             (substitute* "js/public/StructuredClone.h"
-               (("class SharedArrayRawBufferRefs \\{")
-                "class JS_PUBLIC_API SharedArrayRawBufferRefs {"))
-             #t))
          (add-after 'patch-source-shebangs 'patch-cargo-checksums
            (lambda _
              (let ((null-hash
@@ -487,8 +498,7 @@ in C/C++.")
                (chdir "run-configure-from-here")
                (setenv "SHELL" (which "sh"))
                (setenv "CONFIG_SHELL" (which "sh"))
-               (setenv "AUTOCONF" (string-append (assoc-ref inputs "autoconf")
-                                                 "/bin/autoconf"))
+               (setenv "AUTOCONF" (which "autoconf"))
                (apply invoke "../js/src/configure"
                       (cons (string-append "--prefix=" out)
                             configure-flags))
@@ -564,9 +574,7 @@ in C/C++.")
        ("rust" ,rust)
        ("cargo" ,rust "cargo")))
     (inputs
-     `(("icu4c" ,icu4c-68)
-       ("readline" ,readline)
-       ("zlib" ,zlib)))))
+     (list icu4c readline zlib))))
 
 (define mozilla-compare-locales
   (origin
@@ -697,8 +705,8 @@ in C/C++.")
 ;; XXXX: Workaround 'snippet' limitations.
 (define computed-origin-method (@@ (guix packages) computed-origin-method))
 
-(define %icecat-version "91.3.0-guix0-preview1")
-(define %icecat-build-id "20211102000000") ;must be of the form YYYYMMDDhhmmss
+(define %icecat-version "91.4.0-guix0-preview1")
+(define %icecat-build-id "20211207000000") ;must be of the form YYYYMMDDhhmmss
 
 ;; 'icecat-source' is a "computed" origin that generates an IceCat tarball
 ;; from the corresponding upstream Firefox ESR tarball, using the 'makeicecat'
@@ -720,11 +728,11 @@ in C/C++.")
                   "firefox-" upstream-firefox-version ".source.tar.xz"))
             (sha256
              (base32
-              "0v79c435vfbhsx7pqyq4jm5rv8iysig69wwqhvys1n0jy54m72qj"))))
+              "09xkzk27krzyj1qx8cjjn2zpnws1cncka75828kk7ychnjfq48p7"))))
 
-         (upstream-icecat-base-version "91.3.0") ; maybe older than base-version
+         (upstream-icecat-base-version "91.4.0") ; maybe older than base-version
          ;;(gnuzilla-commit (string-append "v" upstream-icecat-base-version))
-         (gnuzilla-commit "32631cac00953abbac61dc7ab1a0eafbdd59b53a")
+         (gnuzilla-commit "dd79d69e5dc6e6e751195001f322b30746be6903")
          (gnuzilla-source
           (origin
             (method git-fetch)
@@ -736,7 +744,7 @@ in C/C++.")
                                       (string-take gnuzilla-commit 8)))
             (sha256
              (base32
-              "13ckga49h5azf0c6q3c6b6wcmahzyywryxgwmwr1dahsjgy0wwrw"))))
+              "1vv97wmgdmkwddh8n30dak5l8akzbw49ca0w6krhq9dnj7n74cxh"))))
 
          ;; 'search-patch' returns either a valid file name or #f, so wrap it
          ;; in 'assume-valid-file-name' to avoid 'local-file' warnings.
@@ -750,7 +758,6 @@ in C/C++.")
     (origin
       (method computed-origin-method)
       (file-name (string-append "icecat-" %icecat-version ".tar.xz"))
-      (patches (search-patches "icecat-CVE-2021-43527.patch"))
       (sha256 #f)
       (uri
        (delay
@@ -866,6 +873,7 @@ in C/C++.")
 
                 (format #t "Packing IceCat source tarball...~%")
                 (force-output)
+                (setenv "XZ_DEFAULTS" (string-join (%xz-parallel-args)))
                 (invoke "tar" "cfa" #$output
                         ;; Avoid non-determinism in the archive.  We set the
                         ;; mtime of files in the archive to early 1980 because
@@ -876,9 +884,7 @@ in C/C++.")
                         "--owner=root:0"
                         "--group=root:0"
                         "--sort=name"
-                        icecat-dir)
-
-                #t))))))))
+                        icecat-dir)))))))))
 
 (define-public icecat
   (package
@@ -917,7 +923,7 @@ in C/C++.")
        ("libffi" ,libffi)
        ("ffmpeg" ,ffmpeg)
        ("libvpx" ,libvpx)
-       ("icu4c" ,icu4c-69)
+       ("icu4c" ,icu4c)
        ("pixman" ,pixman)
        ("pulseaudio" ,pulseaudio)
        ("mesa" ,mesa)
@@ -950,8 +956,8 @@ in C/C++.")
 
        ("patch" ,(canonical-package patch))
 
-       ("rust" ,rust-1.51)
-       ("cargo" ,rust-1.51 "cargo")
+       ("rust" ,rust)
+       ("cargo" ,rust "cargo")
        ("rust-cbindgen" ,rust-cbindgen-0.19)
        ("llvm" ,llvm-11)
        ("clang" ,clang-11)
@@ -973,7 +979,7 @@ in C/C++.")
 
        #:configure-flags `("--enable-application=browser"
                            "--with-distribution-id=org.gnu"
-
+                           "--enable-geckodriver"
                            ;; Do not require addons in the global app or
                            ;; system directories to be signed by Mozilla.
                            "--with-unsigned-addon-scopes=app,system"
@@ -1065,8 +1071,7 @@ in C/C++.")
                               (format #t "applying '~a'...~%" file)
                               (invoke patch "--force" "--no-backup-if-mismatch"
                                       "-p1" "--input" file))))
-                         (or native-inputs inputs)))
-             #t))
+                         (or native-inputs inputs)))))
          (add-after 'apply-guix-specific-patches 'remove-bundled-libraries
            (lambda _
              ;; Remove bundled libraries that we don't use, since they may
@@ -1115,8 +1120,7 @@ in C/C++.")
                          ;; UNBUNDLE-ME! "gfx/graphite2"
                          "js/src/ctypes/libffi"
                          ;; UNBUNDLE-ME! "db/sqlite3"
-                         ))
-             #t))
+                         ))))
          (add-after 'remove-bundled-libraries 'fix-ffmpeg-runtime-linker
            (lambda* (#:key inputs #:allow-other-keys)
              (let* ((ffmpeg (assoc-ref inputs "ffmpeg"))
@@ -1124,8 +1128,7 @@ in C/C++.")
                ;; Arrange to load libavcodec.so by its absolute file name.
                (substitute* "dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp"
                  (("libavcodec\\.so")
-                  libavcodec))
-               #t)))
+                  libavcodec)))))
          (add-after 'fix-ffmpeg-runtime-linker 'build-sandbox-whitelist
            (lambda* (#:key inputs #:allow-other-keys)
              (define (runpath-of lib)
@@ -1155,8 +1158,7 @@ in C/C++.")
                        whitelist-string)
                (format port "~%pref(\"security.sandbox.content.read_path_whitelist\", ~S);~%"
                        whitelist-string)
-               (close-output-port port))
-             #t))
+               (close-output-port port))))
          (add-after 'patch-source-shebangs 'patch-cargo-checksums
            (lambda _
              (use-modules (guix build cargo-utils))
@@ -1185,8 +1187,7 @@ in C/C++.")
                            "intl"
                            "servo"
                            "security/manager/ssl"
-                           "build")))
-             #t))
+                           "build")))))
          (delete 'bootstrap)
          (replace 'configure
            ;; configure does not work followed by both "SHELL=..." and
@@ -1246,10 +1247,15 @@ in C/C++.")
                  (("[0-9a-df-np-sv-z]{32}" hash)
                   (string-append (string-take hash 8)
                                  "<!-- Guix: not a runtime dependency -->"
-                                 (string-drop hash 8)))))
-             #t))
+                                 (string-drop hash 8)))))))
          (replace 'install
-           (lambda _ (invoke "./mach" "install")))
+           (lambda* (#:key outputs #:allow-other-keys)
+             (invoke "./mach" "install")
+             ;; The geckodriver binary is not installed by the above, for some
+             ;; reason.  Use 'find-files' to avoid having to deal with the
+             ;; system/architecture-specific file name.
+             (install-file (first (find-files "." "geckodriver"))
+                           (string-append (assoc-ref outputs "out") "/bin"))))
          (add-after 'install 'wrap-program
            (lambda* (#:key inputs outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
@@ -1274,8 +1280,7 @@ in C/C++.")
                  ;; package on guix has been observed to be unstable when
                  ;; using wayland, and the bundled extensions stop working.
                  ;;   `("MOZ_ENABLE_WAYLAND" = ("1"))
-                 `("LD_LIBRARY_PATH" prefix ,ld-libs))
-               #t)))
+                 `("LD_LIBRARY_PATH" prefix ,ld-libs)))))
          (add-after 'wrap-program 'install-desktop-entry
            (lambda* (#:key outputs #:allow-other-keys)
              ;; Install the '.desktop' file.
@@ -1288,8 +1293,7 @@ in C/C++.")
                  (("Icon=.*")          "Icon=icecat\n")
                  (("NewWindow")        "new-window")
                  (("NewPrivateWindow") "new-private-window"))
-               (install-file desktop-file applications)
-               #t)))
+               (install-file desktop-file applications))))
          (add-after 'install-desktop-entry 'install-icons
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((out (assoc-ref outputs "out")))
@@ -1303,14 +1307,15 @@ in C/C++.")
                       (copy-file file (string-append icons "/icecat.png"))))
                   '("default16.png" "default22.png" "default24.png"
                     "default32.png" "default48.png" "content/icon64.png"
-                    "mozicon128.png" "default256.png"))
-                 #t)))))))
+                    "mozicon128.png" "default256.png")))))))))
     (home-page "https://www.gnu.org/software/gnuzilla/")
     (synopsis "Entirely free browser derived from Mozilla Firefox")
     (description
      "IceCat is the GNU version of the Firefox browser.  It is entirely free
 software, which does not recommend non-free plugins and addons.  It also
-features built-in privacy-protecting features.
+features built-in privacy-protecting features.  This package also includes the
+@command{geckodriver} command, which can be useful for automated web
+testing.
 
 WARNING: IceCat 91 has not yet been released by the upstream IceCat project.
 This is a preview release, and does not currently meet the privacy-respecting
@@ -1322,11 +1327,11 @@ standards of the IceCat project.")
        (cpe-version . ,(first (string-split version #\-)))))))
 
 ;; Update this together with icecat!
-(define %icedove-build-id "20211119000000") ;must be of the form YYYYMMDDhhmmss
+(define %icedove-build-id "20211207000000") ;must be of the form YYYYMMDDhhmmss
 (define-public icedove
   (package
     (name "icedove")
-    (version "91.3.2")
+    (version "91.4.0")
     (source icecat-source)
     (properties
      `((cpe-name . "thunderbird_esr")))
@@ -1471,8 +1476,7 @@ standards of the IceCat project.")
                (setenv "MOZ_NOSPAM" "1")
                (setenv "MACH_USE_SYSTEM_PYTHON" "1")
                (setenv "PYTHON"
-                       (string-append (assoc-ref inputs "python2")
-                                      "/bin/python"))
+                       (search-input-file inputs "/bin/python"))
                (setenv "MOZ_BUILD_DATE" ,%icedove-build-id) ; avoid timestamp
                (setenv "MOZ_APP_NAME" "icedove")
                (setenv "LDFLAGS" (string-append "-Wl,-rpath="
@@ -1575,7 +1579,7 @@ standards of the IceCat project.")
        ("gtk+" ,gtk+)
        ("gtk+-2" ,gtk+-2)
        ("hunspell" ,hunspell)
-       ("icu4c" ,icu4c-69)
+       ("icu4c" ,icu4c)
        ("libcanberra" ,libcanberra)
        ("libevent" ,libevent)
        ("libffi" ,libffi)
@@ -1608,7 +1612,7 @@ standards of the IceCat project.")
         ;; in the Thunderbird release tarball.  We don't use the release
         ;; tarball because it duplicates the Icecat sources and only adds the
         ;; "comm" directory, which is provided by this repository.
-        ,(let ((changeset "c35def313c0c2bd0341e3e058f862f02390269c4"))
+        ,(let ((changeset "ab6dfcf3a37bf53aac1a9d632d45ee51047050bb"))
            (origin
              (method hg-fetch)
              (uri (hg-reference
@@ -1617,8 +1621,8 @@ standards of the IceCat project.")
              (file-name (string-append "thunderbird-" version "-checkout"))
              (sha256
               (base32
-               "0rp4i353dskx065a6hskvfpf0l2qywqnivks9qc6a85h4yah4rvq")))))
-       ("cargo" ,rust-1.51 "cargo")
+               "00zj1k3c8p66ylf9n7xp42y6kiv3h6hf8ba7bk6f8wj3hh0r2hrd")))))
+       ("cargo" ,rust "cargo")
        ("clang" ,clang)
        ("llvm" ,llvm)
        ("m4" ,m4)
@@ -1628,7 +1632,7 @@ standards of the IceCat project.")
        ("pkg-config" ,pkg-config)
        ("python" ,python)
        ("python2" ,python-2.7)
-       ("rust" ,rust-1.51)
+       ("rust" ,rust)
        ("rust-cbindgen" ,rust-cbindgen-0.19)
        ("which" ,which)
        ("yasm" ,yasm)))
@@ -1690,8 +1694,7 @@ Thunderbird.  It supports email, news feeds, chat, calendar and contacts.")
                 "17yyyxp47z4m8hnflcq34rc1y871515kr3f1y42j1l0yx3g0il07"))))
     (build-system trivial-build-system)
     (inputs
-     `(("nss" ,nss)
-       ("python" ,python)))
+     (list nss python))
     (arguments
      `(#:modules ((guix build utils))
        #:builder
@@ -1730,8 +1733,8 @@ Mozilla (Firefox, Waterfox, Thunderbird, SeaMonkey) profiles.")
        (sha256
         (base32 "1xxn8yzr6j8j6prmbj6mxspdczigarfiv3vlm9k70yxmky65ijh3"))))
     (build-system gnu-build-system)
-    (native-inputs `(("pkg-config" ,pkg-config)))
-    (inputs `(("lz4" ,lz4)))
+    (native-inputs (list pkg-config))
+    (inputs (list lz4))
     (arguments
      `(#:tests? #f                              ; no check target
        #:phases

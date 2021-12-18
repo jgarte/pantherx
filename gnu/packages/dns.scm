@@ -127,10 +127,7 @@
                       ":"))))
                #t)))))
       (inputs
-       `(("bash-minimal" ,bash-minimal)
-         ("curl" ,curl)
-         ("grep" ,grep)
-         ("json.sh" ,json.sh)))
+       (list bash-minimal curl grep json.sh))
       (synopsis
         "CLI to edit Cloudflare DNS records")
       (description
@@ -213,9 +210,7 @@ protocol.")
        ("python" ,python-wrapper)
        ("swig" ,swig)))
     (inputs
-     `(("libpcap" ,libpcap)
-       ("nss-certs" ,nss-certs)
-       ("openssl" ,openssl)))
+     (list libpcap nss-certs openssl))
     (synopsis "DNS library that facilitates DNS tool programming")
     (description "LDNS aims to simplify DNS programming, it supports recent
 RFCs like the DNSSEC documents, and allows developers to easily create
@@ -342,9 +337,9 @@ prompt the user with the option to go with insecure DNS only.")
                 "027b0ycw8h8yvvkq46vnr7dv8iqn5srm4kr7hm7sq110kvy2rm98"))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("pkg-config" ,pkg-config)))
+     (list pkg-config))
     (inputs
-     `(("dbus" ,dbus)))
+     (list dbus))
     (arguments
      `(#:phases
        (modify-phases %standard-phases (delete 'configure))
@@ -373,29 +368,30 @@ and BOOTP/TFTP for network booting of diskless machines.")
     ;; When updating, check whether isc-dhcp's bundled copy should be as well.
     ;; The BIND release notes are available here:
     ;; https://www.isc.org/bind/
-    (version "9.16.16")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append
-                    "https://ftp.isc.org/isc/bind9/" version
-                    "/bind-" version ".tar.xz"))
-              (sha256
-               (base32
-                "0yqxfq7qc26x7qhk0nkp8h7x9jggzaafm712bvfffy7qml13k4bc"))))
+    (version "9.16.24")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "https://ftp.isc.org/isc/bind9/" version
+             "/bind-" version ".tar.xz"))
+       (sha256
+        (base32 "01w5n1injvq6azhplyd4vqczila6i9mj051zz62248yn9drz70jm"))
+       (patches
+        (search-patches "bind-re-add-attr-constructor-priority.patch"))))
     (build-system gnu-build-system)
     (outputs `("out" "utils"))
     (inputs
      ;; It would be nice to add GeoIP and gssapi once there are packages.
-     `(("libcap" ,libcap)
-       ("libuv" ,libuv)
-       ("libxml2" ,libxml2)
-       ("openssl" ,openssl)
-       ("p11-kit" ,p11-kit)
-       ("python" ,python)
-       ("python-ply" ,python-ply)))
+     (list libcap
+           libuv
+           libxml2
+           openssl
+           p11-kit
+           python
+           python-ply))
     (native-inputs
-     `(("perl" ,perl)
-       ("pkg-config" ,pkg-config)))
+     (list perl pkg-config))
     (arguments
      `(#:configure-flags
        (list (string-append "--with-pkcs11="
@@ -488,13 +484,9 @@ Dynamic DNS update utility
              ;; The system version is still favored and referenced.
              (invoke "autoreconf" "-vif"))))))
     (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("automake" ,automake)
-       ("autoconf" ,autoconf)
-       ("libtool" ,libtool)))
+     (list pkg-config automake autoconf libtool))
     (inputs
-     `(("libltdl" ,libltdl)
-       ("libsodium" ,libsodium)))
+     (list libltdl libsodium))
     (home-page "https://www.dnscrypt.org/")
     (synopsis "Securely send DNS requests to a remote server")
     (description
@@ -533,10 +525,9 @@ servers is included, and an up-to-date version is available at
            (lambda _
              (invoke "make" "configure"))))))
     (native-inputs
-     `(("autoconf" ,autoconf)))
+     (list autoconf))
     (inputs
-     `(("libevent" ,libevent)
-       ("libsodium" ,libsodium)))
+     (list libevent libsodium))
     (home-page "https://github.com/Cofyc/dnscrypt-wrapper")
     (synopsis "Server-side dnscrypt proxy")
     (description
@@ -573,10 +564,7 @@ the two.")
                              (string-append out "/share/man/man3"))
                #t))))))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("libtool" ,libtool)
-       ("pkg-config" ,pkg-config)))
+     (list autoconf automake libtool pkg-config))
     (home-page "https://www.opensmtpd.org")
     (synopsis "Asynchronous resolver library by the OpenBSD project")
     (description
@@ -592,14 +580,14 @@ asynchronous fashion.")
 (define-public nsd
   (package
     (name "nsd")
-    (version "4.3.8")
+    (version "4.3.9")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.nlnetlabs.nl/downloads/nsd/nsd-"
                            version ".tar.gz"))
        (sha256
-        (base32 "1qcrrglm3r486r6n26h5fr1xb1k8jf63gm9b43wrhnigywjpx28i"))))
+        (base32 "13ay2gr7ln8gl09wdqnxkrdxi51jaqsbn54yh82vvv49jbq4j5ak"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -638,8 +626,7 @@ asynchronous fashion.")
                   (string-append doc "/examples/" file-name)))))))
        #:tests? #f))                    ; no tests
     (inputs
-     `(("libevent" ,libevent)
-       ("openssl" ,openssl)))
+     (list libevent openssl))
     (home-page "https://www.nlnetlabs.nl/projects/nsd/about/")
     (synopsis "Authoritative DNS name server")
     (description "@dfn{NSD}, short for Name Server Daemon, is an authoritative
@@ -690,7 +677,7 @@ to result in system-wide compromise.")
                (install-file "rbldnsd" sbin)
                (install-file "rbldnsd.8" man8)))))))
     (inputs
-     `(("zlib" ,zlib)))
+     (list zlib))
     (native-inputs
      ;; For running the test suite.  Python 3 is not yet supported by a release:
      ;; see <https://github.com/spamhaus/rbldnsd/issues/16>.
@@ -726,15 +713,14 @@ BIND and djbdns---whilst using relatively little memory.")
     (build-system gnu-build-system)
     (outputs '("out" "python"))
     (native-inputs
-     `(("flex" ,flex)
-       ("swig" ,swig)))
+     (list flex swig))
     (inputs
-     `(("expat" ,expat)
-       ("libevent" ,libevent)
-       ("nghttp2" ,nghttp2 "lib")
-       ("protobuf" ,protobuf)
-       ("python-wrapper" ,python-wrapper)
-       ("openssl" ,openssl)))
+     (list expat
+           libevent
+           `(,nghttp2 "lib")
+           protobuf
+           python-wrapper
+           openssl))
     (arguments
      `(#:configure-flags
        (list "--disable-static" ; save space and non-determinism in libunbound.a
@@ -887,9 +873,9 @@ served by AS112.  Stub and forward zones are supported.")
           (base32 "1mwy6sfnlaslx26f3kpj9alh8i8y8bf1nbnsdd5j04hjsbavd07p")))))
     (build-system gnu-build-system)
     (native-inputs
-     `(("which" ,which)))
+     (list which))
     (inputs
-     `(("openssl" ,openssl)))
+     (list openssl))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -1016,13 +1002,13 @@ Extensions} (DNSSEC).")
                (rename-file (string-append out   "/share/man/man1")
                             (string-append tools "/share/man/man1"))))))))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("libtool" ,libtool)
-       ("pkg-config" ,pkg-config)
-       ("python-sphinx" ,python-sphinx)
-       ("ragel" ,ragel)
-       ("texinfo" ,texinfo)))
+     (list autoconf
+           automake
+           libtool
+           pkg-config
+           python-sphinx
+           ragel
+           texinfo))
     (inputs
      `(("fstrm" ,fstrm)
        ("gnutls" ,gnutls)
@@ -1059,14 +1045,14 @@ synthesis, and on-the-fly re-configuration.")
 (define-public knot-resolver
   (package
     (name "knot-resolver")
-    (version "5.4.2")
+    (version "5.4.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://secure.nic.cz/files/knot-resolver/"
                                   "knot-resolver-" version ".tar.xz"))
               (sha256
                (base32
-                "12x5cd09rv530pak5f2smxcfq2zdqg0g5qxsd5k0alm7f6aj2spa"))))
+                "01m5s2kllr0apkg0bcfagzvijyfbivby03d1pjv3c0qrjgmjk1s8"))))
     (build-system meson-build-system)
     (outputs '("out" "doc"))
     (arguments
@@ -1078,8 +1064,7 @@ synthesis, and on-the-fly re-configuration.")
              ;;  Disable the default managed root TA, since we don't have
              ;;  write access to the keyfile and its directory in store.
              (substitute* "daemon/lua/sandbox.lua.in"
-               (("^trust_anchors\\.add_file.*") ""))
-             #t))
+               (("^trust_anchors\\.add_file.*") ""))))
          (add-after 'build 'build-doc
            (lambda _
              (invoke "ninja" "doc")))
@@ -1110,17 +1095,16 @@ synthesis, and on-the-fly re-configuration.")
                                  (string-append p "/lib/lua/5.1/?.so"))))
                (wrap-program (string-append out "/sbin/kresd")
                  `("LUA_PATH" ";" prefix ,(map lua-path lua-*))
-                 `("LUA_CPATH" ";" prefix ,(map lua-cpath lua-*)))
-               #t))))))
+                 `("LUA_CPATH" ";" prefix ,(map lua-cpath lua-*)))))))))
     (native-inputs
-     `(("cmocka" ,cmocka)               ; for unit tests
-       ("doxygen" ,doxygen)
-       ("protobuf-c" ,protobuf-c)
-       ("pkg-config" ,pkg-config)
-       ("python-breathe" ,python-breathe)
-       ("python-sphinx" ,python-sphinx)
-       ("python-sphinx-rtd-theme" ,python-sphinx-rtd-theme)
-       ("texinfo" ,texinfo)))
+     (list cmocka ; for unit tests
+           doxygen
+           protobuf-c
+           pkg-config
+           python-breathe
+           python-sphinx
+           python-sphinx-rtd-theme
+           texinfo))
     (inputs
      `(("fstrm" ,fstrm)
        ("gnutls" ,gnutls)
@@ -1157,14 +1141,13 @@ LuaJIT, both a resolver library and a daemon.")
         (base32 "0hf377g4j9r9sac75xp17nk2h58mazswz4vkg4g2gl2yyhvzq91w"))))
     (build-system trivial-build-system) ; no Makefile.PL
     (native-inputs
-     `(("bash" ,bash)
-       ("perl" ,perl)))
+     (list bash perl))
     (inputs
-     `(("inetutils" ,inetutils)         ; logger
-       ("net-tools" ,net-tools)
-       ("perl-data-validate-ip" ,perl-data-validate-ip)
-       ("perl-digest-sha1" ,perl-digest-sha1)
-       ("perl-io-socket-ssl" ,perl-io-socket-ssl)))
+     (list inetutils ; logger
+           net-tools
+           perl-data-validate-ip
+           perl-digest-sha1
+           perl-io-socket-ssl))
     (arguments
      `(#:modules ((guix build utils))
        #:builder
@@ -1262,12 +1245,9 @@ attempts the update when it has changed.")
      (arguments
       '(#:configure-flags '("--disable-static"))) ;no need for libhsk.a
      (native-inputs
-      `(("autoconf" ,autoconf)
-        ("automake" ,automake)
-        ("libtool" ,libtool)))
+      (list autoconf automake libtool))
      (inputs
-      `(("unbound" ,unbound)
-        ("libuv" ,libuv)))
+      (list unbound libuv))
      (home-page "https://www.handshake.org/")
      (synopsis "Resolver daemon for the Handshake naming protocol")
      (description
@@ -1415,7 +1395,21 @@ and TCP-capable recursive DNS server for finding domains on the internet.")
        #:configure-flags
        (list (string-append "--sysconfdir=/etc"))
        #:make-flags
-       (list (string-append "SYSCONFDIR=/" (assoc-ref %outputs "out") "/etc"))))
+       (list (string-append "SYSCONFDIR=/" (assoc-ref %outputs "out") "/etc"))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'install 'wrap-program
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out"))
+                   (coreutils (assoc-ref inputs "coreutils-minimal")))
+               (substitute* (string-append out "/sbin/resolvconf")
+                 (("RESOLVCONF=\"\\$0\"")
+                  (format #f "\
+RESOLVCONF=\"$0\"
+PATH=~a/bin:$PATH"
+                          coreutils)))))))))
+    (inputs
+     (list coreutils-minimal))
     (home-page "https://roy.marples.name/projects/openresolv/")
     (synopsis "Resolvconf POSIX compliant implementation, a middleman for resolv.conf")
     (description "openresolv is an implementation of @command{resolvconf}, the
