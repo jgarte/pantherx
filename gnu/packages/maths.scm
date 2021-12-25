@@ -79,6 +79,7 @@
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
+  #:use-module (guix build-system meson)
   #:use-module (guix build-system ocaml)
   #:use-module (guix build-system python)
   #:use-module (guix build-system ruby)
@@ -4859,7 +4860,7 @@ Failure to do so will result in a library with poor performance.")
 (define-public cglm
   (package
     (name "cglm")
-    (version "0.8.2")
+    (version "0.8.4")
     (source
      (origin
        (method git-fetch)
@@ -4868,11 +4869,10 @@ Failure to do so will result in a library with poor performance.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1lcfl9ph4bnl3hckpx4hzwh8r4llnw94ik75igc5qy38wk468gmk"))))
-    (build-system cmake-build-system)
+        (base32 "0zgckh56vcdar3a4n51r84wrizyd2ssqal4nsvxd4qdjm0rvb4h0"))))
+    (build-system meson-build-system)
     (arguments
-     `(#:configure-flags
-       (list "-DCGLM_USE_TEST=ON")))
+     `(#:configure-flags '("-Dbuild_tests=true")))
     (home-page "https://github.com/recp/cglm")
     (synopsis "Mathematics C library for graphics programming")
     (description
@@ -7195,14 +7195,14 @@ of C, Java, or Ada programs.")
 (define-public frama-c
   (package
     (name "frama-c")
-    (version "23.1")
+    (version "24.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://frama-c.com/download/frama-c-"
-                                  version "-Vanadium.tar.gz"))
+                                  version "-Chromium.tar.gz"))
               (sha256
                (base32
-                "1rgkq9sg436smw005ag0j6y3xryhjn18a07m5wjfrfp0s1438nnj"))))
+                "0x1xgip50jdz1phsb9rzwf2ra8lshn1hmd9g967xia402wrg3sjf"))))
     (build-system ocaml-build-system)
     (arguments
      `(#:tests? #f; no test target in Makefile

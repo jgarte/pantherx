@@ -2,7 +2,7 @@
 ;;; Copyright © 2013 Cyril Roelandt <tipecaml@gmail.com>
 ;;; Copyright © 2014 Kevin Lemonnier <lemonnierk@ulrar.net>
 ;;; Copyright © 2015, 2017 Ludovic Courtès <ludo@gnu.org>
-;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Nikita <nikita@n0.is>
 ;;; Copyright © 2017 Marius Bakke <mbakke@fastmail.com>
 ;;; Copyright © 2017–2021 Tobias Geerinckx-Rice <me@tobias.gr>
@@ -187,27 +187,30 @@ SILC and ICB protocols via plugins.")
 (define-public weechat
   (package
     (name "weechat")
-    (version "3.3")
+    (version "3.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://weechat.org/files/src/weechat-"
                                   version ".tar.xz"))
               (sha256
                (base32
-                "1pyb1yaw61cbdg1g4cc22px1wsh8wm0gsx1yzp684idyz25apzna"))))
+                "0k5rgdy0c4dnxvsqjzyrr5czz1lmfk1vrsqkkvj8v24y0b3xrlvw"))))
     (build-system cmake-build-system)
     (outputs '("out" "doc"))
     (native-inputs
-     `(("gettext" ,gettext-minimal)
+     `(("gettext-minimal" ,gettext-minimal)
        ("pkg-config" ,pkg-config)
-       ("ruby-asciidoctor" ,ruby-asciidoctor)
+       ,@(if (or (target-x86-64?)
+                 (target-x86-32?))
+           `(("ruby-asciidoctor" ,ruby-asciidoctor))
+           '())
        ;; For tests.
        ("cpputest" ,cpputest)))
     (inputs
      (list aspell
            curl
            gnutls
-           `(,libgcrypt "out")
+           libgcrypt
            ncurses
            zlib
            ;; Scripting language plug-ins.
@@ -220,24 +223,25 @@ SILC and ICB protocols via plugins.")
     (arguments
      `(#:configure-flags
        (list "-DENABLE_PHP=OFF"
-             "-DENABLE_MAN=ON"
-             "-DENABLE_DOC=ON"
+             ,@(if (or (target-x86-64?)
+                       (target-x86-32?))
+                 '("-DENABLE_MAN=ON"
+                   "-DENABLE_DOC=ON")
+                '())
              "-DENABLE_TESTS=ON")       ; ‘make test’ fails otherwise
        #:phases
        (modify-phases %standard-phases
-         (add-after 'install 'move-doc
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                   (doc (assoc-ref outputs "doc"))
-                   (from (string-append out "/share/doc/weechat"))
-                   (to (string-append doc "/share/doc/weechat")))
-               (mkdir-p (string-append doc "/share/doc"))
-               (rename-file from to)))))
-       ;; Tests hang indefinitely on non-Intel platforms.
-       #:tests? ,(if (any (cute string-prefix? <> (or (%current-target-system)
-                                                      (%current-system)))
-                          '("i686" "x86_64"))
-                   '#t '#f)))
+         ,@(if (or (target-x86-64?)
+                   (target-x86-32?))
+             '((add-after 'install 'move-doc
+                 (lambda* (#:key outputs #:allow-other-keys)
+                   (let* ((out (assoc-ref outputs "out"))
+                         (doc (assoc-ref outputs "doc"))
+                         (from (string-append out "/share/doc/weechat"))
+                         (to (string-append doc "/share/doc/weechat")))
+                     (mkdir-p (string-append doc "/share/doc"))
+                     (rename-file from to)))))
+             '()))))
     (synopsis "Extensible chat client")
     (description "WeeChat (Wee Enhanced Environment for Chat) is an
 @dfn{Internet Relay Chat} (IRC) client, which is designed to be light and fast.
@@ -246,7 +250,7 @@ Qt, Android, and Emacs.
 
 Everything in WeeChat can be done with the keyboard, though it also supports
 using a mouse.  It is customizable and extensible with plugins and scripts.")
-    (home-page "https://www.weechat.org/")
+    (home-page "https://weechat.org/")
     (license license:gpl3)))
 
 (define-public srain

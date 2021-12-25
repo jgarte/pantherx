@@ -1855,7 +1855,7 @@ either on a local, or remote machine via a number of methods.")
 (define-public gnome-commander
   (package
     (name "gnome-commander")
-    (version "1.12.2")
+    (version "1.12.3.1")
     (source
      (origin
        (method url-fetch)
@@ -1863,7 +1863,7 @@ either on a local, or remote machine via a number of methods.")
                            (version-major+minor version)  "/"
                            "gnome-commander-" version ".tar.xz"))
        (sha256
-        (base32 "0f7l2pkyh3r1qk4hhavl7387l3bq5my3snpdppiavcpnji28dpa5"))))
+        (base32 "0fhmfxh6kbchggvpbin7d4g4fq5vc49y0w48wdkyxln5dswidss2"))))
     (build-system glib-or-gtk-build-system)
     (native-inputs
      (list desktop-file-utils
@@ -9809,7 +9809,8 @@ fit the GNOME desktop.")
                 "1d8dhcfys788vv27v34i3s3x3jdvdi2kqn2a5p8c937a9hm0qr9f"))))
     (build-system meson-build-system)
     (arguments
-     '(#:glib-or-gtk? #t
+     `(#:glib-or-gtk? #t
+       #:meson ,meson-0.59
        #:phases
        (modify-phases %standard-phases
          (add-after 'unpack 'skip-gtk-update-icon-cache
@@ -9818,12 +9819,12 @@ fit the GNOME desktop.")
              (substitute* "build-aux/meson/post-install.py"
                (("gtk-update-icon-cache") "true")))))))
     (native-inputs
-     `(("glib:bin" ,glib "bin")
-       ("gobject-introspection" ,gobject-introspection)
-       ("intltool" ,intltool)
-       ("itstool" ,itstool)
-       ("pkg-config" ,pkg-config)
-       ("xmllint" ,libxml2)))
+     (list `(,glib "bin")
+           gobject-introspection
+           intltool
+           itstool
+           pkg-config
+           libxml2))
     (inputs
      (list gsettings-desktop-schemas gtk+))
     (home-page "https://wiki.gnome.org/Apps/Dictionary")
@@ -11171,7 +11172,7 @@ tabs, and it supports drag and drop re-ordering of terminals.")
 (define-public libhandy
   (package
     (name "libhandy")
-    (version "1.2.3")
+    (version "1.5.0")
     (source
      (origin
        (method git-fetch)
@@ -11180,7 +11181,7 @@ tabs, and it supports drag and drop re-ordering of terminals.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1ng2607cp4dfl169rj7zi8q5p6fzxy3a4l0glm7mj75yd1a603rz"))))
+        (base32 "19gl0xxybraw2iyn6cdi9w7nps825lb2bhav7d2x51wla0lq3kdc"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags
@@ -11570,7 +11571,7 @@ environment.")
              (let ((out (assoc-ref outputs "out")))
                (substitute* (string-append out "/share/applications/"
                                            "org.gnome.Polari.desktop")
-                 (("Exec=.*") (string-append "Exec=" out "/bin/polari"))))))
+                 (("Exec=.*") (string-append "Exec=" out "/bin/polari\n"))))))
          (add-after 'glib-or-gtk-wrap 'wrap-typelib
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((prog (string-append (assoc-ref outputs "out")
@@ -12102,7 +12103,7 @@ provided there is a DBus service present:
 (define-public parlatype
   (package
     (name "parlatype")
-    (version "3.0")
+    (version "3.1")
     (source
      (origin
        (method git-fetch)
@@ -12111,7 +12112,7 @@ provided there is a DBus service present:
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0mvzagkg9kq2ji6mffi37mdjxmlj3wa65d4lcayij9hsmjlklnzs"))))
+        (base32 "0cqrzbkyksfsm57riirmjkwf2nf2dgl1xpps1wvqxpij475qcb9b"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t
@@ -12134,12 +12135,12 @@ provided there is a DBus service present:
                (wrap-program (string-append out "/bin/parlatype")
                  `("GST_PLUGIN_SYSTEM_PATH" ":" = (,gst-plugin-path)))))))))
     (native-inputs
-     `(("appstream-glib" ,appstream-glib)
-       ("desktop-file-utils" ,desktop-file-utils) ;for desktop-file-validate
-       ("gettext" ,gettext-minimal)
-       ("glib" ,glib "bin")             ;for glib-compile-resources
-       ("pkg-config" ,pkg-config)
-       ("yelp-tools" ,yelp-tools)))
+     (list appstream-glib
+           desktop-file-utils           ;for desktop-file-validate
+           gettext-minimal
+           `(,glib "bin")               ;for glib-compile-resources
+           pkg-config
+           yelp-tools))
     (inputs
      (list gst-plugins-base
            gst-plugins-good
@@ -12346,7 +12347,7 @@ integrated profiler via Sysprof, debugging support, and more.")
 (define-public komikku
   (package
     (name "komikku")
-    (version "0.35.2")
+    (version "0.36.0")
     (source
      (origin
        (method git-fetch)
@@ -12356,7 +12357,7 @@ integrated profiler via Sysprof, debugging support, and more.")
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "11iq2mc8k7ny70vb0iqfjhj1hii0wvr4cv2p6b5rnjqdp6hc63n9"))))
+         "05gc51dphqladfv1dw680hzgvmiydggz885zhmhw501jm1f15ryj"))))
     (build-system meson-build-system)
     (arguments
      `(#:glib-or-gtk? #t

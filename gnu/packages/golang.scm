@@ -685,6 +685,29 @@ in the style of communicating sequential processes (@dfn{CSP}).")
                   (string-append net-base "/etc/services")))
                (substitute* "src/time/zoneinfo_unix.go"
                  (("/usr/share/zoneinfo/") tzdata-path)))))
+         ;; Keep this synchronized with the package inputs.
+         ,@(if (target-arm?)
+             '((add-after 'unpack 'patch-gcc:lib
+                 (lambda* (#:key inputs #:allow-other-keys)
+                   (let* ((gcclib (string-append (assoc-ref inputs "gcc:lib") "/lib")))
+                     ;; Add libgcc to runpath
+                     (substitute* "src/cmd/link/internal/ld/lib.go"
+                       (("!rpath.set") "true"))
+                     (substitute* "src/cmd/go/internal/work/gccgo.go"
+                       (("cgoldflags := \\[\\]string\\{\\}")
+                        (string-append "cgoldflags := []string{"
+                                       "\"-Wl,-rpath=" gcclib "\""
+                                       "}"))
+                       (("\"-lgcc_s\", ")
+                        (string-append
+                         "\"-Wl,-rpath=" gcclib "\", \"-lgcc_s\", ")))
+                     (substitute* "src/cmd/go/internal/work/gc.go"
+                       (("ldflags = setextld\\(ldflags, compiler\\)")
+                        (string-append
+                         "ldflags = setextld(ldflags, compiler)\n"
+                         "ldflags = append(ldflags, \"-r\")\n"
+                         "ldflags = append(ldflags, \"" gcclib "\")\n")))))))
+             '())
          (add-after 'patch-source 'disable-failing-tests
            (lambda _
              ;; Disable failing tests: these tests attempt to access
@@ -796,15 +819,47 @@ in the style of communicating sequential processes (@dfn{CSP}).")
                   (install-file file (string-append out "/share/doc/go")))
                 '("AUTHORS" "CONTRIBUTORS" "CONTRIBUTING.md" "PATENTS"
                   "README.md" "SECURITY.md"))))))))
-    (inputs (alist-delete "gcc:lib" (package-inputs go-1.16)))
+    (inputs (if (not (target-arm?))
+              (alist-delete "gcc:lib" (package-inputs go-1.16))
+              (package-inputs go-1.16)))
     (native-inputs
-     `(,@(if (not (member (%current-system) (package-supported-systems go-1.4)))
-           ;; gccgo-10.4, 11.3 and lower has a bug which causes bootstrapping
-           ;; to fail. Use go-1.16 until we have a newer version available.
-           (alist-replace "go" (list go-1.16) (package-native-inputs go-1.16))
-           (package-native-inputs go-1.16))))))
+     (if (not (member (%current-system) (package-supported-systems go-1.4)))
+       ;; gccgo-10.4, 11.3 and lower has a bug which causes bootstrapping
+       ;; to fail. Use go-1.16 until we have a newer version available.
+       (alist-replace "go" (list go-1.16) (package-native-inputs go-1.16))
+       (package-native-inputs go-1.16)))))
 
-(define-public go go-1.14)
+(define-public go go-1.17)
+
+(define-public (make-go-std go)
+  "Return a package which builds the standard library for Go compiler GO."
+  (package
+    (name (string-append (package-name go) "-std"))
+    (version (package-version go))
+    (source #f)
+    (build-system go-build-system)
+    (arguments
+     `(#:import-path "std"
+       #:build-flags `("-pkgdir" "pkg") ; "Install" to build directory.
+       #:allow-go-reference? #t
+       #:substitutable? #f ; Faster to build than download.
+       #:tests? #f ; Already tested in the main Go build.
+       #:go ,go
+       #:phases
+       (modify-phases %standard-phases
+         (delete 'unpack)
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (out-cache (string-append out "/var/cache/go/build")))
+               (copy-recursively (getenv "GOCACHE") out-cache)
+               (delete-file (string-append out-cache "/trim.txt"))
+               (delete-file (string-append out-cache "/README")))))
+         (delete 'install-license-files))))
+    (home-page (package-home-page go))
+    (synopsis "Cached standard library build for Go")
+    (description (package-description go))
+    (license (package-license go))))
 
 (define-public go-0xacab-org-leap-shapeshifter
   (let ((commit "0aa6226582efb8e563540ec1d3c5cfcd19200474")
@@ -8662,50 +8717,6 @@ zero round-trip encryption, and other advanced features.")
 @url{https://github.com/Cyan4973/xxHash, xxHash} algorithm, an extremely fast
 non-cryptographic hash algorithm, working at speeds close to RAM limits.")
     (license license:asl2.0)))
-
-(define-public go-github-com-aswinkarthik-csvdiff
-  (package
-    (name "go-github-com-aswinkarthik-csvdiff")
-    (version "1.4.0")
-    (source
-      (origin
-        (method git-fetch)
-        (uri (git-reference
-               (url "https://github.com/aswinkarthik/csvdiff")
-               (commit (string-append "v" version))))
-        (file-name (git-file-name name version))
-        (sha256
-         (base32
-          "0cd1ikxsypjqisfnmr7zix3g7x8p892w77086465chyd39gpk97b"))))
-    (build-system go-build-system)
-    (arguments
-     '(#:import-path "github.com/aswinkarthik/csvdiff"))
-    (propagated-inputs
-     (list go-golang-org-x-sys
-           go-github-com-stretchr-testify
-           go-github-com-spf13-cobra
-           go-github-com-spf13-afero
-           go-github-com-spaolacci-murmur3
-           go-github-com-mattn-go-colorable
-           go-github-com-fatih-color
-           go-github-com-cespare-xxhash
-           go-github-com-oneofone-xxhash))
-    (home-page "https://github.com/aswinkarthik/csvdiff")
-    (synopsis "Fast diff tool for comparing CSV files")
-    (description "@code{csvdiff} is a diff tool to compute changes between two
-CSV files.  It can compare CSV files with a million records in under 2
-seconds.  It is specifically suited for comparing CSV files dumped from
-database tables.  GNU Diff is orders of magnitude faster for comparing line by
-line.  @code{csvdiff} supports
-
-@itemize
-@item Selective comparison of fields in a row
-@item Specifying group of columns as primary-key to uniquely identify a row
-@item Ignoring columns
-@item Several output formats including colored git style output or
-JSON for post-processing
-@end itemize")
-    (license license:expat)))
 
 (define-public go-gopkg-in-djherbis-times-v1
   (package

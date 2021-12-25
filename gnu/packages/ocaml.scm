@@ -882,19 +882,17 @@ Git-friendly development workflow.")
 (define-public camlp5
   (package
     (name "camlp5")
-    (version "7.13")
+    (version "8.00.02")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://github.com/camlp5/camlp5")
-             (commit (string-append "rel" (string-delete #\. version)))))
+             (commit (string-append "rel" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1d9spy3f5ahixm8nxxk086kpslzva669a5scn49am0s7vx4i71kp"))))
+        (base32 "03qm99h2380x0y69sppg10yz1mwx7smkscia7pa175wmilifx8vy"))))
     (build-system gnu-build-system)
-    (inputs
-     (list ocaml))
     (arguments
      `(#:tests? #f  ; XXX TODO figure out how to run the tests
        #:phases
@@ -924,6 +922,10 @@ Git-friendly development workflow.")
              (install-file "etc/META" (string-append (assoc-ref outputs "out")
                                                      "/lib/ocaml/camlp5/"))
              #t)))))
+    (inputs
+     (list ocaml))
+    (native-inputs
+     (list perl))
     (home-page "https://camlp5.github.io/")
     (synopsis "Pre-processor Pretty Printer for OCaml")
     (description
@@ -1251,14 +1253,14 @@ to the other.")
 (define-public ocaml-findlib
   (package
     (name "ocaml-findlib")
-    (version "1.8.1")
+    (version "1.9.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://download.camlcity.org/download/"
                                   "findlib" "-" version ".tar.gz"))
               (sha256
                (base32
-                "00s3sfb02pnjmkax25pcnljcnhcggiliccfz69a72ic7gsjwz1cf"))))
+                "1qhgk25avmz4l4g47g8jvk0k1g9p9d5hbdrwpz2693a8ajyvhhib"))))
     (build-system gnu-build-system)
     (native-inputs
      (list m4 ocaml))
@@ -2549,14 +2551,14 @@ message report is decoupled from logging and is handled by a reporter.")
 (define-public ocaml-fpath
   (package
     (name "ocaml-fpath")
-    (version "0.7.2")
+    (version "0.7.3")
     (source (origin
               (method url-fetch)
               (uri (string-append "http://erratique.ch/software/fpath/releases/"
                                   "fpath-" version ".tbz"))
               (sha256
                 (base32
-                  "1hr05d8bpqmqcfdavn4rjk9rxr7v2zl84866f5knjifrm60sxqic"))))
+                  "03z7mj0sqdz465rc4drj1gr88l9q3nfs374yssvdjdyhjbqqzc0j"))))
     (build-system ocaml-build-system)
     (arguments
      `(#:tests? #f
@@ -3146,7 +3148,7 @@ is used to determine whether the results truly differ.")
 (define-public ocaml-batteries
   (package
     (name "ocaml-batteries")
-    (version "3.3.0")
+    (version "3.4.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3155,7 +3157,7 @@ is used to determine whether the results truly differ.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1h03nkc3vajaijqhj1dy5hw85j2hwwxdkg8rvs2fc00qaf44ad1d"))))
+                "1cd7475n1mxhq482aidmhh27mq5p2vmb8d9fkb1mlza9pz5z66yq"))))
     (build-system ocaml-build-system)
     (propagated-inputs (list ocaml-num))
     (native-inputs
@@ -6739,7 +6741,7 @@ then run the Bisect_ppx report tool on the generated visitation files.")
 (define-public ocaml-odoc
   (package
     (name "ocaml-odoc")
-    (version "2.0.0")
+    (version "2.0.2")
     (source
      (origin
        (method git-fetch)
@@ -6748,7 +6750,7 @@ then run the Bisect_ppx report tool on the generated visitation files.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0lkmanfn8pc0rgcn9cc4mv48i29q2w1nl01n21qqxpyyfavgc98s"))))
+        (base32 "06rm1bhfp2yvkvidksndwii9v074r0lc9sqfp60q8mfcfd7pj7rx"))))
     (build-system dune-build-system)
     (arguments
      `(#:phases

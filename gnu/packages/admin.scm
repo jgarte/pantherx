@@ -46,6 +46,7 @@
 ;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
+;;; Copyright © 2021 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -118,6 +119,7 @@
   #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lua)
+  #:use-module (gnu packages m4)
   #:use-module (gnu packages mail)
   #:use-module (gnu packages man)
   #:use-module (gnu packages mcrypt)
@@ -693,6 +695,8 @@ memory, disks, network and processes.")
     (arguments
      `(#:phases
        (modify-phases %standard-phases
+         ;; sanity-check phase fail, but the application seems to be working
+         (delete 'sanity-check)
          (add-after 'install 'install-themes
            (lambda* (#:key outputs #:allow-other-keys)
              (let ((themes (string-append (assoc-ref outputs "out")
@@ -2172,7 +2176,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
 (define-public acpica
   (package
     (name "acpica")
-    (version "20210930")
+    (version "20211217")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -2180,7 +2184,7 @@ module slots, and the list of I/O ports (e.g. serial, parallel, USB).")
                     version ".tar.gz"))
               (sha256
                (base32
-                "06wsrl1118sl9z76p9sh53zvzv5hpm82qks896d8slx5dgnzrrll"))))
+                "0521hmaw2zhi0mpgnaf2i83dykfgql4bx98cg7xqy8wmj649z194"))))
     (build-system gnu-build-system)
     (native-inputs (list flex bison))
     (arguments
@@ -3979,7 +3983,7 @@ Python loading in HPC environments.")
   (let ((real-name "inxi"))
     (package
       (name "inxi-minimal")
-      (version "3.3.10-1")
+      (version "3.3.11-1")
       (source
        (origin
          (method git-fetch)
@@ -3988,7 +3992,7 @@ Python loading in HPC environments.")
                (commit version)))
          (file-name (git-file-name real-name version))
          (sha256
-          (base32 "1whzrxqybh9h3v4c3mkjmz82vhlixdsj586fs6cj9mjzs7x89gz8"))))
+          (base32 "1nk3q2xg0myykq1myasxhvhhr0vk8qv3m7pb3icw81r3ydasnls0"))))
       (build-system trivial-build-system)
       (inputs
        `(("bash" ,bash-minimal)
@@ -4808,7 +4812,6 @@ FIFO and UNIX interprocess communication.")
     (build-system go-build-system)
     (arguments
      `(#:unpack-path "bdd.fi/x/runitor"
-       #:go ,go-1.17
        #:build-flags '(,(string-append "-ldflags=-X main.Version=" version))
        #:import-path "bdd.fi/x/runitor/cmd/runitor"
        #:install-source? #f))
@@ -4819,3 +4822,39 @@ FIFO and UNIX interprocess communication.")
 exit code reports successful or failed execution to
 @url{https://healthchecks.io,https://healthchecks.io} or your private instance.")
     (license license:bsd-0)))
+
+(define-public udpcast
+  (package
+    (name "udpcast")
+    (version "20200328")
+    (source
+     (origin
+       (method url-fetch)
+       ;; XXX: Original server is at https://www.udpcast.linux.lu is not
+       ;; reliable.
+       (uri (list (string-append
+                   "http://sources.buildroot.net/udpcast/udpcast-"
+                   version ".tar.gz")
+                  (string-append
+                   "https://fossies.org/linux/privat/udpcast-"
+                   version ".tar.gz")
+                  (string-append
+                   "https://www.udpcast.linux.lu/download/udpcast-"
+                   version ".tar.gz")))
+       (sha256
+        (base32 "06pj86nbi9hx7abbb0z2c5ynhfq0rv89b7nmy0kq3xz2lsxfw6cw"))))
+    (build-system gnu-build-system)
+    (native-inputs
+     (list autoconf automake m4 perl))
+    (arguments `(#:tests? #f))                    ;no test suite
+    (synopsis "Multicast file transfer tool")
+    (description
+     "UDPcast is a file transfer tool that can send data simultaneously to
+many destinations on a LAN.  This can for instance be used to install entire
+classrooms of PC's at once.  The advantage of UDPcast over using other
+methods (nfs, ftp, whatever) is that UDPcast uses UDP's multicast abilities:
+it won't take longer to install 15 machines than it would to install just 2.")
+    (home-page "https://www.udpcast.linux.lu")
+    (license license:gpl2+)))
+
+

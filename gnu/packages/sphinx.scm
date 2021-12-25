@@ -9,7 +9,7 @@
 ;;; Copyright © 2017 Frederick M. Muriithi <fredmanglis@gmail.com>
 ;;; Copyright © 2017 Christine Lemmer-Webber <cwebber@dustycloud.org>
 ;;; Copyright © 2017 Julien Lepiller <julien@lepiller.eu>
-;;; Copyright © 2019 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2019, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2019, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2019 Alexandros Theodotou <alex@zrythm.org>
 ;;; Copyright © 2019 Brett Gilio <brettg@gnu.org>
@@ -299,6 +299,38 @@ math in HTML via JavaScript.")
 Blog, News or Announcements section to a Sphinx website.")
     (home-page "https://bitbucket.org/prometheus/sphinxcontrib-newsfeed")
     (license license:bsd-2)))
+
+(define-public python-sphinx-panels
+  (package
+    (name "python-sphinx-panels")
+    (version "0.6.0")
+    (source
+      (origin
+        ;; Tests not included in the pypi release.
+        (method git-fetch)
+        (uri (git-reference
+               (url "https://github.com/executablebooks/sphinx-panels")
+               (commit (string-append "v" version))))
+        (file-name (git-file-name name version))
+        (sha256
+         (base32 "1ivqz6yv96a2jp59kylg1gbkrmzq6zwilppz3ij0zrkjn25zb97k"))))
+    (build-system python-build-system)
+    (arguments
+     '(#:phases
+       (modify-phases %standard-phases
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "pytest")))))))
+    (propagated-inputs (list python-docutils python-sphinx))
+    (native-inputs
+     (list python-pytest
+           python-pytest-regressions))
+    (home-page "https://github.com/executablebooks/sphinx-panels")
+    (synopsis "Sphinx extension for creating panels in a grid layout")
+    (description
+     "This package provides a sphinx extension for creating panels in a grid layout.")
+    (license license:expat)))
 
 (define-public python-sphinxcontrib-programoutput
   (package
@@ -919,19 +951,16 @@ automated way to document command-line programs.  It scans
      (list python-beautifulsoup4))
     (native-inputs
      (list python-beautifulsoup4
-           python-docutils
+           python-docutils-0.15
            python-jupyter-sphinx
            python-numpy
            python-numpydoc
            python-pandas
-           python-plotly
            python-pytest
            python-pytest-regressions
            python-recommonmark
            python-sphinx
-           python-xarray
-           python-docutils
-           python-sphinx))
+           python-xarray))
     (home-page "https://github.com/pydata/pydata-sphinx-theme")
     (synopsis "Bootstrap-based Sphinx theme")
     (description

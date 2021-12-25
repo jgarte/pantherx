@@ -138,6 +138,7 @@
   #:use-module (guix build-system qt)
   #:use-module (guix build-system trivial)
   #:use-module (guix download)
+  #:use-module (guix gexp)
   #:use-module (guix git-download)
   #:use-module (guix hg-download)
   #:use-module ((guix licenses) #:prefix license:)
@@ -1257,6 +1258,7 @@ of xmpppy.")
        ("libxss" ,libxscrnsaver)
        ("network-manager" ,network-manager)
        ("python-css-parser" ,python-css-parser)
+       ("python-dbus" ,python-dbus)
        ("python-keyring" ,python-keyring)
        ("python-nbxmpp" ,python-nbxmpp)
        ("python-packaging" ,python-packaging)
@@ -1689,7 +1691,7 @@ instant messenger with audio and video chat capabilities.")
 (define-public qtox
   (package
     (name "qtox")
-    (version "1.17.3")
+    (version "1.17.4")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/qTox/qTox/releases"
@@ -1697,34 +1699,34 @@ instant messenger with audio and video chat capabilities.")
                                   "/v" version ".tar.gz"))
               (sha256
                (base32
-                "11n7si9wdpf80iwkvbspp14dh5jrwm7hxkj8vqhn5pkc48c5bh9j"))
+                "086hvm0q2vl2lq8zlp8s9sivlic6sg7ga5ixz01hbsyrashvil63"))
               (file-name (string-append name "-" version ".tar.gz"))))
     (build-system cmake-build-system)
     (arguments
-     '(#:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'fix-reproducibility-issues
-           (lambda _
-             (substitute* "src/main.cpp"
-               (("__DATE__") "\"\"")
-               (("__TIME__") "\"\"")
-               (("TIMESTAMP") "\"\""))
-             #t))
-         (add-after 'unpack 'disable-network-tests
-           (lambda _
-             ;; These tests require network access.
-             (substitute* "cmake/Testing.cmake"
-               (("auto_test\\(core core\\)") "# auto_test(core core)")
-               (("auto_test\\(net bsu\\)") "# auto_test(net bsu)"))
-             #t))
-         ;; Ensure that icons are found at runtime.
-         (add-after 'install 'wrap-executable
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (let ((out (assoc-ref outputs "out")))
-               (wrap-program (string-append out "/bin/qtox")
-                 `("QT_PLUGIN_PATH" prefix
-                   ,(list (string-append (assoc-ref inputs "qtsvg")
-                                         "/lib/qt5/plugins/"))))))))))
+     (list #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'unpack 'fix-reproducibility-issues
+                 (lambda _
+                   (substitute* "src/main.cpp"
+                     (("__DATE__") "\"\"")
+                     (("__TIME__") "\"\"")
+                     (("TIMESTAMP") "\"\""))))
+               (add-after 'unpack 'disable-network-tests
+                 (lambda _
+                   ;; These tests require network access.
+                   (substitute* "cmake/Testing.cmake"
+                     (("auto_test\\(core core\\)") "# auto_test(core core)")
+                     (("auto_test\\(net bsu\\)") "# auto_test(net bsu)"))))
+               ;; Ensure that icons are found at runtime.
+               (add-after 'install 'wrap-executable
+                 (lambda* (#:key inputs outputs #:allow-other-keys)
+                   (let ((out (assoc-ref outputs "out")))
+                     (wrap-program (string-append out "/bin/qtox")
+                       `("QT_PLUGIN_PATH" prefix
+                         ,(list (search-input-directory
+                                 inputs "lib/qt5/plugins/"))))))))))
+    (native-inputs
+     (list pkg-config qttools))
     (inputs
      (list ffmpeg
            filteraudio
@@ -1742,9 +1744,6 @@ instant messenger with audio and video chat capabilities.")
            qtbase-5
            qtsvg
            sqlcipher))
-    (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("qmake" ,qttools)))
     (home-page "https://qtox.github.io/")
     (synopsis "Tox chat client using Qt")
     (description "qTox is a Tox client that follows the Tox design

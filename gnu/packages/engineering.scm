@@ -26,6 +26,7 @@
 ;;; Copyright © 2021 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2021 Ivan Gankevich <i.gankevich@spbu.ru>
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
+;;; Copyright © 2021 Foo Chuan Wei <chuanwei.foo@hotmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -96,6 +97,7 @@
   #:use-module (gnu packages image)
   #:use-module (gnu packages image-processing)
   #:use-module (gnu packages imagemagick)
+  #:use-module (gnu packages kde-frameworks)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)               ;FIXME: for pcb
@@ -714,6 +716,43 @@ ready for production.")
     ;; Documentation and parts are released under CC-BY-SA 3.0; source code is
     ;; released under GPLv3+.
     (license (list license:gpl3+ license:cc-by-sa3.0))))
+
+(define-public qelectrotech
+  (package
+    (name "qelectrotech")
+    (version "0.8.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://git.tuxfamily.org/qet/qet.git/"
+                           "snapshot/qet-" version ".tar.gz"))
+       (sha256
+        (base32 "0w70fqwhqqzga1kfp34v8z1xf9988nvvi3d5gwl2sg429p9mpsk2"))))
+    (build-system qt-build-system)
+    (arguments
+     ;; XXX: tests are built for the CMake build option but it seems to be
+     ;; broken in 0.8.0.
+     `(#:tests? #f
+       #:phases
+       (modify-phases %standard-phases
+         (replace 'configure
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out")))
+               ;; Patch hardcoded path before running qmake.
+               (substitute* "qelectrotech.pro" (("\\/usr\\/local") out))
+               (invoke "qmake")))))))
+    (native-inputs
+     (list pkg-config qttools))
+    (inputs
+     (list kcoreaddons kwidgetsaddons qtbase-5 qtsvg sqlite))
+    (home-page "https://qelectrotech.org/")
+    (synopsis "CAD/CAE editor focusing on schematics drawing features")
+    (description "QElectroTech, or QET in short, is a desktop application to
+create diagrams and schematics.  The software is primarily intended to create
+electrical documentation but it can also be used to draw any kinds of diagrams,
+such as those made in pneumatics, hydraulics, process industries, electronics,
+and others.")
+    (license license:gpl2+)))
 
 (define-public gerbv
   (package
@@ -2897,6 +2936,107 @@ for hooking Linux system calls in user space.  This is achieved by
 hot-patching the machine code of the standard C library in the memory of
 a process.")
       (license license:bsd-2))))
+
+(define-public xfoil
+  (package
+    (name "xfoil")
+    (version "6.99")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://web.mit.edu/drela/Public/web/xfoil/xfoil"
+                           version ".tgz"))
+       (sha256
+        (base32
+         "0h5y5v0qlyvi4qc943x394npz4779i8f52iksxshxkjj7xj500jw"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (add-after 'unpack 'edit-files
+           (lambda* (#:key outputs #:allow-other-keys)
+             ;; The instructions in orrs/README say that orrs/bin/osmap.f
+             ;; should be edited, but that file is never used by XFOIL.
+             ;; Instead, it is osrc/osmap.f that is used.
+             (substitute* "osrc/osmap.f"
+               (("^[ ]{6}DATA OSFILE / '/var/local/codes/orrs/osmap.dat' /")
+                (let ((replacement (string-append (make-string 6 #\space)
+                                                  "DATA OSFILE / '"
+                                                  (assoc-ref outputs "out")
+                                                  "/share/xfoil/osmap.dat' /")))
+                  ;; In fixed form Fortran, lines cannot exceed 72 columns.
+                  ;; The Guix store path exceeds this limit.
+                  (string-append
+                    (substring replacement 0 72) "\n"
+                    (make-string 5 #\space) "&" (substring replacement 72)))))
+             (substitute* "orrs/bin/Makefile_DP"
+               (("^FC = ifort")
+                "FC = gfortran")
+               (("^FLG = -O -r8")
+                "FLG = -O2 -fdefault-real-8"))
+             (substitute* "plotlib/Makefile"
+               (("^include ./config.make")
+                "include ./config.make.gfortranDP"))
+             (substitute* "bin/Makefile_gfortran"
+               (("^BINDIR = /home/codes/bin/")
+                (string-append "BINDIR = " (assoc-ref outputs "out") "/bin"))
+               (("^CC = cc")
+                "CC = gcc")
+               (("^CFLAGS = -O -DUNDERSCORE")
+                "CFLAGS = -O2 -DUNDERSCORE")
+               (("^FFLAGS = -O \\$\\(CHK\\) \\$\\(DBL\\)")
+                "FFLAGS = -O2 $(CHK) $(DBL)")
+               (("^FFLOPT = -O \\$\\(CHK\\) \\$\\(DBL\\)")
+                "FFLOPT = -O2 $(CHK) $(DBL)")
+               ;; Separate the build stage from the install stage.
+               (("\\$\\(INSTALLCMD\\) xfoil \\$\\(BINDIR\\)") "")
+               (("\\$\\(INSTALLCMD\\) pxplot \\$\\(BINDIR\\)") "")
+               (("\\$\\(INSTALLCMD\\) pplot \\$\\(BINDIR\\)") ""))))
+         (replace 'build
+           (lambda _
+             (invoke "make" "-C" "orrs/bin" "-f" "Makefile_DP" "osgen")
+             (with-directory-excursion "orrs"
+               (invoke "bin/osgen" "osmaps_ns.lst"))
+             (invoke "make" "-C" "plotlib")
+             (substitute* "bin/Makefile_gfortran"
+               (("^FFLAGS =(.*)$" _ suffix)
+                (string-append "FFLAGS = -fallow-argument-mismatch "
+                               suffix "\n")))
+             (invoke "make" "-C" "bin" "-f" "Makefile_gfortran")))
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin-dir (string-append out "/bin"))
+                    (data-dir (string-append out "/share/xfoil"))
+                    (doc-dir (string-append out "/share/doc/xfoil")))
+               (mkdir-p bin-dir)
+               (invoke "make" "-C" "bin" "-f" "Makefile_gfortran" "install")
+               (mkdir-p data-dir)
+               (install-file "orrs/osmap.dat" data-dir)
+               (mkdir-p doc-dir)
+               (install-file "xfoil_doc.txt" doc-dir)))))
+       #:tests? #f))
+    (inputs
+     (list libx11))
+    (native-inputs
+     (list gfortran))
+    (home-page "https://web.mit.edu/drela/Public/web/xfoil/")
+    (synopsis "Program for the design and analysis of subsonic airfoils")
+    (description
+     "XFOIL is an interactive program for the design and analysis of subsonic
+isolated airfoils.  It consists of a collection of menu-driven routines which
+perform various useful functions such as:
+@itemize
+@item Viscous (or inviscid) analysis of an existing airfoil
+@item Airfoil design and redesign by interactive modification of surface speed
+      distributions
+@item Airfoil redesign by interactive modification of geometric parameters
+@item Blending of airfoils
+@item Writing and reading of airfoil coordinates and polar save files
+@item Plotting of geometry, pressure distributions, and multiple polars
+@end itemize")
+    (license license:gpl2+)))
 
 (define-public libigl
   (package

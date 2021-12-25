@@ -179,7 +179,7 @@ runs on top of IP or UDP, and supports both v4 and v6 versions.")
 (define-public axel
   (package
     (name "axel")
-    (version "2.17.10")
+    (version "2.17.11")
     (source
      (origin
        (method url-fetch)
@@ -187,7 +187,7 @@ runs on top of IP or UDP, and supports both v4 and v6 versions.")
                            "releases/download/v" version "/"
                            "axel-" version ".tar.xz"))
        (sha256
-        (base32 "0kmlqk04sgkshsll4r9w3k0rvrgz0gpk987618r50khwl484zss6"))))
+        (base32 "1yfcsi0zv07bvhj8klgna3y1ycc4jhaija1b3rzzv0i4d4c2q2sq"))))
     (build-system gnu-build-system)
     (native-inputs
      (list gettext-minimal pkg-config))
@@ -3324,7 +3324,7 @@ communication over HTTP.")
 (define-public restinio
   (package
     (name "restinio")
-    (version "0.6.13")
+    (version "0.6.14")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3333,7 +3333,7 @@ communication over HTTP.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0gb0yc88hdzwm08zdiviay6s08q427za33kfbygib7bdzp2wr2dm"))))
+                "0j44mglsljwkw49583hcsrl5ck2g56n9srnm10kpbsz2dx5apx98"))))
     (build-system cmake-build-system)
     (inputs                             ; TODO: Need to force-keep references on some inputs, e.g. boost.
      (list zlib
@@ -3352,8 +3352,7 @@ communication over HTTP.")
        (modify-phases %standard-phases
          (add-after 'unpack 'change-directory
            (lambda _
-             (chdir "dev/restinio")
-             #t)))))
+             (chdir "dev/restinio"))))))
     (home-page "https://stiffstream.com/en/products/restinio.html")
     (synopsis "C++14 library that gives you an embedded HTTP/Websocket server")
     (description "RESTinio is a header-only C++14 library that gives you an embedded

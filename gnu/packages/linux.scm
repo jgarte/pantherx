@@ -12,7 +12,7 @@
 ;;; Copyright © 2016 Raymond Nicholson <rain1@openmailbox.org>
 ;;; Copyright © 2016 Mathieu Lirzin <mthl@gnu.org>
 ;;; Copyright © 2016, 2018, 2019, 2020, 2021 Nicolas Goaziou <mail@nicolasgoaziou.fr>
-;;; Copyright © 2016, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2016, 2018, 2019, 2020, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016 David Craven <david@craven.ch>
 ;;; Copyright © 2016 John Darrington <jmd@gnu.org>
 ;;; Copyright © 2016, 2017, 2018, 2019, 2020, 2021 Marius Bakke <marius@gnu.org>
@@ -59,6 +59,7 @@
 ;;; Copyright © 2021 Josselin Poiret <josselin.poiret@protonmail.ch>
 ;;; Copyright © 2021 Olivier Dion <olivier.dion@polymtl.ca>
 ;;; Copyright © 2021 Solene Rapenne <solene@perso.pw>
+;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -138,9 +139,9 @@
   #:use-module (gnu packages sdl)
   #:use-module (gnu packages serialization)
   #:use-module (gnu packages slang)
-  #:use-module (gnu packages sphinx)
   #:use-module (gnu packages sqlite)
   #:use-module (gnu packages texinfo)
+  #:use-module (gnu packages textutils)
   #:use-module (gnu packages tls)
   #:use-module (gnu packages valgrind)
   #:use-module (gnu packages video)
@@ -355,7 +356,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 
 ;; The current "stable" kernels. That is, the most recently released major
 ;; versions that are still supported upstream.
-(define-public linux-libre-5.15-version "5.15.10")
+(define-public linux-libre-5.15-version "5.15.11")
 (define-public linux-libre-5.15-gnu-revision "gnu")
 (define deblob-scripts-5.15
   (linux-libre-deblob-scripts
@@ -365,7 +366,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "04fj1x3zmi310cr3m9hxpi26gdcmwfsqciv5yb6q6rrnqjqs1pc0")))
 (define-public linux-libre-5.15-pristine-source
   (let ((version linux-libre-5.15-version)
-        (hash (base32 "0jsv8lialjwp91qg9c9rh8rhn49a70ryyhzl19bxq3fhz1fwyks8")))
+        (hash (base32 "1km1fglpg1a67vsfx6gqz9ikb6pywdl146bhws915n8jgrz8n5y1")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.15)))
@@ -373,7 +374,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
 ;; The "longterm" kernels — the older releases with long-term upstream support.
 ;; Here are the support timelines:
 ;; <https://www.kernel.org/category/releases.html>
-(define-public linux-libre-5.10-version "5.10.87")
+(define-public linux-libre-5.10-version "5.10.88")
 (define-public linux-libre-5.10-gnu-revision "gnu1")
 (define deblob-scripts-5.10
   (linux-libre-deblob-scripts
@@ -383,12 +384,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "024rz0bp3n3r5nkwbib7byx10d72c2fh5cw9iv00diyzgnp819g7")))
 (define-public linux-libre-5.10-pristine-source
   (let ((version linux-libre-5.10-version)
-        (hash (base32 "0jz6xhph7x0x11cjmypaw5gh8z4d53dcgx2gmg7k6d06ydq8n4h3")))
+        (hash (base32 "1sv8j34k75xpbdgyddhlszlgn74fbj0girgixz7v18l2qfv331kg")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.10)))
 
-(define-public linux-libre-5.4-version "5.4.167")
+(define-public linux-libre-5.4-version "5.4.168")
 (define-public linux-libre-5.4-gnu-revision "gnu1")
 (define deblob-scripts-5.4
   (linux-libre-deblob-scripts
@@ -398,12 +399,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-5.4-pristine-source
   (let ((version linux-libre-5.4-version)
-        (hash (base32 "19x5f3s5f4nqzjb61g22rs0hnmk43q4b7sm7mc4j1q3y44b33r5l")))
+        (hash (base32 "108i35bnfhv7cpq8ifp915ybngygl2qf6cfslrh3aqk5sk29mdzc")))
    (make-linux-libre-source version
                             (%upstream-linux-source version hash)
                             deblob-scripts-5.4)))
 
-(define-public linux-libre-4.19-version "4.19.221")
+(define-public linux-libre-4.19-version "4.19.222")
 (define-public linux-libre-4.19-gnu-revision "gnu1")
 (define deblob-scripts-4.19
   (linux-libre-deblob-scripts
@@ -413,12 +414,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.19-pristine-source
   (let ((version linux-libre-4.19-version)
-        (hash (base32 "1yg1cibyn53gpjnxfgj2qxxi8k3l7gv1ri6kywvp6sk5bygx8jd3")))
+        (hash (base32 "0f48c6lv0nqggn5rn1wfnlf3xjz6ckmzvjqbhpyar43x7l687c4p")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.19)))
 
-(define-public linux-libre-4.14-version "4.14.258")
+(define-public linux-libre-4.14-version "4.14.259")
 (define-public linux-libre-4.14-gnu-revision "gnu1")
 (define deblob-scripts-4.14
   (linux-libre-deblob-scripts
@@ -428,12 +429,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.14-pristine-source
   (let ((version linux-libre-4.14-version)
-        (hash (base32 "162bzhm0k8kipgk0ma745rjcl33rqhpwxdfdz3q6rkp48b82kbvi")))
+        (hash (base32 "0s23iq89xdgckzyh8xv7p7wx0agjpj8ac2p42jpx6yzp3xa89qi6")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.14)))
 
-(define-public linux-libre-4.9-version "4.9.293")
+(define-public linux-libre-4.9-version "4.9.294")
 (define-public linux-libre-4.9-gnu-revision "gnu1")
 (define deblob-scripts-4.9
   (linux-libre-deblob-scripts
@@ -443,12 +444,12 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.9-pristine-source
   (let ((version linux-libre-4.9-version)
-        (hash (base32 "0l64rz6ly5ls23lqq0cv98xb4z2mimp2jrsjrs6kq3zm4k2mm4gs")))
+        (hash (base32 "0s527wr1zngyfz4p7nss1id14amc448g19i1wy20s13n43gm1jii")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.9)))
 
-(define-public linux-libre-4.4-version "4.4.295")
+(define-public linux-libre-4.4-version "4.4.296")
 (define-public linux-libre-4.4-gnu-revision "gnu1")
 (define deblob-scripts-4.4
   (linux-libre-deblob-scripts
@@ -458,7 +459,7 @@ corresponding UPSTREAM-SOURCE (an origin), using the given DEBLOB-SCRIPTS."
    (base32 "1a0k9i8gnzkyvfr80f8xw2fnxfwddhz1pzicz9fh0y3jzzkzk45p")))
 (define-public linux-libre-4.4-pristine-source
   (let ((version linux-libre-4.4-version)
-        (hash (base32 "1h3i2lgm2sy325f58jildip7m6sb4hr2n9pm3gc3h2gash65kc2r")))
+        (hash (base32 "1ydh6qiib6anxv5kxd13d9p2hjh3ni7r3whxazlzvckijmzqd5nb")))
     (make-linux-libre-source version
                              (%upstream-linux-source version hash)
                              deblob-scripts-4.4)))
@@ -1412,7 +1413,7 @@ RTL8812AU, RTL8821AU, and RTL8814AU chips.")
 (define-public vhba-module
   (package
     (name "vhba-module")
-    (version "20211023")
+    (version "20211218")
     (source
      (origin
        (method url-fetch)
@@ -1420,7 +1421,7 @@ RTL8812AU, RTL8821AU, and RTL8814AU chips.")
              "http://downloads.sourceforge.net/cdemu/vhba-module/vhba-module-"
              version ".tar.xz"))
        (sha256
-        (base32 "045zvsdb2yjhzhmb6b7rzsn151ylygz0civ8sl3gmki8m6m7n230"))))
+        (base32 "1dkprnnya0i8121p7ip4g8cww99drk7fzbwcxx65x02jqk0siibj"))))
     (build-system linux-module-build-system)
     (arguments
      `(#:tests? #f))                    ; no test suite
@@ -2340,7 +2341,7 @@ Zerofree requires the file system to be unmounted or mounted read-only.")
 (define-public strace
   (package
     (name "strace")
-    (version "5.13")
+    (version "5.15")
     (home-page "https://strace.io")
     (source (origin
              (method url-fetch)
@@ -2348,7 +2349,7 @@ Zerofree requires the file system to be unmounted or mounted read-only.")
                                  "/strace-" version ".tar.xz"))
              (sha256
               (base32
-               "0mmns22bjjvakxj29si0x4dcylcgy26llpcimkb0llcxif439k2s"))
+               "1p3jipp6mj5fwfcjdnp6xhxk84z07jy5qhjlqr6jjdbk54pw5jpb"))
              (patches (search-patches "strace-readlink-tests.patch"))))
     (build-system gnu-build-system)
     (arguments
@@ -2357,8 +2358,7 @@ Zerofree requires the file system to be unmounted or mounted read-only.")
          (add-after 'unpack 'patch-/bin/sh
            (lambda _
              (substitute* "src/strace.c"
-               (("/bin/sh") (which "sh")))
-             #t))
+               (("/bin/sh") (which "sh")))))
          (add-after 'unpack 'disable-failing-tests
            (lambda _
              (substitute* "tests/Makefile.in"
@@ -2366,8 +2366,9 @@ Zerofree requires the file system to be unmounted or mounted read-only.")
                ;; extended.
                (("^\tstrace-DD?D?\\.test \\\\.*") "")
                (("^\tpidns-cache.test \\\\.*") "")
-               (("^\t.*--pidns-translation.test \\\\.*") ""))
-             #t)))
+               (("^\t.*--pidns-translation.test \\\\.*") "")
+               ;; This one fails with an encoding error.
+               (("^\t.*net-yy-unix.test \\\\.*") "")))))
        ;; Don't fail if the architecture doesn't support different
        ;; personalities.
        #:configure-flags '("--enable-mpers=check")
@@ -4123,6 +4124,29 @@ dm-thin, dm-cache and dm-era device-mapper targets.")
     (home-page "https://github.com/jthornber/thin-provisioning-tools")
     (license license:gpl3+)))
 
+(define-public watchdogd
+  (package
+    (name "watchdogd")
+    (version "3.5")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/troglobit/watchdogd")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "05f7igavzimfgbh39fflbkmpya12r854n03dkyimwashcqwchx8f"))))
+    (build-system gnu-build-system)
+    (native-inputs (list autoconf automake libtool pkg-config))
+    (inputs (list libconfuse libite libuev))
+    (synopsis "Advanced system & process supervisor for Linux")
+    (description "This package provides an advanced monitor of critical system
+resources, supervises the heartbeat of processes, records deadline
+transgressions, and initiates a controlled reset if needed.")
+    (home-page "https://troglobit.com/projects/watchdogd/")
+    (license license:isc)))
+
 (define-public wireless-tools
   (package
     (name "wireless-tools")
@@ -4865,6 +4889,65 @@ also contains the libsysfs library.")
 information, and set the CPU frequency if supported, using the cpufreq
 capabilities of the Linux kernel.")
     (license license:gpl2)))
+
+(define-public libite
+  (package
+    (name "libite")
+    (version "2.5.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/troglobit/libite")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "14i0q0nxns6g4zh86zdqy97dwljkqdr5l85ammljzccsrijg9m8v"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-tests
+           (lambda* (#:key inputs #:allow-other-keys)
+             ;; replace paths to the executables
+             (substitute* "test/which.c"
+               (("/usr/bin/which")
+                (search-input-file inputs "/bin/which"))
+               (("ls\"")
+                (string-append
+                 (search-input-file inputs "/bin/ls") "\"")))
+             ;; create pidfile in /tmp instead of /var
+             (substitute* "test/pidfile.c" (("/var/tmp") "/tmp")))))))
+    (native-inputs (list autoconf automake libtool which))
+    (synopsis "Library providing missing pieces in GNU libc")
+    (description "This package provides many of the missing pieces in GNU
+libc.  Most notably the string functions: strlcpy(3), strlcat(3) and the *BSD
+sys/queue.h and sys/tree.h API's.")
+    (home-page "https://troglobit.com/projects/libite/")
+    (license license:expat)))
+
+(define-public libuev
+  (package
+    (name "libuev")
+    (version "2.4.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/troglobit/libuev")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "0ih82lxfdcq179kknzdl5c8vi1l0n5j7yh68y8f6kwsrm457paf7"))))
+    (build-system gnu-build-system)
+    (native-inputs (list autoconf automake libtool))
+    (synopsis "Lightweight event loop library for epoll family APIs")
+    (description "This package provides small event loop that wraps the
+epoll family of APIs.")
+    (home-page "https://troglobit.com/projects/libuev/")
+    (license license:expat)))
 
 (define-public libraw1394
   (package
@@ -6926,6 +7009,70 @@ every time the power supply source is changed.")
     ;; rest is GPLv2+.
     (license (list license:gpl2+ license:gpl3+))))
 
+(define-public tlpui
+  (package
+    (name "tlpui")
+    (version "1.4.0-1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/d4nj1/TLPUI")
+             (commit (string-append "tlpui-" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0yshdpj521wiwc5rkvq89hwq9f3nqp3jbz8v921hpyk8wwq7nniq"))))
+    (build-system python-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-setup.py
+           ;; Install data_files to $out/share instead of /usr/share.
+           (lambda _
+             (substitute* "setup.py"
+               (("/usr/") ""))))
+         (add-after 'unpack 'use-tlp-input
+           ;; Hard-code tlp-stat filename to avoid propagating "tlp".
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((tlp-stat (search-input-file inputs "/bin/tlp-stat")))
+               (with-directory-excursion "tlpui"
+                 (substitute* '("file.py" "settingshelper.py" "statui.py")
+                   (("which\\(\"tlp-stat\"\\)")
+                    (string-append "'" tlp-stat "'"))
+                   (("\"tlp-stat\"")
+                    (string-append "'" tlp-stat "'")))))))
+         (add-before 'check 'fix-home-directory
+           (lambda _
+             ;; Tests fail with "Permission denied:
+             ;; '/homeless-shelter'".
+             (setenv "HOME" "/tmp")))
+         ;; `sanity-check' phase errors out with the following
+         ;; messages: "Unable to init server: Could not connect:
+         ;; Connection refused" and "Error: cannot read user
+         ;; configuration from /etc/tlp.conf or /etc/default/tlp".
+         (delete 'sanity-check)
+         (replace 'check
+           (lambda _
+             (invoke "python" "-m" "discover")))
+         (add-after 'install 'wrap-gi-python
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((out (assoc-ref outputs "out"))
+                   (gi-typelib-path (getenv "GI_TYPELIB_PATH")))
+               (wrap-program (string-append out "/bin/tlpui")
+                 `("GI_TYPELIB_PATH" ":" prefix (,gi-typelib-path)))))))))
+    (native-inputs
+     (list `(,glib "bin") gobject-introspection python-discover))
+    (inputs
+     (list gtk+ python-pygobject tlp))
+    (home-page "https://github.com/d4nj1/TLPUI")
+    (synopsis "User interface for TLP written in Python")
+    (description
+     "The Python scripts in this project generate a GTK-UI to change
+TLP configuration files easily.  It aims to protect users from setting
+bad configuration and to deliver a basic overview of all the valid
+configuration values.")
+    (license license:gpl2+)))
+
 (define-public lshw
   (package
     (name "lshw")
@@ -8112,7 +8259,7 @@ of Linux application development.")
   (package
     (inherit pipewire)
     (name "pipewire")
-    (version "0.3.40")
+    (version "0.3.41")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -8121,7 +8268,7 @@ of Linux application development.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1c6gni23l5w3ghwqnfs712kjj6l1825f0ib8a6r2xc1ymr0sx3kr"))))
+                "05ksl2nbn00gvdmnmffa8q8r3z29ip75554d36xchsrhqq4sxdcm"))))
     (arguments
      '(#:configure-flags
        (list (string-append "-Dudevrulesdir=" (assoc-ref %outputs "out")
@@ -8132,15 +8279,45 @@ of Linux application development.")
        (modify-phases %standard-phases
          ;; Skip shrink-runpath, otherwise validate-runpath fails.
          (delete 'shrink-runpath))))
-    (inputs
-     (append (package-inputs pipewire)
-             `(("avahi" ,avahi)
-               ("bluez" ,bluez)
-               ("jack" ,jack-2)
-               ("ldacbt" ,ldacbt)
-               ("pulseaudio" ,pulseaudio)
-               ("vulkan-loader" ,vulkan-loader)
-               ("vulkan-headers" ,vulkan-headers))))))
+    (inputs (modify-inputs (package-inputs pipewire)
+              (prepend avahi
+                       bluez
+                       jack-2
+                       ldacbt
+                       pulseaudio
+                       vulkan-loader
+                       vulkan-headers)))))
+
+(define-public wireplumber
+  (package
+    (name "wireplumber")
+    (version "0.4.5")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url
+              "https://gitlab.freedesktop.org/pipewire/wireplumber.git")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32
+         "1k56i5cardwr03vkldg68714hyksyp1vb0b315yw1bilaj2ka30i"))))
+    (build-system meson-build-system)
+    (arguments
+     `(#:configure-flags '("-Dsystemd=disabled"
+                           "-Dsystem-lua=true")))
+    (native-inputs
+     (list `(,glib "bin")
+           pkg-config))
+    (inputs (list dbus elogind glib lua pipewire-0.3))
+    (home-page "https://gitlab.freedesktop.org/pipewire/wireplumber")
+    (synopsis "Session / policy manager implementation for PipeWire")
+    (description "WirePlumber is a modular session / policy manager for
+PipeWire and a GObject-based high-level library that wraps PipeWire's API,
+providing convenience for writing the daemon's modules as well as external
+tools for managing PipeWire.")
+    (license license:expat)))
 
 (define-public ell
   (package
@@ -8181,147 +8358,6 @@ the Linux kernel, C standard library, and libdl (for dynamic linking).  While
 ELL is designed to be efficient and compact enough for use on embedded Linux
 platforms, it is not limited to resource-constrained systems.")
     (license license:lgpl2.1+)))
-
-(define-public lttng-ust
-  (package
-    (name "lttng-ust")
-    (version "2.13.0")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://lttng.org/files/lttng-ust/"
-                                  "lttng-ust-" version ".tar.bz2"))
-              (sha256
-               (base32
-                "0l0p6y2zrd9hgd015dhafjmpcj7waz762n6wf5ws1xlwcwrwkr2l"))))
-    (build-system gnu-build-system)
-    (inputs
-     (list liburcu numactl))
-    (native-inputs
-     (list python-3 pkg-config))
-    (home-page "https://lttng.org/")
-    (synopsis "LTTng userspace tracer libraries")
-    (description "The user space tracing library, liblttng-ust, is the LTTng
-user space tracer.  It receives commands from a session daemon, for example to
-enable and disable specific instrumentation points, and writes event records
-to ring buffers shared with a consumer daemon.")
-    (license license:lgpl2.1+)))
-
-(define-public lttng-tools
-  (package
-    (name "lttng-tools")
-    (version "2.13.1")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://lttng.org/files/lttng-tools/"
-                                  "lttng-tools-" version ".tar.bz2"))
-              (sha256
-               (base32
-                "1df8ag2a1yyjn6hz6wxgcz0p847cq91b8inf0zyhgz1im1yxzrng"))))
-    (build-system gnu-build-system)
-    (arguments
-     `(;; FIXME - Currently there's a segmentation fault by swig when enabling
-       ;; Python's bindings.  Thus, bindings are disable here.  Replace
-       ;; `disable` by `enable` in #:configure-flags when this is fixed.
-       #:configure-flags '("--disable-python-bindings")
-       ;; FIXME - Tests are disabled for now because one test hangs
-       ;; indefinetely.  Also, parallel testing is not possible because of how
-       ;; the lttng-daemon handles sessions.  Thus, keep parallel testing
-       ;; disabled even after tests are enabled!
-       #:tests? #f
-       #:parallel-tests? #f
-       #:phases
-       (modify-phases %standard-phases
-         (add-before 'configure 'set-environment-variables
-           (lambda _
-             (setenv "HOME" "/tmp")
-             (setenv "LTTNG_HOME" "/tmp")))
-         ;; We don't put (which "man") here because LTTng uses execlp.
-         (add-after 'unpack 'patch-default-man-path
-           (lambda _
-             (substitute* "src/common/defaults.h"
-               (("/usr/bin/man") "man")))))))
-    ;; NOTE - Users have to install python-3 in their profile to use the
-    ;; bindings.  We don't put it in the inputs, because the rest of the tools
-    ;; can work without it.
-    (inputs
-     (list liburcu popt numactl))
-    (propagated-inputs
-     (list kmod module-init-tools))
-    (native-inputs
-     `(("pkg-config" ,pkg-config)
-       ("perl" ,perl)
-       ("libpfm4" ,libpfm4)
-       ("python-3" ,python-3)
-       ("swig" ,swig)
-       ("procps" ,procps)
-       ("which" ,which)
-       ("flex" ,flex)
-       ("bison" ,bison)
-       ("asciidoc" ,asciidoc)
-       ("libxml2" ,libxml2)
-       ("lttng-ust" ,lttng-ust)))
-    (home-page "https://lttng.org/")
-    (synopsis "LTTng userspace tracer libraries")
-    (description "The lttng-tools project provides a session
-daemon @code{lttng-sessiond} that acts as a tracing registry, the @command{lttng} command
-line for tracing control, a @code{lttng-ctl} library for tracing control and a
-@code{lttng-relayd} for network streaming.")
-    (license (list  license:gpl2 license:lgpl2.1))))
-
-(define-public babeltrace
-  (package
-    (name "babeltrace")
-    (version "2.0.4")
-    (source (origin
-              (method url-fetch)
-              (uri (string-append "https://www.efficios.com/files/babeltrace/babeltrace2-"
-                                  version ".tar.bz2"))
-              (sha256
-               (base32 "1jlv925pr7hykc48mdvbmqm4ipy1r11xwzapa6fdpdfshmk12kvp"))))
-
-    (build-system gnu-build-system)
-
-    (arguments
-     `(;; FIXME - When Python's bindings are enabled, tests do not pass.
-       #:configure-flags '("--enable-debug-info"
-                           "--enable-man-pages"
-                           "--disable-python-bindings"
-                           "--disable-python-plugins")
-       #:phases
-       (modify-phases %standard-phases
-         ;; These are recommended in the project's README for a development
-         ;; build configuration.
-         (add-before 'configure 'set-environment-variables
-           (lambda _
-             (setenv "BABELTRACE_DEV_MODE" "1")
-             (setenv "BABELTRACE_MINIMAL_LOG_LEVEL" "TRACE"))))))
-    (inputs
-     (list glib))
-    ;; NOTE - elfutils is used for the LTTng debug information filter
-    ;; component class.  This can be moved to `native-inputs` if
-    ;; `--enable-debug-info` is replaced by `--disable-debug-info` in
-    ;; `#:configure-flags`.
-    (propagated-inputs
-     (list elfutils))
-    ;; NOTE - python-3 is set here for generating the bindings.  Users need to
-    ;; install python-3 in their profile in order to use these bindings.
-    (native-inputs
-     `(("asciidoc" ,asciidoc)
-       ("bison" ,bison)
-       ("flex" ,flex)
-       ("pkg-config" ,pkg-config)
-       ("python-3" ,python-3)
-       ("python-sphinx" ,python-sphinx)
-       ("swig", swig)
-       ("xmltoman" ,xmltoman)))
-    (home-page "https://babeltrace.org/")
-    (synopsis "Trace manipulation toolkit")
-    (description "Babeltrace 2 is a framework for viewing, converting,
-transforming, and analyzing traces.  It is also the reference parser
-implementation of the Common Trace Format (CTF), produced by tools such as
-LTTng and barectf.  This package provides a library with a C API, Python 3
-bindings, and the command-line tool @command{babeltrace2}.")
-    (license license:expat)))
 
 (define-public kexec-tools
   (package

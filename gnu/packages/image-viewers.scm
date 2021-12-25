@@ -805,15 +805,15 @@ displayed in a terminal.")
 (define-public imv
   (package
     (name "imv")
-    (version "4.3.0")
+    (version "4.3.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url "https://github.com/eXeC64/imv")
+                    (url "https://git.sr.ht/~exec64/imv")
                     (commit (string-append "v" version))))
               (sha256
                (base32
-                "12xcayyzmfknbff04z8jdlxsnnimgisqiah0bw07cyxx8ksmdzqw"))
+                "01x6qg7nhikqh68gnzrdvq0rxma5v9z19il89y8bvdrcr7r1vh40"))
               (file-name (git-file-name name version))))
     (build-system meson-build-system)
     (arguments
@@ -827,8 +827,10 @@ displayed in a terminal.")
                     (bin (string-append out "/bin")))
                (substitute* (string-append bin "/imv")
                  (("imv-")
-                  (string-append bin "/imv-")))
-               #t))))))
+                  (string-append bin "/imv-")))))))))
+    (native-inputs
+     (list asciidoc
+           pkg-config))
     (inputs
      (list freeimage
            glu
@@ -841,12 +843,6 @@ displayed in a terminal.")
            libxkbcommon
            pango
            wayland))
-    (native-inputs
-     `(("asciidoc" ,asciidoc)
-       ("cmocka" ,cmocka)
-       ;; why build need it?
-       ("git" ,git-minimal)
-       ("pkg-config" ,pkg-config)))
     (synopsis "Image viewer for tiling window managers")
     (description "@code{imv} is a command line image viewer intended for use
 with tiling window managers.  Features include:
@@ -866,7 +862,7 @@ with tiling window managers.  Features include:
 @item Configurable key bindings and behavior.
 @item Highly scriptable with IPC via imv-msg.
 @end itemize\n")
-    (home-page "https://github.com/eXeC64/imv")
+    (home-page "https://git.sr.ht/~exec64/imv/")
     (license license:expat)))
 
 (define-public qiv
