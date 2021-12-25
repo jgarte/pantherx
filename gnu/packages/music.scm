@@ -4,7 +4,7 @@
 ;;; Copyright © 2015 Paul van der Walt <paul@denknerd.org>
 ;;; Copyright © 2016 Al McElrath <hello@yrns.org>
 ;;; Copyright © 2016, 2017, 2019, 2021 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016, 2018 Leo Famulari <leo@famulari.name>
+;;; Copyright © 2016, 2018, 2021 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2017, 2019 Kei Kebreau <kkebreau@posteo.net>
 ;;; Copyright © 2016 John J. Foerch <jjfoerch@earthlink.net>
 ;;; Copyright © 2016 Alex Griffin <a@ajgrf.com>
@@ -61,6 +61,7 @@
 ;;; along with GNU Guix.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gnu packages music)
+  #:use-module (guix gexp)
   #:use-module (guix utils)
   #:use-module (guix packages)
   #:use-module (guix download)
@@ -143,6 +144,7 @@
   #:use-module (gnu packages pcre)
   #:use-module (gnu packages pdf)
   #:use-module (gnu packages perl)
+  #:use-module (gnu packages perl-check)
   #:use-module (gnu packages perl-web)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages protobuf)
@@ -4992,16 +4994,16 @@ studio.")
 (define-public gsequencer
   (package
     (name "gsequencer")
-    (version "3.10.18")
+    (version "3.14.5")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://git.savannah.gnu.org/git/gsequencer.git/")
+             (url "https://git.savannah.gnu.org/git/gsequencer")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "126kbvdkxy82mmkl19qhp9k6iz5xclar06chbj7lf580x96c899c"))))
+        (base32 "18pfv4w30nng1p0vgmrnkfm38522iq1x1bj8iz4qfiffiv56dsnz"))))
     (build-system glib-or-gtk-build-system)
     (arguments
      `(#:phases
@@ -5011,34 +5013,34 @@ studio.")
              (system "Xvfb &")
              (setenv "DISPLAY" ":0"))))))
     (native-inputs
-     `(("autoconf" ,autoconf)
-       ("automake" ,automake)
-       ("cunit" ,cunit)
-       ("gettext" ,gettext-minimal)
-       ("gobject-introspection" ,gobject-introspection)
-       ("gtk-doc" ,gtk-doc)
-       ("libtool" ,libtool)
-       ("libxslt" ,libxslt)
-       ("pkg-config" ,pkg-config)
-       ("xorg-server" ,xorg-server-for-tests)))
+     (list autoconf
+           automake
+           cunit
+           gettext-minimal
+           gobject-introspection
+           gtk-doc
+           libtool
+           libxslt
+           pkg-config
+           xorg-server-for-tests))
     (inputs
-     `(("alsa-lib" ,alsa-lib)
-       ("dssi" ,dssi)
-       ("fftw" ,fftw)
-       ("gst-plugins-base" ,gst-plugins-base)
-       ("gstreamer" ,gstreamer)
-       ("gtk+" ,gtk+)
-       ("jack" ,jack-1)
-       ("ladspa" ,ladspa)
-       ("libinstpatch" ,libinstpatch)
-       ("libsamplerate" ,libsamplerate)
-       ("libsndfile" ,libsndfile)
-       ("libsoup" ,libsoup)
-       ("libuuid" ,util-linux "lib")
-       ("libxml2" ,libxml2)
-       ("lv2" ,lv2)
-       ("pulseaudio" ,pulseaudio)
-       ("webkitgtk" ,webkitgtk)))
+     (list alsa-lib
+           dssi
+           fftw
+           gst-plugins-base
+           gstreamer
+           gtk+
+           jack-1
+           ladspa
+           libinstpatch
+           libsamplerate
+           libsndfile
+           libsoup-minimal-2
+           libxml2
+           lv2
+           pulseaudio
+           `(,util-linux "lib")
+           webkitgtk-with-libsoup2))
     (home-page "https://nongnu.org/gsequencer/")
     (synopsis "Advanced Gtk+ Sequencer")
     (description
@@ -6776,3 +6778,51 @@ It is provided as an LV2 plugin and as a standalone Jack application.")
 midi devices to JACK midi devices.")
     (home-page "https://github.com/jackaudio/a2jmidid")
     (license license:gpl2)))
+
+(define-public opustags
+  (package
+    (name "opustags")
+    (version "1.6.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/fmang/opustags")
+                    (commit version)))
+              (sha256
+               (base32 "1wsfw713rhi2gg5xc04cx5i31hlw0l3wdflj3r1y8w45bdk6ag1z"))
+              (file-name (git-file-name name version))))
+    (arguments
+     (list
+       #:test-target "check"
+       #:phases
+       #~(modify-phases %standard-phases
+         ;; This package does not use the perl-build-system, so we have to
+         ;; manually set up the Perl environment used by the test suite.
+         (add-before 'check 'setup-perl-environment
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let* ((perl-list-moreutils-lib
+                      (string-append #$(this-package-native-input "perl-list-moreutils")
+                                     "/lib/perl5/site_perl/"
+                                     #$(package-version perl)))
+                    (perl-exporter-tiny-lib
+                      (string-append #$(this-package-native-input "perl-exporter-tiny")
+                                     "/lib/perl5/site_perl/"
+                                     #$(package-version perl))))
+               (setenv "PERL5LIB" (string-append perl-list-moreutils-lib ":"
+                                                 perl-exporter-tiny-lib))))))))
+    (build-system cmake-build-system)
+    (inputs
+      (list libogg))
+    (native-inputs
+      (list pkg-config
+            ffmpeg
+            perl-exporter-tiny
+            perl-list-moreutils
+            perl-test-harness))
+    (synopsis "Ogg Opus tags editor")
+    (description "@code{opustags} is an Ogg Opus tag editor.  It reads and edits
+the comment header of an Ogg Opus audio file, offering both read-only and
+editing modes.  Tags can be edited interactively with an editor of your
+choice.")
+    (home-page "https://github.com/fmang/opustags")
+    (license license:bsd-3)))

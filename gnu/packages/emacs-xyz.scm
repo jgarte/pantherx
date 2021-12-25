@@ -236,7 +236,7 @@
 (define-public emacs-geiser
   (package
     (name "emacs-geiser")
-    (version "0.19")
+    (version "0.21")
     (source
      (origin
        (method git-fetch)
@@ -245,7 +245,7 @@
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1pfdax2wsfyjz4ddfqh54n3lbxhqpg97grj7kgi641lbhppnq02g"))))
+        (base32 "19if1n2wx1i6mjslh3s2cnb261xjn25w2yll1hk4fdq4afbwbzbs"))))
     (build-system emacs-build-system)
     (arguments
      '(#:phases
@@ -265,6 +265,8 @@
                        "-o" "geiser.info" "geiser.texi")))))))
     (native-inputs
      (list texinfo))
+    (propagated-inputs
+     (list emacs-transient))
     (home-page "https://nongnu.org/geiser/")
     (synopsis "Collection of Emacs modes for Scheme hacking")
     (description
@@ -283,7 +285,7 @@ e.g. emacs-geiser-guile for Guile.")
 (define-public emacs-geiser-guile
   (package
     (name "emacs-geiser-guile")
-    (version "0.19")
+    (version "0.20.1")
     (source
      (origin
        (method git-fetch)
@@ -292,7 +294,7 @@ e.g. emacs-geiser-guile for Guile.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1r21d61b2l65gr90s2h83xfnjgzc4n9ris4g5n3ifvdi3pyga6k9"))))
+        (base32 "0bpsih99rvcjwllv631y1nz8vxymbz1x2n1l0qsljpn8g3cgrfbr"))))
     (build-system emacs-build-system)
     (arguments
      '(#:include (cons "^src/" %default-include)
@@ -415,7 +417,7 @@ a generic Scheme interaction mode for the GNU Emacs editor.")
 (define-public emacs-geiser-chez
   (package
     (name "emacs-geiser-chez")
-    (version "0.16")
+    (version "0.17")
     (source
      (origin
        (method git-fetch)
@@ -424,8 +426,7 @@ a generic Scheme interaction mode for the GNU Emacs editor.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32
-         "0cc1z5z5cpvxa5f3n8kvms0wxlybzcg4l1bh3rwv1l1sb0lk1xzx"))))
+        (base32 "03fc9ahb0pmznkcnxzgpni4clj1zgky6vaqkc94nf8b8swniwkm9"))))
     (build-system emacs-build-system)
     (arguments
      '(#:include (cons "^src/" %default-include)
@@ -11087,7 +11088,7 @@ target will call @code{compile} on it.")
 (define-public emacs-cider
   (package
     (name "emacs-cider")
-    (version "1.1.1")
+    (version "1.2.0")
     (source
      (origin
        (method git-fetch)
@@ -11096,7 +11097,7 @@ target will call @code{compile} on it.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0psd8zrhs5w1cfmksd5sjgy9xzfs9i9zp55g97rp7zp6y5als0lx"))))
+        (base32 "1c21hdrf6b7zc65nr7wqjhcyq5a0f4aa91wrxgzx374q81xym2rf"))))
     (build-system emacs-build-system)
     (arguments
      '(#:exclude                        ;don't exclude 'cider-test.el'
@@ -11522,16 +11523,16 @@ extensions.")
 (define-public emacs-evil-collection
   (package
     (name "emacs-evil-collection")
-    (version "0.0.6")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/emacs-evil/evil-collection")
-                    (commit version)))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "0ssb3n1i67b6zp2j8djaalkr33x4c7zalw6vl6p5kqxkh8vy8cdf"))))
+    (version "0.0.7")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/emacs-evil/evil-collection")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1f5mbg2k527brn6b7njdjizpbzj252c53crzl8sf2564czcprqj0"))))
     (build-system emacs-build-system)
     (propagated-inputs
      (list emacs-evil emacs-annalist))
@@ -12083,7 +12084,7 @@ passive voice.")
 (define-public emacs-org
   (package
     (name "emacs-org")
-    (version "9.5.1")
+    (version "9.5.2")
     (source
      (origin
        (method git-fetch)
@@ -12092,7 +12093,7 @@ passive voice.")
              (commit (string-append "release_" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ajig1sb4zxffx3lv7l7xvsf77qgs3s7pm2ylxa3wanwmpk3gvcg"))))
+        (base32 "19fg3drf5h7k46fkdn3b09s69rx8a909cslg7vp2k3b2yji77fdp"))))
     (build-system emacs-build-system)
     (arguments
      `(#:tests? #t
@@ -13814,13 +13815,13 @@ containing words from the Rime project.")
 (define-public emacs-pyim
   (package
     (name "emacs-pyim")
-    (version "3.9.5")
+    (version "3.9.7")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://elpa.gnu.org/packages/pyim-" version ".tar"))
        (sha256
-        (base32 "1dj46yprbl3l6n83aj0hsnd0rwjcp4ypyg2nhwig39wxirwlf9an"))))
+        (base32 "1d8x4lkvnrbs70z5201sh2kxh0h8r000bw0ndxkl5xx8jwz2kmya"))))
     (build-system emacs-build-system)
     (propagated-inputs
      (list emacs-async emacs-pyim-basedict emacs-popup emacs-posframe
@@ -13878,14 +13879,14 @@ methods from a given list.")
 (define-public emacs-posframe
   (package
     (name "emacs-posframe")
-    (version "1.1.2")
+    (version "1.1.3")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://elpa.gnu.org/packages/"
                            "posframe-" version ".tar"))
        (sha256
-        (base32 "0vrv46v7qwmax5m1i6b7lwdh789dfr18ggxjl4bk05qn7waway6j"))))
+        (base32 "12710a6lnkmngh8hy853q1haplphbamcpci8fyln0x9bahgbfamq"))))
     (build-system emacs-build-system)
     ;; emacs-minimal does not include the function font-info.
     (arguments
@@ -14198,7 +14199,7 @@ on mouse-control.")
 (define-public emacs-gnugo
   (package
     (name "emacs-gnugo")
-    (version "3.1.1")
+    (version "3.1.2")
     (source
      (origin
        (method url-fetch)
@@ -14206,7 +14207,7 @@ on mouse-control.")
                            version ".tar"))
        (sha256
         (base32
-         "035rgiz42q042h41l4cvf0hr8igy2vyn3s1hsl2pgh2dq2jjylv6"))))
+         "138gzdyi8scqimvs49da66j8f5a43bhgpasn1bxzdj2zffwlwp6g"))))
     (build-system emacs-build-system)
     (arguments
      `(#:phases (modify-phases %standard-phases
@@ -17246,7 +17247,7 @@ as well as functions for navigating between these headings.")
         (base32 "10l9h2n09cql4ih7nc0ma3ghdsq9l5v9xlj1lg7kq67icdwjlsvy"))))
     (build-system emacs-build-system)
     (arguments
-     `(#:tests? #t
+     `(#:tests? #f                  ;FIXNE: Tests try to read "~/org/test.org"
        #:test-command '("test/run" "--debug")
        #:phases
        (modify-phases %standard-phases
@@ -17433,7 +17434,7 @@ according to a parsing expression grammar.")
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (bin (string-append out "/bin"))
-                    (site-lisp (string-append out "/share/emacs/site-lisp")))
+                    (site-lisp (elpa-directory out)))
                (mkdir-p bin)
                (setenv "HOME" (getcwd))
                (invoke "./install.sh" bin)
@@ -20599,15 +20600,14 @@ using XML-RPC methods fairly transparent to the Lisp code.")
 (define-public emacs-xpm
   (package
     (name "emacs-xpm")
-    (version "1.0.4")
+    (version "1.0.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://elpa.gnu.org/packages/xpm-"
                            version ".tar"))
        (sha256
-        (base32
-         "075miyashh9cm3b0gk6ngld3rm8bfgnh4qxnhxmmvjgzf6a64grh"))))
+        (base32 "13p6s6b2v7h4bnwdkkrd1qz84jd7g2s18w0czhpxv6hvj9sqf5hx"))))
     (build-system emacs-build-system)
     (home-page "https://elpa.gnu.org/packages/xpm.html")
     (synopsis "XPM image editing mode for Emacs")
@@ -21588,7 +21588,7 @@ docstring of the thing at point.")
 (define-public emacs-rust-mode
   (package
     (name "emacs-rust-mode")
-    (version "1.0.1")
+    (version "1.0.3")
     (source
      (origin
        (method git-fetch)
@@ -21597,7 +21597,7 @@ docstring of the thing at point.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1chb3a97cwf1pkxn8cm3wc35gfh9k55l7khg7pklmx36isr3csjv"))))
+        (base32 "11fdxbv51anrjfdqqpgrqz2md9qkcn5y3524lzjippqi9i31lnjn"))))
     (build-system emacs-build-system)
     (arguments
      `(#:tests? #false                  ;FIXME: phase fail with status 127

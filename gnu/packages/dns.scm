@@ -79,6 +79,7 @@
   #:use-module (gnu packages web)
   #:use-module (gnu packages xml)
   #:use-module (gnu packages)
+  #:use-module (guix gexp)
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (guix packages)
   #:use-module (guix download)
@@ -140,15 +141,15 @@ protocol.")
 (define-public ldns
   (package
     (name "ldns")
-    (version "1.7.1")
+    (version "1.8.1")
     (source
      (origin
        (method url-fetch)
        (uri
         (string-append "https://www.nlnetlabs.nl/downloads/"
-                       name "/" name "-" version ".tar.gz"))
+                       "ldns/ldns-" version ".tar.gz"))
        (sha256
-        (base32 "0ac242n7996fswq1a3nlh1bbbhrsdwsq4mx7xq8ffq6aplb4rj4a"))
+        (base32 "18vzdmyg9bm45janw602d4hifjsncrv143awlwcslfjdrsmjk0lm"))
        (patches
         (search-patches
          ;; To create make-flag variables,
@@ -157,60 +158,42 @@ protocol.")
     (build-system gnu-build-system)
     (outputs '("out" "drill" "examples" "pyldns"))
     (arguments
-     `( ;; Tests require Tpkg.
-       ;; https://tpkg.github.io/
-       #:tests? #f
-       #:configure-flags
-       (list
-        "--disable-static"
-        "--enable-gost-anyway"
-        "--enable-rrtype-ninfo"
-        "--enable-rrtype-rkey"
-        "--enable-rrtype-ta"
-        "--enable-rrtype-avc"
-        "--enable-rrtype-doa"
-        "--enable-rrtype-amtrelay"
-        "--with-drill"
-        "--with-examples"
-        "--with-pyldns"
-        ;; Perl module DNS::LDNS not available.
-        ;; https://github.com/erikoest/DNS-LDNS.git
-        ;; "--with-p5-dns-ldns"
-        (string-append "--with-ssl="
-                       (assoc-ref %build-inputs "openssl"))
-        (string-append "--with-ca-path="
-                       (assoc-ref %build-inputs "nss-certs")
-                       "/etc/ssl/certs"))
-       #:make-flags
-       (list
-        (string-append "drillbindir="
-                       (assoc-ref %outputs "drill")
-                       "/bin")
-        (string-append "drillmandir="
-                       (assoc-ref %outputs "drill")
-                       "/share/man")
-        (string-append "examplesbindir="
-                       (assoc-ref %outputs "examples")
-                       "/bin")
-        (string-append "examplesmandir="
-                       (assoc-ref %outputs "examples")
-                       "/share/man")
-        (string-append "python_site="
-                       (assoc-ref %outputs "pyldns")
-                       "/lib/python"
-                       ,(version-major+minor
-                         (package-version python))
-                       "/site-packages"))))
+     (list
+      #:tests? #f                     ; tests require <https://tpkg.github.io>
+      #:configure-flags
+      #~(list
+         "--disable-static"
+         "--enable-gost-anyway"
+         "--enable-rrtype-ninfo"
+         "--enable-rrtype-rkey"
+         "--enable-rrtype-ta"
+         "--enable-rrtype-avc"
+         "--enable-rrtype-doa"
+         "--enable-rrtype-amtrelay"
+         "--with-drill"
+         "--with-examples"
+         "--with-pyldns"
+         ;; Perl module DNS::LDNS not available.
+         ;; https://github.com/erikoest/DNS-LDNS.git
+         ;; "--with-p5-dns-ldns"
+         (string-append "--with-ssl=" #$(this-package-input "openssl"))
+         (string-append "--with-ca-path=" #$(this-package-input "nss-certs")
+                        "/etc/ssl/certs"))
+      #:make-flags
+      #~(list
+         (string-append "drillbindir=" #$output:drill "/bin")
+         (string-append "drillmandir=" #$output:drill "/share/man")
+         (string-append "examplesbindir=" #$output:examples "/bin")
+         (string-append "examplesmandir=" #$output:examples "/share/man")
+         (string-append "python_site=" #$output:pyldns "/lib/python"
+                        #$(version-major+minor (package-version
+                                                (this-package-input
+                                                 "python-wrapper")))
+                        "/site-packages"))))
     (native-inputs
-     `(("doxygen" ,doxygen)
-       ("ksh" ,oksh)
-       ("perl" ,perl)
-       ("perl-devel-checklib" ,perl-devel-checklib)
-       ("pkg-config" ,pkg-config)
-       ("python" ,python-wrapper)
-       ("swig" ,swig)))
+     (list doxygen perl perl-devel-checklib pkg-config swig))
     (inputs
-     (list libpcap nss-certs openssl))
+     (list libpcap nss-certs openssl python-wrapper))
     (synopsis "DNS library that facilitates DNS tool programming")
     (description "LDNS aims to simplify DNS programming, it supports recent
 RFCs like the DNSSEC documents, and allows developers to easily create
@@ -907,7 +890,7 @@ Extensions} (DNSSEC).")
 (define-public knot
   (package
     (name "knot")
-    (version "3.1.4")
+    (version "3.1.5")
     (source
      (origin
        (method git-fetch)
@@ -916,7 +899,7 @@ Extensions} (DNSSEC).")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0wx8ad95adryzp527m4k0lja8y39qqd65f5z9immhfpb9cyax6i7"))
+        (base32 "145fnz740y1g0h2m07kpcimf2rx37saq2l905bl6vwa5ifybrgcq"))
        (modules '((guix build utils)))
        (snippet
         '(begin

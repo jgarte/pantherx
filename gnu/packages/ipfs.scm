@@ -25,7 +25,9 @@
   #:use-module (guix git-download)
   #:use-module (guix download)
   #:use-module (guix build-system go)
-  #:use-module (gnu packages golang))
+  #:use-module (gnu packages golang)
+  #:use-module (gnu packages python)
+  #:use-module (gnu packages shells))
 
 (define-public go-github-com-ipfs-go-ipfs-cmdkit-files
   (let ((commit
@@ -46,7 +48,8 @@
               "0qk6fshgdmhp8dip2ksm13j6nywi41m9mn0czkvmw6b697z85l2r"))))
       (build-system go-build-system)
       (arguments
-       '(#:unpack-path "github.com/ipfs/go-ipfs-cmdkit"
+       `(#:go ,go-1.16
+         #:unpack-path "github.com/ipfs/go-ipfs-cmdkit"
          #:import-path "github.com/ipfs/go-ipfs-cmdkit/files"))
       (home-page "https://github.com/ipfs/go-ipfs-cmdkit")
       (synopsis "Shared types, functions and values for go-ipfs")
@@ -214,7 +217,7 @@ written in Go.")
 (define-public go-ipfs
   (package
     (name "go-ipfs")
-    (version "0.8.0")
+    (version "0.11.0")
     (source
      (origin
        (method url-fetch/tarbomb)
@@ -222,11 +225,11 @@ written in Go.")
              "https://dist.ipfs.io/go-ipfs/v" version
              "/go-ipfs-source.tar.gz"))
        (sha256
-        (base32 "0k2qzlfz8ks9c70rxsy7jvk6d2s6yll1b8v9k2kcw07r989gxbdq"))
+        (base32 "13pmj83hwpz6mk7x52qn0cjnfqxqw2qri3r0k4b270w3bafcccwm"))
        (file-name (string-append name "-" version "-source"))))
     (build-system go-build-system)
     (arguments
-     '(#:unpack-path "github.com/ipfs/go-ipfs"
+     `(#:unpack-path "github.com/ipfs/go-ipfs"
        #:import-path "github.com/ipfs/go-ipfs/cmd/ipfs"
        #:phases (modify-phases %standard-phases
                   (add-before 'reset-gzip-timestamps 'make-files-writable
@@ -237,6 +240,8 @@ written in Go.")
                         (for-each make-file-writable
                                   (find-files out "\\.gz$"))
                         #t))))))
+    (native-inputs
+     (list python-minimal-wrapper zsh))
     (home-page "https://ipfs.io")
     (synopsis "Go implementation of IPFS, a peer-to-peer hypermedia protocol")
     (description "IPFS is a global, versioned, peer-to-peer file system.  It

@@ -6,7 +6,7 @@
 ;;; Copyright © 2018, 2020 Tobias Geerinckx-Rice <me@tobias.gr>
 ;;; Copyright © 2018 Vagrant Cascadian <vagrant@debian.org>
 ;;; Copyright © 2019 Mathieu Othacehe <m.othacehe@gmail.com>
-;;; Copyright © 2020 Marius Bakke <mbakke@fastmail.com>
+;;; Copyright © 2020, 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -281,7 +281,7 @@ for platform-specific firmwares executing in M-mode.")
 (define-public seabios
   (package
     (name "seabios")
-    (version "1.14.0")
+    (version "1.15.0")
     (source
      (origin
        (method git-fetch)
@@ -290,25 +290,71 @@ for platform-specific firmwares executing in M-mode.")
              (commit (string-append "rel-" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0jp4rxsv9jdzvx4gjvkybj6g1yjg8pkd2wys4sdh6c029npp6y8p"))))
+        (base32 "0gnsfmbgcvihsap8sz8c2n3qs439q44i3pwrms2nv3xcnf1sclj9"))))
     (build-system gnu-build-system)
-    (native-inputs
-     `(("python" ,python-wrapper)))
+    (native-inputs (list python-wrapper))
     (arguments
      `(#:tests? #f                      ; no check target
+       #:make-flags '("EXTRAVERSION=-guix") ;upstream wants distros to set this
+       #:modules (,@%gnu-build-system-modules
+                  (ice-9 match))
        #:phases
        (modify-phases %standard-phases
          (replace 'configure
            (lambda _
-             (setenv "CC" "gcc")
-             #t))
+             ;; Create the ".version" file that is present in release tarballs.
+             ;; Otherwise this will be regarded as an "unclean" build, and the
+             ;; build system ends up encoding the build date in the binaries.
+             (call-with-output-file ".version"
+               (lambda (port)
+                 (format port ,(package-version this-package))))
+             (setenv "CC" "gcc")))
+         (add-after 'build 'build-vgabios
+           (lambda* (#:key (make-flags ''()) #:allow-other-keys)
+             (for-each
+              (match-lambda
+                ((target . config)
+                 (let* ((dot-config (string-append (getcwd) "/" target "/.config"))
+                        (flags (append make-flags
+                                      (list (string-append "KCONFIG_CONFIG="
+                                                           dot-config)
+                                            (string-append "OUT=" target "/")))))
+                   (mkdir target)
+                   (call-with-output-file dot-config
+                     (lambda (port)
+                       (for-each (lambda (entry)
+                                   (if (string-suffix? "=n" entry)
+                                       (format port "# CONFIG_~a is not set~%"
+                                               (string-drop-right entry 2))
+                                       (format port "CONFIG_~a~%" entry)))
+                                 (cons "BUILD_VGABIOS=y" config))))
+                   (apply invoke "make" (append flags '("oldnoconfig")))
+                   (apply invoke "make" flags)
+                   (link (string-append target "/bios.bin")
+                         (string-append "out/" target ".bin")))))
+              ;; These tuples are modelled after Debians packaging:
+              ;; https://salsa.debian.org/qemu-team/seabios/-/blob/master/debian/rules
+              '(("ati"    . ("VGA_ATI=y" "VGA_PCI=y"))
+                ("bochs-display" . ("DISPLAY_BOCHS=y" "VGA_PCI=y"))
+                ("cirrus" . ("VGA_CIRRUS=y" "VGA_PCI=y"))
+                ("stdvga" . ("VGA_BOCHS=y" "VGA_PCI=y"))
+                ("virtio" . ("VGA_BOCHS_VIRTIO=y" "VGA_PCI=y"))
+                ("vmware" . ("VGA_BOCHS_VMWARE=y" "VGA_PCI=y"))
+                ("qxl"    . ("VGA_BOCHS_QXL=y" "VGA_PCI=y"))
+                ("isavga" . ("VGA_BOCHS=y" "VGA_PCI=n"))
+                ("ramfb"  . ("VGA_RAMFB=y" "VGA_PCI=n"))))))
          (replace 'install
            (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (fmw (string-append out "/share/firmware")))
                (mkdir-p fmw)
                (copy-file "out/bios.bin" (string-append fmw "/bios.bin"))
-               #t))))))
+               (for-each (lambda (bios)
+                           (install-file bios fmw))
+                         (find-files "out" "\\.bin$"))
+               (with-directory-excursion fmw
+                 ;; QEMU 1.7 and later looks only for the latter.
+                 (symlink "bios.bin" "bios-256k.bin"))))))))
     (home-page "https://www.seabios.org/SeaBIOS")
     (synopsis "x86 BIOS implementation")
     (description "SeaBIOS is an implementation of a 16bit x86 BIOS.  SeaBIOS

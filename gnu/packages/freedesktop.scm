@@ -2378,7 +2378,7 @@ interfaces.")
 (define-public xdg-desktop-portal-wlr
   (package
     (name "xdg-desktop-portal-wlr")
-    (version "0.4.0")
+    (version "0.5.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2387,21 +2387,39 @@ interfaces.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "13fbzh8bjnhk4xs8j9bpc01q3hy27zpbf0gkk1fnh3hm5pnyfyiv"))))
+                "1ipg35gv8ja39ijwbyi96qlyq2y1fjdggl40s38rv68bsya8zry1"))
+              (patches (search-patches "xdg-desktop-portal-wlr-harcoded-length.patch"))))
     (build-system meson-build-system)
     (arguments
      `(#:configure-flags
        '("-Dsystemd=disabled"
-         "-Dsd-bus-provider=libelogind")))
+         "-Dsd-bus-provider=libelogind")
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'hardcode-binaries
+           (lambda* (#:key inputs #:allow-other-keys)
+             (let ((sh (search-input-file inputs "/bin/sh"))
+                   (grim (search-input-file inputs "/bin/grim"))
+                   (slurp (search-input-file inputs "/bin/slurp")))
+               (substitute* "src/screenshot/screenshot.c"
+                 (("grim") grim)
+                 (("slurp") slurp)
+                 (("execl\\(\"/bin/sh\", \"/bin/sh\"")
+                  (string-append "execl(\"" sh "\", \"" sh "\"")))
+               (substitute* "src/screencast/screencast.c"
+                 (("execvp\\(\"sh")
+                  (string-append "execvp(\"" sh)))))))))
     (native-inputs
      (list cmake pkg-config))
-    (inputs
-     `(("elogind" ,elogind)
-       ("iniparser" ,iniparser)
-       ("pipewire" ,pipewire-0.3)
-       ("inih" ,libinih)
-       ("wayland" ,wayland)
-       ("wayland-protocols" ,wayland-protocols)))
+    (inputs (list elogind
+                  bash-minimal
+                  grim
+                  iniparser
+                  libinih
+                  pipewire-0.3
+                  slurp
+                  wayland
+                  wayland-protocols))
     (home-page "https://github.com/emersion/xdg-desktop-portal-wlr")
     (synopsis "@code{xdg-desktop-portal} backend for wlroots")
     (description

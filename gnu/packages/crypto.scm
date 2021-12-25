@@ -365,34 +365,47 @@ the wrong hands.")
 (define-public keyutils
   (package
     (name "keyutils")
-    (version "1.6.1")
+    (version "1.6.3")
     (source
      (origin
-       (method url-fetch)
-       (uri
-        (string-append "https://people.redhat.com/dhowells/keyutils/keyutils-"
-                       version ".tar.bz2"))
+       (method git-fetch)
+       (uri (git-reference
+             (url (string-append "https://git.kernel.org/pub/scm/linux/kernel/"
+                                 "git/dhowells/keyutils.git"))
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "1kk4pmyflgplkgxn2bzpc069ph9c9jdd9ikcsyd5pnaimqi5gcf8"))
+        (base32 "1095g1p5038m91wf2dxnagngpvww7ilcj8fhyviid3srvxr675i7"))
        (modules '((guix build utils)))
        ;; Create relative symbolic links instead of absolute ones to /lib/*.
        (snippet '(begin
                    (substitute* "Makefile" (("\\$\\(LNS\\) \\$\\(LIBDIR\\)/")
-                                            "$(LNS) "))
-                   #t))))
+                                            "$(LNS) "))))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases (modify-phases %standard-phases
-                  (delete 'configure))          ; no configure script
-       #:make-flags (list ,(string-append "CC=" (cc-for-target))
-                          "RPATH=-Wl,-rpath,$(DESTDIR)$(LIBDIR)"
-                          (string-append "DESTDIR="
-                                         (assoc-ref %outputs "out"))
-                          "INCLUDEDIR=/include"
-                          "LIBDIR=/lib"
-                          "MANDIR=/share/man"
-                          "SHAREDIR=/share/keyutils")
-       #:test-target "test"))
+     (list #:make-flags
+           #~(list (string-append "CC=" #$(cc-for-target))
+                   ;; "NO_ARLIB=1" would cleanly disable static libraries.
+                   "RPATH=-Wl,-rpath,$(DESTDIR)$(LIBDIR)"
+                   (string-append "DESTDIR=" #$output)
+                   "INCLUDEDIR=/include"
+                   "LIBDIR=/lib"
+                   "MANDIR=/share/man"
+                   "SHAREDIR=/share/keyutils")
+           #:phases
+           #~(modify-phases %standard-phases
+               (delete 'configure)      ; no configure script
+               (add-after 'install 'install:static
+                 (lambda _
+                   (with-directory-excursion #$output
+                     (for-each (lambda (file)
+                                 (let ((target (string-append #$output:static
+                                                              "/" file)))
+                                   (format #t "~a -> ~a\n" file target)
+                                   (mkdir-p (dirname target))
+                                   (rename-file file target)))
+                               (find-files "lib" "\\.a$"))))))
+           #:test-target "test"))
     (inputs
      (list mit-krb5))
     (home-page "https://people.redhat.com/dhowells/keyutils/")
@@ -1239,19 +1252,19 @@ quickly by using all your CPU cores and hardware acceleration.")
 (define-public minisign
   (package
     (name "minisign")
-    (version "0.9")
+    (version "0.10")
     (source
      (origin
-       (method url-fetch)
-       (uri
-        (string-append "https://github.com/jedisct1/minisign/releases/download/"
-                       version "/minisign-" version ".tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/jedisct1/minisign")
+             (commit version)))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "1h9cfvvm6lqq33b2wdar1x3w4k7zyrscavllyb0l5dmcdabq60r2"))))
+        (base32 "0gi5z03w9sg72vyjs94y0mhkzz7bbhyzcg92mgmd9r2ydpi5gads"))))
     (build-system cmake-build-system)
     (arguments
-     ; No test suite
-     `(#:tests? #f))
+     `(#:tests? #f))                    ; no test suite
     (native-inputs
      (list pkg-config))
     (inputs

@@ -1689,7 +1689,7 @@ connectivity of the X server running on a particular @code{DISPLAY}.")
 (define-public rofi
   (package
     (name "rofi")
-    (version "1.7.0")
+    (version "1.7.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/davatorium/rofi/"
@@ -1697,27 +1697,27 @@ connectivity of the X server running on a particular @code{DISPLAY}.")
                                   version "/rofi-" version ".tar.xz"))
               (sha256
                (base32
-                "1929q3dks8fqd3pfkzs0ba06gwzhlgcrfar9fpga43f3byrrbfxa"))))
+                "1kfp9ylynz8xgw11aa5k7b4iyq9z8zkqas1mpvs8wpzvnfr09ymd"))))
     (build-system gnu-build-system)
-    (inputs
-     `(("pango" ,pango)
-       ("cairo" ,cairo)
-       ("glib" ,glib)
-       ("startup-notification" ,startup-notification)
-       ("libjpeg" ,libjpeg-turbo)
-       ("librsvg" ,librsvg)
-       ("libxkbcommon" ,libxkbcommon)
-       ("libxcb" ,libxcb)
-       ("xcb-util" ,xcb-util)
-       ("xcb-util-cursor" ,xcb-util-cursor)
-       ("xcb-util-xrm" ,xcb-util-xrm)
-       ("xcb-util-wm" ,xcb-util-wm)))
     (native-inputs
-     `(("bison" ,bison)
-       ("check" ,check)
-       ("flex" ,flex)
-       ("glib:bin" ,glib "bin")
-       ("pkg-config" ,pkg-config)))
+     (list bison
+           check
+           flex
+           `(,glib "bin")
+           pkg-config))
+    (inputs
+     (list cairo
+           glib
+           libjpeg-turbo
+           librsvg
+           libxcb
+           libxkbcommon
+           pango
+           startup-notification
+           xcb-util
+           xcb-util-cursor
+           xcb-util-wm
+           xcb-util-xrm))
     (arguments
      `(#:parallel-tests? #f             ; fails in some circumstances
        #:phases
@@ -1727,8 +1727,7 @@ connectivity of the X server running on a particular @code{DISPLAY}.")
              (substitute* '("test/helper-expand.c")
                (("~root") "/root")
                (("~") "")
-               (("g_get_home_dir \\(\\)") "\"/\""))
-             #t)))))
+               (("g_get_home_dir \\(\\)") "\"/\"")))))))
     (home-page "https://github.com/davatorium/rofi")
     (synopsis "Application launcher")
     (description "Rofi is a minimalist application launcher.  It memorizes which

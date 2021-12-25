@@ -2,7 +2,7 @@
 ;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015 Vicente Vera Parra <vicentemvp@gmail.com>
 ;;; Copyright © 2016 Andreas Enge <andreas@enge.fr>
-;;; Copyright © 2016, 2017, 2019, 2020 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2017, 2019, 2020, 2021 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Pjotr Prins <pjotr.guix@thebird.nl>
 ;;; Copyright © 2016 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2016 Ben Woodcroft <donttrustben@gmail.com>
@@ -1963,14 +1963,17 @@ building design matrices.")
 (define-public python-statsmodels
   (package
     (name "python-statsmodels")
-    (version "0.11.1")
+    (version "0.13.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "statsmodels" version))
        (sha256
-        (base32
-         "1w6mf8b86vizi2895j11szqryr2v1ckjig3wp9fv94aslfh3zpjv"))))
+        (base32 "0sbsyxgpzhys5padhkhrj71z4i1q41sm938pz0x8ff6jjvcchvh0"))
+       (modules '((guix build utils)))
+       (snippet
+        '(begin
+           (for-each delete-file (find-files "." "\\.c$"))))))
     (build-system python-build-system)
     (arguments
      `(;; The test suite is very large and rather brittle.  Tests often fail

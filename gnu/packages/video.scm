@@ -3380,6 +3380,7 @@ be used for realtime video capture via Linux-specific APIs.")
        ("qtbase" ,qtbase-5)
        ("qtsvg" ,qtsvg)
        ("qtx11extras" ,qtx11extras)
+       ("qtwayland" ,qtwayland)
        ("speexdsp" ,speexdsp)
        ("v4l-utils" ,v4l-utils)
        ("wayland" ,wayland)
@@ -5477,20 +5478,18 @@ elementary stream are provided.")
        #:make-flags
        #~(list (string-append "prefix=" #$output))
        #:phases
-       '(modify-phases %standard-phases
+       #~(modify-phases %standard-phases
           (delete 'configure)
           (delete 'build)
           (delete 'check)
           (add-after 'install 'wrap-program
-            (lambda* (#:key inputs outputs #:allow-other-keys)
-              (let ((vcs (string-append (assoc-ref outputs "out") "/bin/vcs"))
-                    (ffmpeg (assoc-ref inputs "ffmpeg"))
-                    (imagemagick (assoc-ref inputs "imagemagick")))
-                (wrap-program vcs
-                  `("PATH" ":" prefix
-                    ,(map (lambda (dir)
-                            (string-append dir "/bin"))
-                          (list ffmpeg imagemagick))))))))))
+            (lambda _
+              (wrap-program (string-append #$output "/bin/vcs")
+                `("PATH" ":" prefix
+                  ,(map (lambda (dir)
+                          (string-append dir "/bin"))
+                        (list #$(this-package-input "ffmpeg")
+                              #$(this-package-input "imagemagick"))))))))))
    (inputs
      (list bash-minimal ffmpeg imagemagick))
    (synopsis "Create contact sheets (preview images) from videos")

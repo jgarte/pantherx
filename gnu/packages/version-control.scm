@@ -1626,17 +1626,16 @@ visualize your public Git repositories on a web interface.")
 (define-public pre-commit
   (package
     (name "pre-commit")
-    (version "2.15.0")
+    (version "2.16.0")
     (source
      (origin
-       ;; No tests in the PyPI tarball.
-       (method git-fetch)
+       (method git-fetch)               ; no tests in PyPI release
        (uri (git-reference
              (url "https://github.com/pre-commit/pre-commit")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0hyynhg52qq8rd37cwk2gl1jjy7hpqh74zl2lg89kkdhhx0xfiaj"))))
+        (base32 "1sf9mqpiv3pgzi6aar7xfna9v7n63lgm7d7b24fhni0jxn56384b"))))
     (build-system python-build-system)
     (arguments
      `(#:phases
@@ -2032,10 +2031,12 @@ projects, from individuals to large-scale enterprise operations.")
                  (modify-phases %standard-phases
                    (add-after 'install 'install-rcsfreeze
                      (lambda* (#:key outputs #:allow-other-keys)
-                       (chmod "src/rcsfreeze" #o755)
-                       (install-file
-                         "src/rcsfreeze"
-                         (string-append (assoc-ref outputs "out") "/bin")))))))
+                       (let* ((out (assoc-ref outputs "out"))
+                              (bin (string-append out "/bin"))
+                              (man1 (string-append out "/share/man/man1")))
+                         (chmod "src/rcsfreeze" #o755)
+                         (install-file "src/rcsfreeze" bin)
+                         (install-file "man/rcsfreeze.1" man1)))))))
     (native-inputs (list ed))
     (home-page "https://www.gnu.org/software/rcs/")
     (synopsis "Per-file local revision control system")
@@ -2067,6 +2068,28 @@ machine.")
 annotated RCS file describes the revision and date in which each line was
 added to the file, and the author of each line.")
     (license license:gpl2+)))
+
+(define-public rcshist
+  (package
+    (name "rcshist")
+    (version "1.04-20190106")
+    (source (origin
+             (method url-fetch)
+             (uri (string-append
+                   "https://invisible-mirror.net/archives/rcshist/rcshist-"
+                   version ".tgz"))
+             (sha256
+              (base32
+               "01ab3xwgm934lxr8bm758am3vxwx4hxx7cc9prbgqj5nh30vdg1n"))))
+    (build-system gnu-build-system)
+    (home-page "https://invisible-island.net/rcshist/rcshist.html")
+    (synopsis "Display RCS change history")
+    (description
+     "The @code{rcshist} utility displays the complete revision history of a
+set of RCS files including log messages and patches.  It can also display the
+patch associated with a particular revision of an RCS file.")
+    (license (list license:bsd-2
+                   license:bsd-3))))  ; bsd_queue.h
 
 (define-public cvs
   (package
@@ -3229,6 +3252,52 @@ If several repos are related, it helps to see their status together.")
 makes a directory under a specific root directory (by default @file{~/ghq})
 using the remote repository URL's host and path.")
     (license license:expat)))
+
+(define-public tkrev
+  (package
+    (name "tkrev")
+    (version "9.4.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append
+             "mirror://sourceforge/tkcvs/tkrev_" version ".tar.gz"))
+       (sha256
+        (base32 "0bpfbhkngzmwy476mfc69mkd94l0m2wxznrn0qzd81s450yxjw2q"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (delete 'configure)
+         (delete 'build)
+         (replace 'install
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                    (bin (string-append out "/bin")))
+               (invoke "wish" "doinstall.tcl" "-nox" out)
+               (install-file "contrib/tkdirdiff" bin))))
+         (add-after 'install 'wrap-programs
+           (lambda* (#:key outputs #:allow-other-keys)
+             (for-each
+               (lambda (file)
+                 (wrap-program (string-append (assoc-ref outputs "out")
+                                              "/bin/" file)
+                   `("PATH" ":" prefix (,(dirname (which "wish"))))))
+               '("tkdiff"
+                 "tkdirdiff"
+                 "tkrev")))))
+       #:tests? #f))
+    (inputs
+     (list tk))
+    (home-page "https://tkcvs.sourceforge.io")
+    (synopsis "Graphical interface to CVS, Subversion, Git, and RCS")
+    (description
+     "TkRev (formerly TkCVS) is a Tcl/Tk-based graphical interface to the CVS,
+Subversion and Git configuration management systems.  It will also help with
+RCS.  It shows the status of the files in the current working directory, and
+has tools for tagging, merging, checking in/out, and other user operations.
+TkDiff is included for browsing and merging your changes.")
+    (license license:gpl2+)))
 
 (define-public git-filter-repo
   (package

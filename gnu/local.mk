@@ -309,6 +309,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/inklingreader.scm		\
   %D%/packages/inkscape.scm			\
   %D%/packages/installers.scm			\
+  %D%/packages/instrumentation.scm		\
   %D%/packages/ipfs.scm			\
   %D%/packages/irc.scm  			\
   %D%/packages/irods.scm  			\
@@ -717,7 +718,6 @@ GNU_SYSTEM_MODULES =				\
   %D%/build/linux-modules.scm			\
   %D%/build/marionette.scm			\
   %D%/build/secret-service.scm			\
-  %D%/build/vm.scm				\
 						\
   %D%/tests.scm					\
   %D%/tests/audio.scm				\
@@ -884,7 +884,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/bazaar-CVE-2017-14176.patch		\
   %D%/packages/patches/bc-fix-cross-compilation.patch		\
   %D%/packages/patches/bdb-5.3-atomics-on-gcc-9.patch		\
-  %D%/packages/patches/bear-disable-preinstall-tests.patch	\
   %D%/packages/patches/bind-re-add-attr-constructor-priority.patch	\
   %D%/packages/patches/brightnessctl-elogind-support.patch	\
   %D%/packages/patches/bsd-games-2.17-64bit.patch		\
@@ -1265,7 +1264,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/icecat-use-older-reveal-hidden-html.patch	\
   %D%/packages/patches/icecat-use-system-graphite2+harfbuzz.patch	\
   %D%/packages/patches/icecat-use-system-media-libs.patch	\
-  %D%/packages/patches/icedtea-6-extend-hotspot-aarch64-support.patch	\
   %D%/packages/patches/icedtea-7-hotspot-aarch64-use-c++98.patch\
   %D%/packages/patches/id3lib-CVE-2007-4460.patch			\
   %D%/packages/patches/id3lib-UTF16-writing-bug.patch			\
@@ -1549,8 +1547,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/onnx-skip-model-downloads.patch		\
   %D%/packages/patches/openbabel-fix-crash-on-nwchem-output.patch	\
   %D%/packages/patches/opencascade-oce-glibc-2.26.patch		\
-  %D%/packages/patches/opencv-fix-build-of-grfmt_jpeg2000.cpp.patch	\
-  %D%/packages/patches/opencv-rgbd-aarch64-test-fix.patch	\
   %D%/packages/patches/openfoam-4.1-cleanup.patch			\
   %D%/packages/patches/openjdk-10-idlj-reproducibility.patch	\
   %D%/packages/patches/openjdk-14-builtins.patch                \
@@ -1590,6 +1586,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/sdl-pango-sans-serif.patch		\
   %D%/packages/patches/smalltalk-multiplication-overflow.patch	\
   %D%/packages/patches/sqlite-hurd.patch			\
+  %D%/packages/patches/sssd-collision-with-external-nss-symbol.patch	\
   %D%/packages/patches/strace-readlink-tests.patch		\
   %D%/packages/patches/sunxi-tools-remove-sys-io.patch	\
   %D%/packages/patches/p11-kit-hurd.patch			\
@@ -1845,6 +1842,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/tor-sandbox-i686.patch			\
   %D%/packages/patches/transcode-ffmpeg.patch	\
   %D%/packages/patches/transmission-honor-localedir.patch	\
+  %D%/packages/patches/trytond-add-egg-modules-to-path.patch	\
+  %D%/packages/patches/trytond-add-guix_trytond_path.patch	\
   %D%/packages/patches/ttf2eot-cstddef.patch			\
   %D%/packages/patches/tup-unbundle-dependencies.patch		\
   %D%/packages/patches/tuxpaint-stamps-path.patch		\
@@ -1929,6 +1928,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/wpa-supplicant-CVE-2021-27803.patch	\
   %D%/packages/patches/wpa-supplicant-CVE-2021-30004.patch	\
   %D%/packages/patches/x265-arm-flags.patch			\
+  %D%/packages/patches/xdg-desktop-portal-wlr-harcoded-length.patch\
   %D%/packages/patches/xf86-video-ark-remove-mibstore.patch	\
   %D%/packages/patches/xf86-video-mach64-bool-to-boolean.patch	\
   %D%/packages/patches/xf86-video-mach64-glibc-2.20.patch	\

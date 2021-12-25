@@ -67,6 +67,7 @@
 ;;; Copyright © 2021 Petr Hodina <phodina@protonmail.com>
 ;;; Copyright © 2021 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2021 Christopher Baines <mail@cbaines.net>
+;;; Copyright © 2021 Foo Chuan Wei <chuanwei.foo@hotmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -151,6 +152,7 @@
   #:use-module (gnu packages kde)
   #:use-module (gnu packages kde-frameworks)
   #:use-module (gnu packages less)
+  #:use-module (gnu packages lesstif)
   #:use-module (gnu packages libcanberra)
   #:use-module (gnu packages libedit)
   #:use-module (gnu packages libidn)
@@ -5826,7 +5828,7 @@ for Un*x systems with X11.")
 (define-public freeciv
   (package
    (name "freeciv")
-   (version "2.6.5")
+   (version "2.6.6")
    (source
     (origin
      (method url-fetch)
@@ -5838,7 +5840,7 @@ for Un*x systems with X11.")
                   (version-major+minor version) "/" version
                   "/freeciv-" version ".tar.bz2")))
      (sha256
-      (base32 "0ngcj59ak71i6m8yvbr0g3aryzpw1scalpdzgfqsq4mf9p3y2r1f"))))
+      (base32 "04aq2v1ima87sap6yjb7jrm1ss63ax7v5kg7rpkj44887kfybkvv"))))
    (build-system gnu-build-system)
    (inputs
     (list curl cyrus-sasl gtk+ sdl-mixer zlib))
@@ -12200,6 +12202,80 @@ game.")  ;thanks to Debian for description
 computer opponents or against real players online.")
     (license license:agpl3+)))
 
+(define-public xblackjack
+  (package
+    (name "xblackjack")
+    (version "2.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://www.ibiblio.org/pub/X11/contrib/games/"
+                           "xblackjack-" version ".tar.gz"))
+       (sha256
+        (base32 "05h93rya7zwnx2l58f0a7wkjadymkj4y77clcr2hryhrhhy1vwjx"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:phases
+       (modify-phases %standard-phases
+         (replace 'configure
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let ((imake (assoc-ref inputs "imake"))
+                   (out (assoc-ref outputs "out")))
+               (substitute* "Imakefile"
+                 (("EXTRA_LIBRARIES = -lXm \\$\\(DEPLIBS\\) -lbsd")
+                  "EXTRA_LIBRARIES = -lXm -lXt -lXmu -lXext -lX11")
+                 (("^#define NonStandardInstallTargets NO")
+                  "#define NonStandardInstallTargets YES")
+                 (("BINDIR = /usr/local/bin")
+                  (string-append "BINDIR = " out "/bin"))
+                 (("MANDIR = /usr/local/man/cat1")
+                  (string-append "MANDIR = " out "/share/man/man1"))
+                 (("XAPPLOADDIR = /usr/local/lib/app-defaults")
+                  (string-append "XAPPLOADDIR = " out "/lib/X11/app-defaults")))
+
+               (invoke "xmkmf")  ; Generate Makefile.
+               (substitute* "Makefile"
+                 ((imake) out)
+                 (("ETCX11DIR = /etc/X11")
+                  (string-append "ETCX11DIR = " out "/etc/X11"))
+                 ;; Fix incorrect argument given to gcc. Error message:
+                 ;; "gcc: error: DefaultGcc2AMD64Opt: No such file or directory"
+                 (("CDEBUGFLAGS = [^\n]*") ""))
+
+               ;; Fix header paths.
+               (substitute* '("Draw.c"
+                              "Strategy.c")
+                 (("^#include <X11/Xm/Xm.h>")
+                  "#include <Xm/Xm.h>"))
+               (substitute* "Strategy.c"
+                 (("^#include <X11/Xm/Label.h>")
+                  "#include <Xm/Label.h>"))
+
+               ;; Fix compilation errors.
+               (substitute* "Table.c"
+                 (("/\\* focus_moved_proc \\*/\tXtInheritFocusMovedProc,") "")
+                 (("_XmMoveObject\\(\\(RectObj\\) w, rx, ry\\);")
+                  "_XmMoveObject(w, rx, ry);")
+                 (("_XmResizeObject\\(\\(RectObj\\) managed->locs[i].w, nw, nh,")
+                  "_XmResizeObject(managed->locs[i].w, nw, nh,")))))
+         (add-after 'install 'install-man-pages
+           (lambda _
+             (invoke "make" "install.man"))))
+       #:tests? #f))  ; No check target.
+    (inputs
+     (list lesstif libx11 libxext libxmu libxt))
+    (native-inputs
+     (list imake))
+    (home-page "https://www.ibiblio.org/pub/X11/contrib/games/")
+    (synopsis "X11/Motif blackjack game")
+    (description
+     "Xblackjack is a MOTIF/OLIT based tool constructed to get you ready for
+the casino.  It was inspired by a book called \"Beat the Dealer\" by Edward
+O. Thorp, Ph.D. of UCLA.  A number of important statistics are maintained
+for display, and used by the program to implement Thorp's \"Complete Point
+System\" (high-low system).")
+    (license (license:x11-style "" "See file headers."))))
+
 (define-public azimuth
   (package
     (name "azimuth")
@@ -12476,7 +12552,7 @@ disassembly of the DOS version, extended with new features.")
 (define-public fheroes2
   (package
     (name "fheroes2")
-    (version "0.9.9")
+    (version "0.9.10")
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f                      ; no tests
@@ -12496,7 +12572,7 @@ disassembly of the DOS version, extended with new features.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "030kfaagxy3i7bjvbx2nf05jmbbh5g2r52l17y9bl6vbfj67yvxy"))))
+        (base32 "0zz8k1ygw4kwnv403q60v2hdfzk13p89jjgmpfbylhxchjvwaxgh"))))
     (home-page "https://ihhub.github.io/fheroes2/")
     (synopsis "Turn-based strategy game engine")
     (description "@code{fheroes2} is an implementation of Heroes of Might and

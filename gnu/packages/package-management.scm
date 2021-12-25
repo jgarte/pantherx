@@ -142,13 +142,17 @@
 ;; Instead, please push one commit that rolls back Guix to before the mistake,
 ;; and then another that points to the first one. That way, the faulty commit
 ;; won't appear on the linked list.
+;;
+;; If you are updating this package because it fails to build, you need to
+;; actually update it *twice*, as the installer is pointing to the N-1 guix
+;; package revision.
 (define-public guix
   ;; Latest version of Guix, which may or may not correspond to a release.
   ;; Note: the 'update-guix-package.scm' script expects this definition to
   ;; start precisely like this.
   (let ((version "1.3.0")
-        (commit "10ceb3e84654e024f14a4b048e7d68492ed9dc7c")
-        (revision 16))
+        (commit "2a49ddb513476cd45ebca618ffb0b9e381c1e497")
+        (revision 17))
     (package
       (name "guix")
 
@@ -164,7 +168,7 @@
                       (commit commit)))
                 (sha256
                  (base32
-                  "13gdj1fdjx4i0ylijv3qz5q0mmf4wbdhayifxrhzh2ng9idqhd0j"))
+                  "069gn3j2ar642f42b1l37g901i9n75s0q43abb8mavw9hlc23gqv"))
                 (file-name (string-append "guix-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -328,10 +332,11 @@ $(prefix)/etc/openrc\n")))
                                (ssh    (assoc-ref inputs "guile-ssh"))
                                (gnutls (assoc-ref inputs "gnutls"))
                                (disarchive (assoc-ref inputs "disarchive"))
+                               (lzma (assoc-ref inputs "guile-lzma"))
                                (locales (assoc-ref inputs "glibc-utf8-locales"))
                                (deps   (list gcrypt json sqlite gnutls git
                                              bs ssh zlib lzlib zstd guile-lib
-                                             disarchive))
+                                             disarchive lzma))
                                (deps*  (if avahi (cons avahi deps) deps))
                                (effective
                                 (read-line
@@ -434,6 +439,7 @@ $(prefix)/etc/openrc\n")))
          ("bootstrap/xz" ,(bootstrap-executable "xz" (%current-system)))
 
          ("disarchive" ,disarchive)               ;for 'guix perform-download'
+         ("guile-lzma" ,guile-lzma)               ;for Disarchive
 
          ("glibc-utf8-locales" ,glibc-utf8-locales)))
       (propagated-inputs
@@ -1228,8 +1234,8 @@ environments.")
     (license (list license:gpl3+ license:agpl3+ license:silofl1.1))))
 
 (define-public guix-build-coordinator
-  (let ((commit "226ec0f0f8a10842ffdd50dd464be33b2db45563")
-        (revision "40"))
+  (let ((commit "f8013a0b4dbe68194ac0244a5e1e4f28fcfc7763")
+        (revision "43"))
     (package
       (name "guix-build-coordinator")
       (version (git-version "0" revision commit))
@@ -1240,7 +1246,7 @@ environments.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "1sxvp7j5xypk6zlrs5y21lwx12h5r0c35ia9wqf0cyq8wjjaagh8"))
+                  "0ia64bibzhspzr6vx99nanfls53cb77lyshbq1vxpnf0fgfp1w1s"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments
@@ -1317,41 +1323,41 @@ environments.")
                #t))
            (delete 'strip))))             ; As the .go files aren't compatible
       (native-inputs
-       `(("pkg-config" ,pkg-config)
-         ("autoconf" ,autoconf)
-         ("automake" ,automake)
-         ("gnutls" ,gnutls)
+       (list pkg-config
+             autoconf
+             automake
+             gnutls
 
-         ;; Guile libraries are needed here for cross-compilation.
-         ("guile-json" ,guile-json-4)
-         ("guile-gcrypt" ,guile-gcrypt)
-         ("guix" ,guix)
-         ("guile-prometheus" ,guile-prometheus)
-         ("guile-fibers" ,guile-fibers)
-         ("guile-lib" ,guile-lib)
-         ("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))))
+             ;; Guile libraries are needed here for cross-compilation.
+             guile-json-4
+             guile-gcrypt
+             guix
+             guile-prometheus
+             guile-fibers
+             guile-lib
+             (first (assoc-ref (package-native-inputs guix) "guile"))))
       (inputs
-       `(("guile" ,@(assoc-ref (package-native-inputs guix) "guile"))
-         ,@(if (%current-target-system)
-               `(("bash" ,bash-minimal))
-               '())
-         ("sqlite" ,sqlite)
-         ,@(if (hurd-target?)
-               '()
-               `(("sqitch" ,sqitch)))))
+       (append
+        (list (first (assoc-ref (package-native-inputs guix) "guile"))
+              sqlite
+              bash-minimal)
+        (if (hurd-target?)
+            '()
+            (list sqitch))))
       (propagated-inputs
-       `(,@(if (hurd-target?)
-               '()
-               `(("guile-fibers" ,guile-fibers)))
-         ("guile-prometheus" ,guile-prometheus)
-         ("guile-gcrypt" ,guile-gcrypt)
-         ("guile-json" ,guile-json-4)
-         ("guile-lib" ,guile-lib)
-         ("guile-lzlib" ,guile-lzlib)
-         ("guile-zlib" ,guile-zlib)
-         ("guile-sqlite3" ,guile-sqlite3)
-         ("guix" ,guix)
-         ("gnutls" ,gnutls)))
+       (append
+        (list guile-prometheus
+              guile-gcrypt
+              guile-json-4
+              guile-lib
+              guile-lzlib
+              guile-zlib
+              guile-sqlite3
+              guix
+              gnutls)
+        (if (hurd-target?)
+            '()
+            (list guile-fibers))))
       (home-page "https://git.cbaines.net/guix/build-coordinator/")
       (synopsis "Tool to help build derivations")
       (description
@@ -1440,6 +1446,113 @@ in the right software environment.  Guix-Jupyter spawns the actual kernels
 such as @code{python-ipykernel} on behalf of the notebook user and runs them
 in an isolated environment, in separate namespaces.")
     (license license:gpl3+)))
+
+(define-public nar-herder
+  (let ((commit "049dfec287fa948cac6682d0a047bc0ed356f0bf")
+        (revision "1"))
+    (package
+      (name "nar-herder")
+      (version (git-version "0" revision commit))
+      (source (origin
+                (method git-fetch)
+                (uri (git-reference
+                      (url "https://git.cbaines.net/git/guix/nar-herder")
+                      (commit commit)))
+                (sha256
+                 (base32
+                  "1bkn6avcyp2rcrqaync65b8yn9dvxlkjpk3mdk5nsy527dzhs5ws"))
+                (file-name (string-append name "-" version "-checkout"))))
+      (build-system gnu-build-system)
+      (arguments
+       `(#:modules (((guix build guile-build-system)
+                     #:select (target-guile-effective-version))
+                    ,@%gnu-build-system-modules)
+         #:imported-modules ((guix build guile-build-system)
+                             ,@%gnu-build-system-modules)
+         #:phases
+         (modify-phases %standard-phases
+           (add-before 'build 'set-GUILE_AUTO_COMPILE
+             (lambda _
+               ;; To avoid warnings relating to 'guild'.
+               (setenv "GUILE_AUTO_COMPILE" "0")))
+           (add-after 'install 'wrap-executable
+             (lambda* (#:key inputs outputs target #:allow-other-keys)
+               (let* ((out (assoc-ref outputs "out"))
+                      (bin (string-append out "/bin"))
+                      (guile (assoc-ref inputs "guile"))
+                      (version (target-guile-effective-version))
+                      (scm (string-append out "/share/guile/site/" version))
+                      (go  (string-append out "/lib/guile/" version "/site-ccache")))
+                 (for-each
+                  (lambda (file)
+                    (simple-format (current-error-port) "wrapping: ~A\n" file)
+                    (let ((guile-inputs (list
+                                         "guile-json"
+                                         "guile-gcrypt"
+                                         "guix"
+                                         "guile-lib"
+                                         "guile-sqlite3"
+                                         "gnutls"
+                                         "guile-fibers")))
+                      (wrap-program file
+                        `("GUILE_LOAD_PATH" ":" prefix
+                          (,scm ,(string-join
+                                  (map (lambda (input)
+                                         (string-append
+                                          (assoc-ref inputs input)
+                                          "/share/guile/site/"
+                                          version))
+                                       guile-inputs)
+                                  ":")))
+                        `("GUILE_LOAD_COMPILED_PATH" ":" prefix
+                          (,go ,(string-join
+                                 (map (lambda (input)
+                                        (string-append
+                                         (assoc-ref inputs input)
+                                         "/lib/guile/" version "/site-ccache"))
+                                      guile-inputs)
+                                 ":"))))))
+                  (find-files bin)))
+               #t))
+           (delete 'strip))))           ; As the .go files aren't compatible
+      (native-inputs
+       (list pkg-config
+             autoconf
+             automake
+             gnutls
+
+             ;; Guile libraries are needed here for cross-compilation.
+             guile-3.0
+             guile-json-4
+             guile-gcrypt
+             guix
+             guile-fibers
+             guile-lib
+             guile-sqlite3))
+      (inputs
+       (list bash-minimal
+             guile-3.0))
+      (propagated-inputs
+       (list guile-json-4
+             guile-gcrypt
+             guix
+             guile-fibers
+             guile-lib
+             guile-sqlite3
+             gnutls))
+      (home-page "https://git.cbaines.net/guix/nar-herder")
+      (synopsis "Utility for managing and serving nars")
+      (description
+       "The Nar Herder is a utility for managing a collection of
+nars (normalized archives, in the context of Guix) along with the
+corresponding narinfo files which contain some signed metadata.
+
+It can assist in serving a collection of nars, moving them between machines,
+or mirroring an existing collection of nars.
+
+It's currently a working prototype, many designed features aren't implemented,
+and the error handling is very rough.")
+      (license license:agpl3+))))
 
 (define-public gcab
   (package

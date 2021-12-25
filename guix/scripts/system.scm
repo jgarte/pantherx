@@ -57,6 +57,7 @@
   #:use-module (guix build utils)
   #:use-module (guix progress)
   #:use-module ((guix build syscalls) #:select (terminal-columns))
+  #:use-module (gnu build image)
   #:use-module (gnu build install)
   #:autoload   (gnu build file-systems)
                  (find-partition-by-label find-partition-by-uuid)
@@ -689,6 +690,7 @@ checking this by themselves in their 'check' procedure."
 (define* (system-derivation-for-action image action
                                        #:key
                                        full-boot?
+                                       volatile?
                                        (graphic? #t)
                                        container-shared-network?
                                        mappings)
@@ -707,22 +709,18 @@ checking this by themselves in their 'check' procedure."
       ((vm)
        (system-qemu-image/shared-store-script os
                                               #:full-boot? full-boot?
+                                              #:volatile? volatile?
                                               #:graphic? graphic?
-                                              #:disk-image-size
-                                              (if full-boot?
-                                                  image-size
-                                                  (* 70 (expt 2 20)))
+                                              #:disk-image-size image-size
                                               #:mappings mappings))
-      ((image disk-image vm-image)
+      ((image disk-image vm-image docker-image)
        (when (eq? action 'disk-image)
          (warning (G_ "'disk-image' is deprecated: use 'image' instead~%")))
        (when (eq? action 'vm-image)
          (warning (G_ "'vm-image' is deprecated: use 'image' instead~%")))
-       (lower-object (system-image image)))
-      ((docker-image)
-       (system-docker-image os
-                            #:memory-size 1024
-                            #:shared-network? container-shared-network?)))))
+       (when (eq? action 'docker-image)
+         (warning (G_ "'docker-image' is deprecated: use 'image' instead~%")))
+       (lower-object (system-image image))))))
 
 (define (maybe-suggest-running-guix-pull)
   "Suggest running 'guix pull' if this has never been done before."
@@ -774,6 +772,7 @@ and TARGET arguments."
                          dry-run? derivations-only?
                          use-substitutes? target
                          full-boot?
+                         volatile?
                          (graphic? #t)
                          container-shared-network?
                          (mappings '())
@@ -828,6 +827,7 @@ static checks."
   (mlet* %store-monad
       ((sys       (system-derivation-for-action image action
                                                 #:full-boot? full-boot?
+                                                #:volatile? volatile?
                                                 #:graphic? graphic?
                                                 #:container-shared-network? container-shared-network?
                                                 #:mappings mappings))
@@ -1214,11 +1214,14 @@ resulting from command-line parsing."
          (label       (assoc-ref opts 'label))
          (image-type  (lookup-image-type-by-name
                        (assoc-ref opts 'image-type)))
-         (image       (let* ((image-type (if (eq? action 'vm-image)
-                                            qcow2-image-type
-                                            image-type))
+         (image       (let* ((image-type (case action
+                                           ((vm-image) qcow2-image-type)
+                                           ((docker-image) docker-image-type)
+                                           (else image-type)))
                             (image-size (assoc-ref opts 'image-size))
                             (volatile?  (assoc-ref opts 'volatile-root?))
+                            (shared-network?
+                               (assoc-ref opts 'container-shared-network?))
                             (base-image (if (operating-system? obj)
                                             (os->image obj
                                                        #:type image-type)
@@ -1228,7 +1231,8 @@ resulting from command-line parsing."
                                       (image-with-label base-image label)
                                       base-image))
                          (size image-size)
-                         (volatile-root? volatile?))))
+                         (volatile-root? volatile?)
+                         (shared-network? shared-network?))))
          (os          (image-operating-system image))
          (target-file (match args
                         ((first second) second)
@@ -1275,6 +1279,7 @@ resulting from command-line parsing."
                                #:validate-reconfigure
                                (assoc-ref opts 'validate-reconfigure)
                                #:full-boot? (assoc-ref opts 'full-boot?)
+                               #:volatile? (assoc-ref opts 'volatile-root?)
                                #:graphic? (not (assoc-ref opts 'no-graphic?))
                                #:container-shared-network?
                                (assoc-ref opts 'container-shared-network?)

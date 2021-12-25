@@ -404,8 +404,8 @@ from a mounted file system.")
     (license license:gpl2+)))
 
 (define-public bcachefs-tools
-  (let ((commit "f9f57789de567726f7cfa46bd13df4b0815d137a")
-        (revision "12"))
+  (let ((commit "b19d9f92e12c2e78d6e306e6cb7f8a7d9a7875f3")
+        (revision "13"))
     (package
       (name "bcachefs-tools")
       (version (git-version "0.1" revision commit))
@@ -417,7 +417,7 @@ from a mounted file system.")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "13442qpmv7hywkpbnbwlg2sfhlfh16qxry1xwlv35vch2qnzlhrq"))))
+          (base32 "1ixb1fk58yjk8alpcf9a7h0fnkvpbsjxd766iz9h7qa6r1r77a6c"))))
       (build-system gnu-build-system)
       (arguments
        `(#:make-flags
@@ -457,21 +457,20 @@ from a mounted file system.")
              python
              python-docutils))
       (inputs
-       `(("eudev" ,eudev)
-         ("keyutils" ,keyutils)
-         ("libaio" ,libaio)
-         ("libscrypt" ,libscrypt)
-         ("libsodium" ,libsodium)
-         ("liburcu" ,liburcu)
-         ("util-linux:lib" ,util-linux "lib") ; lib{blkid,uuid}
-         ("lz4" ,lz4)
-         ("zlib" ,zlib)
-         ("zstd:lib" ,zstd "lib")
-
-         ;; Only for mount.bcachefs.sh.
-         ("coreutils" ,coreutils-minimal)
-         ("gawk" ,gawk)
-         ("util-linux" ,util-linux)))
+       (list eudev
+             keyutils
+             libaio
+             libscrypt
+             libsodium
+             liburcu
+             `(,util-linux "lib")
+             lz4
+             zlib
+             `(,zstd "lib")
+             ;; Only for mount.bcachefs.sh.
+             coreutils-minimal
+             gawk
+             util-linux))
       (home-page "https://bcachefs.org/")
       (synopsis "Tools to create and manage bcachefs file systems")
       (description
@@ -506,14 +505,14 @@ performance and other characteristics.")
                    (string-append prefix suffix "\n"))
                   ;; …as does installing a now non-existent file.
                   ((".*\\$\\(INSTALL\\).* lib.*") ""))))))))
-     (inputs
-      `(("eudev:static" ,eudev "static")
-        ("libscrypt:static" ,libscrypt "static")
-        ("lz4:static" ,lz4 "static")
-        ("util-linux:static" ,util-linux "static") ; lib{blkid,uuid}
-        ("zlib" ,zlib "static")
-        ("zstd:static" ,zstd "static")
-        ,@(package-inputs bcachefs-tools)))))
+    (inputs (modify-inputs (package-inputs bcachefs-tools)
+              (prepend `(,eudev "static")
+                       `(,keyutils "static")
+                       `(,libscrypt "static")
+                       `(,lz4 "static")
+                       `(,util-linux "static")
+                       `(,zlib "static")
+                       `(,zstd "static"))))))
 
 (define-public bcachefs/static
   (package
@@ -838,14 +837,14 @@ All of this is accomplished without a centralized metadata server.")
 (define-public libeatmydata
   (package
     (name "libeatmydata")
-    (version "129")
+    (version "130")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.flamingspork.com/projects/libeatmydata/"
                            "libeatmydata-" version ".tar.gz"))
        (sha256
-        (base32 "1qycv1cvy6fr3v5rxilnsqxllwyfbqlcairlh31x2dnjsx28jnqf"))))
+        (base32 "1h212l2s0g3pv6q96d94dk7kpp9qzyxqydrrcgyp7zqjwvbiqws8"))))
     (build-system gnu-build-system)
     (arguments
      ;; All tests pass---but only if the host kernel allows PTRACE_TRACEME.
@@ -887,9 +886,9 @@ All of this is accomplished without a centralized metadata server.")
            (method url-fetch)
            (uri (string-append "https://deb.debian.org/debian/pool/main/"
                                "libe/libeatmydata/libeatmydata_" version
-                               "-1.debian.tar.xz"))
+                               "-2.debian.tar.xz"))
            (sha256
-            (base32 "0q6kx1bf870jj52a2vm5p5xlrr89g2zs8wyhlpn80pys9p28nikx"))))
+            (base32 "1sg9g1nv3wl9ymzz33ig4ns563npkbxj67a64m7p34cc813jl95w"))))
        ;; For the test suite.
        ("strace" ,strace)
        ("which" ,which)))
@@ -911,7 +910,7 @@ Please, @emph{do not} use something called ``eat my data'' in such cases!
 
 However, it does not make sense to accept this performance hit if the data is
 unimportant and you can afford to lose all of it in the event of a crash, for
-example when running a software test suite.  Adding @code{}libeatmydata.so} to
+example when running a software test suite.  Adding @file{libeatmydata.so} to
 the @env{LD_PRELOAD} environment of such tasks will override all C library data
 synchronisation functions with custom @i{no-op} ones that do nothing and
 immediately return success.

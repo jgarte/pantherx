@@ -10,6 +10,7 @@
 ;;; Copyright © 2020 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2021 Simon Tournier <zimon.toutoune@gmail.com>
 ;;; Copyright © 2021 Guillaume Le Vaillant <glv@posteo.net>
+;;; Copyright © 2021 Philip McGrath <philip@philipmcgrath.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -57,14 +58,14 @@
 (define-public node
   (package
     (name "node")
-    (version "10.24.0")
+    (version "10.24.1")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://nodejs.org/dist/v" version
                                   "/node-v" version ".tar.xz"))
               (sha256
                (base32
-                "1k1srdis23782hnd1ymgczs78x9gqhv77v0am7yb54gqcspp70hm"))
+                "032801kg24j04xmf09m0vxzlcz86sv21s24lv9l4cfv08k1c4byp"))
               (modules '((guix build utils)))
               (snippet
                `(begin
@@ -104,16 +105,29 @@
        ;; Run only the CI tests.  The default test target requires additional
        ;; add-ons from NPM that are not distributed with the source.
        #:test-target "test-ci-js"
+       #:modules
+       ((guix build gnu-build-system)
+        (guix build utils)
+        (srfi srfi-1)
+        (ice-9 match))
        #:phases
        (modify-phases %standard-phases
-         (add-before 'configure 'patch-files
+         (add-before 'configure 'patch-hardcoded-program-references
            (lambda* (#:key inputs #:allow-other-keys)
+
              ;; Fix hardcoded /bin/sh references.
-             (substitute* '("lib/child_process.js"
-                            "lib/internal/v8_prof_polyfill.js"
-                            "test/parallel/test-child-process-spawnsync-shell.js"
-                            "test/parallel/test-stdio-closed.js"
-                            "test/sequential/test-child-process-emfile.js")
+             (substitute*
+                 (let ((common
+                        '("lib/child_process.js"
+                          "lib/internal/v8_prof_polyfill.js"
+                          "test/parallel/test-child-process-spawnsync-shell.js"
+                          "test/parallel/test-stdio-closed.js"
+                          "test/sequential/test-child-process-emfile.js"))
+                       ;; not in bootstap node:
+                       (sigxfsz "test/parallel/test-fs-write-sigxfsz.js"))
+                   (if (file-exists? sigxfsz)
+                       (cons sigxfsz common)
+                       common))
                (("'/bin/sh'")
                 (string-append "'" (assoc-ref inputs "bash") "/bin/sh'")))
 
@@ -123,7 +137,10 @@
                             "test/parallel/test-child-process-exec-env.js")
                (("'/usr/bin/env'")
                 (string-append "'" (assoc-ref inputs "coreutils")
-                               "/bin/env'")))
+                               "/bin/env'")))))
+         (add-after 'patch-hardcoded-program-references
+             'delete-problematic-tests
+           (lambda* (#:key inputs #:allow-other-keys)
 
              ;; FIXME: These tests fail in the build container, but they don't
              ;; seem to be indicative of real problems in practice.
@@ -218,24 +235,50 @@
                (setenv "CXX" ,(cxx-for-target))
                (setenv "PKG_CONFIG" ,(pkg-config-for-target))
                (apply invoke
-                      (search-input-file (or native-inputs inputs)
-                                         "/bin/python")
-                      "configure" flags))))
-         (add-after 'patch-shebangs 'patch-npm-shebang
+                      (let ((inpts (or native-inputs inputs)))
+                        (with-exception-handler
+                            (lambda (e)
+                              (if (search-error? e)
+                                  (search-input-file inpts "/bin/python3")
+                                  (raise-exception e)))
+                          (lambda ()
+                            (search-input-file inpts "/bin/python"))))
+                      "configure"
+                      flags))))
+         (add-after 'patch-shebangs 'patch-nested-shebangs
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             ;; Based on the implementation of patch-shebangs
+             ;; from (guix build gnu-build-system).
+             (let ((path (append-map (match-lambda
+                                       ((_ . dir)
+                                        (list (string-append dir "/bin")
+                                              (string-append dir "/sbin")
+                                              (string-append dir "/libexec"))))
+                                     (append outputs inputs))))
+               (for-each
+                (lambda (file)
+                  (patch-shebang file path))
+                (find-files (search-input-directory outputs "lib/node_modules")
+                            (lambda (file stat)
+                              (executable-file? file))
+                            #:stat lstat)))))
+         (add-after 'install 'install-npmrc
+           ;; Note: programs like node-gyp only receive these values if
+           ;; they are started via `npm` or `npx`.
+           ;; See: https://github.com/nodejs/node-gyp#npm-configuration
            (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((bindir (string-append (assoc-ref outputs "out")
-                                           "/bin"))
-                    (npm    (string-append bindir "/npm"))
-                    (target (readlink npm)))
-               (with-directory-excursion bindir
-                 (patch-shebang target (list bindir))))))
-         (add-after 'install 'patch-node-shebang
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((bindir (string-append (assoc-ref outputs "out")
-                                           "/bin"))
-                    (npx    (readlink (string-append bindir "/npx"))))
-               (with-directory-excursion bindir
-                 (patch-shebang npx (list bindir)))))))))
+             (let* ((out (assoc-ref outputs "out")))
+               (with-output-to-file
+                   ;; Use the config file "primarily for distribution
+                   ;; maintainers" rather than "{prefix}/etc/npmrc",
+                   ;; especially because node-build-system uses --prefix
+                   ;; to install things to their store paths:
+                   (string-append out "/lib/node_modules/npm/npmrc")
+                 (lambda ()
+                   ;; Tell npm (mostly node-gyp) where to find our
+                   ;; installed headers so it doesn't try to
+                   ;; download them from the internet:
+                   (format #t "nodedir=~a\n" out)))))))))
     (native-inputs
      `(;; Runtime dependencies for binaries used as a bootstrap.
        ("c-ares" ,c-ares)
@@ -256,7 +299,7 @@
             (variable "NODE_PATH")
             (files '("lib/node_modules")))))
     (inputs
-     (list bash
+     (list bash-minimal
            coreutils
            c-ares
            http-parser
@@ -264,6 +307,7 @@
            libuv
            `(,nghttp2 "lib")
            openssl
+           python-wrapper ;; for node-gyp (supports python3)
            zlib))
     (synopsis "Evented I/O for V8 JavaScript")
     (description "Node.js is a platform built on Chrome's JavaScript runtime
@@ -705,65 +749,8 @@ source files.")
                                    libuv "/lib:"
                                    zlib "/lib"
                                    "'],"))))))
-           (replace 'configure
-             ;; Node's configure script is actually a python script, so we can't
-             ;; run it with bash.
-             (lambda* (#:key outputs (configure-flags '()) native-inputs inputs
-                       #:allow-other-keys)
-               (let* ((prefix (assoc-ref outputs "out"))
-                      (xflags ,(if (%current-target-system)
-                                   `'("--cross-compiling"
-                                     ,(string-append
-                                       "--dest-cpu="
-                                       (match (%current-target-system)
-                                         ((? (cut string-prefix? "arm" <>))
-                                          "arm")
-                                         ((? (cut string-prefix? "aarch64" <>))
-                                          "arm64")
-                                         ((? (cut string-prefix? "i686" <>))
-                                          "ia32")
-                                         ((? (cut string-prefix? "x86_64" <>))
-                                          "x64")
-                                         ((? (cut string-prefix? "powerpc64" <>))
-                                          "ppc64")
-                                         (_ "unsupported"))))
-                                   ''()))
-                      (flags (cons
-                               (string-append "--prefix=" prefix)
-                               (append xflags configure-flags))))
-                 (format #t "build directory: ~s~%" (getcwd))
-                 (format #t "configure flags: ~s~%" flags)
-                 ;; Node's configure script expects the CC environment variable to
-                 ;; be set.
-                 (setenv "CC_host" "gcc")
-                 (setenv "CXX_host" "g++")
-                 (setenv "CC" ,(cc-for-target))
-                 (setenv "CXX" ,(cxx-for-target))
-                 (setenv "PKG_CONFIG" ,(pkg-config-for-target))
-                 (apply invoke
-                        (search-input-file (or native-inputs inputs)
-                                           "/bin/python3")
-                        "configure" flags))))
-           (replace 'patch-files
+           (replace 'delete-problematic-tests
              (lambda* (#:key inputs #:allow-other-keys)
-               ;; Fix hardcoded /bin/sh references.
-               (substitute* '("lib/child_process.js"
-                              "lib/internal/v8_prof_polyfill.js"
-                              "test/parallel/test-child-process-spawnsync-shell.js"
-                              "test/parallel/test-fs-write-sigxfsz.js"
-                              "test/parallel/test-stdio-closed.js"
-                              "test/sequential/test-child-process-emfile.js")
-                 (("'/bin/sh'")
-                  (string-append "'" (assoc-ref inputs "bash") "/bin/sh'")))
-
-               ;; Fix hardcoded /usr/bin/env references.
-               (substitute* '("test/parallel/test-child-process-default-options.js"
-                              "test/parallel/test-child-process-env.js"
-                              "test/parallel/test-child-process-exec-env.js")
-                 (("'/usr/bin/env'")
-                  (string-append "'" (assoc-ref inputs "coreutils")
-                                 "/bin/env'")))
-
                ;; FIXME: These tests fail in the build container, but they don't
                ;; seem to be indicative of real problems in practice.
                (for-each delete-file
@@ -802,8 +789,9 @@ source files.")
                ;; TODO: Regenerate certs instead.
                (for-each delete-file
                          '("test/parallel/test-tls-passphrase.js"
-                           "test/parallel/test-tls-server-verify.js"))
-
+                           "test/parallel/test-tls-server-verify.js"))))
+           (add-after 'delete-problematic-tests 'replace-llhttp-sources
+             (lambda* (#:key inputs #:allow-other-keys)
                ;; Replace pre-generated llhttp sources
                (let ((llhttp (assoc-ref inputs "llhttp")))
                  (copy-file (string-append llhttp "/src/llhttp.c")
@@ -830,7 +818,7 @@ source files.")
            python
            util-linux))
     (inputs
-     (list bash
+     (list bash-minimal
            coreutils
            c-ares-for-node
            icu4c-67
@@ -839,6 +827,7 @@ source files.")
            brotli
            `(,nghttp2 "lib")
            openssl
+           python-wrapper ;; for node-gyp (supports python3)
            zlib))))
 
 (define-public libnode
@@ -850,5 +839,5 @@ source files.")
         `(cons* "--shared" "--without-npm" ,flags))
        ((#:phases phases '%standard-phases)
         `(modify-phases ,phases
-           (delete 'patch-npm-shebang)
-           (delete 'patch-node-shebang)))))))
+           (delete 'install-npmrc)
+           (delete 'patch-nested-shebangs)))))))

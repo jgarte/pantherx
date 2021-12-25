@@ -254,14 +254,14 @@
 (define-public httpd
   (package
     (name "httpd")
-    (version "2.4.51")
+    (version "2.4.52")
     (source (origin
              (method url-fetch)
              (uri (string-append "mirror://apache/httpd/httpd-"
                                  version ".tar.bz2"))
              (sha256
               (base32
-               "1x1qp10pfh33x1b56liwsjl0jamjm5lkk7j3lj87c1ygzs0ivq10"))))
+               "1jgmfbazc2n9dnl7axhahwppyq25bvbvwx0lqplq76by97fgf9q1"))))
     (build-system gnu-build-system)
     (native-inputs (list `(,pcre "bin")))       ;for 'pcre-config'
     (inputs (list apr apr-util openssl perl)) ; needed to run bin/apxs
@@ -1537,7 +1537,15 @@ high performance.")
     (build-system gnu-build-system)
     (arguments
      ;; Parallel builds don't reliably succeed.
-     `(#:parallel-build? #f))
+     `(#:parallel-build? #f
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'fix-sphinx-error
+           ;; XXX: Remove in next version: fix applied upstream.  See
+           ;; <https://github.com/tatsuhiro-t/wslay/commit/43fda1207ea5977043630500e0c8e77b98b35320>.
+           (lambda _
+             (substitute* "doc/sphinx/conf.py.in"
+               (("add_stylesheet") "add_css_file")))))))
     (native-inputs
      (list autoconf
            automake
@@ -7591,15 +7599,18 @@ HTTrack is fully configurable, and has an integrated help system.")
      (origin
        (method url-fetch)
        (uri (pypi-uri "buku" version))
-       (file-name (git-file-name name version))
        (sha256
         (base32 "1n4d1mkjyvzdxbyq067p1p9skb3iwx0msd86nzr224dlqrfh9675"))))
     (build-system python-build-system)
     (arguments
-     `(#:tests? #f))                    ;FIXME: many tests need network access
+     `(#:tests? #f                     ; FIXME: many tests need network access
+       #:phases
+       (modify-phases %standard-phases
+         ;; XXX: missing inputs, e.g. python-flask-admin
+         (delete 'sanity-check))))
     (inputs
      (list python-beautifulsoup4 python-certifi python-cryptography
-           python-html5lib python-urllib3))
+           python-flask python-html5lib python-urllib3))
     (home-page "https://github.com/jarun/buku")
     (synopsis "Bookmark manager")
     (description
