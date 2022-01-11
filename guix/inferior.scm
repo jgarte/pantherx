@@ -808,15 +808,11 @@ determines whether CHANNELS are authenticated."
             ;; what's going to be built.
             (built-derivations (list profile))
 
-            ;; Cache if and only if AUTHENTICATE? is true.
-            (if authenticate?
-                (mbegin %store-monad
-                  (symlink* (derivation->output-path profile) cached)
-                  (add-indirect-root* cached)
-                  (return cached))
-                (mbegin %store-monad
-                  (add-temp-root* profile)
-                  (return profile))))))))
+            ;; Note: Caching is fine even when AUTHENTICATE? is false because
+            ;; we always call 'latest-channel-instances?'.
+            (symlink* (derivation->output-path profile) cached)
+            (add-indirect-root* cached)
+            (return cached))))))
 
 (define* (inferior-for-channels channels
                                 #:key
